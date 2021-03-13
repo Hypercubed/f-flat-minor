@@ -7,7 +7,7 @@
 | Typescript | https://replit.com/@Hypercubed/f-flat-minor-TS | 😀 |
 | Go | https://replit.com/@Hypercubed/f-flat-minor-Go | 😀 |
 | Rust | https://replit.com/@Hypercubed/f-flat-minor-Rust | 🤬 |
-| Python |  | TBD |
+| Python | https://replit.com/@Hypercubed/f-flat-minor-Python | 😀 |
 | C++ |  | TBD |
 | Ruby |  | TBD |
 | Clojure | | TBD |
