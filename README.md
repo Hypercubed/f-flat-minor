@@ -6,10 +6,10 @@
 | --- | ----------- | ----------- |
 | Typescript | https://replit.com/@Hypercubed/f-flat-minor-TS | 😀 |
 | Go | https://replit.com/@Hypercubed/f-flat-minor-Go | 😀 |
-| Rust | https://replit.com/@Hypercubed/f-flat-minor-Rust | 🤬 |
+| Rust | https://replit.com/@Hypercubed/f-flat-minor-Rust | 😵 |
 | Python | https://replit.com/@Hypercubed/f-flat-minor-Python | 😀 |
 | C++ |  | TBD |
-| Ruby | https://replit.com/@Hypercubed/f-flat-minor-Ruby | 😵 |
+| Ruby | https://replit.com/@Hypercubed/f-flat-minor-Ruby | 😐 |
 | Clojure | | TBD |
 | Haskell | | TBD |
 | Julia | | TBD |
