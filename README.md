@@ -14,5 +14,6 @@
 | Haskell | | TBD |
 | Julia | | TBD |
 | Dart | | TBD |
-| Erlang | | TBD |
+| Erlang/BEAM | | TBD |
 | Raku | | TBD |
+| WebAssembly/AssemblyScript | | TBD |
