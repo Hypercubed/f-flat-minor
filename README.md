@@ -8,12 +8,12 @@
 | Go | https://replit.com/@Hypercubed/f-flat-minor-Go | 😀 |
 | Rust | https://replit.com/@Hypercubed/f-flat-minor-Rust | 😵 |
 | Python | https://replit.com/@Hypercubed/f-flat-minor-Python | 😀 |
-| C++ |  | TBD |
+| C/C++/C#/LLVM |  | TBD |
 | Ruby | https://replit.com/@Hypercubed/f-flat-minor-Ruby | 😐 |
-| Clojure | | TBD |
+| Lisp/Clojure/Racket | | TBD |
 | Haskell | | TBD |
 | Julia | | TBD |
 | Dart | | TBD |
 | Erlang/BEAM | | TBD |
-| Raku | | TBD |
+| Perl/Raku | | TBD |
 | WebAssembly/AssemblyScript | | TBD |
