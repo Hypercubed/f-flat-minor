@@ -1,11 +1,11 @@
-cd ./go
+#!/bin/bash
+cd "$(dirname "$0")"
+
 rm -f ./output.*
-rm -f ./execute
 
-echo "Deno Compile and Execute"
+echo "** Ruby Compile and Execute **"
 
-go build
-time ./execute > output.txt
+time ruby ./execute.rb > output.txt
 
 echo ""
 
@@ -17,4 +17,3 @@ else
 fi
 
 echo ""
-

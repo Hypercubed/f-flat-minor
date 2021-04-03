@@ -1,3 +1,3 @@
-module example.com/execute
+module hypercubed.com/f-flat-minor
 
 go 1.16

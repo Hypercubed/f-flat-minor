@@ -1,4 +1,6 @@
-cd deno
+#!/bin/bash
+cd "$(dirname "$0")"
+
 rm -f ./output.*
 rm -f ./compile
 rm -f ./execute
@@ -6,7 +8,7 @@ rm -f ./execute
 # deno --unstable compile --lite --allow-read ./compile.ts
 # echo ""
 
-echo "Deno Compile"
+echo "** Deno Compile **"
 
 # time ./compile > ./output.bin
 time deno run --allow-read ./compile.ts > ./output.bin
@@ -25,7 +27,7 @@ echo ""
 # deno --unstable compile --lite --allow-read ./execute.ts
 # echo ""
 
-echo "Deno Execute"
+echo "** Deno Execute **"
 
 # time ./execute > ./output.txt
 time deno run --allow-read ./execute.ts > ./output.txt

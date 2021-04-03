@@ -1,3 +1,5 @@
+import { decodeByteArray } from "./leb128.ts";
+
 const COMMENT_START = '/*';
 const COMMENT_END = '*/';
 const SIGNIFICANT_BITS = 7n;
@@ -19,7 +21,6 @@ interface IrInstruction {
 
 const stack: bigint[] = [];
 
-const symbols = new Map<string, bigint>();
 const defs = new Map<bigint, () => void | bigint[]>();
 
 function peek(): bigint {
@@ -34,13 +35,6 @@ function pop(): bigint {
     throw 'err';
   }
   return stack.pop() as bigint;
-}
-
-// interpretor
-let _nextCode = 0x80;
-
-function nextCode(): bigint {
-  return BigInt(_nextCode++);
 }
 
 function defineSystem(name: string, fn: () => void, char: string | number) {
@@ -63,49 +57,18 @@ function callOp(code: bigint): void {
 
 // 
 
-function decodeWithOffset(byteArray: Uint8Array, startingOffset = 0) {
-  let finalOffset = startingOffset;
-  while (finalOffset < byteArray.length - 1 && (byteArray[finalOffset] & 0x80) === 0x80) {
-    ++finalOffset;
-  }
-
-  let value = -1n;
-  for (let offset = finalOffset; offset >= startingOffset; --offset) {
-    ++value;
-    value <<= SIGNIFICANT_BITS;
-    value |= BigInt(byteArray[offset]) & REST_MASK;
-  }
-
-  if ((value & 1n) === 1n) {
-    value >>= 1n;
-    ++value;
-    value = -value;
-  } else {
-    value >>= 1n;
-  }
-
-  return {
-    value,
-    followingOffset: finalOffset + 1,
-  };
-}
-
 function fromByteArray(byteArray: Uint8Array): bigint[] {
-  const ret = [];
-  let offset = 0;
-  while (offset < byteArray.length) {
-    const { value, followingOffset } = decodeWithOffset(byteArray, offset);
+  const arr = decodeByteArray(Array.from(byteArray));
+
+  return arr.flatMap(value => {
     const op = value & 1n;
     const val = value >> 1n;
     if (op) {
-      ret.push(val);
+      return [val];
     } else {
-      ret.push(0n);
-      ret.push(val);
+      return [0n, val];
     }
-    offset = followingOffset;
-  }
-  return ret;
+  });
 }
 
 function executeBigIntCode(bc: bigint[]) {
@@ -119,6 +82,25 @@ function executeBigIntCode(bc: bigint[]) {
     }
   }
 }
+
+// function toPrintableCharacter(n: number) {
+//   if (n < 32 || (n > 126 && n < 161)) {
+//     return '.';
+//   }
+//   return String.fromCharCode(n);
+// }
+
+// function dumpByteArray(byteArray: Uint8Array) {
+//   for (let i = 0; i < byteArray.length; i += 16) {
+//     const c = [...byteArray.slice(i, i+16)];
+//     const s: string[] = c.map(toPrintableCharacter);
+//     const h = c.map(cc => cc.toString(16).toUpperCase().padStart(2, '0'));
+//     console.log(h.join(' ').padEnd(48, ' '), s.join(''));
+//   }
+
+//   console.log(byteArray.length, 'bytes');
+//   console.log();
+// }
 
 // Definitions
 

@@ -1,9 +1,11 @@
-cd ruby
+#!/bin/bash
+cd "$(dirname "$0")"
+
 rm -f ./output.*
 
-echo "Ruby Compile and Execute"
+echo "** Python Compile and Execute **"
 
-time ruby ./execute.rb > output.txt
+time python3 ./execute.py > output.txt
 
 echo ""
 

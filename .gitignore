@@ -1,0 +1,4 @@
+.vscode/*
+
+go/compile
+go/execute

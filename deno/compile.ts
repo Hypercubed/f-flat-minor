@@ -1,3 +1,5 @@
+import { encodeBigIntArray } from "./leb128.ts";
+
 const COMMENT_START = '/*';
 const COMMENT_END = '*/';
 const SIGNIFICANT_BITS = 7n;
@@ -40,35 +42,6 @@ function getSymbol(name: string): bigint {
 }
 
 // 
-
-function encodeInto<U>(value: bigint, byteArray: Array<number>, offset = 0) {
-  value = BigInt(value);
-
-  if (value < 0) {
-    value = -value;
-    --value;
-    value <<= 1n;
-    value |= 1n;
-  } else {
-    value <<= 1n;
-  }
-
-  while (value >= CONTINUE && offset < byteArray.length) {
-    byteArray[offset] = Number((value & REST_MASK) | CONTINUE);
-    value >>= SIGNIFICANT_BITS;
-    --value;
-    ++offset;
-  }
-
-  if (offset >= byteArray.length) {
-    throw new Error('insufficient space');
-  }
-
-  byteArray[offset] = Number(value);
-  ++offset;
-
-  return offset;
-}
 
 function compileToIR(s: string[]): IrInstruction[] {
   let compileMode = false;
@@ -140,20 +113,37 @@ function toBigIntIR(i: IrInstruction) {
 
 function compileToByteArray(ir: Array<IrInstruction>): Uint8Array {
   const out = { length: Infinity };
-  let offset = 0;
-  ir.forEach(i => {
-    if (i.op === IROp.call && i.value === 0n) return; 
+
+  const arr = ir.flatMap(i => {
+    if (i.op === IROp.call && i.value === 0n) return []; 
     const vv = i.value << 1n;
-    const v = i.op === IROp.push ? vv : (vv | 1n);
-    offset = encodeInto(v, out as number[], offset);
+    return [i.op === IROp.push ? vv : (vv | 1n)];
   });
 
-  out.length = offset;
-  return Uint8Array.from(out);
+  return Uint8Array.from(encodeBigIntArray(arr));
 }
 
 function tokenize(s: string) {
   return s.split(/\s+/).filter(Boolean);
+}
+
+function toPrintableCharacter(n: number) {
+  if (n < 32 || (n > 126 && n < 161)) {
+    return '.';
+  }
+  return String.fromCharCode(n);
+}
+
+function dumpByteArray(byteArray: Uint8Array) {
+  for (let i = 0; i < byteArray.length; i += 16) {
+    const c = [...byteArray.slice(i, i+16)];
+    const s: string[] = c.map(toPrintableCharacter);
+    const h = c.map(cc => cc.toString(16).toUpperCase().padStart(2, '0'));
+    console.log(h.join(' ').padEnd(48, ' '), s.join(''));
+  }
+
+  console.log(byteArray.length, 'bytes');
+  console.log();
 }
 
 // Definitions
