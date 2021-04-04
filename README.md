@@ -55,12 +55,12 @@ For each target language first implement a proof-of-concept in an online code ru
 
 | Language | POC | Compiler | Runner |
 | --- | ----------- | --- | --- |
-| Typescript/Deno | https://replit.com/@Hypercubed/f-flat-minor-TS 😀 | ✔ | ✔ |
-| Go | https://replit.com/@Hypercubed/f-flat-minor-Go 😀 | ✔ | ✔ |
-| Rust | https://replit.com/@Hypercubed/f-flat-minor-Rust 😔 |
-| Python | https://replit.com/@Hypercubed/f-flat-minor-Python 😀 |
+| Typescript/Deno | 😀 https://replit.com/@Hypercubed/f-flat-minor-TS | ✔ | ✔ |
+| Go | 😀  https://replit.com/@Hypercubed/f-flat-minor-Go | ✔ | ✔ |
+| Rust | 😔  https://replit.com/@Hypercubed/f-flat-minor-Rust |
+| Python | 😀  https://replit.com/@Hypercubed/f-flat-minor-Python |
+| Ruby | 😀  https://replit.com/@Hypercubed/f-flat-minor-Ruby |
 | C/C++/C#/LLVM |  TBD |
-| Ruby | https://replit.com/@Hypercubed/f-flat-minor-Ruby 😐 |
 | Lisp/Clojure/Racket | TBD |
 | Haskell | TBD |
 | Julia | TBD |
