@@ -15,7 +15,7 @@ interface IrInstruction {
 
 const stack: bigint[] = [];
 
-const defs = new Map<bigint, () => void | bigint[]>();
+const defs = new Map<bigint, (() => void) | bigint[]>();
 
 function peek(): bigint {
   if (stack.length === 0) {
@@ -77,24 +77,24 @@ function executeBigIntCode(bc: bigint[]) {
   }
 }
 
-// function toPrintableCharacter(n: number) {
-//   if (n < 32 || (n > 126 && n < 161)) {
-//     return '.';
-//   }
-//   return String.fromCharCode(n);
-// }
+function toPrintableCharacter(n: number) {
+  if (n < 32 || (n > 126 && n < 161)) {
+    return '.';
+  }
+  return String.fromCharCode(n);
+}
 
-// function dumpByteArray(byteArray: Uint8Array) {
-//   for (let i = 0; i < byteArray.length; i += 16) {
-//     const c = [...byteArray.slice(i, i+16)];
-//     const s: string[] = c.map(toPrintableCharacter);
-//     const h = c.map(cc => cc.toString(16).toUpperCase().padStart(2, '0'));
-//     console.log(h.join(' ').padEnd(48, ' '), s.join(''));
-//   }
+function dumpByteArray(byteArray: Uint8Array) {
+  for (let i = 0; i < byteArray.length; i += 16) {
+    const c = [...byteArray.slice(i, i+16)];
+    const s: string[] = c.map(toPrintableCharacter);
+    const h = c.map(cc => cc.toString(16).toUpperCase().padStart(2, '0'));
+    console.log(h.join(' ').padEnd(48, ' '), s.join(''));
+  }
 
-//   console.log(byteArray.length, 'bytes');
-//   console.log();
-// }
+  console.log(byteArray.length, 'bytes');
+  console.log();
+}
 
 // Definitions
 
@@ -108,7 +108,7 @@ function setup() {
   defineSystem(';', () => {
     const s: bigint[] = stack.splice(0, stack.length) || [];
     const n = s.shift() || 0n;
-    defs.set(n, s as any);
+    defs.set(n, s);
   }, ';');
 
   defineSystem('cls', () => {
@@ -179,8 +179,14 @@ function setup() {
 // Run
 setup();
 
-const byteCode = new Uint8Array(1024);
-await Deno.stdin.read(byteCode);
+const buf = new Uint8Array(1024);
+const n = <number>await Deno.stdin.read(buf);
+const byteCode = buf.subarray(0, n);
+
+if (Deno.args.includes('--dump')) {
+  dumpByteArray(byteCode);
+  Deno.exit();
+}
 
 const bigCode = fromByteArray(byteCode);
 

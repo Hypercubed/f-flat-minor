@@ -19,6 +19,6 @@
   println: print 10 putc ;
 
   0 32 'Factorial print
-  0 '100 println
+  0 '100: println
 
   100 fact .

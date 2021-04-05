@@ -164,7 +164,7 @@ ev("""
 
   0 'Factorial print
   32 putc
-  0 '100 println
+  0 '100: println
 
   100 fact .
 

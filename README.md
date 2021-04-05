@@ -35,7 +35,7 @@ print: dup &drop &print_f ifte ;
 println: print 10 putc ;
 
 0 32 'Factorial print
-0 '100 println
+0 '100: println
 
 100 fact .
 ```
@@ -43,7 +43,7 @@ println: print 10 putc ;
 with the following output:
 
 ```
-Factorial 100
+Factorial 100:
 [93326215443944152681699238856266700490715968264381621468592963895217599993229915608941463976156518286253697920827223758251185210916864000000000000000000000000]
 ```
 

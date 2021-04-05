@@ -68,6 +68,15 @@ function compileToIR(s: string[]): IrInstruction[] {
 
     if (isNumber) {
       ret.push({ value: BigInt(maybeNumber), op: IROp.push, comment: ss });
+    } else if (ss[0] === '\'') { // String
+      const chars = ss.replace(/^'/, '')
+        .split('')
+        .map(c => String(c.charCodeAt(0)))
+        .reverse();
+      const ir = compileToIR(chars);
+      ir.forEach(cc => cc.comment = '');
+      ir[0].comment = ss;
+      ret.push(...ir);
     } else if (ss.endsWith(':')) { // Definition
       const name = ss.replace(/:$/, '');
       ret.push({ value: getSymbol(name), op: IROp.push, comment: ss });
@@ -83,15 +92,6 @@ function compileToIR(s: string[]): IrInstruction[] {
       const name = ss.replace(/^&/, '');
       const code = getSymbol(name);
       ret.push({ value: code, op: IROp.push, comment: ss });
-    } else if (ss[0] === '\'') { // String
-      const chars = ss.replace(/^'/, '')
-        .split('')
-        .map(c => String(c.charCodeAt(0)))
-        .reverse();
-      const ir = compileToIR(chars);
-      ir.forEach(cc => cc.comment = '');
-      ir[0].comment = ss;
-      ret.push(...ir);
     } else {
       const code = getSymbol(ss);
       ret.push({ value: code, op: IROp.call, comment: ss });
@@ -143,6 +143,14 @@ function dumpByteArray(byteArray: Uint8Array) {
   console.log();
 }
 
+function printIr(ir: Array<IrInstruction>) {
+  ir.forEach(i => {
+    const n = (i.value + 'n').padEnd(5, ' ');
+    const o = i.op.toUpperCase().padEnd(6, ' ');
+    console.log(n, o, ';', i.comment)
+  });
+}
+
 // Definitions
 
 function setup() {
@@ -173,6 +181,17 @@ const code = new TextDecoder().decode(buf.subarray(0, n));
 
 const tokens = tokenize(code);
 const ir = compileToIR(tokens);
+
+if (Deno.args.includes('--ir')) {
+  printIr(ir);
+  Deno.exit();
+}
+
 const byteCode = compileToByteArray(ir);
+
+if (Deno.args.includes('--dump')) {
+  dumpByteArray(byteCode);
+  Deno.exit();
+}
 
 Deno.stdout.writeSync(byteCode);
