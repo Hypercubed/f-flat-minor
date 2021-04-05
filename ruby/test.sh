@@ -5,7 +5,7 @@ rm -f ./output.*
 
 echo "** Ruby Compile and Execute **"
 
-time ruby ./execute.rb > output.txt
+time cat ../input.ff | ruby ./execute.rb > output.txt
 
 echo ""
 

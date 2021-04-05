@@ -1,3 +1,6 @@
+#!/usr/bin/env python3
+
+import sys
 import time
 
 stack = []
@@ -142,30 +145,7 @@ def ev(t):
         print('undefined', s)
         exit()
 
-ev("""
+lines = sys.stdin.readlines()
+code = ' '.join(lines)
 
-  /* common definitions */
-  --: 1 - ;
-  not: 0 = ;
-  rot: &swap dip swap ;
-  choose: &swap ? drop ;
-  ifte: rot choose call ;
-
-  /* define factorial */
-  fact_t: drop 1 ;
-  fact_f: dup -- fact * ;
-  fact: dup &fact_t &fact_f ifte ;
-
-  /* string printing */
-  print_t: drop ;
-  print_f: putc print ;
-  print: dup &print_t &print_f ifte ;
-  println: print 10 putc ;
-
-  0 'Factorial print
-  32 putc
-  0 '100: println
-
-  100 fact .
-
-""".split())
+ev(code.split())

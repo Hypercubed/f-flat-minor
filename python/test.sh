@@ -5,7 +5,7 @@ rm -f ./output.*
 
 echo "** Python Compile and Execute **"
 
-time python3 ./execute.py > output.txt
+time cat ../input.ff | python3 ./execute.py > output.txt
 
 echo ""
 
