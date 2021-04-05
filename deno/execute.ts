@@ -1,11 +1,5 @@
 import { decodeByteArray } from "./leb128.ts";
 
-const COMMENT_START = '/*';
-const COMMENT_END = '*/';
-const SIGNIFICANT_BITS = 7n;
-const CONTINUE = 1n << SIGNIFICANT_BITS;
-const REST_MASK = CONTINUE - 1n;
-
 const encoder = new TextEncoder();
 
 enum IROp {
@@ -185,7 +179,8 @@ function setup() {
 // Run
 setup();
 
-const byteCode = Deno.readFileSync('./output.bin');
+const byteCode = new Uint8Array(1024);
+await Deno.stdin.read(byteCode);
 
 const bigCode = fromByteArray(byteCode);
 

@@ -2,9 +2,6 @@ import { encodeBigIntArray } from "./leb128.ts";
 
 const COMMENT_START = '/*';
 const COMMENT_END = '*/';
-const SIGNIFICANT_BITS = 7n;
-const CONTINUE = 1n << SIGNIFICANT_BITS;
-const REST_MASK = CONTINUE - 1n;
 
 enum IROp {
   call = 'call',
@@ -170,7 +167,9 @@ function setup() {
 // Run
 setup();
 
-const code = Deno.readTextFileSync('../input.ff');
+const buf = new Uint8Array(1024);
+const n = <number>await Deno.stdin.read(buf);
+const code = new TextDecoder().decode(buf.subarray(0, n));
 
 const tokens = tokenize(code);
 const ir = compileToIR(tokens);

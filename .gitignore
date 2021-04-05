@@ -1,4 +1,8 @@
 .vscode/*
+deno/.vscode
+go/.vscode
+python/.vscode
+ruby/.vscode
 
 go/compile
 go/execute

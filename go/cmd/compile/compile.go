@@ -201,9 +201,9 @@ func check(e error) {
 func main() {
 	setup()
 
-	dat, err := ioutil.ReadFile("../input.ff")
+	data, err := ioutil.ReadAll(os.Stdin)
 	check(err)
-	code := string(dat)
+	code := string(data)
 
 	var tokens = strings.Fields(code)
 

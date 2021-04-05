@@ -11,7 +11,7 @@ rm -f ./execute
 echo "** Deno Compile **"
 
 # time ./compile > ./output.bin
-time deno run --allow-read ./compile.ts > ./output.bin
+time cat ../input.ff | deno run ./compile.ts > ./output.bin
 
 echo ""
 
@@ -30,7 +30,7 @@ echo ""
 echo "** Deno Execute **"
 
 # time ./execute > ./output.txt
-time deno run --allow-read ./execute.ts > ./output.txt
+time cat ./output.bin | deno run ./execute.ts > ./output.txt
 
 echo ""
 

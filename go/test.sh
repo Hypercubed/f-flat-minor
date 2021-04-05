@@ -6,7 +6,7 @@ rm -f ./output.*
 echo "** Go Compile **"
 
 go build ./cmd/compile
-time ./compile > output.bin
+time cat ../input.ff | ./compile > output.bin
 
 echo ""
 
@@ -22,7 +22,7 @@ echo ""
 echo "** Go Execute **"
 
 go build ./cmd/execute
-time ./execute > output.txt
+time cat ./output.bin | ./execute > output.txt
 
 echo ""
 

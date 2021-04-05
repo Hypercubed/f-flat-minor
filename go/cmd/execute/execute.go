@@ -214,9 +214,7 @@ func executeBigIntCode(bc []big.Int) {
 func main() {
 	setup()
 
-	f, err := os.Open("./output.bin")
-	check(err)
-	reader := bufio.NewReader(f)
+	reader := bufio.NewReader(os.Stdin)
 
 	var out = make([]int64, 0)
 
