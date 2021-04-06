@@ -1,4 +1,6 @@
-import { encodeBigIntArray } from "./leb128.ts";
+import { dumpByteArray } from '../src/dump.ts';
+import { encodeBigIntArray } from '../src/leb128.ts';
+import { OpCodes } from '../src/opcodes.ts';
 
 const COMMENT_START = '/*';
 const COMMENT_END = '*/';
@@ -23,9 +25,8 @@ function nextCode(): bigint {
   return BigInt(_nextCode++);
 }
 
-function defineSystem(name: string, char: string | number) {
-  const code = BigInt((typeof char === 'string') ? char.charCodeAt(0) : char);
-  symbols.set(name, code);
+function defineSystem(name: string, code: number) {
+  symbols.set(name, BigInt(code));
 }
 
 function getSymbol(name: string): bigint {
@@ -102,17 +103,15 @@ function compileToIR(s: string[]): IrInstruction[] {
 
 function toBigIntIR(i: IrInstruction) {
   if (i.op !== IROp.push) {
-    if (i.op === IROp.call && i.value === 0n) return [];
+    if (i.op === IROp.call && i.value === 0n) return []; // Remove NOPS
     return [i.value];
   }
   return [0n, i.value];
 }
 
 function compileToByteArray(ir: Array<IrInstruction>): Uint8Array {
-  const out = { length: Infinity };
-
   const arr = ir.flatMap(i => {
-    if (i.op === IROp.call && i.value === 0n) return []; 
+    if (i.op === IROp.call && i.value === 0n) return []; // Remove NOPS
     const vv = i.value << 1n;
     return [i.op === IROp.push ? vv : (vv | 1n)];
   });
@@ -122,25 +121,6 @@ function compileToByteArray(ir: Array<IrInstruction>): Uint8Array {
 
 function tokenize(s: string) {
   return s.split(/\s+/).filter(Boolean);
-}
-
-function toPrintableCharacter(n: number) {
-  if (n < 32 || (n > 126 && n < 161)) {
-    return '.';
-  }
-  return String.fromCharCode(n);
-}
-
-function dumpByteArray(byteArray: Uint8Array) {
-  for (let i = 0; i < byteArray.length; i += 16) {
-    const c = [...byteArray.slice(i, i+16)];
-    const s: string[] = c.map(toPrintableCharacter);
-    const h = c.map(cc => cc.toString(16).toUpperCase().padStart(2, '0'));
-    console.log(h.join(' ').padEnd(48, ' '), s.join(''));
-  }
-
-  console.log(byteArray.length, 'bytes');
-  console.log();
 }
 
 function printIr(ir: Array<IrInstruction>) {
@@ -154,22 +134,22 @@ function printIr(ir: Array<IrInstruction>) {
 // Definitions
 
 function setup() {
-  defineSystem('nop',    0);
-  defineSystem('call',   1);
-  defineSystem(';',    ';');
-  defineSystem('cls',  '~');
-  defineSystem('.',    '.');
-  defineSystem('putc', '@');
-  defineSystem('drop', '$');
-  defineSystem('swap', '%');
-  defineSystem('dup',  '!');
-  defineSystem('+',    '+');
-  defineSystem('-',    '-');
-  defineSystem('*',    '*');
-  defineSystem('/',    '/');
-  defineSystem('=',    '=');
-  defineSystem('?',    '?');
-  defineSystem('dip',  '^');
+  defineSystem('nop',  OpCodes.NOP);
+  defineSystem('call', OpCodes.CALL);
+  defineSystem(';',    OpCodes.DEF);
+  defineSystem('cls',  OpCodes.CLS);
+  defineSystem('.',    OpCodes.PRN);
+  defineSystem('putc', OpCodes.PUTC);
+  defineSystem('drop', OpCodes.DROP);
+  defineSystem('swap', OpCodes.SWAP);
+  defineSystem('dup',  OpCodes.DUP);
+  defineSystem('+',    OpCodes.ADD);
+  defineSystem('-',    OpCodes.SUB);
+  defineSystem('*',    OpCodes.MUL);
+  defineSystem('/',    OpCodes.DIV);
+  defineSystem('=',    OpCodes.EQ);
+  defineSystem('?',    OpCodes.IF);
+  defineSystem('dip',  OpCodes.DIP);
 }
 
 // Run
@@ -178,9 +158,7 @@ setup();
 const buf = new Uint8Array(1024);
 const n = <number>await Deno.stdin.read(buf);
 const code = new TextDecoder().decode(buf.subarray(0, n));
-
-const tokens = tokenize(code);
-const ir = compileToIR(tokens);
+const ir = compileToIR(tokenize(code));
 
 if (Deno.args.includes('--ir')) {
   printIr(ir);
