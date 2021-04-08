@@ -53,21 +53,21 @@ For each target language first implement a proof-of-concept in an online code ru
 
 ## Progress
 
-| Language | POC | Compiler | Runner |
-| --- | ----------- | --- | --- |
-| Typescript/Deno | 😀 https://replit.com/@Hypercubed/f-flat-minor-TS | ✔ | ✔ |
-| Go | 😀  https://replit.com/@Hypercubed/f-flat-minor-Go | ✔ | ✔ |
-| Rust | 😔  https://replit.com/@Hypercubed/f-flat-minor-Rust |
-| Python | 😀  https://replit.com/@Hypercubed/f-flat-minor-Python |
-| Ruby | 😀  https://replit.com/@Hypercubed/f-flat-minor-Ruby |
-| C/C++/C#/LLVM |  TBD |
-| Lisp/Clojure/Racket | TBD |
-| Haskell | TBD |
-| Julia | TBD |
-| Dart | TBD |
-| Erlang/BEAM | TBD |
-| Perl/Raku | TBD |
-| WebAssembly/AssemblyScript | TBD |
+| Language | POC | Compiler | Interpreter | REPL |
+| --- | ----------- | --- | --- | --- |
+| Typescript/Deno | [ 😀  Replit ](https://replit.com/@Hypercubed/f-flat-minor-TS) | ✔ | ✔ | ✔ |
+| Go | [ 😀  Replit ](https://replit.com/@Hypercubed/f-flat-minor-Go) | ✔ | ✔ |
+| Rust | [ 😔  Replit ](https://replit.com/@Hypercubed/f-flat-minor-Rust) |
+| Python | [ 😀  Replit ](https://replit.com/@Hypercubed/f-flat-minor-Python) |
+| Ruby | [ 😀  Replit ](https://replit.com/@Hypercubed/f-flat-minor-Ruby) |
+| C/C++/C#/LLVM |
+| Lisp/Clojure/Racket |
+| Haskell |
+| Julia |
+| Dart |
+| Erlang/BEAM |
+| Perl/Raku |
+| WebAssembly/AssemblyScript |
 
 ## License
 

@@ -1,0 +1,24 @@
+rot: &swap dip swap ;
+choose: &swap ? drop ;
+ifte: rot choose call ;
+
+print_f: putc print ;
+print: dup &drop &print_f ifte ;
+
+0 10 'World! 32 'Hello print
+
+0 10 '! 'd 'l 'r 'o 'W 32 'o 'l dup 'e 'H print
+
+'H putc
+'e putc
+'l putc
+'l putc
+'0 putc
+32 putc
+'W putc
+'o putc
+'r putc
+'l putc
+'d putc
+'! putc
+10 putc

@@ -17,7 +17,7 @@ function encodeSignedLeb128FromInt32(value: bigint): number[] {
     }
     result.push(Number(byte | CONTINUE));
   }
-};
+}
 
 function decodeSignedLeb128(input: number[]): bigint {
   let result = 0;
@@ -42,7 +42,7 @@ export function encodeBigIntArray(bigIntArray: bigint[]): number[] {
 export function decodeByteArray(byteArray: number[]): bigint[] {
   const result = [];
   while (byteArray.length) {
-    result.push(decodeSignedLeb128(byteArray))
+    result.push(decodeSignedLeb128(byteArray));
   }
   return result;
 }

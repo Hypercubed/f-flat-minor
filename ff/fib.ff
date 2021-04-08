@@ -1,0 +1,8 @@
+not: 0 = ;
+--: 1 - ;
+
+fib_tt: -- dup fib swap -- fib + ;
+fib_t: dup 1 = not &fib_tt ? ;
+fib: dup 0 = not &fib_t ? ;
+
+20 fib .

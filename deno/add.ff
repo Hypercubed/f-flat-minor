@@ -1,0 +1,3 @@
+add: getc 48 - 32 putc getc 48 - + ;
+
+add
