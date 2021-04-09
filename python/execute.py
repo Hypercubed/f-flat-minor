@@ -4,6 +4,7 @@ import sys
 import time
 
 stack = []
+r_stack = []
 ops = {}
 defs = {}
 op = -1
@@ -91,8 +92,16 @@ def putc():
 def drop():
   stack.pop()
 
+def pushq():
+  a = stack.pop()
+  r_stack.append(a)
+
+def popq():
+  a = r_stack.pop()
+  stack.append(a)
+
 define('nop', nop)
-define('call', call)
+define('eval', call)
 define('+', add)
 define('-', sub)
 define('*', mul)
@@ -102,9 +111,10 @@ define('=', eq)
 define('swap', swap)
 define('?', q)
 define('dup', dup)
-define('dip', dip)
 define('drop', lambda: stack.pop() )
 define('putc', putc)
+define('q<', pushq)
+define('q>', popq)
 
 def ev(t):
   i = 0

@@ -114,7 +114,7 @@ func AppendSleb128(b []byte, v int64) []byte {
 
 func setup() {
 	defSystem("nop", 0)
-	defSystem("call", 1)
+	defSystem("eval", 1)
 	defSystem(";", ';')
 	defSystem(".", '.')
 	defSystem("putc", '@')
@@ -127,7 +127,8 @@ func setup() {
 	defSystem("/", '/')
 	defSystem("=", '=')
 	defSystem("?", '?')
-	defSystem("dip", '^')
+	defSystem("q<", 's')
+	defSystem("q>", 'u')
 }
 
 func compileToIR(t []string) []IrInstruction {

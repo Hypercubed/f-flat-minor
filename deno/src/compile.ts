@@ -1,7 +1,7 @@
 #!/usr/bin/env deno
 
 import { encodeBigIntArray } from "./leb128.ts";
-import { OpCodes } from "./opcodes.ts";
+import { systemWords } from "./opcodes.ts";
 
 const COMMENT_START = "/*";
 const COMMENT_END = "*/";
@@ -127,22 +127,8 @@ export function tokenize(s: string) {
 // Definitions
 
 export function setup() {
-  defineSystem("nop", OpCodes.NOP);
-  defineSystem("call", OpCodes.CALL);
-  defineSystem(";", OpCodes.DEF);
-  defineSystem("clr", OpCodes.CLR);
-  defineSystem(".", OpCodes.PRN);
-  defineSystem("putc", OpCodes.PUTC);
-  defineSystem("getc", OpCodes.GETC);
-  defineSystem("drop", OpCodes.DROP);
-  defineSystem("swap", OpCodes.SWAP);
-  defineSystem("dup", OpCodes.DUP);
-  defineSystem("+", OpCodes.ADD);
-  defineSystem("-", OpCodes.SUB);
-  defineSystem("*", OpCodes.MUL);
-  defineSystem("/", OpCodes.DIV);
-  defineSystem("=", OpCodes.EQ);
-  defineSystem("?", OpCodes.IF); // rename IF?
-  defineSystem("dip", OpCodes.DIP);
-  defineSystem("%", OpCodes.MOD);
+  let k: keyof typeof systemWords;
+  for (k in systemWords) {
+    defineSystem(k, systemWords[k]);
+  }
 }

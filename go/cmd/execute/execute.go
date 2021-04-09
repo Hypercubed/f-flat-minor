@@ -10,6 +10,7 @@ import (
 )
 
 var stack = make([]big.Int, 0)
+var r_stack = make([]big.Int, 0)
 var symbolMap = make(map[string]int64)
 var systemDict = make(map[int64]func())
 var userDict = make(map[int64][]big.Int)
@@ -131,12 +132,18 @@ func setup() {
 		}
 	}, '?')
 
-	defSystem(func() { // dip
+	defSystem(func() {
 		a := pop()
-		b := pop()
-		call(a.Int64())
-		stack = append(stack, b)
-	}, '^')
+		r_stack = append(r_stack, a)
+	}, 's')
+
+	defSystem(func() {
+		i := len(r_stack) - 1
+		x := r_stack[i]
+		r := big.NewInt(0)
+		r_stack = append((r_stack)[:i])
+		stack = append(stack, *r.Add(r, &x))
+	}, 'u')
 }
 
 func readVarint(r io.Reader, n uint) (int64, error) {

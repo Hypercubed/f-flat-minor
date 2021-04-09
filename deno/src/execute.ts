@@ -1,13 +1,8 @@
 import { decodeByteArray } from "../src/leb128.ts";
 import { OpCodes } from "../src/opcodes.ts";
 
-enum IROp {
-  call = "call",
-  push = "push",
-}
-
 export const stack: bigint[] = [];
-
+export const rStack: bigint[] = [];
 const defs = new Map<bigint, (() => void) | bigint[]>();
 
 function peek(): bigint {
@@ -159,9 +154,15 @@ export function setup() {
   }, OpCodes.IF);
 
   defineSystem(() => {
-    const a = pop();
-    const b = pop();
-    callOp(a);
-    stack.push(b);
-  }, OpCodes.DIP);
+    rStack.push(pop());
+  }, OpCodes.PUSHR);
+
+  defineSystem(() => {
+    const a = rStack.pop() || 0n;
+    stack.push(a);
+  }, OpCodes.PULLR);
+
+  defineSystem(() => {
+    stack.push(BigInt(stack.length));
+  }, OpCodes.DEP);
 }

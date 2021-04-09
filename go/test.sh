@@ -6,7 +6,7 @@ rm -f ./output.*
 echo "** Go Compile **"
 
 go build ./cmd/compile
-time cat ../ff/fact.ff | ./compile > output.bin
+time cat ../ff/example.ff | ./compile > output.bin
 
 echo ""
 

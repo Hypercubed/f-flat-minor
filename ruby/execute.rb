@@ -1,6 +1,7 @@
 #!/usr/bin/env ruby
 
 $stack = Array.new
+$r_stack = Array.new
 
 $op = -1
 $syms = Hash.new
@@ -120,18 +121,12 @@ define('swap', lambda {||
   push(b)
 })
 
-define('dip', lambda {||
-  a = pop()
-  b = pop()
-  callOp(a)
-  push(b)
-})
-
 define('dup', lambda {||
   push($stack[-1])
 })
 
-define('call', lambda {||
+
+define('eval', lambda {||
   o = pop()
   callOp(o)
 })
@@ -147,6 +142,16 @@ define('?', lambda {||
 define('putc', lambda {||
   a = pop()
   putc a
+})
+
+define('q<', lambda {||
+  a = pop()
+  $r_stack.push(a)
+})
+
+define('q>', lambda {||
+  a = $r_stack.pop
+  push a
 })
 
 $code = ARGF.read
