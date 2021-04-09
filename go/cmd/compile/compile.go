@@ -231,5 +231,8 @@ func main() {
 	// }
 	// fmt.Println("")
 
+	header := []byte("F♭A𝄫C♭")
+
+	os.Stdout.Write(header)
 	os.Stdout.Write(byteCode)
 }

@@ -31,4 +31,7 @@ if (Deno.args.includes("--dump")) {
   Deno.exit();
 }
 
+const header = new TextEncoder().encode("F♭A𝄫C♭");
+
+Deno.stdout.writeSync(header);
 Deno.stdout.writeSync(byteCode);

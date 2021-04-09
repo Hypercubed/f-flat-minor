@@ -8,10 +8,10 @@ GRN = \033[0;32m
 clean:
 	@rm -f ./example.*
 
-compile: ./cmd/compile ./utils/*
+compile: ./cmd/compile/* ./utils/*
 	go build ./cmd/compile
 
-execute: ./cmd/execute ./utils/*
+execute: ./cmd/execute/* ./utils/*
 	go build ./cmd/execute
 
 example:

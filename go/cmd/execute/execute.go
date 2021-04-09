@@ -230,6 +230,15 @@ func main() {
 
 	reader := bufio.NewReader(os.Stdin)
 
+	header := []byte("F♭A𝄫C♭")
+
+	for i := 0; i < len(header); i++ {
+		c, err := reader.ReadByte()
+		if (err == io.EOF) || (c != header[i]) {
+			panic("Invalid Header")
+		}
+	}
+
 	var out = make([]int64, 0)
 
 	for {
