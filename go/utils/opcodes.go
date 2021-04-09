@@ -5,9 +5,9 @@ const (
 	OP_CALL  = 1
 	OP_DEF   = ';'
 	OP_PRN   = '.'
-	OP_PUTC  = '@'
-	OP_DROP  = '$'
-	OP_SWAP  = '%'
+	OP_PUTC  = 2
+	OP_DROP  = 8
+	OP_SWAP  = '$'
 	OP_DUP   = '!'
 	OP_ADD   = '+'
 	OP_SUB   = '-'
@@ -15,9 +15,9 @@ const (
 	OP_DIV   = '/'
 	OP_EQ    = '='
 	OP_IF    = '?'
-	OP_PUSHR = 's'
-	OP_PULLR = 'u'
-	OP_MOD   = 'm'
+	OP_PUSHR = 14
+	OP_PULLR = 15
+	OP_MOD   = '%'
 )
 
 const (

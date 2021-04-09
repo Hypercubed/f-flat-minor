@@ -164,5 +164,5 @@ export function setup() {
 
   defineSystem(() => {
     stack.push(BigInt(stack.length));
-  }, OpCodes.DEP);
+  }, OpCodes.DEPTH);
 }

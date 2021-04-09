@@ -3,26 +3,26 @@ RED=\033[0;31m
 NC=\033[0m
 GRN=\033[0;32m
 
-.PHONY : clean example run test output.bin output.txt
+.PHONY : clean example run test example.bin example.txt
 
 clean:
-	@rm -f ./output.*
+	@rm -f ./example.*
 
 example:
 	cat ../ff/example.ff | deno run ./cmds/compile.ts | deno run ./cmds/execute.ts
 
 run: clean example
 
-test:	output.bin output.txt
+test:	example.bin example.txt
 
-output.bin:
+example.bin:
 	@printf "** Deno Compile **"
-	@time cat ../ff/example.ff | deno run ./cmds/compile.ts > ./output.bin
-	@cmp --silent -- "./output.bin" "../output.bin" && printf "${GRN}OK${NC}\n" || printf "${RED}bins differ${NC}\n"
+	@time cat ../ff/example.ff | deno run ./cmds/compile.ts > ./example.bin
+	@cmp --silent -- "./example.bin" "../fixtures/example.bin" && printf "${GRN}OK${NC}\n" || printf "${RED}bins differ${NC}\n"
 	@echo ""
 
-output.txt:
+example.txt:
 	@echo "** Deno Execute **"
-	@time cat ./output.bin | deno run ./cmds/execute.ts > ./output.txt
-	@cmp --silent -- "./output.txt" "../output.txt" && printf "${GRN}OK${NC}\n" || printf "${RED}outouts differ${NC}\n"
+	@time cat ./example.bin | deno run ./cmds/execute.ts > ./example.txt
+	@cmp --silent -- "./example.txt" "../fixtures/example.txt" && printf "${GRN}OK${NC}\n" || printf "${RED}outouts differ${NC}\n"
 	@echo ""

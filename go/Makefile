@@ -3,15 +3,15 @@ RED = \033[0;31m
 NC = \033[0m
 GRN = \033[0;32m
 
-.PHONY : clean example run test output.bin output.txt
+.PHONY : clean example run test example.bin example.txt
 
 clean:
-	@rm -f ./output.*
+	@rm -f ./example.*
 
-compile: ./cmd/compile
+compile: ./cmd/compile ./utils/*
 	go build ./cmd/compile
 
-execute: ./cmd/execute
+execute: ./cmd/execute ./utils/*
 	go build ./cmd/execute
 
 example:
@@ -19,16 +19,16 @@ example:
 
 run: compile execute example
 
-test:	compile execute output.bin output.txt
+test:	compile execute example.bin example.txt
 
-output.bin:
+example.bin:
 	@echo "** Go Compile **"
-	@time cat ../ff/example.ff | ./compile > ./output.bin
-	@cmp --silent -- "./output.bin" "../output.bin" && printf "${GRN}OK${NC}\n" || printf "${RED}bins differ${NC}\n"
+	@time cat ../ff/example.ff | ./compile > ./example.bin
+	@cmp --silent -- "./example.bin" "../fixtures/example.bin" && printf "${GRN}OK${NC}\n" || printf "${RED}bins differ${NC}\n"
 	@echo ""
 
-output.txt:
+example.txt:
 	@echo "** Go Execute **"
-	@time cat ./output.bin | ./execute > ./output.txt
-	@cmp --silent -- "./output.txt" "../output.txt" && printf "${GRN}OK${NC}\n" || printf "${RED}outouts differ${NC}\n"
+	@time cat ./example.bin | ./execute > ./example.txt
+	@cmp --silent -- "./example.txt" "../fixtures/example.txt" && printf "${GRN}OK${NC}\n" || printf "${RED}outouts differ${NC}\n"
 	@echo ""

@@ -1,24 +1,25 @@
 export enum OpCodes {
   NOP = 0,
   CALL = 1,
+  PUTC = 2,
+  GETC = 3,
+  DROP = 8,
+  PUSHR = 14,
+  PULLR = 15,
+  CLR = 24,
   DEF = ';'.charCodeAt(0),
-  CLR = '~'.charCodeAt(0),
   PRN = '.'.charCodeAt(0),
-  PUTC = '@'.charCodeAt(0),
-  GETC = 'g'.charCodeAt(0),
-  DROP = '$'.charCodeAt(0),
-  SWAP = '%'.charCodeAt(0),
+  SWAP = '$'.charCodeAt(0),
   DUP = '!'.charCodeAt(0),
   ADD = '+'.charCodeAt(0),
   SUB = '-'.charCodeAt(0),
   MUL = '*'.charCodeAt(0),
   DIV = '/'.charCodeAt(0),
-  EQ = '='.charCodeAt(0),  // Use cmp
+  EQ = '='.charCodeAt(0),
   IF = '?'.charCodeAt(0),
-  MOD = 'm'.charCodeAt(0), // make %
-  PUSHR = 's'.charCodeAt(0),
-  PULLR = 'u'.charCodeAt(0),
-  DEP = 'd'.charCodeAt(0)
+  MOD = '%'.charCodeAt(0),
+  DEPTH = '#'.charCodeAt(0),
+  POW = '^'.charCodeAt(0)
 }
 
 export const systemWords = {
@@ -41,7 +42,8 @@ export const systemWords = {
   '%': OpCodes.MOD,
   'q<': OpCodes.PUSHR,
   'q>': OpCodes.PULLR,
-  'depth': OpCodes.DEP
+  'depth': OpCodes.DEPTH,
+  '^': OpCodes.POW
 }
 
 // CMP/CMPZ
