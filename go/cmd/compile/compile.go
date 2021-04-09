@@ -3,6 +3,7 @@ package main
 import (
 	"fmt"
 	"io/ioutil"
+	"m/utils"
 	"math/big"
 	"os"
 	"strconv"
@@ -113,22 +114,23 @@ func AppendSleb128(b []byte, v int64) []byte {
 }
 
 func setup() {
-	defSystem("nop", 0)
-	defSystem("eval", 1)
-	defSystem(";", ';')
-	defSystem(".", '.')
-	defSystem("putc", '@')
-	defSystem("drop", '$')
-	defSystem("swap", '%')
-	defSystem("dup", '!')
-	defSystem("+", '+')
-	defSystem("-", '-')
-	defSystem("*", '*')
-	defSystem("/", '/')
-	defSystem("=", '=')
-	defSystem("?", '?')
-	defSystem("q<", 's')
-	defSystem("q>", 'u')
+	defSystem(utils.SYM_NOP, utils.OP_NOP)
+	defSystem(utils.SYM_CALL, utils.OP_CALL)
+	defSystem(utils.SYM_DEF, utils.OP_DEF)
+	defSystem(utils.SYM_PRN, utils.OP_PRN)
+	defSystem(utils.SYM_PUTC, utils.OP_PUTC)
+	defSystem(utils.SYM_DROP, utils.OP_DROP)
+	defSystem(utils.SYM_SWAP, utils.OP_SWAP)
+	defSystem(utils.SYM_DUP, utils.OP_DUP)
+	defSystem(utils.SYM_ADD, utils.OP_ADD)
+	defSystem(utils.SYM_SUB, utils.OP_SUB)
+	defSystem(utils.SYM_MUL, utils.OP_MUL)
+	defSystem(utils.SYM_DIV, utils.OP_DIV)
+	defSystem(utils.SYM_EQ, utils.OP_EQ)
+	defSystem(utils.SYM_IF, utils.OP_IF)
+	defSystem(utils.SYM_PUSHR, utils.OP_PUSHR)
+	defSystem(utils.SYM_PULLR, utils.OP_PULLR)
+	defSystem(utils.SYM_MOD, utils.OP_MOD)
 }
 
 func compileToIR(t []string) []IrInstruction {

@@ -1,3 +1,3 @@
-module hypercubed.com/f-flat-minor
+module m
 
 go 1.16

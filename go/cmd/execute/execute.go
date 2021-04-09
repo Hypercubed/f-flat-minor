@@ -5,6 +5,7 @@ import (
 	"errors"
 	"fmt"
 	"io"
+	"m/utils"
 	"math/big"
 	"os"
 )
@@ -44,21 +45,21 @@ func call(c int64) {
 func setup() {
 	defSystem(func() {
 		// nop
-	}, 0)
+	}, utils.OP_NOP)
 
-	defSystem(func() { // call
+	defSystem(func() {
 		x := pop()
 		call(x.Int64())
-	}, 1)
+	}, utils.OP_CALL)
 
-	defSystem(func() { // def
+	defSystem(func() {
 		name := stack[0]
 		def := stack[1:]
 		userDict[name.Int64()] = def
 		stack = make([]big.Int, 0)
-	}, ';')
+	}, utils.OP_DEF)
 
-	defSystem(func() { // print stack
+	defSystem(func() {
 		fmt.Print("[")
 		for i, num := range stack {
 			fmt.Print(num.Text(10))
@@ -67,54 +68,60 @@ func setup() {
 			}
 		}
 		fmt.Println("]")
-	}, '.')
+	}, utils.OP_PRN)
 
-	defSystem(func() { // putc
+	defSystem(func() {
 		x := pop()
 		c := rune(x.Int64())
 		fmt.Print(string(c))
-	}, '@')
+	}, utils.OP_PUTC)
 
-	defSystem(func() { // drop
+	defSystem(func() {
 		pop()
-	}, '$')
+	}, utils.OP_DROP)
 
-	defSystem(func() { // swap
+	defSystem(func() {
 		x := pop()
 		y := pop()
 		stack = append(stack, x, y)
-	}, '%')
+	}, utils.OP_SWAP)
 
-	defSystem(func() { // dup
+	defSystem(func() {
 		x := peek()
 		stack = append(stack, x)
-	}, '!')
+	}, utils.OP_DUP)
 
-	defSystem(func() { // add
+	defSystem(func() {
 		x := pop()
 		y := peek()
-		stack[len(stack)-1] = *y.Add(&x, &y)
-	}, '+')
+		stack[len(stack)-1] = *y.Add(&y, &x)
+	}, utils.OP_ADD)
 
-	defSystem(func() { // sub
+	defSystem(func() {
 		x := pop()
 		y := peek()
 		stack[len(stack)-1] = *y.Sub(&y, &x)
-	}, '-')
+	}, utils.OP_SUB)
 
-	defSystem(func() { // mul
+	defSystem(func() {
 		x := pop()
 		y := peek()
-		stack[len(stack)-1] = *x.Mul(&x, &y)
-	}, '*')
+		stack[len(stack)-1] = *x.Mul(&y, &x)
+	}, utils.OP_MUL)
 
-	defSystem(func() { // div
+	defSystem(func() {
+		x := pop()
+		y := peek()
+		stack[len(stack)-1] = *x.Mod(&y, &x)
+	}, utils.OP_MOD)
+
+	defSystem(func() {
 		x := pop()
 		y := peek()
 		stack[len(stack)-1] = *x.Div(&x, &y)
-	}, '/')
+	}, utils.OP_DIV)
 
-	defSystem(func() { // eq
+	defSystem(func() {
 		x := pop()
 		y := peek()
 		if x.Cmp(&y) == 0 {
@@ -122,20 +129,20 @@ func setup() {
 		} else {
 			stack[len(stack)-1] = *big.NewInt(0)
 		}
-	}, '=')
+	}, utils.OP_EQ)
 
-	defSystem(func() { // if
+	defSystem(func() {
 		t := pop()
 		i := pop()
 		if i.Cmp(big.NewInt(0)) != 0 {
 			call(t.Int64())
 		}
-	}, '?')
+	}, utils.OP_IF)
 
 	defSystem(func() {
 		a := pop()
 		r_stack = append(r_stack, a)
-	}, 's')
+	}, utils.OP_PUSHR)
 
 	defSystem(func() {
 		i := len(r_stack) - 1
@@ -143,7 +150,7 @@ func setup() {
 		r := big.NewInt(0)
 		r_stack = append((r_stack)[:i])
 		stack = append(stack, *r.Add(r, &x))
-	}, 'u')
+	}, utils.OP_PULLR)
 }
 
 func readVarint(r io.Reader, n uint) (int64, error) {

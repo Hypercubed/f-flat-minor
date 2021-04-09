@@ -127,8 +127,8 @@ export function tokenize(s: string) {
 // Definitions
 
 export function setup() {
-  let k: keyof typeof systemWords;
-  for (k in systemWords) {
-    defineSystem(k, systemWords[k]);
+  let name: keyof typeof systemWords;
+  for (name in systemWords) {
+    symbols.set(name, BigInt(systemWords[name]));
   }
 }

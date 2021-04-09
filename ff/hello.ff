@@ -1,9 +1,10 @@
-rot: &swap dip swap ;
+rot: q< swap q> swap ;
 choose: &swap ? drop ;
-ifte: rot choose call ;
+ifte: rot choose eval ;
 
 print_f: putc print ;
 print: dup &drop &print_f ifte ;
+println: print 10 putc ;
 
 0 10 'World! 32 'Hello print
 
@@ -13,7 +14,7 @@ print: dup &drop &print_f ifte ;
 'e putc
 'l putc
 'l putc
-'0 putc
+'o putc
 32 putc
 'W putc
 'o putc
