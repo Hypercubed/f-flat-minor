@@ -77,10 +77,16 @@ export function setup() {
   }, OpCodes.CALL);
 
   defineSystem(() => {
-    const s: bigint[] = stack.splice(0, stack.length) || [];
-    const n = s.shift() || 0n;
+    const m = rStack.pop() || 0n;
+    const s: bigint[] = stack.splice(Number(m), stack.length) || [];
+    const n = pop();
     defs.set(n, s);
   }, OpCodes.DEF);
+
+  defineSystem(() => {
+    const m = stack.length;
+    rStack.push(BigInt(m));
+  }, OpCodes.MARK);
 
   defineSystem(clear, OpCodes.CLR);
 

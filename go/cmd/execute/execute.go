@@ -10,24 +10,51 @@ import (
 	"os"
 )
 
-var stack = make([]big.Int, 0)
-var r_stack = make([]big.Int, 0)
+var stack = []big.Int(nil)
+var r_stack = []big.Int(nil)
 var symbolMap = make(map[string]int64)
 var systemDict = make(map[int64]func())
 var userDict = make(map[int64][]big.Int)
 
-func peek() big.Int {
-	i := len(stack) - 1
-	x := stack[i]
+func clone(x big.Int) big.Int {
 	r := big.NewInt(0)
 	return *r.Add(r, &x)
 }
 
+func peek() big.Int {
+	l := len(stack)
+	if l > 0 {
+		return clone(stack[l-1])
+	}
+	return *big.NewInt(0)
+}
+
 func pop() big.Int {
-	i := len(stack) - 1
-	x := peek()
-	stack = append((stack)[:i])
-	return x
+	l := len(stack)
+	if l > 0 {
+		r := clone(stack[l-1])
+		stack = stack[:l-1]
+		return r
+	}
+	return *big.NewInt(0)
+}
+
+func rpeek() big.Int {
+	l := len(r_stack)
+	if l > 0 {
+		return clone(r_stack[l-1])
+	}
+	return *big.NewInt(0)
+}
+
+func rpop() big.Int {
+	l := len(r_stack)
+	if l > 0 {
+		r := clone(r_stack[l-1])
+		r_stack = r_stack[:l-1]
+		return r
+	}
+	return *big.NewInt(0)
 }
 
 func defSystem(fn func(), code int64) {
@@ -53,10 +80,17 @@ func setup() {
 	}, utils.OP_CALL)
 
 	defSystem(func() {
-		name := stack[0]
-		def := stack[1:]
-		userDict[name.Int64()] = def
-		stack = make([]big.Int, 0)
+		m := len(stack)
+		r_stack = append(r_stack, *big.NewInt(int64(m)))
+	}, utils.OP_MARK)
+
+	defSystem(func() {
+		m := rpop()
+		mm := int(m.Int64())
+		def := append([]big.Int(nil), stack[mm:]...)
+		stack = stack[:mm]
+		n := pop()
+		userDict[n.Int64()] = def
 	}, utils.OP_DEF)
 
 	defSystem(func() {
@@ -145,11 +179,7 @@ func setup() {
 	}, utils.OP_PUSHR)
 
 	defSystem(func() {
-		i := len(r_stack) - 1
-		x := r_stack[i]
-		r := big.NewInt(0)
-		r_stack = append((r_stack)[:i])
-		stack = append(stack, *r.Add(r, &x))
+		stack = append(stack, rpop())
 	}, utils.OP_PULLR)
 }
 

@@ -131,6 +131,7 @@ func setup() {
 	defSystem(utils.SYM_PUSHR, utils.OP_PUSHR)
 	defSystem(utils.SYM_PULLR, utils.OP_PULLR)
 	defSystem(utils.SYM_MOD, utils.OP_MOD)
+	defSystem(utils.SYM_MARK, utils.OP_MARK)
 }
 
 func compileToIR(t []string) []IrInstruction {
@@ -171,9 +172,13 @@ func compileToIR(t []string) []IrInstruction {
 			}
 			ret[l].comment = element
 		} else if strings.HasSuffix(element, ":") {
-			name := element[:len(element)-1]
-			value := getSymbol(name)
-			ret = append(ret, IrInstruction{value: value, op: "push", comment: element})
+			if len(element) > 1 {
+				name := element[:len(element)-1]
+				value := getSymbol(name)
+				ret = append(ret, IrInstruction{value: value, op: "push", comment: element})
+			}
+			value := getSymbol(":")
+			ret = append(ret, IrInstruction{value: value, op: "call", comment: element})
 			compile = true
 		} else if element == "/*" {
 			i++

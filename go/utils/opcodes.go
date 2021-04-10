@@ -18,6 +18,7 @@ const (
 	OP_PUSHR = 14
 	OP_PULLR = 15
 	OP_MOD   = '%'
+	OP_MARK  = ':'
 )
 
 const (
@@ -38,4 +39,5 @@ const (
 	SYM_PUSHR = "q<"
 	SYM_PULLR = "q>"
 	SYM_MOD   = "%"
+	SYM_MARK  = ":"
 )

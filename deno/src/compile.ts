@@ -1,7 +1,7 @@
 #!/usr/bin/env deno
 
 import { encodeBigIntArray } from "./leb128.ts";
-import { systemWords } from "./opcodes.ts";
+import { OpCodes, systemWords } from "./opcodes.ts";
 
 const COMMENT_START = "/*";
 const COMMENT_END = "*/";
@@ -24,10 +24,6 @@ let _nextCode = 0x80;
 
 function nextCode(): bigint {
   return BigInt(_nextCode++);
-}
-
-function defineSystem(name: string, code: number) {
-  symbols.set(name, BigInt(code));
 }
 
 function getSymbol(name: string): bigint {
@@ -80,8 +76,11 @@ export function compileToIR(s: string[]): IrInstruction[] {
       ir[0].comment = ss;
       ret.push(...ir);
     } else if (ss.endsWith(":")) { // Definition
-      const name = ss.replace(/:$/, "");
-      ret.push({ value: getSymbol(name), op: IROp.push, comment: ss });
+      if (ss.length > 1) {
+        const name = ss.replace(/:$/, "");
+        ret.push({ value: getSymbol(name), op: IROp.push, comment: ss });        
+      }
+      ret.push({ value: getSymbol(':'), op: IROp.call, comment: ss });
       compileMode = true;
     } else if (ss === COMMENT_START) { // Comment
       const comment = ["/*"];
@@ -95,8 +94,8 @@ export function compileToIR(s: string[]): IrInstruction[] {
       const code = getSymbol(name);
       ret.push({ value: code, op: IROp.push, comment: ss });
     } else {
-      const code = getSymbol(ss);
-      ret.push({ value: code, op: IROp.call, comment: ss });
+      const value = getSymbol(ss);
+      ret.push({ value, op: IROp.call, comment: ss });
     }
   }
   return ret;
