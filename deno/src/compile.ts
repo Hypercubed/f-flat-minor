@@ -39,7 +39,7 @@ function getSymbol(name: string): bigint {
 //
 
 export function compileToIR(s: string[]): IrInstruction[] {
-  let compileMode = false;
+  let depth = 0;
   let i = 0;
   const l = s.length;
   let ss = "";
@@ -47,11 +47,11 @@ export function compileToIR(s: string[]): IrInstruction[] {
   while (i < l) {
     ss = s[i++];
 
-    if (ss === ";") {
-      compileMode = false;
+    if (ss === ";" || ss === "]" || ss === "}}") {
+      depth--;
     }
 
-    if (compileMode) {
+    if (depth && ss !== "]" && ss !== "[" && ss !== "(" && ss !== ")") {
       const ir = compileToIR([ss]);
       const bc = ir.flatMap(toBigIntIR).map(String);
       const c = compileToIR(bc);
@@ -80,8 +80,25 @@ export function compileToIR(s: string[]): IrInstruction[] {
         const name = ss.replace(/:$/, "");
         ret.push({ value: getSymbol(name), op: IROp.push, comment: ss });        
       }
-      ret.push({ value: getSymbol(':'), op: IROp.call, comment: ss });
-      compileMode = true;
+      ret.push({ value: BigInt(OpCodes.MARK), op: IROp.call, comment: '' });
+      depth++;
+    } else if (ss === "{{") {
+      depth++;
+    } else if (ss === "}}") {
+      // NOP
+    } else if (ss === '[') { // Anon Definition
+      if (depth) {
+        ret.push({ value: 0n, op: IROp.push, comment: '' });
+      }
+      ret.push({ value: nextCode(), op: IROp.push, comment: ss });
+      ret.push({ value: BigInt(OpCodes.MARK), op: IROp.call, comment: '' });
+      depth++;
+    } else if (ss === '(') {
+      if (depth) {
+        ret.push({ value: 0n, op: IROp.push, comment: ss });
+      }
+      ret.push({ value: nextCode(), op: IROp.push, comment: ss });
+      ret.push({ value: BigInt(OpCodes.MARK), op: IROp.call, comment: '' });
     } else if (ss === COMMENT_START) { // Comment
       const comment = ["/*"];
       while (i < s.length && ss !== COMMENT_END) {

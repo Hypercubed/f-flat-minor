@@ -84,6 +84,14 @@ export function setup() {
   }, OpCodes.DEF);
 
   defineSystem(() => {
+    const m = rStack.pop() || 0n;
+    const s: bigint[] = stack.splice(Number(m), stack.length) || [];
+    const n = peek();
+    defs.set(n, s);
+    console.log('unmark', n, s, stack);
+  }, OpCodes.UNMARK);
+
+  defineSystem(() => {
     const m = stack.length;
     rStack.push(BigInt(m));
   }, OpCodes.MARK);
