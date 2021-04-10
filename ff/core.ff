@@ -1,0 +1,12 @@
+--: 1 - ;
+rot: q< swap q> swap ;
+choose: &swap ? drop ;
+ifte: rot choose eval ;
+not: 0 = ;
+roll: swap q< swap q> ;
+
+/* string printing */
+
+print_f: putc print ;
+print: dup &drop &print_f ifte ;
+println: print 10 putc ;

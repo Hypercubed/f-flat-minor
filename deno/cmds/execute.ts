@@ -1,4 +1,5 @@
-#!/usr/bin/env deno run
+#!/usr/bin/env -S deno run --allow-net --allow-read
+
 import { assertEquals } from "https://deno.land/std@0.92.0/testing/asserts.ts";
 
 import { dumpByteArray } from "../src/dump.ts";

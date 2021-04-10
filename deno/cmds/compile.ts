@@ -1,4 +1,4 @@
-#!/usr/bin/env deno run
+#!/usr/bin/env -S deno run --allow-net --allow-read
 
 import { dumpByteArray } from "../src/dump.ts";
 import * as compiler from "../src/compile.ts";
