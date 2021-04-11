@@ -8,8 +8,8 @@ import * as interpreter from "../src/execute.ts";
 
 const HEADER = new TextEncoder().encode("F♭A𝄫C♭");
 
-export function execute() {
-  const bin = readStdin();
+export function execute(filename = '-') {
+  const bin = filename == '-' ? readStdin() : Deno.readFileSync(filename);
 
   for (let i = 0; i < HEADER.length; i++) {
     assertEquals(HEADER[i], bin[i], "Invalid Header");
@@ -28,5 +28,5 @@ export function execute() {
 }
 
 if (import.meta.main) {
-  execute();
+  execute(Deno.args[0]);
 }

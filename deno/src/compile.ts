@@ -58,6 +58,13 @@ export function compileToIR(s: string[]): IrInstruction[] {
         case ".call":
           call(parseInt(s[i++]));
           break;
+        case ".load": {
+          const filename = s[i++];
+          const code = Deno.readTextFileSync(filename);
+          const ir = compileToIR(tokenize(code))
+          ret.push(...ir);
+          break;          
+        }
       }
     } else if (ss[0] === "'") { // String
       ss.replace(/^'/, "") // TODO: use backtick?

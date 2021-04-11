@@ -1,18 +1,16 @@
 #!/usr/bin/env -S deno -q run --allow-net --allow-read
 
-const command = Deno.args[0] || 'repl';
-
-switch (command) {
+switch (Deno.args[0] || 'repl') {
   case "compile": {
-    (await import("./ff2ffb.ts")).compile();
+    (await import("./ff2ffb.ts")).compile(Deno.args[1]);
     break;
   }
   case "execute": {
-    (await import("./ffb-interp.ts")).execute();
+    (await import("./ffb-interp.ts")).execute(Deno.args[1]);
     break;
   }
   case "run": {
-    (await import("./ff-interp.ts")).run();
+    (await import("./ff-interp.ts")).run(Deno.args[1]);
     break;
   }
   case "repl": {

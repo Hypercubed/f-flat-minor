@@ -13,11 +13,7 @@ export async function repl() {
   console.log("\nF♭ minor");
   while (true) {
     Deno.stdout.writeSync(PROMPT);
-    for await (let line of readLines(Deno.stdin)) {
-      if (line.startsWith(".load ")) {
-        const [, filename] = line.split(" ");
-        line = await Deno.readTextFile(filename);
-      }
+    for await (const line of readLines(Deno.stdin)) {
       const ir = compiler.compileToIR(compiler.tokenize(line));
       const byteCode = compiler.compileToByteArray(ir);
       const bigCode = interpreter.fromByteArray(byteCode);

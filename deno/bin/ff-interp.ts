@@ -4,8 +4,8 @@ import { readStdin } from "../src/read.ts";
 import * as compiler from "../src/compile.ts";
 import * as interpreter from "../src/execute.ts";
 
-export function run() {
-  const code = new TextDecoder().decode(readStdin());
+export function run(filename = '-') {
+  const code = filename == '-' ? new TextDecoder().decode(readStdin()) : Deno.readTextFileSync(filename);
 
   compiler.setup();
   const ir = compiler.compileToIR(compiler.tokenize(code));
@@ -17,5 +17,5 @@ export function run() {
 }
 
 if (import.meta.main) {
-  run();
+  run(Deno.args[0]);
 }
