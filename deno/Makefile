@@ -21,6 +21,6 @@ example.bin:
 
 example.txt:
 	@echo "** Deno Execute **"
-	@time cat ./example2.bin | ./bin/execute.ts > ./example.txt
+	@time cat ./example2.bin | ./bin/ffb-interp.ts > ./example.txt
 	@cmp --silent -- "./example.txt" "../fixtures/example.txt" && printf "${GRN}OK${NC}\n" || printf "${RED}outouts differ${NC}\n"
 	@echo ""

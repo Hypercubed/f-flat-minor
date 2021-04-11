@@ -8,11 +8,11 @@ switch (command) {
     break;
   }
   case "execute": {
-    (await import("./execute.ts")).execute();
+    (await import("./ffb-interp.ts")).execute();
     break;
   }
   case "run": {
-    (await import("./run.ts")).run();
+    (await import("./ff-interp.ts")).run();
     break;
   }
   case "repl": {
