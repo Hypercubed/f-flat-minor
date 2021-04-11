@@ -138,7 +138,7 @@ func setup() {
 	defSystem(utils.SYM_PULLR, utils.OP_PULLR)
 	defSystem(utils.SYM_MOD, utils.OP_MOD)
 	defSystem(utils.SYM_MARK, utils.OP_MARK)
-	defSystem(utils.SYM_MARK, utils.OP_UNMARK)
+	defSystem(utils.SYM_UNMARK, utils.OP_UNMARK)
 }
 
 func compileToIR(t []string) []IrInstruction {

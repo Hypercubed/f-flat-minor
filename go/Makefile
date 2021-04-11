@@ -23,12 +23,12 @@ test:	compile execute example.bin example.txt
 
 example.bin: compile
 	@echo "** Go Compile **"
-	@time cat ../ff/example.ff | ./compile > ./example.bin
-	@cmp --silent -- "./example.bin" "../fixtures/example.bin" && printf "${GRN}OK${NC}\n" || printf "${RED}bins differ${NC}\n"
+	@time cat ../ff/example2.ff | ./compile > ./example2.bin
+	@cmp --silent -- "./example2.bin" "../fixtures/example2.bin" && printf "${GRN}OK${NC}\n" || printf "${RED}bins differ${NC}\n"
 	@echo ""
 
 example.txt: execute
 	@echo "** Go Execute **"
-	@time cat ./example.bin | ./execute > ./example.txt
+	@time cat ./example2.bin | ./execute > ./example.txt
 	@cmp --silent -- "./example.txt" "../fixtures/example.txt" && printf "${GRN}OK${NC}\n" || printf "${RED}outouts differ${NC}\n"
 	@echo ""
