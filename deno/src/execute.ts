@@ -75,43 +75,11 @@ export function executeBigIntCode(bc: bigint[]): bigint[] {
         callOp(op);
       }
     }
-    
+
     switch (op) {
       case BigInt(OpCodes.MARK):
       case BigInt(OpCodes.SDEF):
-        depth++
-    }
-  }
-  return stack;
-}
-
-export function printIr(bc: bigint[]) {
-  let ip = 0;
-  while (ip < bc.length) {
-    const op = bc[ip++];
-
-    switch (op) {
-      case BigInt(OpCodes.UNMARK):
-      case BigInt(OpCodes.DEF):
-        depth--;
-        break;
-      case BigInt(OpCodes.MARK):
-        depth++
-    }
-
-    if (depth) {
-      console.log(op, 'PUSH', depth);
-      if (op === 0n) {
-        console.log(bc[ip++], 'PUSH', depth);
-      }
-      continue;
-    }
-
-    if (op === 0n) {
-      const v = bc[ip++];
-      console.log(v, 'PUSH', depth);
-    } else {
-      console.log(op, 'CALL', depth);
+        depth++;
     }
   }
   return stack;

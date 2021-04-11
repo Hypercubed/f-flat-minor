@@ -8,21 +8,19 @@ GRN=\033[0;32m
 clean:
 	@rm -f ./example.*
 
-example:
-	cat ../ff/example.ff | deno run ./cmds/compile.ts | deno run ./cmds/execute.ts
-
-run: clean example
+run:
+	cat ../ff/example2.ff | ./bin/ff.ts run
 
 test:	example.bin example.txt
 
 example.bin:
 	@printf "** Deno Compile **"
-	@time cat ../ff/example2.ff | deno run ./cmds/compile.ts > ./example2.bin
+	@time cat ../ff/example2.ff | ./bin/ff2ffb.ts compile > ./example2.bin
 	@cmp --silent -- "./example2.bin" "../fixtures/example2.bin" && printf "${GRN}OK${NC}\n" || printf "${RED}bins differ${NC}\n"
 	@echo ""
 
 example.txt:
 	@echo "** Deno Execute **"
-	@time cat ./example2.bin | deno run ./cmds/execute.ts > ./example.txt
+	@time cat ./example2.bin | ./bin/execute.ts > ./example.txt
 	@cmp --silent -- "./example.txt" "../fixtures/example.txt" && printf "${GRN}OK${NC}\n" || printf "${RED}outouts differ${NC}\n"
 	@echo ""

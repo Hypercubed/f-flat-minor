@@ -47,45 +47,60 @@ export function compileToIR(s: string[]): IrInstruction[] {
     ss = s[i++];
 
     const maybeNumber = parseInt(ss, 10);
-    const isNumber = !isNaN(maybeNumber);
 
-    if (isNumber) {
-      ret.push({ value: BigInt(maybeNumber), op: IROp.push, comment: ss });
+    if (!isNaN(maybeNumber)) {
+      push(maybeNumber, ss);
+    } else if (ss.length > 1 && ss.startsWith(".")) { // macro?
+      switch (ss) {
+        case ".push":
+          push(parseInt(s[i++]));
+          break;
+        case ".call":
+          call(parseInt(s[i++]));
+          break;
+      }
     } else if (ss[0] === "'") { // String
-      const chars = ss.replace(/^'/, "")  // TODO: use backtick?
+      ss.replace(/^'/, "") // TODO: use backtick?
         .split("")
-        .map((c) => String(c.charCodeAt(0)))
-        .reverse();
-      const ir = compileToIR(chars);
-      ir.forEach((cc) => cc.comment = "");
-      ir[0].comment = ss;
-      ret.push(...ir);
+        .reverse()
+        .forEach((c, i) => {
+          push(c.charCodeAt(0), i === 0 ? ss : "");
+        });
     } else if (ss.endsWith(":")) { // Definition
       if (ss.length > 1) {
         const name = ss.replace(/:$/, "");
-        ret.push({ value: getSymbol(name), op: IROp.push, comment: ss });        
+        push(getSymbol(name), ss);
       }
-      ret.push({ value: BigInt(OpCodes.SDEF), op: IROp.call, comment: '' });
-    } else if (ss === '[') { // Anon Definition
-      ret.push({ value: nextCode(), op: IROp.push, comment: ss });
-      ret.push({ value: BigInt(OpCodes.MARK), op: IROp.call, comment: '' });
+      call(OpCodes.SDEF);
+    } else if (ss === "[") { // Anon Definition
+      push(nextCode(), ss);
+      call(OpCodes.MARK);
     } else if (ss === COMMENT_START) { // Comment
-      const comment = ["/*"];
-      while (i < s.length && ss !== COMMENT_END) {
+      const comment = [];
+      while (i < s.length) {
         ss = s[i++];
+        if (ss === COMMENT_END) {
+          break;
+        }
         comment.push(ss);
       }
-      ret.push({ value: 0n, op: IROp.call, comment: comment.join(" ") });
+      call(0n, comment.join(" "));
     } else if (ss[0] === "&") { // Symbol
       const name = ss.replace(/^&/, "");
-      const code = getSymbol(name);
-      ret.push({ value: code, op: IROp.push, comment: ss });
+      push(getSymbol(name), ss);
     } else {
-      const value = getSymbol(ss);
-      ret.push({ value, op: IROp.call, comment: ss });
+      call(getSymbol(ss), ss);
     }
   }
   return ret;
+
+  function push(value: bigint | number, comment = "") {
+    ret.push({ value: BigInt(value), op: IROp.push, comment });
+  }
+
+  function call(value: bigint | number, comment = "") {
+    ret.push({ value: BigInt(value), op: IROp.call, comment });
+  }
 }
 
 function toBigIntIR(i: IrInstruction) {
