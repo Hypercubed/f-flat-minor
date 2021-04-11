@@ -4,6 +4,7 @@ import { assertEquals } from "https://deno.land/std@0.92.0/testing/asserts.ts";
 
 import { dumpByteArray } from "../src/dump.ts";
 import * as interpreter from "../src/execute.ts";
+import { printIr } from "../src/execute.ts";
 
 // Run
 interpreter.setup();
@@ -25,6 +26,11 @@ if (Deno.args.includes("--dump")) {
 }
 
 const bigCode = interpreter.fromByteArray(byteCode);
+
+if (Deno.args.includes("--ir")) {
+  printIr(bigCode);
+  Deno.exit();
+}
 
 interpreter.executeBigIntCode(bigCode);
 

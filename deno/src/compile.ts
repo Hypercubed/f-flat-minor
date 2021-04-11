@@ -39,27 +39,12 @@ function getSymbol(name: string): bigint {
 //
 
 export function compileToIR(s: string[]): IrInstruction[] {
-  let depth = 0;
   let i = 0;
   const l = s.length;
   let ss = "";
   const ret: IrInstruction[] = [];
   while (i < l) {
     ss = s[i++];
-
-    if (ss === ";" || ss === "]" || ss === "}}") {
-      depth--;
-    }
-
-    if (depth && ss !== "]" && ss !== "[" && ss !== "(" && ss !== ")") {
-      const ir = compileToIR([ss]);
-      const bc = ir.flatMap(toBigIntIR).map(String);
-      const c = compileToIR(bc);
-      c.forEach((cc) => cc.comment = "");
-      c[0].comment = ss;
-      ret.push(...c);
-      continue;
-    }
 
     const maybeNumber = parseInt(ss, 10);
     const isNumber = !isNaN(maybeNumber);
@@ -80,23 +65,8 @@ export function compileToIR(s: string[]): IrInstruction[] {
         const name = ss.replace(/:$/, "");
         ret.push({ value: getSymbol(name), op: IROp.push, comment: ss });        
       }
-      ret.push({ value: BigInt(OpCodes.MARK), op: IROp.call, comment: '' });
-      depth++;
-    } else if (ss === "{{") {
-      depth++;
-    } else if (ss === "}}") {
-      // NOP
+      ret.push({ value: BigInt(OpCodes.SDEF), op: IROp.call, comment: '' });
     } else if (ss === '[') { // Anon Definition
-      if (depth) {
-        ret.push({ value: 0n, op: IROp.push, comment: '' });
-      }
-      ret.push({ value: nextCode(), op: IROp.push, comment: ss });
-      ret.push({ value: BigInt(OpCodes.MARK), op: IROp.call, comment: '' });
-      depth++;
-    } else if (ss === '(') {
-      if (depth) {
-        ret.push({ value: 0n, op: IROp.push, comment: ss });
-      }
       ret.push({ value: nextCode(), op: IROp.push, comment: ss });
       ret.push({ value: BigInt(OpCodes.MARK), op: IROp.call, comment: '' });
     } else if (ss === COMMENT_START) { // Comment

@@ -20,6 +20,12 @@ var symbolMap = make(map[string]int64)
 
 var code int64 = 0x80
 
+func nextCode() int64 {
+	c := code
+	code++
+	return c
+}
+
 func defSystem(name string, value int64) {
 	symbolMap[name] = value
 }
@@ -28,8 +34,7 @@ func getSymbol(name string) big.Int {
 	if c, ok := symbolMap[name]; ok {
 		return *big.NewInt(c)
 	}
-	symbolMap[name] = code
-	code++
+	symbolMap[name] = nextCode()
 	return *big.NewInt(symbolMap[name])
 }
 
@@ -116,6 +121,7 @@ func AppendSleb128(b []byte, v int64) []byte {
 func setup() {
 	defSystem(utils.SYM_NOP, utils.OP_NOP)
 	defSystem(utils.SYM_CALL, utils.OP_CALL)
+	defSystem(utils.SYM_SDEF, utils.OP_SDEF)
 	defSystem(utils.SYM_DEF, utils.OP_DEF)
 	defSystem(utils.SYM_PRN, utils.OP_PRN)
 	defSystem(utils.SYM_PUTC, utils.OP_PUTC)
@@ -132,31 +138,14 @@ func setup() {
 	defSystem(utils.SYM_PULLR, utils.OP_PULLR)
 	defSystem(utils.SYM_MOD, utils.OP_MOD)
 	defSystem(utils.SYM_MARK, utils.OP_MARK)
+	defSystem(utils.SYM_MARK, utils.OP_UNMARK)
 }
 
 func compileToIR(t []string) []IrInstruction {
 	var ret = make([]IrInstruction, 0)
-	var compile = false
 
 	for i := 0; i < len(t); i++ {
 		element := t[i]
-
-		if element == ";" {
-			compile = false
-		}
-
-		if compile {
-			ir := compileToIR(t[i : i+1])
-			for _, i := range ir {
-				if i.op == "call" {
-					ret = append(ret, IrInstruction{value: i.value, op: "push", comment: i.comment})
-				} else {
-					ret = append(ret, IrInstruction{value: *big.NewInt(0), op: "push", comment: i.comment})
-					ret = append(ret, IrInstruction{value: i.value, op: "push", comment: ""})
-				}
-			}
-			continue
-		}
 
 		if s, err := strconv.ParseInt(element, 10, 64); err == nil {
 			ret = append(ret, IrInstruction{value: *big.NewInt(s), op: "push", comment: element})
@@ -174,12 +163,12 @@ func compileToIR(t []string) []IrInstruction {
 		} else if strings.HasSuffix(element, ":") {
 			if len(element) > 1 {
 				name := element[:len(element)-1]
-				value := getSymbol(name)
-				ret = append(ret, IrInstruction{value: value, op: "push", comment: element})
+				ret = append(ret, IrInstruction{value: getSymbol(name), op: "push", comment: element})
 			}
-			value := getSymbol(":")
-			ret = append(ret, IrInstruction{value: value, op: "call", comment: element})
-			compile = true
+			ret = append(ret, IrInstruction{value: getSymbol(":"), op: "call", comment: element})
+		} else if strings.HasSuffix(element, "[") {
+			ret = append(ret, IrInstruction{value: *big.NewInt(nextCode()), op: "push", comment: element})
+			ret = append(ret, IrInstruction{value: getSymbol("["), op: "call", comment: element})
 		} else if element == "/*" {
 			i++
 			var comment = element + " "

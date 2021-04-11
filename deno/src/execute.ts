@@ -4,6 +4,7 @@ import { OpCodes } from "../src/opcodes.ts";
 export const stack: bigint[] = [];
 export const rStack: bigint[] = [];
 const defs = new Map<bigint, (() => void) | bigint[]>();
+let depth = 0;
 
 function peek(): bigint {
   return stack[stack.length - 1] || 0n;
@@ -49,10 +50,68 @@ export function executeBigIntCode(bc: bigint[]): bigint[] {
   let ip = 0;
   while (ip < bc.length) {
     const op = bc[ip++];
-    if (op === 0n) {
-      stack.push(bc[ip++]);
+
+    switch (op) {
+      case BigInt(OpCodes.UNMARK):
+      case BigInt(OpCodes.DEF):
+        depth--;
+    }
+
+    if (depth) {
+      stack.push(op);
+      // console.log(op, 'PUSH', depth);
+      if (op === 0n) {
+        const v = bc[ip++];
+        stack.push(v);
+        // console.log(v, 'PUSH', depth);
+      }
     } else {
-      callOp(op);
+      if (op === 0n) {
+        const v = bc[ip++];
+        // console.log(v, 'PUSH', depth);
+        stack.push(v);
+      } else {
+        // console.log(op, 'CALL', depth);
+        callOp(op);
+      }
+    }
+    
+    switch (op) {
+      case BigInt(OpCodes.MARK):
+      case BigInt(OpCodes.SDEF):
+        depth++
+    }
+  }
+  return stack;
+}
+
+export function printIr(bc: bigint[]) {
+  let ip = 0;
+  while (ip < bc.length) {
+    const op = bc[ip++];
+
+    switch (op) {
+      case BigInt(OpCodes.UNMARK):
+      case BigInt(OpCodes.DEF):
+        depth--;
+        break;
+      case BigInt(OpCodes.MARK):
+        depth++
+    }
+
+    if (depth) {
+      console.log(op, 'PUSH', depth);
+      if (op === 0n) {
+        console.log(bc[ip++], 'PUSH', depth);
+      }
+      continue;
+    }
+
+    if (op === 0n) {
+      const v = bc[ip++];
+      console.log(v, 'PUSH', depth);
+    } else {
+      console.log(op, 'CALL', depth);
     }
   }
   return stack;
@@ -77,6 +136,11 @@ export function setup() {
   }, OpCodes.CALL);
 
   defineSystem(() => {
+    const m = stack.length;
+    rStack.push(BigInt(m));
+  }, OpCodes.SDEF);
+
+  defineSystem(() => {
     const m = rStack.pop() || 0n;
     const s: bigint[] = stack.splice(Number(m), stack.length) || [];
     const n = pop();
@@ -84,17 +148,16 @@ export function setup() {
   }, OpCodes.DEF);
 
   defineSystem(() => {
+    const m = stack.length;
+    rStack.push(BigInt(m));
+  }, OpCodes.MARK);
+
+  defineSystem(() => {
     const m = rStack.pop() || 0n;
     const s: bigint[] = stack.splice(Number(m), stack.length) || [];
     const n = peek();
     defs.set(n, s);
-    console.log('unmark', n, s, stack);
   }, OpCodes.UNMARK);
-
-  defineSystem(() => {
-    const m = stack.length;
-    rStack.push(BigInt(m));
-  }, OpCodes.MARK);
 
   defineSystem(clear, OpCodes.CLR);
 

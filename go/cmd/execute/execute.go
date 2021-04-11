@@ -82,6 +82,11 @@ func setup() {
 	defSystem(func() {
 		m := len(stack)
 		r_stack = append(r_stack, *big.NewInt(int64(m)))
+	}, utils.OP_SDEF)
+
+	defSystem(func() {
+		m := len(stack)
+		r_stack = append(r_stack, *big.NewInt(int64(m)))
 	}, utils.OP_MARK)
 
 	defSystem(func() {
@@ -92,6 +97,15 @@ func setup() {
 		n := pop()
 		userDict[n.Int64()] = def
 	}, utils.OP_DEF)
+
+	defSystem(func() {
+		m := rpop()
+		mm := int(m.Int64())
+		def := append([]big.Int(nil), stack[mm:]...)
+		stack = stack[:mm]
+		n := peek()
+		userDict[n.Int64()] = def
+	}, utils.OP_UNMARK)
 
 	defSystem(func() {
 		fmt.Print("[")
@@ -239,18 +253,34 @@ func printBigIntArray(a []big.Int) {
 }
 
 func executeBigIntCode(bc []big.Int) {
+	depth := 0
+
 	for i := 0; i < len(bc); i++ {
 		op := bc[i]
-		if op.Cmp(big.NewInt(0)) == 0 {
-			v := bc[i+1]
-			// fmt.Print(v.Text(10))
-			// fmt.Println(" PUSH")
-			stack = append(stack, v)
-			i++
+
+		if op.Int64() == utils.OP_UNMARK || op.Int64() == utils.OP_DEF {
+			depth--
+		}
+
+		if depth > 0 {
+			stack = append(stack, op)
+			if op.Int64() == 0 {
+				v := bc[i+1]
+				stack = append(stack, v)
+				i++
+			}
 		} else {
-			// fmt.Print(op.Text(10))
-			// fmt.Println(" CALL")
-			call(op.Int64())
+			if op.Int64() == 0 {
+				v := bc[i+1]
+				stack = append(stack, v)
+				i++
+			} else {
+				call(op.Int64())
+			}
+		}
+
+		if op.Int64() == utils.OP_MARK || op.Int64() == utils.OP_SDEF {
+			depth++
 		}
 	}
 }
