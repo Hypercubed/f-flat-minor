@@ -1,0 +1,20 @@
+/* common definitions */
+
+--: 1 - ;
+rot: q< swap q> swap ;
+choose: [ swap ] ? drop ;
+ifte: rot choose eval ;
+
+/* factorial */
+
+fact: dup [ drop 1 ] [ dup -- fact * ] ifte ;
+
+/* string printing */
+
+print: dup [ drop ] [ putc print ] ifte ;
+println: print \r putc ;
+
+'Factorial\s100:' println
+
+100 fact .
+

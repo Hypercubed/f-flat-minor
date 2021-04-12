@@ -5,6 +5,6 @@ export function printIr(ir: Array<IrInstruction>) {
     const o = "." + i.op.padEnd(6, " ");
     const n = ("" + i.value).padEnd(5, " ");
     const c = i.comment ? `/* ${i.comment} */` : "";
-    console.log(o, n, c);
+    console.log(n, o, c);
   });
 }

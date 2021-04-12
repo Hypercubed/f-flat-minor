@@ -53,10 +53,10 @@ export function compileToIR(s: string[]): IrInstruction[] {
     } else if (ss.length > 1 && ss.startsWith(".")) { // macro?
       switch (ss) {
         case ".push":
-          push(parseInt(s[i++]));
+          ret[ret.length - 1].op = IROp.push
           break;
         case ".call":
-          call(parseInt(s[i++]));
+          ret[ret.length - 1].op = IROp.call
           break;
         case ".load": {
           const filename = s[i++];
@@ -67,7 +67,9 @@ export function compileToIR(s: string[]): IrInstruction[] {
         }
       }
     } else if (ss[0] === "'") { // String
-      ss.replace(/^'/, "") // TODO: use backtick?
+      convertEsc2Char(ss)
+        .replace(/^'/, "") // TODO: use backtick?
+        .replace(/'$/, '\0')
         .split("")
         .reverse()
         .forEach((c, i) => {
@@ -110,14 +112,6 @@ export function compileToIR(s: string[]): IrInstruction[] {
   }
 }
 
-function toBigIntIR(i: IrInstruction) {
-  if (i.op !== IROp.push) {
-    if (i.op === IROp.call && i.value === 0n) return []; // Remove NOPS
-    return [i.value];
-  }
-  return [0n, i.value];
-}
-
 export function compileToByteArray(ir: Array<IrInstruction>): Uint8Array {
   const arr = ir.flatMap((i) => {
     if (i.op === IROp.call && i.value === 0n) return []; // Remove NOPS
@@ -139,4 +133,19 @@ export function setup() {
   for (name in systemWords) {
     symbols.set(name, BigInt(systemWords[name]));
   }
+}
+
+function convertEsc2Char(str: string): string {
+  return str
+    .replace(/\\0/g, '\0')
+    .replace(/\\b/g, '\b')
+    .replace(/\\t/g, '\t')
+    .replace(/\\n/g, '\n')
+    .replace(/\\v/g, '\v')
+    .replace(/\\f/g, '\f')
+    .replace(/\\r/g, '\r')
+    .replace(/\\'/g, `'`)
+    .replace(/\\"/g, '"')
+    .replace(/\\s/g, ' ')
+    .replace(/\\\\/g, '\\');
 }

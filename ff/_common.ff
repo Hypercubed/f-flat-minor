@@ -1,0 +1,4 @@
+--: 1 - ;
+rot: q< swap q> swap ;
+choose: &swap ? drop ;
+ifte: rot choose eval ;
