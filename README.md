@@ -60,11 +60,11 @@ For each target language first implement a proof-of-concept in an online code ru
 | Rust | [ 😔  Replit ](https://replit.com/@Hypercubed/f-flat-minor-Rust) |
 | Python | [ 😀  Replit ](https://replit.com/@Hypercubed/f-flat-minor-Python) |
 | Ruby | [ 😀  Replit ](https://replit.com/@Hypercubed/f-flat-minor-Ruby) |
+| Dart | [ 😀  Replit ](https://replit.com/@Hypercubed/f-flat-minor-Dart) |
 | C/C++/C#/LLVM |
 | Lisp/Clojure/Racket |
 | Haskell |
 | Julia |
-| Dart |
 | Erlang/BEAM |
 | Perl/Raku |
 | WebAssembly/AssemblyScript |
