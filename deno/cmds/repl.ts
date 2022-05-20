@@ -2,11 +2,11 @@
 
 
 import { readLines } from "https://deno.land/std/io/bufio.ts";
-import * as compiler from "../src/compile.ts";
-import * as interpreter from "../src/execute.ts";
+import { Compiler } from "../src/compiler.ts";
+import { Engine } from "../src/engine.ts";
 
-compiler.setup();
-interpreter.setup();
+const compiler = new Compiler();
+const interpreter = new Engine();
 
 async function read() {
   // Listen to stdin input, once a new line is entered return
@@ -15,9 +15,9 @@ async function read() {
       const [,filename] = line.split(' ');
       line = await Deno.readTextFile(filename);
     }
-    const ir = compiler.compileToIR(compiler.tokenize(line));
-    const byteCode = compiler.compileToByteArray(ir);
-    const bigCode = interpreter.fromByteArray(byteCode);
+    const ir = compiler.compileToIR(Compiler.tokenize(line));
+    const byteCode = Compiler.compileToByteArray(ir);
+    const bigCode = Engine.fromByteArray(byteCode);
     interpreter.executeBigIntCode(bigCode);
     interpreter.print();
     console.log("");

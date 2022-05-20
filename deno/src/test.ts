@@ -1,6 +1,6 @@
 import { assertEquals } from "https://deno.land/std@0.92.0/testing/asserts.ts";
 
-import { Compiler } from "../src/compile.ts";
+import { Compiler } from "../src/compiler.ts";
 import { Engine } from "./engine.ts";
 
 const compiler = new Compiler();

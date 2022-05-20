@@ -1,7 +1,7 @@
 #!/usr/bin/env -S deno run --allow-net --allow-read
 
 import { dumpByteArray } from "../src/dump.ts";
-import { Compiler, IrInstruction } from "../src/compile.ts";
+import { Compiler, IrInstruction } from "../src/compiler.ts";
 
 const compiler = new Compiler();
 
