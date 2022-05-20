@@ -1,0 +1,21 @@
+#!/usr/bin/env -S deno -q run --allow-net --allow-read
+
+switch (Deno.args[0] || 'repl') {
+  case 'compile': {
+    (await import('./ff-compile.ts')).compile(Deno.args[1]);
+    break;
+  }
+  case 'execute': {
+    (await import('./ff-execute.ts')).execute(Deno.args[1]);
+    break;
+  }
+  case 'run': {
+    (await import('./ff-run.ts')).run(Deno.args[1]);
+    break;
+  }
+  case 'repl': {
+    const { repl } = await import('./ff-repl.ts');
+    await repl();
+    break;
+  }
+}

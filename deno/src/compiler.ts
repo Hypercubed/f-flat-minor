@@ -80,25 +80,39 @@ export class Compiler {
       }
 
       const maybeNumber = parseInt(ss, 10);
-      const isNumber = !isNaN(maybeNumber);
 
-      if (isNumber) {
+      if (!isNaN(maybeNumber)) {
         ret.push({ value: BigInt(maybeNumber), op: IROp.push, comment: ss });
+      } else if (ss.length > 1 && ss.startsWith(".")) { // macro?
+        switch (ss) {
+          case ".push":
+            ret[ret.length - 1].op = IROp.push
+            break;
+          case ".call":
+            ret[ret.length - 1].op = IROp.call
+            break;
+          case ".load": {
+            const filename = s[i++];
+            const code = Deno.readTextFileSync(filename);
+            const ir = this.compileToIR(Compiler.tokenize(code))
+            ret.push(...ir);
+            break;  
+          }
+        }
       } else if (ss[0] === "'") { // String
-        const chars = ss.replace(/^'/, "")  // TODO: use backtick?
+        convertEsc2Char(ss)
+          .replace(/^'/, "")  // TODO: use backtick?
           .split("")
           .map((c) => String(c.charCodeAt(0)))
-          .reverse();
-        const ir = this.compileToIR(chars);
-        ir.forEach((cc) => cc.comment = "");
-        ir[0].comment = ss;
-        ret.push(...ir);
+          .reverse()
+          .forEach((c, i) => {
+            push(c.charCodeAt(0), i === 0 ? ss : "");
+          });
       } else if (ss.endsWith(":")) { // Definition
         if (ss.length > 1) {
-          const name = ss.replace(/:$/, "");
-          ret.push({ value: this.getSymbol(name), op: IROp.push, comment: ss });        
+          push(this.getSymbol(ss.replace(/:$/, "")), ss);     
         }
-        ret.push({ value: this.getSymbol(':'), op: IROp.call, comment: ss });
+        call(this.getSymbol(':'), ss);
         defMode = true;
       } else if (ss === COMMENT_START) { // Comment
         const comment = ["/*"];
@@ -106,17 +120,22 @@ export class Compiler {
           ss = s[i++];
           comment.push(ss);
         }
-        ret.push({ value: 0n, op: IROp.call, comment: comment.join(" ") });
+        call(0n, comment.join(" "));
       } else if (ss[0] === "&") { // Symbol
-        const name = ss.replace(/^&/, "");
-        const code = this.getSymbol(name);
-        ret.push({ value: code, op: IROp.push, comment: ss });
+        push(this.getSymbol(ss.replace(/^&/, "")), ss);
       } else {
-        const value = this.getSymbol(ss);
-        ret.push({ value, op: IROp.call, comment: ss });
+        call(this.getSymbol(ss), ss);
       }
     }
     return ret;
+
+    function push(value: bigint | number, comment = "") {
+      ret.push({ value: BigInt(value), op: IROp.push, comment });
+    }
+  
+    function call(value: bigint | number, comment = "") {
+      ret.push({ value: BigInt(value), op: IROp.call, comment });
+    }
   }
 
   private toBigIntIR(i: IrInstruction) {
@@ -126,4 +145,19 @@ export class Compiler {
     }
     return [0n, i.value];
   }
+}
+
+function convertEsc2Char(str: string): string {
+  return str
+    .replace(/\\0/g, '\0')
+    .replace(/\\b/g, '\b')
+    .replace(/\\t/g, '\t')
+    .replace(/\\n/g, '\n')
+    .replace(/\\v/g, '\v')
+    .replace(/\\f/g, '\f')
+    .replace(/\\r/g, '\r')
+    .replace(/\\'/g, `'`)
+    .replace(/\\"/g, '"')
+    .replace(/\\s/g, ' ')
+    .replace(/\\\\/g, '\\');
 }
