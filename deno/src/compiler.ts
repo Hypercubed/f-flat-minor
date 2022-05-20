@@ -103,7 +103,6 @@ export class Compiler {
         convertEsc2Char(ss)
           .replace(/^'/, "")  // TODO: use backtick?
           .split("")
-          .map((c) => String(c.charCodeAt(0)))
           .reverse()
           .forEach((c, i) => {
             push(c.charCodeAt(0), i === 0 ? ss : "");

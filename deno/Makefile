@@ -9,13 +9,13 @@ clean:
 	@rm -f ./example.*
 
 run:
-	./bin/ff.ts compile ../ff/example.ff | ./bin/ff.ts execute
+	./bin/ff run ../ff/example.ff
 
 test:	example.bin example.txt
 
 example.bin:
 	@printf "** Deno Compile **"
-	@time cat ../ff/example2.ff | ./bin/ff compile > ./example2.bin
+	@time cat ../ff/example.ff | ./bin/ff compile > ./example.bin
 	@cmp --silent -- "./example.bin" "../fixtures/example.bin" && printf "${GRN}OK${NC}\n" || printf "${RED}bins differ${NC}\n"
 	@echo ""
 

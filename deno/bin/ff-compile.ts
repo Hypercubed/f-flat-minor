@@ -9,7 +9,6 @@ import { Compiler } from "../src/compiler.ts";
 const HEADER = new TextEncoder().encode('F♭A𝄫C♭');
 
 export function compile(filename = '-') {
-  console.log({ filename });
   const code = filename == '-' ? new TextDecoder().decode(readStdin()) : Deno.readTextFileSync(filename);
 
   const compiler = new Compiler();
