@@ -1,4 +1,5 @@
 {
+  "target": "es2020",
   "compilerOptions": {
     "lib": ["es2020"]
   }

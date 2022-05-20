@@ -3,10 +3,9 @@
 import { assertEquals } from "https://deno.land/std@0.92.0/testing/asserts.ts";
 
 import { dumpByteArray } from "../src/dump.ts";
-import * as interpreter from "../src/execute.ts";
+import { Engine } from "../src/engine.ts";
 
-// Run
-interpreter.setup();
+const interpreter = new Engine();
 
 const buf = new Uint8Array(1024);
 const n = <number> await Deno.stdin.read(buf);
@@ -24,7 +23,7 @@ if (Deno.args.includes("--dump")) {
   Deno.exit();
 }
 
-const bigCode = interpreter.fromByteArray(byteCode);
+const bigCode = Engine.fromByteArray(byteCode);
 
 interpreter.executeBigIntCode(bigCode);
 

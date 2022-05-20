@@ -1,25 +1,16 @@
 import { assertEquals } from "https://deno.land/std@0.92.0/testing/asserts.ts";
 
-import {
-  compileToByteArray,
-  compileToIR,
-  setup as setupCompiler,
-  tokenize,
-} from "./compile.ts";
-import {
-  executeBigIntCode,
-  fromByteArray,
-  setup as setupVM,
-} from "./execute.ts";
+import { Compiler } from "../src/compile.ts";
+import { Engine } from "./engine.ts";
 
-setupCompiler();
-setupVM();
+const compiler = new Compiler();
+const interpreter = new Engine();
 
 function run(code: string): bigint[] {
-  const ir = compileToIR(tokenize(code));
-  const byteCode = compileToByteArray(ir);
-  const bigCode = fromByteArray(byteCode);
-  return executeBigIntCode(bigCode);
+  const ir = compiler.compileToIR(Compiler.tokenize(code));
+  const byteCode = Compiler.compileToByteArray(ir);
+  const bigCode = Engine.fromByteArray(byteCode);
+  return interpreter.executeBigIntCode(bigCode);
 }
 
 const { test } = Deno;
