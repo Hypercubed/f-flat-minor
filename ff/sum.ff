@@ -1,0 +1,4 @@
+.load ./ff/core.ff
+
+10 count sum . drop
+1 10 range product .

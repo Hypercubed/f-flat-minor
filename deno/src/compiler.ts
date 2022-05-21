@@ -71,7 +71,7 @@ export class Compiler {
 
       if (defMode) {
         const ir = this.compileToIR([ss]);
-        const bc = ir.flatMap(this.toBigIntIR).map(String);
+        const bc = ir.flatMap(toBigIntIR).map(String);
         const c = this.compileToIR(bc);
         c.forEach((cc) => cc.comment = "");
         c[0].comment = ss;
@@ -86,18 +86,26 @@ export class Compiler {
       } else if (ss.length > 1 && ss.startsWith(".")) { // macro?
         switch (ss) {
           case ".push":
-            ret[ret.length - 1].op = IROp.push
+            ret[ret.length - 1].op = IROp.push;
             break;
           case ".call":
-            ret[ret.length - 1].op = IROp.call
+            ret[ret.length - 1].op = IROp.call;
+            break;
+          case ".exit":
+            Deno.exit();
             break;
           case ".load": {
             const filename = s[i++];
             const code = Deno.readTextFileSync(filename);
-            const ir = this.compileToIR(Compiler.tokenize(code))
+            const ir = this.compileToIR(Compiler.tokenize(code));
             ret.push(...ir);
-            break;  
+            break; 
           }
+          case ".symbols":
+            this.symbols.forEach((value, key) => {
+              console.log(key, value);
+            });
+            break;
         }
       } else if (ss[0] === "'") { // String
         convertEsc2Char(ss)
@@ -136,14 +144,14 @@ export class Compiler {
       ret.push({ value: BigInt(value), op: IROp.call, comment });
     }
   }
+}
 
-  private toBigIntIR(i: IrInstruction) {
-    if (i.op !== IROp.push) {
-      if (i.op === IROp.call && i.value === 0n) return []; // Remove NOPS
-      return [i.value];
-    }
-    return [0n, i.value];
+function toBigIntIR(i: IrInstruction) {
+  if (i.op !== IROp.push) {
+    if (i.op === IROp.call && i.value === 0n) return []; // Remove NOPS
+    return [i.value];
   }
+  return [0n, i.value];
 }
 
 function convertEsc2Char(str: string): string {

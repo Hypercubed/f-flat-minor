@@ -1,0 +1,13 @@
+.load ./ff/core.ff
+
+mod3?: 3 divisor? ;
+mod5?: 5 divisor? ;
+mod35?: dup mod3? &mod5? dip or ;
+
+no: succ &+ dip ;
+yes: ++ ;
+
+next: dup mod35? &yes &no ifte loop ;
+loop: dup 1000 = &next if ;
+
+0 loop drop .
