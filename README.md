@@ -87,6 +87,8 @@ For each target language first implement a proof-of-concept in an online code ru
 | DEPTH    | depth  |    35 (#)     |   v1    |
 | SWAP     |  swap  |    36 ($)     |   v0    |
 | MOD      |   %    |    37 (%)     |   v0    |
+| STASH    |   (    |    40 (()     |   v2    |
+| FETCH    |   )    |    41 ())     |   v2    |
 | MUL      |   *    |    42 (*)     |   v0    |
 | ADD      |   +    |    43 (+)     |   v0    |
 | SUB      |   -    |    45 (-)     |   v0    |
@@ -98,9 +100,10 @@ For each target language first implement a proof-of-concept in an online code ru
 | EQ       |   =    |    61 (=)     |   v0    |
 | GT       |   >    |    62 (>)     |   v2    |
 | IF       |   ?    |    63 (?)     |   v0    |
+| BRA      |   [    |    91 ([)     |   v2    |
+| KET      |   ]    |    93 (])     |   v2    |
 | POW      |   ^    |    94 (^)     |   v1    |
 
-< > ( ) [ ]
 
 ## License
 

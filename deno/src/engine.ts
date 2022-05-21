@@ -88,6 +88,18 @@ export class Engine {
       const n = this.pop();
       this.defs.set(n, s);
     }, OpCodes.DEF);
+
+    this.defineSystem(() => {
+      const m = this.rStack.pop() || 0n;
+      const s: bigint[] = this.stack.splice(Number(m), this.stack.length) || [];
+      const n = this.peek();
+      this.defs.set(n, s);
+    }, OpCodes.KET);
+
+    this.defineSystem(() => {
+      const m = this.stack.length;
+      this.rStack.push(BigInt(m));
+    }, OpCodes.BRA);
   
     this.defineSystem(() => {
       const m = this.stack.length;
@@ -189,5 +201,16 @@ export class Engine {
     this.defineSystem(() => {
       this.push(BigInt(this.stack.length));
     }, OpCodes.DEPTH);
+
+    this.defineSystem(() => {
+      const len = this.stack.length;
+      this.rStack.push(...this.stack.splice(0, len));
+      this.rStack.push(BigInt(len));
+    }, OpCodes.STASH);
+
+    this.defineSystem(() => {
+      const len = Number(this.rStack.pop());
+      this.stack.unshift(...this.rStack.splice(-len));
+    }, OpCodes.FETCH);
   }
 }

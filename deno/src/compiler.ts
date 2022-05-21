@@ -1,7 +1,7 @@
 #!/usr/bin/env deno
 
 import { encodeBigIntArray } from "./leb128.ts";
-import { systemWords } from "./opcodes.ts";
+import { OpCodes, systemWords } from "./opcodes.ts";
 
 const COMMENT_START = "/*";
 const COMMENT_END = "*/";
@@ -65,7 +65,7 @@ export class Compiler {
     while (i < l) {
       ss = s[i++];
 
-      if (ss === ";") {
+      if (ss === ";" || ss === "]") {
         defMode = false;
       }
 
@@ -119,7 +119,7 @@ export class Compiler {
         if (ss.length > 1) {
           push(this.getSymbol(ss.replace(/:$/, "")), ss);
         }
-        call(this.getSymbol(":"), ss);
+        call(OpCodes.MARK, ss);
         defMode = true;
       } else if (ss === COMMENT_START) { // Comment
         const comment = ["/*"];
@@ -128,6 +128,10 @@ export class Compiler {
           comment.push(ss);
         }
         call(0n, comment.join(" "));
+      } else if (ss === '[') {
+        push(this.nextCode(), ss);
+        call(OpCodes.BRA, ss);
+        defMode = true;
       } else if (ss[0] === "&") { // Symbol
         push(this.getSymbol(ss.replace(/^&/, "")), ss);
       } else {

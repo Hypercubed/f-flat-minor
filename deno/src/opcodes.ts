@@ -11,6 +11,8 @@ export enum OpCodes {
   DEPTH = '#'.charCodeAt(0),
   SWAP = '$'.charCodeAt(0),
   MOD = '%'.charCodeAt(0),
+  STASH = '('.charCodeAt(0),
+  FETCH = ')'.charCodeAt(0),
   MUL = '*'.charCodeAt(0),
   ADD = '+'.charCodeAt(0),
   SUB = '-'.charCodeAt(0),
@@ -22,6 +24,8 @@ export enum OpCodes {
   EQ = '='.charCodeAt(0),
   GT = '>'.charCodeAt(0),
   IF = '?'.charCodeAt(0),
+  BRA = '['.charCodeAt(0),
+  KET = ']'.charCodeAt(0),
   POW = '^'.charCodeAt(0),
 }
 
@@ -46,10 +50,14 @@ export const systemWords = {
   '>': OpCodes.GT,
   '?': OpCodes.IF,
   '%': OpCodes.MOD,
+  '(': OpCodes.STASH,
+  ')': OpCodes.FETCH,
   'q<': OpCodes.PUSHR,
   'q>': OpCodes.PULLR,
   'depth': OpCodes.DEPTH,
-  '^': OpCodes.POW
+  '^': OpCodes.POW,
+  '[': OpCodes.BRA,
+  ']': OpCodes.KET
 }
 
 // CMP/CMPZ
