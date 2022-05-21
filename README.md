@@ -86,7 +86,7 @@ For each target language first implement a proof-of-concept in an online code ru
 | DUP      |  dup   |    33 (!)     |   v0    |
 | DEPTH    | depth  |    35 (#)     |   v1    |
 | SWAP     |  swap  |    36 ($)     |   v0    |
-| MOD      |   %    |    37 (%)     |   v0    |
+| MOD      |   %    |    37 (%)     |   v1    |
 | STASH    |   (    |    40 (()     |   v2    |
 | FETCH    |   )    |    41 ())     |   v2    |
 | MUL      |   *    |    42 (*)     |   v0    |

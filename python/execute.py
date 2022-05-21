@@ -1,5 +1,7 @@
 #!/usr/bin/env python3
 
+# f-flat-minor v0
+
 import sys
 import time
 
@@ -102,19 +104,32 @@ def popq():
 
 define('nop', nop)
 define('eval', call)
-define('+', add)
-define('-', sub)
-define('*', mul)
-define('/', div)
-define('.', printStack)
-define('=', eq)
-define('swap', swap)
-define('?', q)
-define('dup', dup)
-define('drop', lambda: stack.pop() )
 define('putc', putc)
+# getc
+define('drop', lambda: stack.pop() )
 define('q<', pushq)
 define('q>', popq)
+# clr
+define('dup', dup)
+# depth
+define('swap', swap)
+# mod
+# stash
+# fetch
+define('*', mul)
+define('+', add)
+define('-', sub)
+define('.', printStack)
+define('/', div)
+# mark
+# def
+# lt
+define('=', eq)
+# gt
+define('?', q)
+# bra
+# ket
+# pow
 
 def ev(t):
   i = 0

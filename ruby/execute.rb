@@ -1,5 +1,7 @@
 #!/usr/bin/env ruby
 
+# f-flat-minor v0
+
 $stack = Array.new
 $r_stack = Array.new
 
@@ -81,8 +83,54 @@ end
 define('nop', lambda {||
 })
 
-define('.', lambda {||
-  puts $stack.inspect
+define('eval', lambda {||
+  o = pop()
+  callOp(o)
+})
+
+define('putc', lambda {||
+  a = pop()
+  putc a
+})
+
+# getc
+
+define('drop', lambda {||
+  pop
+})
+
+define('q<', lambda {||
+a = pop()
+$r_stack.push(a)
+})
+
+define('q>', lambda {||
+a = $r_stack.pop
+push a
+})
+
+# clr
+
+define('dup', lambda {||
+  push($stack[-1])
+})
+
+# depth
+
+define('swap', lambda {||
+  a = pop()
+  b = pop()
+  push(a)
+  push(b)
+})
+
+# mod
+# stash
+# fetch
+
+define('*', lambda {||
+  a = pop()
+  $stack[-1] *= a
 })
 
 define('+', lambda {||
@@ -95,9 +143,8 @@ define('-', lambda {||
   $stack[-1] -= a
 })
 
-define('*', lambda {||
-  a = pop()
-  $stack[-1] *= a
+define('.', lambda {||
+  puts $stack.inspect
 })
 
 define('/', lambda {||
@@ -105,31 +152,16 @@ define('/', lambda {||
   $stack[-1] /= a
 })
 
-define('drop', lambda {||
-  pop
-})
+# mark
+# def
+# lt
 
 define('=', lambda {||
   a = pop()
   $stack[-1] = ($stack[-1] == a) && 1 || 0
 })
 
-define('swap', lambda {||
-  a = pop()
-  b = pop()
-  push(a)
-  push(b)
-})
-
-define('dup', lambda {||
-  push($stack[-1])
-})
-
-
-define('eval', lambda {||
-  o = pop()
-  callOp(o)
-})
+# gt
 
 define('?', lambda {||
   a = pop()
@@ -139,20 +171,9 @@ define('?', lambda {||
   end
 })
 
-define('putc', lambda {||
-  a = pop()
-  putc a
-})
-
-define('q<', lambda {||
-  a = pop()
-  $r_stack.push(a)
-})
-
-define('q>', lambda {||
-  a = $r_stack.pop
-  push a
-})
+# bra
+# ket
+# pow
 
 $code = ARGF.read
 
