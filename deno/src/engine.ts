@@ -19,6 +19,8 @@ export class Engine {
   private readonly rStack: bigint[] = [];
   private readonly defs = new Map<bigint, (() => void) | bigint[]>();
 
+  private depth = 0;
+
   constructor() {
     this.setup();
   }
@@ -61,10 +63,21 @@ export class Engine {
     let ip = 0;
     while (ip < bc.length) {
       const op = bc[ip++];
+
+      if (op === BigInt(OpCodes.DEF) || op === BigInt(OpCodes.KET)) {
+        this.depth--;
+      }
+
+      if (this.depth) this.push(op);
+
       if (op === 0n) {
         this.push(bc[ip++]);
       } else {
-        this.callOp(op);
+        if (!this.depth) this.callOp(op);
+      }
+
+      if (op === BigInt(OpCodes.MARK) || op === BigInt(OpCodes.BRA)) {
+        this.depth++;
       }
     }
     return this.stack;

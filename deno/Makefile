@@ -15,8 +15,8 @@ test:	example.bin example.txt
 
 example.bin:
 	@printf "** Deno Compile **"
-	@time cat ../ff/example.ff | ./bin/ff compile > ./example.bin
-	@cmp --silent -- "./example.bin" "../fixtures/example.bin" && printf "${GRN}OK${NC}\n" || printf "${RED}bins differ${NC}\n"
+	@time cat ../ff/example_v2.ff | ./bin/ff compile > ./example.bin
+	@cmp --silent -- "./example.bin" "../fixtures/example_v2.bin" && printf "${GRN}OK${NC}\n" || printf "${RED}bins differ${NC}\n"
 	@echo ""
 
 example.txt:

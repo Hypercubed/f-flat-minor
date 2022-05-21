@@ -57,7 +57,6 @@ export class Compiler {
   }
 
   compileToIR(s: string[]): IrInstruction[] {
-    let defMode = false;
     let i = 0;
     const l = s.length;
     let ss = "";
@@ -65,19 +64,19 @@ export class Compiler {
     while (i < l) {
       ss = s[i++];
 
-      if (ss === ";" || ss === "]") {
-        defMode = false;
-      }
+      // if (ss === ";" || ss === "]") {
+      //   defMode = false;
+      // }
 
-      if (defMode) {
-        const ir = this.compileToIR([ss]);
-        const bc = ir.flatMap(toBigIntIR).map(String);
-        const c = this.compileToIR(bc);
-        c.forEach((cc) => cc.comment = "");
-        c[0].comment = ss;
-        ret.push(...c);
-        continue;
-      }
+      // if (defMode) {
+      //   const ir = this.compileToIR([ss]);
+      //   const bc = ir.flatMap(toBigIntIR).map(String);
+      //   const c = this.compileToIR(bc);
+      //   c.forEach((cc) => cc.comment = "");
+      //   c[0].comment = ss;
+      //   ret.push(...c);
+      //   continue;
+      // }
 
       const maybeNumber = parseInt(ss, 10);
 
@@ -117,10 +116,11 @@ export class Compiler {
           });
       } else if (ss.endsWith(":")) { // Definition
         if (ss.length > 1) {
-          push(this.getSymbol(ss.replace(/:$/, "")), ss);
+          const name = ss.replace(/:$/, "");
+          push(this.getSymbol(name), `&${name}`);
         }
-        call(OpCodes.MARK, ss);
-        defMode = true;
+        call(OpCodes.MARK, ':');
+        // defMode = true;
       } else if (ss === COMMENT_START) { // Comment
         const comment = ["/*"];
         while (i < s.length && ss !== COMMENT_END) {
@@ -130,8 +130,8 @@ export class Compiler {
         call(0n, comment.join(" "));
       } else if (ss === '[') {
         push(this.nextCode(), ss);
-        call(OpCodes.BRA, ss);
-        defMode = true;
+        call(OpCodes.BRA, '[');
+        // defMode = true;
       } else if (ss[0] === "&") { // Symbol
         push(this.getSymbol(ss.replace(/^&/, "")), ss);
       } else {
@@ -150,13 +150,13 @@ export class Compiler {
   }
 }
 
-function toBigIntIR(i: IrInstruction) {
-  if (i.op !== IROp.push) {
-    if (i.op === IROp.call && i.value === 0n) return []; // Remove NOPS
-    return [i.value];
-  }
-  return [0n, i.value];
-}
+// function toBigIntIR(i: IrInstruction) {
+//   if (i.op !== IROp.push) {
+//     if (i.op === IROp.call && i.value === 0n) return []; // Remove NOPS
+//     return [i.value];
+//   }
+//   return [0n, i.value];
+// }
 
 function convertEsc2Char(str: string): string {
   return str
