@@ -1,7 +1,9 @@
 .load ./ff/core.ff
 
-0 &++ 5 repeat . drop /* 5 */
+0 &++ 5 repeat /* 5 */
 
-10 count sum . drop /* 55 */
+( 10 count sum ) /* 55 */
 
-1 10 range product . clr /* 3628800 */
+( 1 10 range product ) /* 3628800 */
+
+.

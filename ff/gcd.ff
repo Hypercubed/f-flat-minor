@@ -1,8 +1,9 @@
-not: 0 = ;
-roll: swap q< swap q> ;
+.load ./ff/core.ff
 
 gcd_t: dup roll % gcd_r ;
-gcd_r: dup 0 = not &gcd_t ? ;
+gcd_r: dup &gcd_t ? ;
 gcd: gcd_r drop ;
 
 109876463  177777648  gcd .
+
+/* 1234567 */

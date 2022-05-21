@@ -1,10 +1,4 @@
-rot: q< swap q> swap ;
-choose: &swap ? drop ;
-ifte: rot choose eval ;
-
-print_f: putc print ;
-print: dup &drop &print_f ifte ;
-println: print 10 putc ;
+.load ./ff/core.ff
 
 0 10 'World! 32 'Hello print
 

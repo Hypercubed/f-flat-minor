@@ -1,8 +1,11 @@
-not: 0 = ;
---: 1 - ;
+.load ./ff/core.ff
 
-fib_tt: -- dup fib swap -- fib + ;
-fib_t: dup 1 = not &fib_tt ? ;
-fib: dup 0 = not &fib_t ? ;
+fib:
+  dup 0 = ~
+  [ dup 1 = ~
+    [ -- dup fib swap -- fib + ] ?
+  ] ? ;
 
 20 fib .
+
+/* 6765 */

@@ -62,6 +62,5 @@ product: &* reduce ;
 
 /* string printing */
 
-print_f: putc print ;
-print: dup &drop &print_f ifte ;
+print: dup &drop [ putc print ] ifte ;
 println: print 10 putc ;
