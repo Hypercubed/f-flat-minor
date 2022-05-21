@@ -116,47 +116,57 @@ func AppendSleb128(b []byte, v int64) []byte {
 func setup() {
 	defSystem(utils.SYM_NOP, utils.OP_NOP)
 	defSystem(utils.SYM_CALL, utils.OP_CALL)
-	defSystem(utils.SYM_DEF, utils.OP_DEF)
-	defSystem(utils.SYM_PRN, utils.OP_PRN)
 	defSystem(utils.SYM_PUTC, utils.OP_PUTC)
+  // getc
 	defSystem(utils.SYM_DROP, utils.OP_DROP)
-	defSystem(utils.SYM_SWAP, utils.OP_SWAP)
-	defSystem(utils.SYM_DUP, utils.OP_DUP)
-	defSystem(utils.SYM_ADD, utils.OP_ADD)
-	defSystem(utils.SYM_SUB, utils.OP_SUB)
-	defSystem(utils.SYM_MUL, utils.OP_MUL)
-	defSystem(utils.SYM_DIV, utils.OP_DIV)
-	defSystem(utils.SYM_EQ, utils.OP_EQ)
-	defSystem(utils.SYM_IF, utils.OP_IF)
 	defSystem(utils.SYM_PUSHR, utils.OP_PUSHR)
 	defSystem(utils.SYM_PULLR, utils.OP_PULLR)
+  // clr
+	defSystem(utils.SYM_DUP, utils.OP_DUP)
+  // depth
+	defSystem(utils.SYM_SWAP, utils.OP_SWAP)
 	defSystem(utils.SYM_MOD, utils.OP_MOD)
+  // stash
+  // fetch
+	defSystem(utils.SYM_MUL, utils.OP_MUL)
+	defSystem(utils.SYM_ADD, utils.OP_ADD)
+	defSystem(utils.SYM_SUB, utils.OP_SUB)
+	defSystem(utils.SYM_PRN, utils.OP_PRN)
+	defSystem(utils.SYM_DIV, utils.OP_DIV)
 	defSystem(utils.SYM_MARK, utils.OP_MARK)
+	defSystem(utils.SYM_DEF, utils.OP_DEF)
+  // lt
+	defSystem(utils.SYM_EQ, utils.OP_EQ)
+  // gt
+	defSystem(utils.SYM_IF, utils.OP_IF)
+  // bra
+  // ket
+  // pow
 }
 
 func compileToIR(t []string) []IrInstruction {
 	var ret = make([]IrInstruction, 0)
-	var compile = false
+	// var compile = false
 
 	for i := 0; i < len(t); i++ {
 		element := t[i]
 
-		if element == ";" {
-			compile = false
-		}
+		// if element == ";" {
+		// 	compile = false
+		// }
 
-		if compile {
-			ir := compileToIR(t[i : i+1])
-			for _, i := range ir {
-				if i.op == "call" {
-					ret = append(ret, IrInstruction{value: i.value, op: "push", comment: i.comment})
-				} else {
-					ret = append(ret, IrInstruction{value: *big.NewInt(0), op: "push", comment: i.comment})
-					ret = append(ret, IrInstruction{value: i.value, op: "push", comment: ""})
-				}
-			}
-			continue
-		}
+		// if compile {
+		// 	ir := compileToIR(t[i : i+1])
+		// 	for _, i := range ir {
+		// 		if i.op == "call" {
+		// 			ret = append(ret, IrInstruction{value: i.value, op: "push", comment: i.comment})
+		// 		} else {
+		// 			ret = append(ret, IrInstruction{value: *big.NewInt(0), op: "push", comment: i.comment})
+		// 			ret = append(ret, IrInstruction{value: i.value, op: "push", comment: ""})
+		// 		}
+		// 	}
+		// 	continue
+		// }
 
 		if s, err := strconv.ParseInt(element, 10, 64); err == nil {
 			ret = append(ret, IrInstruction{value: *big.NewInt(s), op: "push", comment: element})
@@ -175,11 +185,11 @@ func compileToIR(t []string) []IrInstruction {
 			if len(element) > 1 {
 				name := element[:len(element)-1]
 				value := getSymbol(name)
-				ret = append(ret, IrInstruction{value: value, op: "push", comment: element})
+				ret = append(ret, IrInstruction{value: value, op: "push", comment: name})
 			}
 			value := getSymbol(":")
-			ret = append(ret, IrInstruction{value: value, op: "call", comment: element})
-			compile = true
+			ret = append(ret, IrInstruction{value: value, op: "call", comment: ":"})
+			// compile = true
 		} else if element == "/*" {
 			i++
 			var comment = element + " "

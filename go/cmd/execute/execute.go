@@ -239,19 +239,29 @@ func printBigIntArray(a []big.Int) {
 }
 
 func executeBigIntCode(bc []big.Int) {
+  var depth = 0
+
 	for i := 0; i < len(bc); i++ {
 		op := bc[i]
+
+    if op.Cmp(big.NewInt(utils.OP_DEF)) == 0 {
+      depth--
+    }
+
+    if depth > 0 {
+      stack = append(stack, op)
+    }
+
 		if op.Cmp(big.NewInt(0)) == 0 {
-			v := bc[i+1]
-			// fmt.Print(v.Text(10))
-			// fmt.Println(" PUSH")
-			stack = append(stack, v)
+			stack = append(stack, bc[i+1])
 			i++
-		} else {
-			// fmt.Print(op.Text(10))
-			// fmt.Println(" CALL")
+		} else if (depth < 1) {
 			call(op.Int64())
 		}
+
+    if op.Cmp(big.NewInt(utils.OP_MARK)) == 0 {
+      depth++
+    }
 	}
 }
 
