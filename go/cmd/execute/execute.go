@@ -39,6 +39,10 @@ func pop() big.Int {
 	return *big.NewInt(0)
 }
 
+func push(a big.Int) {
+  stack = append(stack, a)
+}
+
 func rpeek() big.Int {
 	l := len(r_stack)
 	if l > 0 {
@@ -79,19 +83,80 @@ func setup() {
 		call(x.Int64())
 	}, utils.OP_CALL)
 
-	defSystem(func() {
-		m := len(stack)
-		r_stack = append(r_stack, *big.NewInt(int64(m)))
-	}, utils.OP_MARK)
+  defSystem(func() {
+    x := pop()
+    c := rune(x.Int64())
+    fmt.Print(string(c))
+  }, utils.OP_PUTC)
+
+  defSystem(func() {
+		panic(errors.New("OP_GETC not defined"))
+	}, utils.OP_GETC)
 
 	defSystem(func() {
-		m := rpop()
-		mm := int(m.Int64())
-		def := append([]big.Int(nil), stack[mm:]...)
-		stack = stack[:mm]
-		n := pop()
-		userDict[n.Int64()] = def
-	}, utils.OP_DEF)
+		pop()
+	}, utils.OP_DROP)
+
+	defSystem(func() {
+		a := pop()
+		r_stack = append(r_stack, a)
+	}, utils.OP_PUSHR)
+
+	defSystem(func() {
+		push(rpop())
+	}, utils.OP_PULLR)
+
+  defSystem(func() {
+		stack = nil
+	}, utils.OP_CLR)
+
+	defSystem(func() {
+		push(peek())
+	}, utils.OP_DUP)
+
+  defSystem(func() {
+    l := len(stack)
+    push(*big.NewInt(int64(l)))
+	}, utils.OP_DEPTH)
+
+	defSystem(func() {
+		x := pop()
+		y := pop()
+    push(x)
+    push(y)
+	}, utils.OP_SWAP)
+
+	defSystem(func() {
+		x := pop()
+		y := pop()
+		push(*x.Mod(&y, &x))
+	}, utils.OP_MOD)
+
+  defSystem(func() {
+		panic(errors.New("OP_LSTASH not defined"))
+	}, utils.OP_STASH)
+
+  defSystem(func() {
+		panic(errors.New("OP_FETCH not defined"))
+	}, utils.OP_FETCH)
+
+	defSystem(func() {
+		x := pop()
+		y := pop()
+		push(*x.Mul(&y, &x))
+	}, utils.OP_MUL)
+
+	defSystem(func() {
+		x := pop()
+		y := pop()
+		push(*y.Add(&y, &x))
+	}, utils.OP_ADD)
+
+  defSystem(func() {
+		x := pop()
+		y := pop()
+		push(*y.Sub(&y, &x))
+	}, utils.OP_SUB)
 
 	defSystem(func() {
 		fmt.Print("[")
@@ -106,64 +171,67 @@ func setup() {
 
 	defSystem(func() {
 		x := pop()
-		c := rune(x.Int64())
-		fmt.Print(string(c))
-	}, utils.OP_PUTC)
+		y := pop()
+		push(*x.Div(&x, &y))
+	}, utils.OP_DIV)
 
 	defSystem(func() {
-		pop()
-	}, utils.OP_DROP)
+		m := len(stack)
+		r_stack = append(r_stack, *big.NewInt(int64(m)))
+	}, utils.OP_MARK)
+
+  defSystem(func() {
+		m := len(stack)
+		r_stack = append(r_stack, *big.NewInt(int64(m)))
+	}, utils.OP_BRA)
+
+	defSystem(func() {
+		m := rpop()
+		mm := int(m.Int64())
+		def := append([]big.Int(nil), stack[mm:]...)
+		stack = stack[:mm]
+		n := pop()
+		userDict[n.Int64()] = def
+	}, utils.OP_DEF)
+
+  defSystem(func() {
+		m := rpop()
+		mm := int(m.Int64())
+		def := append([]big.Int(nil), stack[mm:]...)
+		stack = stack[:mm]
+		n := peek()
+		userDict[n.Int64()] = def
+	}, utils.OP_KET)
+
+  defSystem(func() {
+		x := pop()
+		y := pop()
+		if y.Cmp(&x) == -1 {
+			push(*big.NewInt(1))
+		} else {
+			push(*big.NewInt(0))
+		}
+	}, utils.OP_LT)
 
 	defSystem(func() {
 		x := pop()
 		y := pop()
-		stack = append(stack, x, y)
-	}, utils.OP_SWAP)
-
-	defSystem(func() {
-		x := peek()
-		stack = append(stack, x)
-	}, utils.OP_DUP)
-
-	defSystem(func() {
-		x := pop()
-		y := peek()
-		stack[len(stack)-1] = *y.Add(&y, &x)
-	}, utils.OP_ADD)
-
-	defSystem(func() {
-		x := pop()
-		y := peek()
-		stack[len(stack)-1] = *y.Sub(&y, &x)
-	}, utils.OP_SUB)
-
-	defSystem(func() {
-		x := pop()
-		y := peek()
-		stack[len(stack)-1] = *x.Mul(&y, &x)
-	}, utils.OP_MUL)
-
-	defSystem(func() {
-		x := pop()
-		y := peek()
-		stack[len(stack)-1] = *x.Mod(&y, &x)
-	}, utils.OP_MOD)
-
-	defSystem(func() {
-		x := pop()
-		y := peek()
-		stack[len(stack)-1] = *x.Div(&x, &y)
-	}, utils.OP_DIV)
-
-	defSystem(func() {
-		x := pop()
-		y := peek()
 		if x.Cmp(&y) == 0 {
-			stack[len(stack)-1] = *big.NewInt(1)
+			push(*big.NewInt(1))
 		} else {
-			stack[len(stack)-1] = *big.NewInt(0)
+			push(*big.NewInt(0))
 		}
 	}, utils.OP_EQ)
+
+  defSystem(func() {
+		x := pop()
+		y := pop()
+		if y.Cmp(&x) == 1 {
+			push(*big.NewInt(1))
+		} else {
+			push(*big.NewInt(0))
+		}
+	}, utils.OP_GT)
 
 	defSystem(func() {
 		t := pop()
@@ -173,14 +241,11 @@ func setup() {
 		}
 	}, utils.OP_IF)
 
-	defSystem(func() {
-		a := pop()
-		r_stack = append(r_stack, a)
-	}, utils.OP_PUSHR)
-
-	defSystem(func() {
-		stack = append(stack, rpop())
-	}, utils.OP_PULLR)
+  defSystem(func() {
+		x := pop()
+		y := pop()
+    push(*x.Exp(&x, &y, nil))
+	}, utils.OP_POW)
 }
 
 func readVarint(r io.Reader, n uint) (int64, error) {
@@ -244,7 +309,7 @@ func executeBigIntCode(bc []big.Int) {
 	for i := 0; i < len(bc); i++ {
 		op := bc[i]
 
-    if op.Cmp(big.NewInt(utils.OP_DEF)) == 0 {
+    if op.Cmp(big.NewInt(utils.OP_DEF)) == 0 || op.Cmp(big.NewInt(utils.OP_KET)) == 0 {
       depth--
     }
 
@@ -259,7 +324,7 @@ func executeBigIntCode(bc []big.Int) {
 			call(op.Int64())
 		}
 
-    if op.Cmp(big.NewInt(utils.OP_MARK)) == 0 {
+    if op.Cmp(big.NewInt(utils.OP_MARK)) == 0 || op.Cmp(big.NewInt(utils.OP_BRA)) == 0 {
       depth++
     }
 	}

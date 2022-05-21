@@ -5,6 +5,6 @@ mod?: dup 3 divisor? [ 5 divisor? ] dip or ;
 next: dup mod? &++ [ succ &+ dip ] ifte loop ;
 loop: dup 1000 = ~ &next ? ;
 
-0 loop drop .
+0 0 loop drop .
 
 /* 233168 */

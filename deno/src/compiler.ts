@@ -64,20 +64,6 @@ export class Compiler {
     while (i < l) {
       ss = s[i++];
 
-      // if (ss === ";" || ss === "]") {
-      //   defMode = false;
-      // }
-
-      // if (defMode) {
-      //   const ir = this.compileToIR([ss]);
-      //   const bc = ir.flatMap(toBigIntIR).map(String);
-      //   const c = this.compileToIR(bc);
-      //   c.forEach((cc) => cc.comment = "");
-      //   c[0].comment = ss;
-      //   ret.push(...c);
-      //   continue;
-      // }
-
       const maybeNumber = parseInt(ss, 10);
 
       if (!isNaN(maybeNumber)) {
@@ -120,7 +106,6 @@ export class Compiler {
           push(this.getSymbol(name), `&${name}`);
         }
         call(OpCodes.MARK, ':');
-        // defMode = true;
       } else if (ss === COMMENT_START) { // Comment
         const comment = ["/*"];
         while (i < s.length && ss !== COMMENT_END) {
@@ -149,14 +134,6 @@ export class Compiler {
     }
   }
 }
-
-// function toBigIntIR(i: IrInstruction) {
-//   if (i.op !== IROp.push) {
-//     if (i.op === IROp.call && i.value === 0n) return []; // Remove NOPS
-//     return [i.value];
-//   }
-//   return [0n, i.value];
-// }
 
 function convertEsc2Char(str: string): string {
   return str

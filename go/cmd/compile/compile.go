@@ -24,12 +24,17 @@ func defSystem(name string, value int64) {
 	symbolMap[name] = value
 }
 
+func nextCode() int64 {
+  c := code
+  code++
+  return c
+}
+
 func getSymbol(name string) big.Int {
 	if c, ok := symbolMap[name]; ok {
 		return *big.NewInt(c)
 	}
-	symbolMap[name] = code
-	code++
+	symbolMap[name] = nextCode()
 	return *big.NewInt(symbolMap[name])
 }
 
@@ -117,17 +122,17 @@ func setup() {
 	defSystem(utils.SYM_NOP, utils.OP_NOP)
 	defSystem(utils.SYM_CALL, utils.OP_CALL)
 	defSystem(utils.SYM_PUTC, utils.OP_PUTC)
-  // getc
+  defSystem(utils.SYM_GETC, utils.OP_GETC)
 	defSystem(utils.SYM_DROP, utils.OP_DROP)
 	defSystem(utils.SYM_PUSHR, utils.OP_PUSHR)
 	defSystem(utils.SYM_PULLR, utils.OP_PULLR)
-  // clr
+  defSystem(utils.SYM_CLR, utils.OP_CLR)
 	defSystem(utils.SYM_DUP, utils.OP_DUP)
-  // depth
+  defSystem(utils.SYM_DEPTH, utils.OP_DEPTH)
 	defSystem(utils.SYM_SWAP, utils.OP_SWAP)
 	defSystem(utils.SYM_MOD, utils.OP_MOD)
-  // stash
-  // fetch
+  defSystem(utils.SYM_STASH, utils.OP_STASH)
+  defSystem(utils.SYM_FETCH, utils.OP_FETCH)
 	defSystem(utils.SYM_MUL, utils.OP_MUL)
 	defSystem(utils.SYM_ADD, utils.OP_ADD)
 	defSystem(utils.SYM_SUB, utils.OP_SUB)
@@ -135,61 +140,56 @@ func setup() {
 	defSystem(utils.SYM_DIV, utils.OP_DIV)
 	defSystem(utils.SYM_MARK, utils.OP_MARK)
 	defSystem(utils.SYM_DEF, utils.OP_DEF)
-  // lt
+  defSystem(utils.SYM_LT, utils.OP_LT)
 	defSystem(utils.SYM_EQ, utils.OP_EQ)
-  // gt
+  defSystem(utils.SYM_GT, utils.OP_GT)
 	defSystem(utils.SYM_IF, utils.OP_IF)
-  // bra
-  // ket
-  // pow
+  defSystem(utils.SYM_BRA, utils.OP_BRA)
+  defSystem(utils.SYM_KET, utils.OP_KET)
+  defSystem(utils.SYM_POW, utils.OP_POW)
 }
 
 func compileToIR(t []string) []IrInstruction {
 	var ret = make([]IrInstruction, 0)
-	// var compile = false
+
+  push := func (value big.Int, comment string) {
+    ret = append(ret, IrInstruction{value: value, op: "push", comment: comment})
+  }
+
+  call := func (code big.Int, comment string) {
+    ret = append(ret, IrInstruction{value: code, op: "call", comment: comment})
+  }
 
 	for i := 0; i < len(t); i++ {
 		element := t[i]
 
-		// if element == ";" {
-		// 	compile = false
-		// }
-
-		// if compile {
-		// 	ir := compileToIR(t[i : i+1])
-		// 	for _, i := range ir {
-		// 		if i.op == "call" {
-		// 			ret = append(ret, IrInstruction{value: i.value, op: "push", comment: i.comment})
-		// 		} else {
-		// 			ret = append(ret, IrInstruction{value: *big.NewInt(0), op: "push", comment: i.comment})
-		// 			ret = append(ret, IrInstruction{value: i.value, op: "push", comment: ""})
-		// 		}
-		// 	}
-		// 	continue
-		// }
-
 		if s, err := strconv.ParseInt(element, 10, 64); err == nil {
-			ret = append(ret, IrInstruction{value: *big.NewInt(s), op: "push", comment: element})
+      push(*big.NewInt(s), element)
+    } else if strings.HasPrefix(element, ".") && len(element) > 1 {
+      switch element {
+        case ".load":
+          i++
+          filename := t[i]
+          dat, err := os.ReadFile(filename)
+          check(err)
+          tokens := strings.Fields(string(dat))
+          ir := compileToIR(tokens)
+          ret = append(ret, ir...)
+      }
 		} else if strings.HasPrefix(element, "&") {
-			name := element[1:]
-			value := getSymbol(name)
-			ret = append(ret, IrInstruction{value: value, op: "push", comment: element})
+			push(getSymbol(element[1:]), element)
 		} else if strings.HasPrefix(element, "'") {
 			l := len(ret)
 			for i := len(element) - 1; i >= 1; i-- {
-				a := int64(element[i])
-				ret = append(ret, IrInstruction{value: *big.NewInt(a), op: "push", comment: ""})
+        push(*big.NewInt(int64(element[i])), "")
 			}
 			ret[l].comment = element
-		} else if strings.HasSuffix(element, ":") {
+		} else if strings.HasSuffix(element, utils.SYM_MARK) {
 			if len(element) > 1 {
 				name := element[:len(element)-1]
-				value := getSymbol(name)
-				ret = append(ret, IrInstruction{value: value, op: "push", comment: name})
+        push(getSymbol(name), name)
 			}
-			value := getSymbol(":")
-			ret = append(ret, IrInstruction{value: value, op: "call", comment: ":"})
-			// compile = true
+      call(*big.NewInt(utils.OP_MARK), ":")
 		} else if element == "/*" {
 			i++
 			var comment = element + " "
@@ -200,10 +200,12 @@ func compileToIR(t []string) []IrInstruction {
 					break
 				}
 			}
-			ret = append(ret, IrInstruction{value: *big.NewInt(0), op: "call", comment: comment})
-		} else {
-			value := getSymbol(element)
-			ret = append(ret, IrInstruction{value: value, op: "call", comment: element})
+      call(*big.NewInt(0), comment)
+		} else if element == "[" {
+      push(*big.NewInt(nextCode()), element)
+      call(*big.NewInt(utils.OP_BRA), element)
+    } else {
+      call(getSymbol(element), element)
 		}
 	}
 
@@ -223,7 +225,7 @@ func main() {
 	check(err)
 	code := string(data)
 
-	var tokens = strings.Fields(code)
+	tokens := strings.Fields(code)
 
 	var ir = compileToIR(tokens)
 	// printIr(ir)

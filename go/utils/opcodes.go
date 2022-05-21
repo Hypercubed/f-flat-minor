@@ -6,17 +6,17 @@ const (
 	OP_NOP   = 0
 	OP_CALL  = 1
 	OP_PUTC  = 2
-	// GETC
+	OP_GETC  = 3
 	OP_DROP  = 8
 	OP_PUSHR = 14
 	OP_PULLR = 15
-	// CLR
+	OP_CLR   = 25
 	OP_DUP   = '!'
-	// DEPTH
+	OP_DEPTH = '#'
 	OP_SWAP  = '$'
 	OP_MOD   = '%'
-	// STASH
-	// FETCH
+	OP_STASH = '('
+	OP_FETCH = ')'
 	OP_MUL   = '*'
 	OP_ADD   = '+'
 	OP_SUB   = '-'
@@ -24,30 +24,30 @@ const (
 	OP_DIV   = '/'
 	OP_MARK  = ':'
 	OP_DEF   = ';'
-	// LT
+	OP_LT    = '<'
 	OP_EQ    = '='
-	// GT
+	OP_GT    = '>'
 	OP_IF    = '?'
-	// BRA
-	// KET
-	// POW
+	OP_BRA   = '['
+	OP_KET   = ']'
+	OP_POW   = '^'
 )
 
 const (
 	SYM_NOP   = "nop"
 	SYM_CALL  = "eval"
 	SYM_PUTC  = "putc"
-	// getc
+	SYM_GETC  = "getc"
 	SYM_DROP  = "drop"
 	SYM_PUSHR = "q<"
 	SYM_PULLR = "q>"
-	// clr
+	SYM_CLR   = "clr"
 	SYM_DUP   = "dup"
-	// depth
+	SYM_DEPTH = "depth"
 	SYM_SWAP  = "swap"
 	SYM_MOD   = "%"
-	// (
-	// )
+	SYM_STASH = "("
+	SYM_FETCH = ")"
 	SYM_MUL   = "*"
 	SYM_ADD   = "+"
 	SYM_SUB   = "-"
@@ -55,11 +55,11 @@ const (
 	SYM_DIV   = "/"
 	SYM_MARK  = ":"
 	SYM_DEF   = ";"
-	// <
+	SYM_LT    = "<"
 	SYM_EQ    = "="
-	// >
+	SYM_GT    = ">"
 	SYM_IF    = "?"
-	// [
-	// ]
-	// ^
+	SYM_BRA   = "["
+	SYM_KET   = "]"
+	SYM_POW   = "^"
 )

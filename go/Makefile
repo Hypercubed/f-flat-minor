@@ -3,6 +3,7 @@ RED = \033[0;31m
 NC = \033[0m
 GRN = \033[0;32m
 
+.DEFAULT_GOAL := default
 .PHONY : clean example run test example.bin example.txt
 
 clean:
@@ -14,10 +15,10 @@ compile: ./cmd/compile/* ./utils/*
 execute: ./cmd/execute/* ./utils/*
 	go build ./cmd/execute
 
-example:
-	cat ../ff/example.ff | ./compile | ./execute
+default: compile execute
 
-run: compile execute example
+run: compile execute
+	cat ../ff/example_v2.ff | ./compile | ./execute
 
 test:	compile execute example.bin example.txt
 
