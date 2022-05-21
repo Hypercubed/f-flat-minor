@@ -8,6 +8,6 @@ no: succ &+ dip ;
 yes: ++ ;
 
 next: dup mod35? &yes &no ifte loop ;
-loop: dup 1000 = &next if ;
+loop: dup 1000 = ~ &next ? ;
 
 0 loop drop .

@@ -12,29 +12,31 @@ dip: swap slip ;
 swapd: q< swap q> ; 
 roll: swap swapd ;
 rot: q< swap q> swap ;
-dup2: q< dup q> swap q< dup q> swap ;
+dupd: q< dup q> ;
+dup2: dupd swap dupd swap ;
+run: dup slip ;
 
 /* inquisitive */
 
-zero?: 0 = ;
-divisor?: % zero? ;
+ne?: = ~ ;
+eqz?: 0 = ;
+divisor?: % eqz? ;
 even?: 2 divisor? ;
-odd?: even? not ;
+odd?: even? ~ ;
 
 /* logical */
 
-nand: * zero? ;
-and: nand not ;
-nor: + zero? ;
-or: nor not ;
-not: 0 = ;
+~: 0 = ;
+nand: * eqz? ;
+and: nand ~ ;
+nor: + eqz? ;
+or: nor ~ ;
 
 /* branching */
 
 choose: &swap ? drop ;
 branch: choose eval ;
 ifte: rot branch ;
-if: &nop ifte ;
 
 /* stack */
 
@@ -46,15 +48,14 @@ head: &drop reduce ;
 
 /* counters */
 
-range_next: &succ dip range ;
-range: dup2 = &range_next &drop ifte ;
-count: 0 swap range ;
+repeat_loop: run q> repeat_next ;
+repeat_next: dup -- q< &repeat_loop ? ;
+repeat: repeat_next q> drop drop ;  
 
-qq: q> dup q< ;
-qappl: qq eval ;
+range: dupd swap - &succ swap repeat ;
+count: 0 swap ++ &succ swap repeat drop ;
 
-reduce_repeat: qappl q> reduce ;
-reduce: q< one? &reduce_repeat if ;
+reduce: depth 2 - repeat ;
 
 sum: &+ reduce ;
 product: &* reduce ;

@@ -54,6 +54,7 @@ export class Engine {
         return;
       }
     }
+    throw new Error(`illegal call op ${code}`)
   }
 
   executeBigIntCode(bc: bigint[]): bigint[] {
@@ -106,7 +107,9 @@ export class Engine {
   
     this.defineSystem(() => {
       const input = new Uint8Array(1);
+      Deno.setRaw(0, true);
       Deno.stdin.readSync(input);
+      Deno.setRaw(0, false);
       this.push(BigInt(input[0]));
     }, OpCodes.GETC);
   

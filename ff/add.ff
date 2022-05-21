@@ -1,3 +1,10 @@
-add: getc 48 - 32 putc getc 48 - + ;
+.load ./ff/core.ff
 
-add
+0 'Type\sa\snumber println
+
+getc 48 -
+
+0 'Type\sa\ssecond\snumber println
+
+getc 48 -
++ .

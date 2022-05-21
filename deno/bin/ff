@@ -1,4 +1,4 @@
-#!/usr/bin/env -S deno -q run --allow-net --allow-read
+#!/usr/bin/env -S deno -q run --allow-net --allow-read --unstable
 
 switch (Deno.args[0] || 'repl') {
   case 'compile': {

@@ -1,0 +1,11 @@
+.load ./ff/core.ff
+
+ws: '\s ;
+
+0 'Type\sa\scharacter:\s print
+
+getc
+
+0 '\nThe\sASCII\sis:\s print
+
+.
