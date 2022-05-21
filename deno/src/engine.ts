@@ -155,10 +155,20 @@ export class Engine {
       const b = this.pop();
       this.push(b % a);
     }, OpCodes.MOD);
+
+    this.defineSystem(() => {
+      // NOTE: Pop order requires opposite operation
+      this.push(this.pop() > this.pop() ? 1n : 0n);
+    }, OpCodes.LT);
   
     this.defineSystem(() => {
       this.push(this.pop() === this.pop() ? 1n : 0n);
     }, OpCodes.EQ);
+
+    this.defineSystem(() => {
+      // NOTE: Pop order requires opposite operation
+      this.push(this.pop() < this.pop() ? 1n : 0n);
+    }, OpCodes.GT);
   
     this.defineSystem(() => {
       const t = this.pop();

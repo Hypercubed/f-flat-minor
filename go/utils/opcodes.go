@@ -3,22 +3,22 @@ package utils
 const (
 	OP_NOP   = 0
 	OP_CALL  = 1
-	OP_DEF   = ';'
-	OP_PRN   = '.'
 	OP_PUTC  = 2
 	OP_DROP  = 8
-	OP_SWAP  = '$'
-	OP_DUP   = '!'
-	OP_ADD   = '+'
-	OP_SUB   = '-'
-	OP_MUL   = '*'
-	OP_DIV   = '/'
-	OP_EQ    = '='
-	OP_IF    = '?'
 	OP_PUSHR = 14
 	OP_PULLR = 15
+	OP_DUP   = '!'
+	OP_SWAP  = '$'
 	OP_MOD   = '%'
+	OP_MUL   = '*'
+	OP_ADD   = '+'
+	OP_SUB   = '-'
+	OP_PRN   = '.'
+	OP_DIV   = '/'
 	OP_MARK  = ':'
+	OP_DEF   = ';'
+	OP_EQ    = '='
+	OP_IF    = '?'
 )
 
 const (

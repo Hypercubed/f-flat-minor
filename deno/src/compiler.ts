@@ -99,7 +99,7 @@ export class Compiler {
             const code = Deno.readTextFileSync(filename);
             const ir = this.compileToIR(Compiler.tokenize(code));
             ret.push(...ir);
-            break; 
+            break;
           }
           case ".symbols":
             this.symbols.forEach((value, key) => {
@@ -109,7 +109,7 @@ export class Compiler {
         }
       } else if (ss[0] === "'") { // String
         convertEsc2Char(ss)
-          .replace(/^'/, "")  // TODO: use backtick?
+          .replace(/^'/, "") // TODO: use backtick?
           .split("")
           .reverse()
           .forEach((c, i) => {
@@ -117,9 +117,9 @@ export class Compiler {
           });
       } else if (ss.endsWith(":")) { // Definition
         if (ss.length > 1) {
-          push(this.getSymbol(ss.replace(/:$/, "")), ss);     
+          push(this.getSymbol(ss.replace(/:$/, "")), ss);
         }
-        call(this.getSymbol(':'), ss);
+        call(this.getSymbol(":"), ss);
         defMode = true;
       } else if (ss === COMMENT_START) { // Comment
         const comment = ["/*"];
@@ -139,7 +139,7 @@ export class Compiler {
     function push(value: bigint | number, comment = "") {
       ret.push({ value: BigInt(value), op: IROp.push, comment });
     }
-  
+
     function call(value: bigint | number, comment = "") {
       ret.push({ value: BigInt(value), op: IROp.call, comment });
     }
@@ -156,15 +156,15 @@ function toBigIntIR(i: IrInstruction) {
 
 function convertEsc2Char(str: string): string {
   return str
-    .replace(/\\0/g, '\0')
-    .replace(/\\b/g, '\b')
-    .replace(/\\t/g, '\t')
-    .replace(/\\n/g, '\n')
-    .replace(/\\v/g, '\v')
-    .replace(/\\f/g, '\f')
-    .replace(/\\r/g, '\r')
+    .replace(/\\0/g, "\0")
+    .replace(/\\b/g, "\b")
+    .replace(/\\t/g, "\t")
+    .replace(/\\n/g, "\n")
+    .replace(/\\v/g, "\v")
+    .replace(/\\f/g, "\f")
+    .replace(/\\r/g, "\r")
     .replace(/\\'/g, `'`)
     .replace(/\\"/g, '"')
-    .replace(/\\s/g, ' ')
-    .replace(/\\\\/g, '\\');
+    .replace(/\\s/g, " ")
+    .replace(/\\\\/g, "\\");
 }
