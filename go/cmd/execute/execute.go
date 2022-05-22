@@ -314,26 +314,31 @@ func main() {
 		}
 	}
 
-	var out = make([]big.Int, 0)
+	// var out = make([]big.Int, 0)
+	var bout = make([]big.Int, 0)
 
 	for {
 		c, err := utils.ReadVarint(reader)
 		if err != nil {
 			break
 		}
-		out = append(out, c)
-	}
 
-	var bout = make([]big.Int, 0)
-
-	for _, value := range out {
-		op := big.NewInt(0).And(&value, big.NewInt(1))
-		v := big.NewInt(0).Rsh(&value, 1)
+		op := big.NewInt(0).And(&c, big.NewInt(1))
+		v := big.NewInt(0).Rsh(&c, 1)
 		if op.Sign() == 0 {
-			bout = append(bout, *big.NewInt(0))
+			bout = append(bout, *op)
 		}
 		bout = append(bout, *v)
 	}
+
+	// for _, value := range out {
+	// 	op := big.NewInt(0).And(&value, big.NewInt(1))
+	// 	v := big.NewInt(0).Rsh(&value, 1)
+	// 	if op.Sign() == 0 {
+	// 		bout = append(bout, *big.NewInt(0))
+	// 	}
+	// 	bout = append(bout, *v)
+	// }
 
 	// fmt.Println(" ")
 	// printBigIntArray(bout)
