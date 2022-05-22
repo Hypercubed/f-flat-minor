@@ -17,5 +17,6 @@ export function run(filename = '-') {
 }
 
 if (import.meta.main) {
-  run(Deno.args[0]);
+  const args = Deno.args.filter((arg) => !arg.startsWith('-'));
+  run(args[0]);
 }

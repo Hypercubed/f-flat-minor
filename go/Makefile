@@ -24,8 +24,8 @@ test:	compile execute example.bin example.txt
 
 example.bin:
 	@echo "** Go Compile **"
-	@time cat ../ff/example.ff | ./compile > ./example.bin
-	@cmp --silent -- "./example.bin" "../fixtures/example_v1.bin" && printf "${GRN}OK${NC}\n" || printf "${RED}bins differ${NC}\n"
+	@time cat ../ff/example_v2.ff | ./compile > ./example.bin
+	@cmp --silent -- "./example.bin" "../fixtures/example_v2.bin" && printf "${GRN}OK${NC}\n" || printf "${RED}bins differ${NC}\n"
 	@echo ""
 
 example.txt:

@@ -6,7 +6,6 @@ import (
 	"m/utils"
 	"math/big"
 	"os"
-	"strconv"
 	"strings"
 )
 
@@ -25,9 +24,9 @@ func defSystem(name string, value int64) {
 }
 
 func nextCode() int64 {
-  c := code
-  code++
-  return c
+	c := code
+	code++
+	return c
 }
 
 func getSymbol(name string) big.Int {
@@ -40,7 +39,7 @@ func getSymbol(name string) big.Int {
 
 func printIr(ir []IrInstruction) {
 	for _, element := range ir {
-		fmt.Printf("%s\t%s\t; %s\n", element.value.Text(10), element.op, element.comment)
+		fmt.Printf("%s\t%s\t; /* %s */\n", element.value.Text(10), element.op, element.comment)
 	}
 }
 
@@ -92,47 +91,32 @@ func compileToByteArray(ir []IrInstruction) []byte {
 	var out = make([]byte, 0)
 	for _, element := range ir {
 		if element.op != "call" || element.value.Cmp(big.NewInt(0)) != 0 {
-			v := element.value.Int64() << 1
+			v := big.NewInt(0)
+			v = v.Lsh(&element.value, 1)
 			if element.op == "call" {
-				v |= 1
+				v = v.Or(v, big.NewInt(1))
 			}
-			out = AppendSleb128(out, v)
+			out = utils.AppendSleb128(out, v)
 		}
 	}
 	return out
-}
-
-func AppendSleb128(b []byte, v int64) []byte {
-	for {
-		c := uint8(v & 0x7f)
-		s := uint8(v & 0x40)
-		v >>= 7
-		if (v != -1 || s == 0) && (v != 0 || s != 0) {
-			c |= 0x80
-		}
-		b = append(b, c)
-		if c&0x80 == 0 {
-			break
-		}
-	}
-	return b
 }
 
 func setup() {
 	defSystem(utils.SYM_NOP, utils.OP_NOP)
 	defSystem(utils.SYM_CALL, utils.OP_CALL)
 	defSystem(utils.SYM_PUTC, utils.OP_PUTC)
-  defSystem(utils.SYM_GETC, utils.OP_GETC)
+	defSystem(utils.SYM_GETC, utils.OP_GETC)
 	defSystem(utils.SYM_DROP, utils.OP_DROP)
 	defSystem(utils.SYM_PUSHR, utils.OP_PUSHR)
 	defSystem(utils.SYM_PULLR, utils.OP_PULLR)
-  defSystem(utils.SYM_CLR, utils.OP_CLR)
+	defSystem(utils.SYM_CLR, utils.OP_CLR)
 	defSystem(utils.SYM_DUP, utils.OP_DUP)
-  defSystem(utils.SYM_DEPTH, utils.OP_DEPTH)
+	defSystem(utils.SYM_DEPTH, utils.OP_DEPTH)
 	defSystem(utils.SYM_SWAP, utils.OP_SWAP)
 	defSystem(utils.SYM_MOD, utils.OP_MOD)
-  defSystem(utils.SYM_STASH, utils.OP_STASH)
-  defSystem(utils.SYM_FETCH, utils.OP_FETCH)
+	defSystem(utils.SYM_STASH, utils.OP_STASH)
+	defSystem(utils.SYM_FETCH, utils.OP_FETCH)
 	defSystem(utils.SYM_MUL, utils.OP_MUL)
 	defSystem(utils.SYM_ADD, utils.OP_ADD)
 	defSystem(utils.SYM_SUB, utils.OP_SUB)
@@ -140,56 +124,56 @@ func setup() {
 	defSystem(utils.SYM_DIV, utils.OP_DIV)
 	defSystem(utils.SYM_MARK, utils.OP_MARK)
 	defSystem(utils.SYM_DEF, utils.OP_DEF)
-  defSystem(utils.SYM_LT, utils.OP_LT)
+	defSystem(utils.SYM_LT, utils.OP_LT)
 	defSystem(utils.SYM_EQ, utils.OP_EQ)
-  defSystem(utils.SYM_GT, utils.OP_GT)
+	defSystem(utils.SYM_GT, utils.OP_GT)
 	defSystem(utils.SYM_IF, utils.OP_IF)
-  defSystem(utils.SYM_BRA, utils.OP_BRA)
-  defSystem(utils.SYM_KET, utils.OP_KET)
-  defSystem(utils.SYM_POW, utils.OP_POW)
+	defSystem(utils.SYM_BRA, utils.OP_BRA)
+	defSystem(utils.SYM_KET, utils.OP_KET)
+	defSystem(utils.SYM_POW, utils.OP_POW)
 }
 
 func compileToIR(t []string) []IrInstruction {
 	var ret = make([]IrInstruction, 0)
 
-  push := func (value big.Int, comment string) {
-    ret = append(ret, IrInstruction{value: value, op: "push", comment: comment})
-  }
+	push := func(value big.Int, comment string) {
+		ret = append(ret, IrInstruction{value: value, op: "push", comment: comment})
+	}
 
-  call := func (code big.Int, comment string) {
-    ret = append(ret, IrInstruction{value: code, op: "call", comment: comment})
-  }
+	call := func(code big.Int, comment string) {
+		ret = append(ret, IrInstruction{value: code, op: "call", comment: comment})
+	}
 
 	for i := 0; i < len(t); i++ {
 		element := t[i]
 
-		if s, err := strconv.ParseInt(element, 10, 64); err == nil {
-      push(*big.NewInt(s), element)
-    } else if strings.HasPrefix(element, ".") && len(element) > 1 {
-      switch element {
-        case ".load":
-          i++
-          filename := t[i]
-          dat, err := os.ReadFile(filename)
-          check(err)
-          tokens := strings.Fields(string(dat))
-          ir := compileToIR(tokens)
-          ret = append(ret, ir...)
-      }
+		if s, ok := new(big.Int).SetString(element, 0); ok {
+			push(*s, element)
+		} else if strings.HasPrefix(element, ".") && len(element) > 1 {
+			switch element {
+			case ".load":
+				i++
+				filename := t[i]
+				dat, err := os.ReadFile(filename)
+				check(err)
+				tokens := strings.Fields(string(dat))
+				ir := compileToIR(tokens)
+				ret = append(ret, ir...)
+			}
 		} else if strings.HasPrefix(element, "&") {
 			push(getSymbol(element[1:]), element)
 		} else if strings.HasPrefix(element, "'") {
 			l := len(ret)
 			for i := len(element) - 1; i >= 1; i-- {
-        push(*big.NewInt(int64(element[i])), "")
+				push(*big.NewInt(int64(element[i])), "")
 			}
 			ret[l].comment = element
 		} else if strings.HasSuffix(element, utils.SYM_MARK) {
 			if len(element) > 1 {
 				name := element[:len(element)-1]
-        push(getSymbol(name), name)
+				push(getSymbol(name), name)
 			}
-      call(*big.NewInt(utils.OP_MARK), ":")
+			call(*big.NewInt(utils.OP_MARK), ":")
 		} else if element == "/*" {
 			i++
 			var comment = element + " "
@@ -200,12 +184,12 @@ func compileToIR(t []string) []IrInstruction {
 					break
 				}
 			}
-      call(*big.NewInt(0), comment)
+			call(*big.NewInt(0), comment)
 		} else if element == "[" {
-      push(*big.NewInt(nextCode()), element)
-      call(*big.NewInt(utils.OP_BRA), element)
-    } else {
-      call(getSymbol(element), element)
+			push(*big.NewInt(nextCode()), element)
+			call(*big.NewInt(utils.OP_BRA), element)
+		} else {
+			call(getSymbol(element), element)
 		}
 	}
 

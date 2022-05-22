@@ -40,7 +40,7 @@ func pop() big.Int {
 }
 
 func push(a big.Int) {
-  stack = append(stack, a)
+	stack = append(stack, a)
 }
 
 func rpeek() big.Int {
@@ -83,13 +83,13 @@ func setup() {
 		call(x.Int64())
 	}, utils.OP_CALL)
 
-  defSystem(func() {
-    x := pop()
-    c := rune(x.Int64())
-    fmt.Print(string(c))
-  }, utils.OP_PUTC)
+	defSystem(func() {
+		x := pop()
+		c := rune(x.Int64())
+		fmt.Print(string(c))
+	}, utils.OP_PUTC)
 
-  defSystem(func() {
+	defSystem(func() {
 		panic(errors.New("OP_GETC not defined"))
 	}, utils.OP_GETC)
 
@@ -106,7 +106,7 @@ func setup() {
 		push(rpop())
 	}, utils.OP_PULLR)
 
-  defSystem(func() {
+	defSystem(func() {
 		stack = nil
 	}, utils.OP_CLR)
 
@@ -114,16 +114,16 @@ func setup() {
 		push(peek())
 	}, utils.OP_DUP)
 
-  defSystem(func() {
-    l := len(stack)
-    push(*big.NewInt(int64(l)))
+	defSystem(func() {
+		l := len(stack)
+		push(*big.NewInt(int64(l)))
 	}, utils.OP_DEPTH)
 
 	defSystem(func() {
 		x := pop()
 		y := pop()
-    push(x)
-    push(y)
+		push(x)
+		push(y)
 	}, utils.OP_SWAP)
 
 	defSystem(func() {
@@ -132,11 +132,11 @@ func setup() {
 		push(*x.Mod(&y, &x))
 	}, utils.OP_MOD)
 
-  defSystem(func() {
+	defSystem(func() {
 		panic(errors.New("OP_LSTASH not defined"))
 	}, utils.OP_STASH)
 
-  defSystem(func() {
+	defSystem(func() {
 		panic(errors.New("OP_FETCH not defined"))
 	}, utils.OP_FETCH)
 
@@ -152,7 +152,7 @@ func setup() {
 		push(*y.Add(&y, &x))
 	}, utils.OP_ADD)
 
-  defSystem(func() {
+	defSystem(func() {
 		x := pop()
 		y := pop()
 		push(*y.Sub(&y, &x))
@@ -180,7 +180,7 @@ func setup() {
 		r_stack = append(r_stack, *big.NewInt(int64(m)))
 	}, utils.OP_MARK)
 
-  defSystem(func() {
+	defSystem(func() {
 		m := len(stack)
 		r_stack = append(r_stack, *big.NewInt(int64(m)))
 	}, utils.OP_BRA)
@@ -194,7 +194,7 @@ func setup() {
 		userDict[n.Int64()] = def
 	}, utils.OP_DEF)
 
-  defSystem(func() {
+	defSystem(func() {
 		m := rpop()
 		mm := int(m.Int64())
 		def := append([]big.Int(nil), stack[mm:]...)
@@ -203,7 +203,7 @@ func setup() {
 		userDict[n.Int64()] = def
 	}, utils.OP_KET)
 
-  defSystem(func() {
+	defSystem(func() {
 		x := pop()
 		y := pop()
 		if y.Cmp(&x) == -1 {
@@ -223,7 +223,7 @@ func setup() {
 		}
 	}, utils.OP_EQ)
 
-  defSystem(func() {
+	defSystem(func() {
 		x := pop()
 		y := pop()
 		if y.Cmp(&x) == 1 {
@@ -241,41 +241,11 @@ func setup() {
 		}
 	}, utils.OP_IF)
 
-  defSystem(func() {
+	defSystem(func() {
 		x := pop()
 		y := pop()
-    push(*x.Exp(&x, &y, nil))
+		push(*x.Exp(&x, &y, nil))
 	}, utils.OP_POW)
-}
-
-func readVarint(r io.Reader, n uint) (int64, error) {
-	if n > 64 {
-		panic(errors.New("leb128: n must <= 64"))
-	}
-	p := make([]byte, 1)
-	var res int64
-	var shift uint
-	for {
-		_, err := io.ReadFull(r, p)
-		if err != nil {
-			return 0, err
-		}
-		b := int64(p[0])
-		switch {
-		case b < 1<<6 && uint64(b) < uint64(1<<(n-1)):
-			res += (1 << shift) * b
-			return res, nil
-		case b >= 1<<6 && b < 1<<7 && uint64(b)+1<<(n-1) >= 1<<7:
-			res += (1 << shift) * (b - 1<<7)
-			return res, nil
-		case b >= 1<<7 && n > 7:
-			res += (1 << shift) * (b - 1<<7)
-			shift += 7
-			n -= 7
-		default:
-			return 0, errors.New("leb128: invalid int")
-		}
-	}
 }
 
 func check(e error) {
@@ -304,29 +274,29 @@ func printBigIntArray(a []big.Int) {
 }
 
 func executeBigIntCode(bc []big.Int) {
-  var depth = 0
+	var depth = 0
 
 	for i := 0; i < len(bc); i++ {
 		op := bc[i]
 
-    if op.Cmp(big.NewInt(utils.OP_DEF)) == 0 || op.Cmp(big.NewInt(utils.OP_KET)) == 0 {
-      depth--
-    }
+		if op.Cmp(big.NewInt(utils.OP_DEF)) == 0 || op.Cmp(big.NewInt(utils.OP_KET)) == 0 {
+			depth--
+		}
 
-    if depth > 0 {
-      stack = append(stack, op)
-    }
+		if depth > 0 {
+			stack = append(stack, op)
+		}
 
 		if op.Cmp(big.NewInt(0)) == 0 {
 			stack = append(stack, bc[i+1])
 			i++
-		} else if (depth < 1) {
+		} else if depth < 1 {
 			call(op.Int64())
 		}
 
-    if op.Cmp(big.NewInt(utils.OP_MARK)) == 0 || op.Cmp(big.NewInt(utils.OP_BRA)) == 0 {
-      depth++
-    }
+		if op.Cmp(big.NewInt(utils.OP_MARK)) == 0 || op.Cmp(big.NewInt(utils.OP_BRA)) == 0 {
+			depth++
+		}
 	}
 }
 
@@ -347,7 +317,7 @@ func main() {
 	var out = make([]int64, 0)
 
 	for {
-		c, err := readVarint(reader, 64)
+		c, err := utils.ReadVarint(reader)
 		if err != nil {
 			break
 		}

@@ -7,7 +7,7 @@ import { OpCodes, systemWords } from "./opcodes.ts";
 const COMMENT_START = "/*";
 const COMMENT_END = "*/";
 
-enum IROp {
+export enum IROp {
   call = "call",
   push = "push",
 }
@@ -15,7 +15,7 @@ enum IROp {
 export interface IrInstruction {
   value: bigint;
   op: IROp;
-  comment: string;
+  comment?: string;
 }
 
 export class Compiler {

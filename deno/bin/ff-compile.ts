@@ -32,5 +32,6 @@ export function compile(filename = '-') {
 }
 
 if (import.meta.main) {
-  compile(Deno.args[0]);
+  const args = Deno.args.filter((arg) => !arg.startsWith('-'));
+  compile(args[0]);
 }

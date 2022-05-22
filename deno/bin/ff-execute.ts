@@ -3,6 +3,7 @@
 import { assertEquals } from "https://deno.land/std@0.92.0/testing/asserts.ts";
 import { dumpByteArray } from "../src/dump.ts";
 import { Engine } from "../src/engine.ts";
+import { printBigCodeIr } from "../src/ir.ts";
 import { readStdin } from "../src/read.ts";
 
 export function execute(filename = '-') {
@@ -24,9 +25,16 @@ export function execute(filename = '-') {
   }
 
   const bigCode = Engine.fromByteArray(byteCode);
+
+  if (Deno.args.includes("--ir")) {
+    printBigCodeIr(bigCode);
+    Deno.exit();
+  }
+
   interpreter.executeBigIntCode(bigCode);
 }
 
 if (import.meta.main) {
-  execute(Deno.args[0]);
+  const args = Deno.args.filter((arg) => !arg.startsWith('-'));
+  execute(args[0]);
 }

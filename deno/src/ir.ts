@@ -1,10 +1,30 @@
-import { IrInstruction } from './compiler.ts';
+import { blue } from "https://deno.land/std@0.139.0/fmt/colors.ts";
+
+import { IrInstruction, IROp } from './compiler.ts';
+
+const OP_WIDTH = 6;
+const VALUE_WIDTH = 10;
 
 export function printIr(ir: Array<IrInstruction>) {
   ir.forEach((i) => {
-    const o = '.' + i.op.padEnd(6, ' ');
-    const n = ('' + i.value).padEnd(5, ' ');
-    const c = i.comment ? `/* ${i.comment} */` : '';
-    console.log(n, o, c);
+    const o = '.' + i.op.padEnd(OP_WIDTH, ' ');
+    const n = ('' + i.value).padEnd(VALUE_WIDTH, ' ');
+    const c = i.comment?.trim() ? `/* ${i.comment} */` : '';
+    console.log(blue(n), o, c);
   });
+}
+
+export function printBigCodeIr(bc: Array<bigint>) {
+  const ir: Array<IrInstruction> = [];
+  let ip = 0;
+  while (ip < bc.length) {
+    const value = bc[ip++];
+    if (value === 0n) {
+      ir.push({ op: IROp.push, value: bc[ip++] });
+    } else {
+      ir.push({ op: IROp.call, value });
+    }
+  }
+
+  printIr(ir);
 }

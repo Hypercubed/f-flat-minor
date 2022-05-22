@@ -18,9 +18,9 @@ function encodeUnsignedLeb128(value: bigint): number[] {
 }
 
 function encodeSignedLeb128(value: bigint): number[] {
-  const sign = value < 0n;
+  const neg = value < 0n;
   value = value << 1n;
-  return encodeUnsignedLeb128(sign ? -value + 1n : value);
+  return encodeUnsignedLeb128(neg ? -value + 1n : value);
 }
 
 function decodeUnsignedLeb128(input: number[]): bigint {
@@ -30,11 +30,10 @@ function decodeUnsignedLeb128(input: number[]): bigint {
     const byte = input.shift() || 0;
     result |= (BigInt(byte) & REST_MASK) << shift;
     if ((0x80 & byte) === 0) {
-      break;
+      return result;
     }
-    shift += 7n;
+    shift += SIGNIFICANT_BITS;
   }
-  return BigInt(result);
 }
 
 function decodeSignedLeb128(input: number[]): bigint {
