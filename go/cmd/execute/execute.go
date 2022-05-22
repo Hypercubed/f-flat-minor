@@ -314,7 +314,7 @@ func main() {
 		}
 	}
 
-	var out = make([]int64, 0)
+	var out = make([]big.Int, 0)
 
 	for {
 		c, err := utils.ReadVarint(reader)
@@ -327,12 +327,12 @@ func main() {
 	var bout = make([]big.Int, 0)
 
 	for _, value := range out {
-		op := value & 1
-		v := value >> 1
-		if op == 0 {
+		op := big.NewInt(0).And(&value, big.NewInt(1))
+		v := big.NewInt(0).Rsh(&value, 1)
+		if op.Sign() == 0 {
 			bout = append(bout, *big.NewInt(0))
 		}
-		bout = append(bout, *big.NewInt(v))
+		bout = append(bout, *v)
 	}
 
 	// fmt.Println(" ")

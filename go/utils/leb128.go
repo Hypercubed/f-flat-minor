@@ -2,48 +2,49 @@ package utils
 
 import (
 	"bufio"
-	"math/big"
+	. "math/big"
 )
 
 var SIGNIFICANT_BITS = uint(7)
 var CONTINUE = byte(0x80)
 var REST_MASK = byte(0x7f)
 
-// TODO: needs to use big.int
-func ReadVarUint(r *bufio.Reader) (uint64, error) {
-	var res uint64 = 0
-	var shift uint = 0
+func ReadVarUint(r *bufio.Reader) (Int, error) {
+	res := NewInt(0)
+	shift := uint(0)
 
 	for {
 		b, err := r.ReadByte()
 		if err != nil {
-			return 0, err
+			return *NewInt(0), err
 		}
-		res |= (uint64((b & REST_MASK))) << shift
+		ib := NewInt(int64(b & REST_MASK))
+		ib = ib.Lsh(ib, shift)
+		res = res.Or(res, ib)
 		if b&CONTINUE == 0 {
-			return res, nil
+			return *res, nil
 		}
 		shift += SIGNIFICANT_BITS
 	}
 }
 
-func ReadVarint(r *bufio.Reader) (int64, error) {
+func ReadVarint(r *bufio.Reader) (Int, error) {
 	result, err := ReadVarUint(r)
 	if err != nil {
-		return 0, err
+		return *NewInt(0), err
 	}
-	sign := result & 1
-	result = result >> 1
-	if sign == 0 {
-		return int64(result), nil
+	sign := NewInt(0).And(&result, NewInt(1)).Sign()
+	result = *result.Rsh(&result, 1)
+	if sign == -1 {
+		return *result.Neg(&result), nil
 	} else {
-		return (int64(result) * -1), nil
+		return result, nil
 	}
 }
 
-func AppendUleb128(b []byte, v *big.Int) []byte {
+func AppendUleb128(b []byte, v *Int) []byte {
 	for {
-		z := big.NewInt(0).And(v, big.NewInt(int64(REST_MASK)))
+		z := NewInt(0).And(v, NewInt(int64(REST_MASK)))
 		c := uint8(z.Uint64())
 		v = v.Rsh(v, SIGNIFICANT_BITS)
 		if v.Sign() != 0 {
@@ -57,12 +58,12 @@ func AppendUleb128(b []byte, v *big.Int) []byte {
 	return b
 }
 
-// TODO: needs to use big.int
-func AppendSleb128(b []byte, v *big.Int) []byte {
+// TODO: needs to use int
+func AppendSleb128(b []byte, v *Int) []byte {
 	neg := v.Sign() == -1
 	v = v.Lsh(v, 1)
 	if neg {
-		v = v.Abs(v).Add(v, big.NewInt(1))
+		v = v.Abs(v).Add(v, NewInt(1))
 	}
 	return AppendUleb128(b, v)
 }
