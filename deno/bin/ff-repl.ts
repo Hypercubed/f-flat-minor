@@ -29,10 +29,9 @@ export async function repl() {
 
   function run(line: string) {
     const ir = compiler.compileToIR(Compiler.tokenize(line));
-    const byteCode = Compiler.compileToByteArray(ir);
-    const bigCode = Engine.fromByteArray(byteCode);
+    const bigCode = Compiler.compileToBigArray(ir);
     interpreter.executeBigIntCode(bigCode);
-  }  
+  }
 }
 
 if (import.meta.main) {

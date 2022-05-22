@@ -26,6 +26,17 @@ export class Compiler {
     });
   }
 
+  static compileToBigArray(ir: Array<IrInstruction>): bigint[] {
+    return ir.flatMap((i) => {
+      if (i.op === IROp.call && i.value === 0n) return []; // Remove NOPS
+      if (i.op === IROp.call) {
+        return [i.value];
+      } else {
+        return [0n, i.value];
+      }
+    });
+  }
+
   static compileToByteArray(ir: Array<IrInstruction>): Uint8Array {
     const arr = ir.flatMap((i) => {
       if (i.op === IROp.call && i.value === 0n) return []; // Remove NOPS
@@ -94,10 +105,8 @@ export class Compiler {
             break;
           }
           case ".m": {
-            const code = rest.join(' ');
-            const ir = this.compileToIR(Compiler.tokenize(code));
-            const byteCode = Compiler.compileToByteArray(ir);
-            const bigCode = Engine.fromByteArray(byteCode);
+            const ir = this.compileToIR(Compiler.tokenize(rest.join(' ')));
+            const bigCode = Compiler.compileToBigArray(ir);
             this.engine.executeBigIntCode(bigCode);
             const stack = this.engine.getStack();
             if (stack.length > 0) {
