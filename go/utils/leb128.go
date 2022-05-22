@@ -35,7 +35,7 @@ func ReadVarint(r *bufio.Reader) (Int, error) {
 	}
 	sign := NewInt(0).And(&result, NewInt(1)).Sign()
 	result = *result.Rsh(&result, 1)
-	if sign == -1 {
+	if sign == 1 {
 		return *result.Neg(&result), nil
 	} else {
 		return result, nil

@@ -6,59 +6,59 @@ import (
 	"fmt"
 	"io"
 	"m/utils"
-	"math/big"
+	. "math/big"
 	"os"
 )
 
-var stack = []big.Int(nil)
-var r_stack = []big.Int(nil)
+var stack = []Int(nil)
+var r_stack = []Int(nil)
 var symbolMap = make(map[string]int64)
 var systemDict = make(map[int64]func())
-var userDict = make(map[int64][]big.Int)
+var userDict = make(map[int64][]Int)
 
-func clone(x big.Int) big.Int {
-	r := big.NewInt(0)
+func clone(x Int) Int {
+	r := NewInt(0)
 	return *r.Add(r, &x)
 }
 
-func peek() big.Int {
+func peek() Int {
 	l := len(stack)
 	if l > 0 {
 		return clone(stack[l-1])
 	}
-	return *big.NewInt(0)
+	return *NewInt(0)
 }
 
-func pop() big.Int {
+func pop() Int {
 	l := len(stack)
 	if l > 0 {
 		r := clone(stack[l-1])
 		stack = stack[:l-1]
 		return r
 	}
-	return *big.NewInt(0)
+	return *NewInt(0)
 }
 
-func push(a big.Int) {
+func push(a Int) {
 	stack = append(stack, a)
 }
 
-func rpeek() big.Int {
+func rpeek() Int {
 	l := len(r_stack)
 	if l > 0 {
 		return clone(r_stack[l-1])
 	}
-	return *big.NewInt(0)
+	return *NewInt(0)
 }
 
-func rpop() big.Int {
+func rpop() Int {
 	l := len(r_stack)
 	if l > 0 {
 		r := clone(r_stack[l-1])
 		r_stack = r_stack[:l-1]
 		return r
 	}
-	return *big.NewInt(0)
+	return *NewInt(0)
 }
 
 func defSystem(fn func(), code int64) {
@@ -116,7 +116,7 @@ func setup() {
 
 	defSystem(func() {
 		l := len(stack)
-		push(*big.NewInt(int64(l)))
+		push(*NewInt(int64(l)))
 	}, utils.OP_DEPTH)
 
 	defSystem(func() {
@@ -177,18 +177,18 @@ func setup() {
 
 	defSystem(func() {
 		m := len(stack)
-		r_stack = append(r_stack, *big.NewInt(int64(m)))
+		r_stack = append(r_stack, *NewInt(int64(m)))
 	}, utils.OP_MARK)
 
 	defSystem(func() {
 		m := len(stack)
-		r_stack = append(r_stack, *big.NewInt(int64(m)))
+		r_stack = append(r_stack, *NewInt(int64(m)))
 	}, utils.OP_BRA)
 
 	defSystem(func() {
 		m := rpop()
 		mm := int(m.Int64())
-		def := append([]big.Int(nil), stack[mm:]...)
+		def := append([]Int(nil), stack[mm:]...)
 		stack = stack[:mm]
 		n := pop()
 		userDict[n.Int64()] = def
@@ -197,7 +197,7 @@ func setup() {
 	defSystem(func() {
 		m := rpop()
 		mm := int(m.Int64())
-		def := append([]big.Int(nil), stack[mm:]...)
+		def := append([]Int(nil), stack[mm:]...)
 		stack = stack[:mm]
 		n := peek()
 		userDict[n.Int64()] = def
@@ -207,9 +207,9 @@ func setup() {
 		x := pop()
 		y := pop()
 		if y.Cmp(&x) == -1 {
-			push(*big.NewInt(1))
+			push(*NewInt(1))
 		} else {
-			push(*big.NewInt(0))
+			push(*NewInt(0))
 		}
 	}, utils.OP_LT)
 
@@ -217,9 +217,9 @@ func setup() {
 		x := pop()
 		y := pop()
 		if x.Cmp(&y) == 0 {
-			push(*big.NewInt(1))
+			push(*NewInt(1))
 		} else {
-			push(*big.NewInt(0))
+			push(*NewInt(0))
 		}
 	}, utils.OP_EQ)
 
@@ -227,16 +227,16 @@ func setup() {
 		x := pop()
 		y := pop()
 		if y.Cmp(&x) == 1 {
-			push(*big.NewInt(1))
+			push(*NewInt(1))
 		} else {
-			push(*big.NewInt(0))
+			push(*NewInt(0))
 		}
 	}, utils.OP_GT)
 
 	defSystem(func() {
 		t := pop()
 		i := pop()
-		if i.Cmp(big.NewInt(0)) != 0 {
+		if i.Cmp(NewInt(0)) != 0 {
 			call(t.Int64())
 		}
 	}, utils.OP_IF)
@@ -261,7 +261,7 @@ func lpad(s string, pad string, plength int) string {
 	return s
 }
 
-func printBigIntArray(a []big.Int) {
+func printBigIntArray(a []Int) {
 	for i, element := range a {
 		fmt.Printf(lpad(element.Text(16), "0", 2))
 		fmt.Printf(" ")
@@ -273,13 +273,13 @@ func printBigIntArray(a []big.Int) {
 	fmt.Printf("%s %d", "BigInts", len(a))
 }
 
-func executeBigIntCode(bc []big.Int) {
+func executeBigIntCode(bc []Int) {
 	var depth = 0
 
 	for i := 0; i < len(bc); i++ {
 		op := bc[i]
 
-		if op.Cmp(big.NewInt(utils.OP_DEF)) == 0 || op.Cmp(big.NewInt(utils.OP_KET)) == 0 {
+		if op.Cmp(NewInt(utils.OP_DEF)) == 0 || op.Cmp(NewInt(utils.OP_KET)) == 0 {
 			depth--
 		}
 
@@ -287,14 +287,14 @@ func executeBigIntCode(bc []big.Int) {
 			stack = append(stack, op)
 		}
 
-		if op.Cmp(big.NewInt(0)) == 0 {
+		if op.Cmp(NewInt(0)) == 0 {
 			stack = append(stack, bc[i+1])
 			i++
 		} else if depth < 1 {
 			call(op.Int64())
 		}
 
-		if op.Cmp(big.NewInt(utils.OP_MARK)) == 0 || op.Cmp(big.NewInt(utils.OP_BRA)) == 0 {
+		if op.Cmp(NewInt(utils.OP_MARK)) == 0 || op.Cmp(NewInt(utils.OP_BRA)) == 0 {
 			depth++
 		}
 	}
@@ -314,8 +314,7 @@ func main() {
 		}
 	}
 
-	// var out = make([]big.Int, 0)
-	var bout = make([]big.Int, 0)
+	var out = make([]Int, 0)
 
 	for {
 		c, err := utils.ReadVarint(reader)
@@ -323,27 +322,18 @@ func main() {
 			break
 		}
 
-		op := big.NewInt(0).And(&c, big.NewInt(1))
-		v := big.NewInt(0).Rsh(&c, 1)
+		op := new(Int).And(&c, NewInt(1))
+		v := new(Int).Rsh(&c, 1)
 		if op.Sign() == 0 {
-			bout = append(bout, *op)
+			out = append(out, *op)
 		}
-		bout = append(bout, *v)
+		out = append(out, *v)
 	}
-
-	// for _, value := range out {
-	// 	op := big.NewInt(0).And(&value, big.NewInt(1))
-	// 	v := big.NewInt(0).Rsh(&value, 1)
-	// 	if op.Sign() == 0 {
-	// 		bout = append(bout, *big.NewInt(0))
-	// 	}
-	// 	bout = append(bout, *v)
-	// }
 
 	// fmt.Println(" ")
 	// printBigIntArray(bout)
 	// fmt.Println(" ")
 	// fmt.Println(" ")
 
-	executeBigIntCode(bout)
+	executeBigIntCode(out)
 }
