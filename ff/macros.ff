@@ -1,6 +1,13 @@
-.m pi: 355 10 10 ^ * 113 / ;
+.m --: 1 - ;
+.m rot: q< swap q> swap ;
+.m choose: &swap ? drop ;
+.m branch: choose eval ;
+.m ifte: rot branch ;
 
-.m 2 2 ^
-.m pi
+.m fact: dup [ drop 1 ] [ dup -- fact * ] ifte ;
 
-* .
+.m 100 fact
+
+.
+
+/* 3628800 */
