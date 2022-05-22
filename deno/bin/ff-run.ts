@@ -10,11 +10,9 @@ export function run(filename = '-') {
   const compiler = new Compiler();
 
   const ir = compiler.compileToIR(Compiler.tokenize(code));
-  const byteCode = Compiler.compileToByteArray(ir);
+  const bigCode = Compiler.compileToBigArray(ir);
 
   const interpreter = new Engine();
-
-  const bigCode = Engine.fromByteArray(byteCode);
   interpreter.executeBigIntCode(bigCode);
 }
 
