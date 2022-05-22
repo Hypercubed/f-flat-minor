@@ -18,4 +18,6 @@ switch (Deno.args[0] || 'repl') {
     await repl();
     break;
   }
+  default:
+    throw new Error('Unknown command');
 }

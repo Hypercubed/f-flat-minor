@@ -25,6 +25,10 @@ export class Engine {
     this.setup();
   }
 
+  getStack() {
+    return this.stack.slice();
+  }
+
   peek(): bigint {
     return this.stack[this.stack.length - 1] || 0n;
   }

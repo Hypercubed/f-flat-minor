@@ -1,5 +1,6 @@
 #!/usr/bin/env deno
 
+import { Engine } from "./engine.ts";
 import { encodeBigIntArray } from "./leb128.ts";
 import { OpCodes, systemWords } from "./opcodes.ts";
 
@@ -19,7 +20,10 @@ export interface IrInstruction {
 
 export class Compiler {
   static tokenize(s: string) {
-    return s.split(/\s+/).filter(Boolean);
+    return s.split(/[\r\n]+/).flatMap(line => {
+      if (line.startsWith('.')) return line;
+      return line.split(/\s+/).filter(Boolean);
+    });
   }
 
   static compileToByteArray(ir: Array<IrInstruction>): Uint8Array {
@@ -32,11 +36,13 @@ export class Compiler {
     return Uint8Array.from(encodeBigIntArray(arr));
   }
 
+  private readonly engine = new Engine();
   private readonly symbols = new Map<string, bigint>();
   private _nextCode = 0x80;
 
   constructor() {
     let name: keyof typeof systemWords;
+
     for (name in systemWords) {
       this.symbols.set(name, BigInt(systemWords[name]));
     }
@@ -69,7 +75,8 @@ export class Compiler {
       if (!isNaN(maybeNumber)) {
         ret.push({ value: BigInt(maybeNumber), op: IROp.push, comment: ss });
       } else if (ss.length > 1 && ss.startsWith(".")) { // macro?
-        switch (ss) {
+        const [cmd, ...rest] = ss.split(" ");
+        switch (cmd) {
           case ".push":
             ret[ret.length - 1].op = IROp.push;
             break;
@@ -80,10 +87,27 @@ export class Compiler {
             Deno.exit();
             break;
           case ".load": {
-            const filename = s[i++];
-            const code = Deno.readTextFileSync(filename);
+            const code = Deno.readTextFileSync(rest.join(' '));
             const ir = this.compileToIR(Compiler.tokenize(code));
+            call(0n, ss);
             ret.push(...ir);
+            break;
+          }
+          case ".m": {
+            const code = rest.join(' ');
+            const ir = this.compileToIR(Compiler.tokenize(code));
+            const byteCode = Compiler.compileToByteArray(ir);
+            const bigCode = Engine.fromByteArray(byteCode);
+            this.engine.executeBigIntCode(bigCode);
+            const stack = this.engine.getStack();
+            if (stack.length > 0) {
+              stack.forEach((c, i) => {
+                push(c, i === 0 ? ss : "");
+              });
+            } else {
+              call(0n, ss);
+            }
+            this.engine.clear();
             break;
           }
           case ".symbols":
