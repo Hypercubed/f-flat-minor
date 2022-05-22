@@ -81,10 +81,16 @@ export class Compiler {
     while (i < l) {
       ss = s[i++];
 
-      const maybeNumber = parseInt(ss, 10);
+      let maybeNumber: bigint | undefined;
 
-      if (!isNaN(maybeNumber)) {
-        ret.push({ value: BigInt(maybeNumber), op: IROp.push, comment: ss });
+      try {
+        maybeNumber = BigInt(ss);
+      } catch (_e) {
+        maybeNumber = undefined;
+      }
+
+      if (maybeNumber !== undefined) {
+        ret.push({ value: maybeNumber, op: IROp.push, comment: ss });
       } else if (ss.length > 1 && ss.startsWith(".")) { // macro?
         const [cmd, ...rest] = ss.split(" ");
         switch (cmd) {

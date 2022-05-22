@@ -6,7 +6,7 @@
 
 .m fact: dup [ drop 1 ] [ dup -- fact * ] ifte ;
 
-.m 100 fact
+.m 10 fact
 
 .
 
