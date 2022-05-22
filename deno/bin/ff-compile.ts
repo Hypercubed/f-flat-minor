@@ -1,4 +1,4 @@
-#!/usr/bin/env -S deno run --allow-net --allow-read
+#!/usr/bin/env -S deno run --allow-net --allow-read --unstable
 
 import { dumpByteArray } from '../src/dump.ts';
 
