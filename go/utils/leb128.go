@@ -41,11 +41,12 @@ func ReadVarint(r *bufio.Reader) (int64, error) {
 	}
 }
 
-func AppendUleb128(b []byte, v uint64) []byte {
+func AppendUleb128(b []byte, v *big.Int) []byte {
 	for {
-		c := uint8(v) & REST_MASK
-		v >>= SIGNIFICANT_BITS
-		if v != 0 {
+		z := big.NewInt(0).And(v, big.NewInt(int64(REST_MASK)))
+		c := uint8(z.Uint64())
+		v = v.Rsh(v, SIGNIFICANT_BITS)
+		if v.Sign() != 0 {
 			c |= CONTINUE
 		}
 		b = append(b, c)
@@ -58,11 +59,10 @@ func AppendUleb128(b []byte, v uint64) []byte {
 
 // TODO: needs to use big.int
 func AppendSleb128(b []byte, v *big.Int) []byte {
-	neg := v.Cmp(big.NewInt(0)) == -1
+	neg := v.Sign() == -1
 	v = v.Lsh(v, 1)
 	if neg {
-		v = v.Abs(v)
-		v = v.Add(v, big.NewInt(1))
+		v = v.Abs(v).Add(v, big.NewInt(1))
 	}
-	return AppendUleb128(b, v.Uint64())
+	return AppendUleb128(b, v)
 }
