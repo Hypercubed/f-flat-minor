@@ -1,4 +1,4 @@
-#!/usr/bin/env -S deno run --allow-read
+#!/usr/bin/env -S deno run --allow-read --unstable
 
 import { Compiler } from "../src/compiler.ts";
 import { Engine } from "../src/engine.ts";

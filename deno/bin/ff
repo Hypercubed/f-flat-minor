@@ -3,6 +3,10 @@
 const args = Deno.args.filter((arg) => !arg.startsWith('-'));
 
 switch (Deno.args[0] || 'repl') {
+  case 'preprocess': {
+    (await import('./ff-preprocess.ts')).compile(args[1]);
+    break;
+  }
   case 'compile': {
     (await import('./ff-compile.ts')).compile(args[1]);
     break;
