@@ -9,3 +9,5 @@ go/*.bin
 
 go/compile
 go/execute
+
+*/node_modules/*
