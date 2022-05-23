@@ -57,9 +57,9 @@ For each target language first implement a proof-of-concept in an online code ru
 | ------------------- | --------------------------------------------------------- | -------- | ----------- | ---- |
 | Typescript/Deno     | [ 😀 ](https://replit.com/@Hypercubed/f-flat-minor-TS)     | v1       | v1          | v1   |
 | Go                  | [ 😀 ](https://replit.com/@Hypercubed/f-flat-minor-Go)     | v0       | v0          |
-| Rust                | [ 😔 ](https://replit.com/@Hypercubed/f-flat-minor-Rust)   |
 | Python              | [ 😀 ](https://replit.com/@Hypercubed/f-flat-minor-Python) |
 | Ruby                | [ 😀 ](https://replit.com/@Hypercubed/f-flat-minor-Ruby)   |
+| Rust                | [ 😔 ](https://replit.com/@Hypercubed/f-flat-minor-Rust)   |
 | Dart                | [ 😀 ](https://replit.com/@Hypercubed/f-flat-minor-Dart)   |
 | AssemblyScript      | [ 😐 ](https://tinyurl.com/yc3wn325)                       |
 | Swift               | [ 😐 ](https://replit.com/@Hypercubed/f-flat-minor-Swift)  |
