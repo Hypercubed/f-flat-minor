@@ -1,8 +1,5 @@
 .vscode/*
-deno/.vscode
-go/.vscode
-python/.vscode
-ruby/.vscode
+*/.vscode
 
 deno/*.bin
 go/*.bin

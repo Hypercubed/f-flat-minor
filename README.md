@@ -71,7 +71,7 @@ For each target language first implement a proof-of-concept in an online code ru
 | Perl/Raku           |
 | Java/Scala          |
 
-## Vacabulary
+## Vocabulary
 
 | Mnemonic | Syntax |  Op (Ascii)   | Version |
 | -------- | :----: | :-----------: | :-----: |

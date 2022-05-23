@@ -22,7 +22,7 @@ function pop(): Base {
   return stack.pop() as Base;
 }
 
-// interpretor
+// interpreter
 let _nextCode = 0;
 
 function nextCode(): Base {
@@ -141,10 +141,10 @@ function ev(tokens: string[]): void {
     } else if (token.startsWith('&')) { // Symbol
       const name = token.replace('&', '');
       stack.push(getSymbol(name));
-    } else if (symbols.has(token))  {  // Defintition
+    } else if (symbols.has(token))  {  // Definition
       const code = symbols.get(token);
       callOp(code);
-    } else if (token.endsWith(':')) { // Defintition
+    } else if (token.endsWith(':')) { // Definition
       const name = token.replace(':', '');
       let code = getSymbol(name);
       token = tokens[i++];
