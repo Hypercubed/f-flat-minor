@@ -58,7 +58,6 @@ func AppendUleb128(b []byte, v *Int) []byte {
 	return b
 }
 
-// TODO: needs to use int
 func AppendSleb128(b []byte, v *Int) []byte {
 	neg := v.Sign() == -1
 	v = v.Lsh(v, 1)

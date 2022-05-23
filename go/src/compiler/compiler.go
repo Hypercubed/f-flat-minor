@@ -6,6 +6,7 @@ import (
 	. "m/src/utils"
 	. "math/big"
 	"os"
+	"regexp"
 	"strings"
 )
 
@@ -16,7 +17,6 @@ type IrInstruction struct {
 }
 
 var symbolMap = make(map[string]int64)
-
 var code int64 = 0x80
 
 func defSystem(name string, value int64) {
@@ -74,8 +74,8 @@ func printByteArray(a []byte) {
 	fmt.Printf("%s %d", "Bytes", len(a))
 }
 
-func compileToBigIntArray(ir []IrInstruction) []Int {
-	var out = make([]Int, 0)
+func CompileToBigIntArray(ir []IrInstruction) []Int {
+	out := make([]Int, 0)
 	for _, element := range ir {
 		if element.op != "call" || element.value.Cmp(NewInt(0)) != 0 {
 			if element.op == "push" {
@@ -88,11 +88,10 @@ func compileToBigIntArray(ir []IrInstruction) []Int {
 }
 
 func CompileToByteArray(ir []IrInstruction) []byte {
-	var out = make([]byte, 0)
+	out := make([]byte, 0)
 	for _, element := range ir {
 		if element.op != "call" || element.value.Cmp(NewInt(0)) != 0 {
-			v := NewInt(0)
-			v = v.Lsh(&element.value, 1)
+			v := NewInt(0).Lsh(&element.value, 1)
 			if element.op == "call" {
 				v = v.Or(v, NewInt(1))
 			}
@@ -134,7 +133,7 @@ func Setup() {
 }
 
 func CompileToIR(t []string) []IrInstruction {
-	var ret = make([]IrInstruction, 0)
+	ret := make([]IrInstruction, 0)
 
 	push := func(value Int, comment string) {
 		ret = append(ret, IrInstruction{value: value, op: "push", comment: comment})
@@ -152,35 +151,42 @@ func CompileToIR(t []string) []IrInstruction {
 		if s, ok := new(Int).SetString(element, 0); ok {
 			push(*s, element)
 		} else if strings.HasPrefix(element, ".") && len(element) > 1 {
-			tokens := strings.SplitN(element, " ", 2)
-			if strings.HasPrefix(tokens[0], ".load") {
+			tokens := regexp.MustCompile("\\s").Split(element, 2)
+			if tokens[0] == ".load" {
 				dat, err := os.ReadFile(tokens[1])
 				check(err)
 				ir := CompileToIR(Tokenize(string(dat)))
 				ret = append(ret, ir...)
-			} else if strings.HasPrefix(element, ".m") {
+			} else if tokens[0] == ".m" {
 				ir := CompileToIR(Tokenize(tokens[1]))
-				bigCode := compileToBigIntArray(ir)
+				bigCode := CompileToBigIntArray(ir)
 				engine.ExecuteBigIntCode(bigCode)
-				for _, item := range engine.GetStack() {
-					push(item, "")
+				for i, item := range engine.GetStack() {
+					if i == 0 {
+						push(item, "")
+					} else {
+						push(item, element)
+					}
 				}
 				engine.ClearStack()
 			}
 		} else if strings.HasPrefix(element, "&") {
 			push(getSymbol(element[1:]), element)
 		} else if strings.HasPrefix(element, "'") {
-			l := len(ret)
 			for i := len(element) - 1; i >= 1; i-- {
-				push(*NewInt(int64(element[i])), "")
+				v := NewInt(int64(element[i]))
+				if i == 0 {
+					push(*v, element)
+				} else {
+					push(*v, "")
+				}
 			}
-			ret[l].comment = element
 		} else if strings.HasSuffix(element, SYM_MARK) {
 			if len(element) > 1 {
 				name := element[:len(element)-1]
 				push(getSymbol(name), name)
 			}
-			call(*NewInt(OP_MARK), ":")
+			call(*NewInt(OP_MARK), SYM_MARK)
 		} else if element == "/*" {
 			i++
 			var comment = element + " "
@@ -192,7 +198,7 @@ func CompileToIR(t []string) []IrInstruction {
 				}
 			}
 			call(*NewInt(0), comment)
-		} else if element == "[" {
+		} else if element == SYM_BRA {
 			push(*NewInt(nextCode()), element)
 			call(*NewInt(OP_BRA), element)
 		} else {

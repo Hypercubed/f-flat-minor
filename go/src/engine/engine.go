@@ -66,6 +66,10 @@ func rPop() Int {
 	return *NewInt(0)
 }
 
+func rPush(a Int) {
+	r_stack = append(r_stack, a)
+}
+
 func defSystem(fn func(), code int64) {
 	systemDict[code] = fn
 }
@@ -75,6 +79,8 @@ func call(c int64) {
 		fn()
 	} else if d, ok := userDict[c]; ok {
 		ExecuteBigIntCode(d)
+	} else {
+		panic(fmt.Sprintf("Unknown opcode %d", c))
 	}
 }
 
@@ -103,8 +109,7 @@ func Setup() {
 	}, OP_DROP)
 
 	defSystem(func() {
-		a := pop()
-		r_stack = append(r_stack, a)
+		rPush(pop())
 	}, OP_PUSHR)
 
 	defSystem(func() {
@@ -112,7 +117,7 @@ func Setup() {
 	}, OP_PULLR)
 
 	defSystem(func() {
-		stack = nil
+		ClearStack()
 	}, OP_CLR)
 
 	defSystem(func() {
@@ -181,13 +186,11 @@ func Setup() {
 	}, OP_DIV)
 
 	defSystem(func() {
-		m := len(stack)
-		r_stack = append(r_stack, *NewInt(int64(m)))
+		rPush(*NewInt(int64(len(stack))))
 	}, OP_MARK)
 
 	defSystem(func() {
-		m := len(stack)
-		r_stack = append(r_stack, *NewInt(int64(m)))
+		rPush(*NewInt(int64(len(stack))))
 	}, OP_BRA)
 
 	defSystem(func() {
@@ -221,7 +224,7 @@ func Setup() {
 	defSystem(func() {
 		x := pop()
 		y := pop()
-		if x.Cmp(&y) == 0 {
+		if y.Cmp(&x) == 0 {
 			push(*NewInt(1))
 		} else {
 			push(*NewInt(0))
@@ -279,7 +282,7 @@ func printBigIntArray(a []Int) {
 }
 
 func ExecuteBigIntCode(bc []Int) {
-	var depth = 0
+	depth := 0
 
 	for i := 0; i < len(bc); i++ {
 		op := bc[i]
@@ -293,8 +296,8 @@ func ExecuteBigIntCode(bc []Int) {
 		}
 
 		if op.Cmp(NewInt(0)) == 0 {
-			stack = append(stack, bc[i+1])
 			i++
+			stack = append(stack, bc[i])
 		} else if depth < 1 {
 			call(op.Int64())
 		}
@@ -304,41 +307,3 @@ func ExecuteBigIntCode(bc []Int) {
 		}
 	}
 }
-
-// func main() {
-// 	setup()
-
-// 	reader := bufio.NewReader(os.Stdin)
-
-// 	header := []byte("F♭A𝄫C♭")
-
-// 	for i := 0; i < len(header); i++ {
-// 		c, err := reader.ReadByte()
-// 		if (err == io.EOF) || (c != header[i]) {
-// 			panic("Invalid Header")
-// 		}
-// 	}
-
-// 	var out = make([]Int, 0)
-
-// 	for {
-// 		c, err := ReadVarint(reader)
-// 		if err != nil {
-// 			break
-// 		}
-
-// 		op := new(Int).And(&c, NewInt(1))
-// 		v := new(Int).Rsh(&c, 1)
-// 		if op.Sign() == 0 {
-// 			out = append(out, *op)
-// 		}
-// 		out = append(out, *v)
-// 	}
-
-// 	// fmt.Println(" ")
-// 	// printBigIntArray(bout)
-// 	// fmt.Println(" ")
-// 	// fmt.Println(" ")
-
-// 	executeBigIntCode(out)
-// }

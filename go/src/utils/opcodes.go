@@ -1,6 +1,6 @@
 package utils
 
-// f-flat-minor v0
+// f-flat-minor v2
 
 const (
 	OP_NOP   = 0
