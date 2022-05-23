@@ -9,10 +9,10 @@ GRN = \033[0;32m
 clean:
 	@rm -f ./example.*
 
-compile: ./cmd/compile/* ./utils/*
+compile: ./cmd/compile/*.go ./src/**/*.go
 	go build ./cmd/compile
 
-execute: ./cmd/execute/* ./utils/*
+execute: ./cmd/execute/*.go ./src/**/*.go
 	go build ./cmd/execute
 
 default: compile execute
