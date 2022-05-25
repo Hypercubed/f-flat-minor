@@ -5,6 +5,7 @@ import * as path from "https://deno.land/std@0.57.0/path/mod.ts";
 
 import { Compiler } from '../src/compiler.ts';
 import { Engine } from '../src/engine.ts';
+import { Preprocessor } from "../src/preprocess.ts";
 
 const PROMPT = new TextEncoder().encode('F♭> ');
 const core = path.fromFileUrl(path.join(import.meta.url, '../../../ff/core.ff'));
@@ -12,6 +13,7 @@ const core = path.fromFileUrl(path.join(import.meta.url, '../../../ff/core.ff'))
 export async function repl() {
   const compiler = new Compiler();
   const interpreter = new Engine();
+  const preprocessor = new Preprocessor();
 
   console.log('\nF♭ minor');
 
@@ -28,7 +30,8 @@ export async function repl() {
   }
 
   function run(line: string) {
-    const ir = compiler.compileToIR(Compiler.tokenize(line));
+    const code = preprocessor.preprocess([line]);
+    const ir = compiler.compileToIR(Compiler.tokenize(code));
     const bigCode = Compiler.compileToBigArray(ir);
     interpreter.executeBigIntCode(bigCode);
   }

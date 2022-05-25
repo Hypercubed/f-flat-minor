@@ -2,10 +2,15 @@
 
 import { Compiler } from "../src/compiler.ts";
 import { Engine } from "../src/engine.ts";
+import { Preprocessor } from "../src/preprocess.ts";
 import { readStdin } from "../src/read.ts";
 
 export function run(filename = '-') {
-  const code = filename == '-' ? new TextDecoder().decode(readStdin()) : Deno.readTextFileSync(filename);
+  let code = filename == '-' ? new TextDecoder().decode(readStdin()) : Deno.readTextFileSync(filename);
+
+  const preprocessor = new Preprocessor();
+
+  code = preprocessor.preprocess(Preprocessor.tokenize(code));
 
   const compiler = new Compiler();
 

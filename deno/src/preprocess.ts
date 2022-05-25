@@ -19,7 +19,7 @@ export class Preprocessor {
             break;
           case ".load": {
             const code = Deno.readTextFileSync(rest.join(' '));
-            return code;
+            return this.preprocess(Preprocessor.tokenize(code));
           }
           case ".m": {
             const ir = this.compiler.compileToIR(Compiler.tokenize(rest.join(' ')));
@@ -29,12 +29,9 @@ export class Preprocessor {
             this.engine.clear();
             return stack.map(String).join(" ") + ` /* ${line} */`;
           }
-          default:
-            throw new Error(`Unknown preprocessor command: ${cmd}`);
         }
-      } else {
-        return line;
       }
+      return line;
     }).join("\n");
   }
 }

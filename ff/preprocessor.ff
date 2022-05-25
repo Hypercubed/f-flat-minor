@@ -1,0 +1,8 @@
+.load ./ff/euler1.ff
+clr
+
+.load ./ff/fact.ff
+clr
+
+.load ./ff/macros.ff
+clr

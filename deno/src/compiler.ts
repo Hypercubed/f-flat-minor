@@ -20,10 +20,7 @@ export interface IrInstruction {
 
 export class Compiler {
   static tokenize(s: string) {
-    return s.split(/[\r\n]+/).flatMap(line => {
-      if (line.startsWith('.')) return line;
-      return line.split(/\s+/).filter(Boolean);
-    });
+    return s.split(/\s+/).filter(Boolean);
   }
 
   static compileToBigArray(ir: Array<IrInstruction>): bigint[] {
@@ -91,8 +88,8 @@ export class Compiler {
 
       if (maybeNumber !== undefined) {
         ret.push({ value: maybeNumber, op: IROp.push, comment: ss });
-      } else if (ss.length > 1 && ss.startsWith(".")) { // macro?
-        const [cmd, ...rest] = ss.split(" ");
+      } else if (ss.length > 1 && ss.startsWith(".")) {
+        const [cmd] = ss.split(" ");
         switch (cmd) {
           case ".push":
             ret[ret.length - 1].op = IROp.push;
@@ -103,28 +100,6 @@ export class Compiler {
           case ".exit":
             Deno.exit();
             break;
-          case ".load": {
-            const code = Deno.readTextFileSync(rest.join(' '));
-            const ir = this.compileToIR(Compiler.tokenize(code));
-            call(0n, ss);
-            ret.push(...ir);
-            break;
-          }
-          case ".m": {
-            const ir = this.compileToIR(Compiler.tokenize(rest.join(' ')));
-            const bigCode = Compiler.compileToBigArray(ir);
-            this.engine.executeBigIntCode(bigCode);
-            const stack = this.engine.getStack();
-            if (stack.length > 0) {
-              stack.forEach((c, i) => {
-                push(c, i === 0 ? ss : "");
-              });
-            } else {
-              call(0n, ss);
-            }
-            this.engine.clear();
-            break;
-          }
           case ".symbols":
             this.symbols.forEach((value, key) => {
               console.log(key, value);

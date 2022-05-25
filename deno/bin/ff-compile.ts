@@ -6,7 +6,9 @@ import { readStdin } from '../src/read.ts';
 import { printIr } from '../src/ir.ts';
 import { Compiler } from "../src/compiler.ts";
 
-const HEADER = new TextEncoder().encode('F♭A𝄫C♭');
+const textEncoder = new TextEncoder();
+
+const HEADER = textEncoder.encode('F♭A𝄫C♭');
 
 export function compile(filename = '-') {
   const code = filename == '-' ? new TextDecoder().decode(readStdin()) : Deno.readTextFileSync(filename);
