@@ -1,0 +1,9 @@
+.load ./ff/core.ff
+
+1 100 range sum sqr
+
+( 1 100 range sqr [ &sqr dip + ] reduce )
+
+- .
+
+/* 25164150 */

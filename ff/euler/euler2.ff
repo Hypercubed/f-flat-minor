@@ -1,0 +1,14 @@
+.load ./ff/core.ff
+
+fib: dup2 + ;
+loop: dup 4000000 < [ fib loop ] ? ;
+
+1 2 loop drop
+0 [
+  [ dup even? ~ [ drop 0 ] ? ]
+  dip +
+] reduce
+
+.
+
+/* 4613732 */

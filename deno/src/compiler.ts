@@ -130,7 +130,6 @@ export class Compiler {
       } else if (ss === '[') {
         push(this.nextCode(), ss);
         call(OpCodes.BRA, '[');
-        // defMode = true;
       } else if (ss[0] === "&") { // Symbol
         push(this.getSymbol(ss.replace(/^&/, "")), ss);
       } else {

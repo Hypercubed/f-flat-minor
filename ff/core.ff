@@ -60,6 +60,9 @@ reduce: depth 2 - repeat ;
 sum: &+ reduce ;
 product: &* reduce ;
 
+/* math */
+sqr: dup * ;
+
 /* string printing */
 
 print: dup &drop [ putc print ] ifte ;

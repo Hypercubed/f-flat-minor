@@ -188,7 +188,7 @@ export class Engine {
     this.defineSystem(() => {
       const a = this.pop();
       const b = this.pop();
-      this.push(a ** b);
+      this.push(b ** a);
     }, OpCodes.POW);
 
     this.defineSystem(() => {
