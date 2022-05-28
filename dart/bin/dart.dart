@@ -162,22 +162,23 @@ void main() {
 
   final stopwatch = Stopwatch()..start();
 	ev(tokenize('''
-
     /* common definitions */
-    --: 1 - ;
-    not: 0 = ;
-    rot: &swap dip swap ;
-    choose: &swap ? drop ;
-    ifte: rot choose call ;
 
-    /* define factorial */
-    fact_t: drop 1 ;
-    fact_f: dup -- fact * ;
+    --: 1 - ;
+    rot: q< swap q> swap ;
+    choose: 0 = &swap ? drop ;
+    ifte: rot choose eval ;
+
+    /* factorial */
+
+    fact_t: dup -- fact * ;
+    fact_f: drop 1 ;
     fact: dup &fact_t &fact_f ifte ;
 
     /* string printing */
-    print_f: putc print ;
-    print: dup &drop &print_f ifte ;
+
+    print_t: putc print ;
+    print: dup &print_t &drop ifte ;
     println: print 10 putc ;
 
     0 32 'Factorial print
