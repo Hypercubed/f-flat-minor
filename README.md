@@ -55,7 +55,7 @@ For each target language first implement a proof-of-concept in an online code ru
 
 | Language            | POC                                                       | Compiler | Interpreter | REPL |
 | ------------------- | --------------------------------------------------------- | -------- | ----------- | ---- |
-| Typescript/Deno     | [ 😀 ](https://replit.com/@Hypercubed/f-flat-minor-TS)     | v1       | v1          | v1   |
+| Typescript/Deno     | [ 😀 ](https://replit.com/@Hypercubed/f-flat-minor-TS)     | v2       | v2          | v2   |
 | Go                  | [ 😀 ](https://replit.com/@Hypercubed/f-flat-minor-Go)     | v0       | v0          |
 | Python              | [ 😀 ](https://replit.com/@Hypercubed/f-flat-minor-Python) |
 | Ruby                | [ 😀 ](https://replit.com/@Hypercubed/f-flat-minor-Ruby)   |
@@ -82,11 +82,13 @@ For each target language first implement a proof-of-concept in an online code ru
 | DROP     |  drop  | 8 (backspace) |   v0    |
 | PUSHR    |   q<   |      14       |   v0    |
 | PULLR    |   q>   |      15       |   v0    |
-| CLR      |  clr   |      25       |   v1    |
+| CLR      |  clr   |      24       |   v1    |
+| EXIT     |  exit  |    27 (ESC)   |   v2    |
 | DUP      |  dup   |    33 (!)     |   v0    |
 | DEPTH    | depth  |    35 (#)     |   v1    |
 | SWAP     |  swap  |    36 ($)     |   v0    |
 | MOD      |   %    |    37 (%)     |   v1    |
+| AND      |   &    |    38 (&)     |   v2    |
 | STASH    |   (    |    40 (()     |   v2    |
 | FETCH    |   )    |    41 ())     |   v2    |
 | MUL      |   *    |    42 (*)     |   v0    |
@@ -103,8 +105,8 @@ For each target language first implement a proof-of-concept in an online code ru
 | BRA      |   [    |    91 ([)     |   v2    |
 | KET      |   ]    |    93 (])     |   v2    |
 | POW      |   ^    |    94 (^)     |   v1    |
-
-
+| BOR      |   |    |    124 (|)    |   v2    |
+| BNOT     |   ~    |    126 (~)    |   v2    |
 ## License
 
 This project is licensed under the MIT License - see the LICENSE file for details

@@ -6,7 +6,7 @@
 .m branch: choose eval ;
 .m ifte: rot branch ;
 
-.m fact: dup [ drop 1 ] [ dup -- fact * ] ifte ;
+.m fact: dup [ dup -- fact * ] [ drop 1 ] ifte ;
 
 /* Main program */
 .m 10 fact -1 *

@@ -7,10 +7,12 @@ export enum OpCodes {
   PUSHR = 14,
   PULLR = 15,
   CLR = 24,
+  EXIT = 27,
   DUP = '!'.charCodeAt(0),
   DEPTH = '#'.charCodeAt(0),
   SWAP = '$'.charCodeAt(0),
   MOD = '%'.charCodeAt(0),
+  AND = '&'.charCodeAt(0),
   STASH = '('.charCodeAt(0),
   FETCH = ')'.charCodeAt(0),
   MUL = '*'.charCodeAt(0),
@@ -27,6 +29,8 @@ export enum OpCodes {
   BRA = '['.charCodeAt(0),
   KET = ']'.charCodeAt(0),
   POW = '^'.charCodeAt(0),
+  OR = '|'.charCodeAt(0),
+  NOT = '~'.charCodeAt(0),
 }
 
 export const systemWords = {
@@ -35,6 +39,7 @@ export const systemWords = {
   ';': OpCodes.DEF,
   ':': OpCodes.MARK,
   'clr': OpCodes.CLR,
+  'exit': OpCodes.EXIT,
   '.': OpCodes.PRN,
   'putc': OpCodes.PUTC,
   'getc': OpCodes.GETC,
@@ -50,6 +55,7 @@ export const systemWords = {
   '>': OpCodes.GT,
   '?': OpCodes.IF,
   '%': OpCodes.MOD,
+  '&': OpCodes.AND,
   '(': OpCodes.STASH,
   ')': OpCodes.FETCH,
   'q<': OpCodes.PUSHR,
@@ -57,14 +63,11 @@ export const systemWords = {
   'depth': OpCodes.DEPTH,
   '^': OpCodes.POW,
   '[': OpCodes.BRA,
-  ']': OpCodes.KET
+  ']': OpCodes.KET,
+  '|': OpCodes.OR,
+  '~': OpCodes.NOT,
 }
 
-// CMP/CMPZ
-// ABS/NEG
-// SQRT?
-// POW (^)
+// CMP?
 // EXIT/HALT
 // INLINE?
-// < > <= >=
-// OVER?

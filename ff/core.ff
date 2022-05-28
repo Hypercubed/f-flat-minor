@@ -1,3 +1,7 @@
+/* constants */
+TRUE: 1 ;
+FALSE: 0 ;
+
 /* incrementors */
 
 --: 1 - ;
@@ -18,23 +22,30 @@ run: dup slip ;
 
 /* inquisitive */
 
-ne?: = ~ ;
+not: 0 = ;
+ne?: = not ;
 eqz?: 0 = ;
+neqz?: 0 = not ;
 divisor?: % eqz? ;
 even?: 2 divisor? ;
-odd?: even? ~ ;
+odd?: even? not ;
+
+/* binary operators */
+
+bxor: dup2 ~ & roll swap ~ & | ;
 
 /* logical */
 
-~: 0 = ;
+and: * ;
+or: + ;
+
 nand: * eqz? ;
-and: nand ~ ;
+and: nand not ;
 nor: + eqz? ;
-or: nor ~ ;
 
 /* branching */
 
-choose: &swap ? drop ;
+choose: not &swap ? drop ;
 branch: choose eval ;
 ifte: rot branch ;
 
@@ -62,8 +73,13 @@ product: &* reduce ;
 
 /* math */
 sqr: dup * ;
+!: dup [ dup -- ! * ] [ drop 1 ] ifte ;
 
 /* string printing */
 
-print: dup &drop [ putc print ] ifte ;
+print: dup [ putc print ] &drop ifte ;
 println: print 10 putc ;
+
+/* testing */
+
+assert: eqz? [ 0 10 'Failed println 1 exit ] ? ;

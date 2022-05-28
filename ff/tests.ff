@@ -1,0 +1,68 @@
+.load ./ff/core.ff
+
+/* math */
+1 2 + 3 = assert
+3 4 - -1 = assert
+5 6 * 30 = assert
+8 4 / 2 = assert
+8 5 % 3 = assert
+9 12 ^ 282429536481 = assert
+12 ! 479001600 = assert
+5 sqr 25 = assert
+
+/* bitwise */
+
+5 3 & 1 = assert
+5 3 | 7 = assert
+5 ~ -6 = assert
+
+/* logical */
+
+true true and assert
+true false and not assert
+false true and not assert
+false false and not assert
+
+true true or assert
+true false or assert
+false true or assert
+false false or not assert
+
+/* comparison */
+
+1 2 < assert
+4 3 < not assert
+5 6 > not assert
+8 7 > assert
+9 10 = not assert
+11 11 = assert
+
+/* string */
+
+'A 65 = assert
+'\s 32 = assert
+'\n 10 = assert
+
+/* control */
+
+true [ true ] ? assert
+true false [ false ] ? assert
+
+5 8 true choose 5 = assert
+5 8 false choose 8 = assert
+
+5 [ 3 + ] [ 3 - ] true branch 8 = assert
+5 [ 3 + ] [ 3 - ] false branch 2 = assert
+
+5 true [ 3 + ] [ 3 - ] ifte 8 = assert
+5 false [ 3 + ] [ 3 - ] ifte 2 = assert
+
+/* shuffing */
+
+3 dup 3 = assert 3 = assert
+3 5 dup2 5 = assert 3 = assert 5 = assert 3 = assert
+
+1 2 3 roll 2 = assert 1 = assert 3 = assert
+1 2 3 rot 1 = assert 3 = assert 2 = assert
+
+'Passed println

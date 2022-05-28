@@ -1,8 +1,8 @@
 .load ./ff/core.ff
 
 fib:
-  dup 0 = ~
-  [ dup 1 = ~
+  dup 0 = not
+  [ dup 1 = not
     [ -- dup fib swap -- fib + ] ?
   ] ? ;
 

@@ -5,7 +5,7 @@ loop: dup 4000000 < [ fib loop ] ? ;
 
 1 2 loop drop
 0 [
-  [ dup even? ~ [ drop 0 ] ? ]
+  [ dup even? not [ drop 0 ] ? ]
   dip +
 ] reduce
 

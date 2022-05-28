@@ -2,16 +2,16 @@
 
 --: 1 - ;
 rot: q< swap q> swap ;
-choose: &swap ? drop ;
+choose: 0 = &swap ? drop ;
 ifte: rot choose eval ;
 
 /* factorial */
 
-fact: dup [ drop 1 ] [ dup -- fact * ] ifte ;
+fact: dup [ dup -- fact * ] [ drop 1 ] ifte ;
 
 /* string printing */
 
-print: dup &drop [ putc print ] ifte ;
+print: dup [ putc print ] &drop ifte ;
 println: print 10 putc ;
 
 0 32 'Factorial print

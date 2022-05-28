@@ -103,6 +103,9 @@ export class Engine {
       const m = this.rStack.pop() || 0n;
       const s: bigint[] = this.stack.splice(Number(m), this.stack.length) || [];
       const n = this.pop();
+      if (n < 0x80n) {
+        throw new Error(`cannot redefine system word ${n}`);
+      }
       this.defs.set(n, s);
     }, OpCodes.DEF);
 
@@ -124,6 +127,11 @@ export class Engine {
     }, OpCodes.MARK);
   
     this.defineSystem(() => this.clear(), OpCodes.CLR);
+
+    this.defineSystem(() => {
+      const n = this.pop();
+      Deno.exit(Number(n));
+    }, OpCodes.EXIT);
   
     this.defineSystem(() => this.print(), OpCodes.PRN);
   
@@ -188,6 +196,12 @@ export class Engine {
     this.defineSystem(() => {
       const a = this.pop();
       const b = this.pop();
+      this.push(b & a);
+    }, OpCodes.AND);
+
+    this.defineSystem(() => {
+      const a = this.pop();
+      const b = this.pop();
       this.push(b ** a);
     }, OpCodes.POW);
 
@@ -235,5 +249,16 @@ export class Engine {
       const len = Number(this.rStack.pop());
       this.stack.unshift(...this.rStack.splice(-len));
     }, OpCodes.FETCH);
+
+    this.defineSystem(() => {
+      const a = this.pop();
+      const b = this.pop();
+      this.push(b | a);
+    }, OpCodes.OR);
+
+    this.defineSystem(() => {
+      const a = this.pop();
+      this.push(~a);
+    }, OpCodes.NOT);
   }
 }
