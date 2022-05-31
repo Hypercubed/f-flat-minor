@@ -1,12 +1,11 @@
 /* Preprocessor definitions */
 
 .m --: 1 - ;
-.m rot: q< swap q> swap ;
-.m choose: &swap ? drop ;
+.m rot: swap q< swap q> swap ;
+.m choose: rot [ swap ] ? drop ;
 .m branch: choose eval ;
-.m ifte: rot branch ;
 
-.m fact: dup [ dup -- fact * ] [ drop 1 ] ifte ;
+.m fact: dup [ dup -- fact * ] [ drop 1 ] branch ;
 
 /* Main program */
 .m 10 fact -1 *

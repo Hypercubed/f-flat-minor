@@ -2,8 +2,8 @@
 
 mod?: dup 3 divisor? [ 5 divisor? ] dip or ;
 
-next: dup mod? [ succ &+ dip ] &++ ifte loop ;
-loop: dup 1000 = not &next ? ;
+next: dup mod? [ succ [ + ] dip ] [ ++ ] branch loop ;
+loop: dup 1000 = not [ next ] ? ;
 
 0 0 loop drop .
 

@@ -39,30 +39,27 @@ false false or not assert
 
 /* string */
 
-'A 65 = assert
-'\s 32 = assert
-'\n 10 = assert
+'A' 65 = assert
+'\s' 32 = assert
+'\n' 10 = assert
 
 /* control */
 
-true [ true ] ? assert
-true false [ false ] ? assert
+5 true [ 3 + ] ? 8 = assert
+5 false [ 3 + ] ? 5 = assert
 
-5 8 true choose 5 = assert
-5 8 false choose 8 = assert
+true 5 8 choose 5 = assert
+false 5 8 choose 8 = assert
 
-5 [ 3 + ] [ 3 - ] true branch 8 = assert
-5 [ 3 + ] [ 3 - ] false branch 2 = assert
-
-5 true [ 3 + ] [ 3 - ] ifte 8 = assert
-5 false [ 3 + ] [ 3 - ] ifte 2 = assert
+5 true [ 3 + ] [ 3 - ] branch 8 = assert
+5 false [ 3 + ] [ 3 - ] branch 2 = assert
 
 /* shuffing */
 
 3 dup 3 = assert 3 = assert
 3 5 dup2 5 = assert 3 = assert 5 = assert 3 = assert
 
-1 2 3 roll 2 = assert 1 = assert 3 = assert
-1 2 3 rot 1 = assert 3 = assert 2 = assert
+1 2 3 bury 2 = assert 1 = assert 3 = assert
+1 2 3 rot 1 = assert 2 = assert 3 = assert
 
 'Passed println

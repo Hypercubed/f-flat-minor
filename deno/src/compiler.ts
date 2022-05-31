@@ -109,6 +109,7 @@ export class Compiler {
       } else if (ss[0] === "'") { // String
         convertEsc2Char(ss)
           .replace(/^'/, "") // TODO: use backtick?
+          .replace(/'$/, "")
           .split("")
           .reverse()
           .forEach((c, i) => {

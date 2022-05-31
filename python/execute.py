@@ -144,7 +144,7 @@ def ev(t):
       if n in ops:
         push(ops[n])
     elif s.startswith('\''):
-      n = s[1:][::-1]
+      n = s[1:-1][::-1] if s.endswith('\'') else s[1:][::-1]
       stack.extend([ord(c) for c in n])
     elif s.endswith(':'):
       n = s[:-1]

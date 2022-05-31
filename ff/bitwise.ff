@@ -1,9 +1,9 @@
 .load ./ff/core.ff
 
 0 1 0 1 . clr
-0 0 1 0 . clr
+0 0 1 1 . clr
 
-0 '& 10 println
+0 '&' 10 println
 
 0 0 &
 1 0 &
@@ -12,7 +12,7 @@
 
 . clr
 
-0 '| 10 println
+0 '|' 10 println
 
 0 0 |
 1 0 |
@@ -21,7 +21,7 @@
 
 . clr
 
-0 '~ 10 println
+0 '~' 10 println
 
 0 ~
 1 ~
@@ -29,15 +29,15 @@
 . clr
 
 
-0 '5\s3\s| 10 println
+0 '5\s3\s&' 10 println
 
 5 3 & . clr
 
-0 '5\s3\s& 10 println
+0 '5\s3\s|' 10 println
 
 5 3 | . clr
 
-0 '5\s3\sbxor 10 println
+0 '5\s3\sbxor' 10 println
 
 5 3 bxor . clr
 

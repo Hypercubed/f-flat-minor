@@ -1,7 +1,7 @@
 .load ./ff/core.ff
 
-gcd_t: dup roll % gcd_r ;
-gcd_r: dup &gcd_t ? ;
+gcd_t: dup bury % gcd_r ;
+gcd_r: dup [ gcd_t ] ? ;
 gcd: gcd_r drop ;
 
 109876463 177777648  gcd .

@@ -45,7 +45,8 @@ def ev (arr)
     if is_integer?(item)
       push item.to_i
     elsif item[0] == "'"
-      item[1..-1].reverse!.each_byte do |c|
+      e = item[-1] == "'" ? item[1..-2] : item[1..-1]
+      e.reverse!.each_byte do |c|
         push(c)
       end
     elsif item[0] == "&"

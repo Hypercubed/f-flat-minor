@@ -173,7 +173,11 @@ func CompileToIR(t []string) []IrInstruction {
 		} else if strings.HasPrefix(element, "&") {
 			push(getSymbol(element[1:]), element)
 		} else if strings.HasPrefix(element, "'") {
-			for i := len(element) - 1; i >= 1; i-- {
+			l := 1
+			if strings.HasSuffix(element, "'") {
+				l++
+			}
+			for i := len(element) - l; i >= 1; i-- {
 				v := NewInt(int64(element[i]))
 				if i == 0 {
 					push(*v, element)

@@ -1,19 +1,19 @@
 .load ./ff/core.ff
 
-0 10 'World! 32 'Hello print
+0 10 'World!' 32 'Hello print
 
 0 10 '! 'd 'l 'r 'o 'W 32 'o 'l dup 'e 'H print
 
-'H putc
-'e putc
-'l putc
-'l putc
-'o putc
+'H' putc
+'e' putc
+'l' putc
+'l' putc
+'o' putc
 32 putc
-'W putc
-'o putc
-'r putc
-'l putc
-'d putc
-'! putc
+'W' putc
+'o' putc
+'r' putc
+'l' putc
+'d' putc
+'!' putc
 10 putc

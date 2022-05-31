@@ -17,24 +17,24 @@ Each implementation should compile and execute the following code:
 /* common definitions */
 
 --: 1 - ;
-rot: q< swap q> swap ;
-choose: 0 = &swap ? drop ;
-ifte: rot choose eval ;
+rot: swap q< swap q> swap ;
+choose: rot &swap ? drop ;
+branch: choose eval ;
 
 /* factorial */
 
 fact_t: dup -- fact * ;
 fact_f: drop 1 ;
-fact: dup &fact_t &fact_f ifte ;
+fact: dup &fact_t &fact_f branch ;
 
 /* string printing */
 
 print_t: putc print ;
-print: dup &print_t &drop ifte ;
+print: dup &print_t &drop branch ;
 println: print 10 putc ;
 
-0 32 'Factorial print
-0 '100: println
+0 32 'Factorial' print
+0 '100:' println
 
 100 fact .
 ```

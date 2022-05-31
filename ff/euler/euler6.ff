@@ -2,7 +2,7 @@
 
 1 100 range sum sqr
 
-( 1 100 range sqr [ &sqr dip + ] reduce )
+( 1 100 range sqr [ [ sqr ] dip + ] reduce )
 
 - .
 

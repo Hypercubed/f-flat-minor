@@ -1,6 +1,6 @@
 .load ./ff/core.ff
 
-0 &++ 5 repeat /* 5 */
+0 [ ++ ] 5 repeat /* 5 */
 
 ( 10 count sum ) /* 55 */
 

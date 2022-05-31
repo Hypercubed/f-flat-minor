@@ -186,18 +186,18 @@ export function main(): string {
     --: 1 - ;
     rot: q< swap q> swap ;
     choose: 0 = &swap ? drop ;
-    ifte: rot choose eval ;
+    branch: rot choose eval ;
     
     /* factorial */
     
     fact_t: dup -- fact * ;
     fact_f: drop 1 ;
-    fact: dup &fact_t &fact_f ifte ;
+    fact: dup &fact_t &fact_f branch ;
     
     /* string printing */
     
     print_t: putc print ;
-    print: dup &print_t &drop ifte ;
+    print: dup &print_t &drop branch ;
     println: print 10 putc ;
     
     0 32 'Factorial print

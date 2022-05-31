@@ -13,10 +13,12 @@ succ: dup ++ ;
 
 slip: q< eval q> ;
 dip: swap slip ;
-swapd: q< swap q> ; 
-roll: swap swapd ;
-rot: q< swap q> swap ;
+swapd: q< swap q> ;
+dig: swapd swap ; /* c b a -> b a c */
+bury: swap swapd ; /* c b a -> a c b */
+rot: swap swapd swap ; /* c b a -> a b c */
 dupd: q< dup q> ;
+over: dupd swap ;
 dup2: dupd swap dupd swap ;
 run: dup slip ;
 
@@ -32,7 +34,7 @@ odd?: even? not ;
 
 /* binary operators */
 
-bxor: dup2 ~ & roll swap ~ & | ;
+bxor: dup2 ~ & bury swap ~ & | ;
 
 /* logical */
 
@@ -45,9 +47,8 @@ nor: + eqz? ;
 
 /* branching */
 
-choose: not &swap ? drop ;
+choose: rot [ swap ] ? drop ;
 branch: choose eval ;
-ifte: rot branch ;
 
 /* stack */
 
@@ -73,11 +74,11 @@ product: &* reduce ;
 
 /* math */
 sqr: dup * ;
-!: dup [ dup -- ! * ] [ drop 1 ] ifte ;
+!: dup [ dup -- ! * ] [ drop 1 ] branch ;
 
 /* string printing */
 
-print: dup [ putc print ] &drop ifte ;
+print: dup [ putc print ] &drop branch ;
 println: print 10 putc ;
 
 /* testing */

@@ -2,7 +2,7 @@
 
 /* factorial */
 
-fact: dup [ dup -- fact * ] [ drop 1 ] ifte ;
+fact: dup [ dup -- fact * ] [ drop 1 ] branch ;
 
 100 fact .
 

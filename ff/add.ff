@@ -1,10 +1,10 @@
 .load ./ff/core.ff
 
-0 'Type\sa\snumber println
+0 'Type\sa\snumber' println
 
 getc 48 -
 
-0 'Type\sa\ssecond\snumber println
+0 'Type\sa\ssecond\snumber' println
 
 getc 48 -
 + .
