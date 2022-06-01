@@ -130,6 +130,9 @@ func Setup() {
 	defSystem(SYM_BRA, OP_BRA)
 	defSystem(SYM_KET, OP_KET)
 	defSystem(SYM_POW, OP_POW)
+	defSystem(SYM_NOT, OP_NOT)
+	defSystem(SYM_AND, OP_AND)
+	defSystem(SYM_OR, OP_OR)
 }
 
 func CompileToIR(t []string) []IrInstruction {
@@ -170,7 +173,7 @@ func CompileToIR(t []string) []IrInstruction {
 				}
 				engine.ClearStack()
 			}
-		} else if strings.HasPrefix(element, "&") {
+		} else if strings.HasPrefix(element, "&") && len(element) > 1 {
 			push(getSymbol(element[1:]), element)
 		} else if strings.HasPrefix(element, "'") {
 			l := 1

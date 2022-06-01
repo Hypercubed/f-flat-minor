@@ -1,6 +1,6 @@
 /* constants */
-TRUE: 1 ;
-FALSE: 0 ;
+true: 1 ;
+false: 0 ;
 
 /* incrementors */
 
@@ -83,4 +83,4 @@ println: print 10 putc ;
 
 /* testing */
 
-assert: eqz? [ 0 10 'Failed println 1 exit ] ? ;
+assert: eqz? [ 0 10 'Failed' println 1 exit ] ? ;

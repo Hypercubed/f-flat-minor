@@ -169,21 +169,38 @@ func Setup() {
 	}, OP_SUB)
 
 	defSystem(func() {
-		fmt.Print("[")
+		fmt.Print("[ ")
 		for i, num := range stack {
 			fmt.Print(num.Text(10))
 			if i < len(stack)-1 {
 				fmt.Print(" ")
 			}
 		}
-		fmt.Println("]")
+		fmt.Println(" ]")
 	}, OP_PRN)
 
 	defSystem(func() {
 		x := pop()
 		y := pop()
-		push(*x.Div(&x, &y))
+		push(*x.Div(&y, &x))
 	}, OP_DIV)
+
+	defSystem(func() {
+		x := pop()
+		y := pop()
+		push(*x.And(&y, &x))
+	}, OP_AND)
+
+	defSystem(func() {
+		x := pop()
+		y := pop()
+		push(*x.Or(&y, &x))
+	}, OP_OR)
+
+	defSystem(func() {
+		x := pop()
+		push(*x.Not(&x))
+	}, OP_NOT)
 
 	defSystem(func() {
 		rPush(*NewInt(int64(len(stack))))
@@ -252,7 +269,7 @@ func Setup() {
 	defSystem(func() {
 		x := pop()
 		y := pop()
-		push(*x.Exp(&x, &y, nil))
+		push(*x.Exp(&y, &x, nil))
 	}, OP_POW)
 }
 

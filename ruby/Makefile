@@ -3,7 +3,7 @@ RED = \033[0;31m
 NC = \033[0m
 GRN = \033[0;32m
 
-.PHONY : clean example run test example.txt
+.PHONY : clean example run test example.txt ff-tests
 
 clean:
 	@rm -f ./example.*
@@ -13,7 +13,12 @@ example:
 
 run: clean example
 
-test:	example.txt
+test:	ff-tests example.txt
+
+ff-tests:
+	@echo "** Ruby FF Test **"
+	@cd ..; ./deno/bin/ff-preprocess.ts ./ff/tests.ff | ruby ./ruby/execute.rb && printf "${GRN}OK${NC}\n" || printf "${RED}outouts differ${NC}\n"
+	@echo ""
 
 example.txt:
 	@echo "** Ruby Compile and Execute **"

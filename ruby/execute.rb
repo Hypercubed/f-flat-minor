@@ -49,7 +49,7 @@ def ev (arr)
       e.reverse!.each_byte do |c|
         push(c)
       end
-    elsif item[0] == "&"
+    elsif item[0] == "&" && item.length() > 1
       if o = $syms[item[1..-1]]
         push(o)
       end
@@ -84,6 +84,9 @@ def ev (arr)
       end
     elsif o = $syms[item]
       callOp(o)
+    else
+      print('undefined ', item)
+      exit()
     end
     i += 1
   end
@@ -137,7 +140,11 @@ define('swap', lambda {||
   push(b)
 })
 
-# mod
+define('%', lambda {||
+  a = pop()
+  $stack[-1] %= a
+})
+
 # stash
 # fetch
 
@@ -157,7 +164,7 @@ define('-', lambda {||
 })
 
 define('.', lambda {||
-  puts $stack.inspect
+  puts "[ " + $stack.join(" ") + " ]"
 })
 
 define('/', lambda {||
@@ -167,14 +174,21 @@ define('/', lambda {||
 
 # mark
 # def
-# lt
+
+define('<', lambda {||
+  a = pop()
+  $stack[-1] = ($stack[-1] < a) && 1 || 0
+})
 
 define('=', lambda {||
   a = pop()
   $stack[-1] = ($stack[-1] == a) && 1 || 0
 })
 
-# gt
+define('>', lambda {||
+  a = pop()
+  $stack[-1] = ($stack[-1] > a) && 1 || 0
+})
 
 define('?', lambda {||
   a = pop()
@@ -186,7 +200,25 @@ define('?', lambda {||
 
 # bra
 # ket
-# pow
+
+define('^', lambda {||
+  a = pop()
+  $stack[-1] = $stack[-1]**a
+})
+
+define('&', lambda {||
+  a = pop()
+  $stack[-1] &= a
+})
+
+define('|', lambda {||
+  a = pop()
+  $stack[-1] |= a
+})
+
+define('~', lambda {||
+  $stack[-1] = ~$stack[-1]
+})
 
 $code = ARGF.read
 

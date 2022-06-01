@@ -3,7 +3,7 @@ RED=\033[0;31m
 NC=\033[0m
 GRN=\033[0;32m
 
-.PHONY : clean example run test example.bin example.txt
+.PHONY : clean example run test example.bin example.txt ff-tests
 
 clean:
 	@rm -f ./example.*
@@ -11,7 +11,12 @@ clean:
 run:
 	./bin/ff run ../ff/example.ff
 
-test:	example.bin example.txt
+test:	ff-tests example.bin example.txt
+
+ff-tests:
+	@echo "** Deno FF Test **"
+	@cd ..; cat ./ff/tests.ff | ./deno/bin/ff run && printf "${GRN}OK${NC}\n" || printf "${RED}outouts differ${NC}\n"
+	@echo ""
 
 example.bin:
 	@printf "** Deno Compile **"

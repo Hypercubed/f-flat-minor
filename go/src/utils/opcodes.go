@@ -31,6 +31,9 @@ const (
 	OP_BRA   = '['
 	OP_KET   = ']'
 	OP_POW   = '^'
+	OP_OR    = '|'
+	OP_AND   = '&'
+	OP_NOT   = '~'
 )
 
 const (
@@ -62,4 +65,7 @@ const (
 	SYM_BRA   = "["
 	SYM_KET   = "]"
 	SYM_POW   = "^"
+	SYM_OR    = "|"
+	SYM_AND   = "&"
+	SYM_NOT   = "~"
 )

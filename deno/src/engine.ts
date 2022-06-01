@@ -89,7 +89,7 @@ export class Engine {
 
   print() {
     const s = this.stack.map(String).join(" ");
-    console.log(`[${s}]`);
+    console.log(`[ ${s} ]`);
   }
 
   private setup() {

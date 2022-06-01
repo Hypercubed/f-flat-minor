@@ -42,6 +42,25 @@ def mul():
   a = stack.pop()
   stack[-1] *= a
 
+def mod():
+  a = stack.pop()
+  stack[-1] %= a
+
+def band():
+  a = stack.pop()
+  stack[-1] = stack[-1] & a
+
+def bor():
+  a = stack.pop()
+  stack[-1] |= a
+
+def bnot():
+  stack[-1] = ~stack[-1]
+
+def pow():
+  a = stack.pop()
+  stack[-1] = stack[-1]**a
+
 def div():
   a = stack.pop()
   stack[-1] = int(stack[-1] / a)
@@ -50,8 +69,19 @@ def eq():
   a = stack.pop()
   stack[-1] = int(stack[-1] == a)
 
+def lt():
+  a = stack.pop()
+  stack[-1] = int(stack[-1] < a)
+
+def gt():
+  a = stack.pop()
+  stack[-1] = int(stack[-1] > a)
+
 def printStack():
-  print(stack)
+  print('[ ', end='')
+  for i in range(len(stack)):
+    print(stack[i], end='')
+  print(' ]')
 
 def callOp(o):
   if o in defs:
@@ -113,7 +143,7 @@ define('q>', popq)
 define('dup', dup)
 # depth
 define('swap', swap)
-# mod
+define('%', mod)
 # stash
 # fetch
 define('*', mul)
@@ -123,13 +153,16 @@ define('.', printStack)
 define('/', div)
 # mark
 # def
-# lt
+define('<', lt)
 define('=', eq)
-# gt
+define('>', gt)
 define('?', q)
 # bra
 # ket
-# pow
+define('^', pow)
+define('|', bor)
+define('&', band)
+define('~', bnot)
 
 def ev(t):
   i = 0
@@ -137,9 +170,9 @@ def ev(t):
   while i < l:
     s = t[i]
     i += 1
-    if s.isnumeric():
+    if s.lstrip("-").isnumeric():
       push(s)
-    elif s.startswith('&'):
+    elif s.startswith('&') and len(s) > 1:
       n = s[1:]
       if n in ops:
         push(ops[n])

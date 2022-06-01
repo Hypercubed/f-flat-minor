@@ -40,8 +40,8 @@ false false or not assert
 /* string */
 
 'A' 65 = assert
-'\s' 32 = assert
-'\n' 10 = assert
+/* '\s' 32 = assert
+'\n' 10 = assert */
 
 /* control */
 
@@ -62,4 +62,4 @@ false 5 8 choose 8 = assert
 1 2 3 bury 2 = assert 1 = assert 3 = assert
 1 2 3 rot 1 = assert 2 = assert 3 = assert
 
-'Passed println
+0 'Passed println
