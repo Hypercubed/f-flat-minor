@@ -63,6 +63,18 @@ def ev (arr)
         d.push(arr[i])
       end
       define(item[0..-2], d)
+    elsif item[-1] == "["
+      d = Array.new
+      o = $op = $op + 1
+      while i < l
+        i += 1
+        if arr[i] == ']'
+          break
+        end
+        d.push(arr[i])
+      end
+      $defs[o] = d
+      push(o)
     elsif item == "/*"
       while i < l
         i += 1

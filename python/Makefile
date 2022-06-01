@@ -9,7 +9,7 @@ clean:
 	@rm -f ./example.*
 
 example:
-	cat ../ff/example.ff | python3 ./execute.py
+	cat ../ff/example_v2.ff | python3 ./execute.py
 
 run: clean example
 
@@ -17,6 +17,6 @@ test:	example.txt
 
 example.txt:
 	@echo "** Python Compile and Execute **"
-	@time cat ../ff/example.ff | python3 ./execute.py > example.txt
+	@time cat ../ff/example_v2.ff | python3 ./execute.py > example.txt
 	@cmp --silent -- "./example.txt" "../fixtures/example.txt" && printf "${GRN}OK${NC}\n" || printf "${RED}outouts differ${NC}\n"
 	@echo ""

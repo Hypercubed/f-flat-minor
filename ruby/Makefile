@@ -9,7 +9,7 @@ clean:
 	@rm -f ./example.*
 
 example:
-	cat ../ff/example.ff | ruby ./execute.rb
+	cat ../ff/example_v2.ff | ruby ./execute.rb
 
 run: clean example
 
@@ -17,6 +17,6 @@ test:	example.txt
 
 example.txt:
 	@echo "** Ruby Compile and Execute **"
-	@time cat ../ff/example.ff | ruby ./execute.rb > example.txt
+	@time cat ../ff/example_v2.ff | ruby ./execute.rb > example.txt
 	@cmp --silent -- "./example.txt" "../fixtures/example.txt" && printf "${GRN}OK${NC}\n" || printf "${RED}outouts differ${NC}\n"
 	@echo ""

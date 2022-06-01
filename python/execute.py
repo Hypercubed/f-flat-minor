@@ -157,6 +157,18 @@ def ev(t):
           i += 1
           break
       define(n, d)
+    elif s == '[':
+      o = nextOp()
+      d = []
+      while i < l:
+        ss = t[i]
+        d.append(ss)
+        i += 1
+        if t[i] == ']':
+          i += 1
+          break
+      defs[o] = d
+      push(o)
     elif s == "/*":
       while i < l:
         i += 1
