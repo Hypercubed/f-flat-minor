@@ -11,6 +11,7 @@ const (
 	OP_PUSHR = 14
 	OP_PULLR = 15
 	OP_CLR   = 25
+	OP_EXIT  = 27
 	OP_DUP   = '!'
 	OP_DEPTH = '#'
 	OP_SWAP  = '$'
@@ -45,6 +46,7 @@ const (
 	SYM_PUSHR = "q<"
 	SYM_PULLR = "q>"
 	SYM_CLR   = "clr"
+	SYM_EXIT  = "exit"
 	SYM_DUP   = "dup"
 	SYM_DEPTH = "depth"
 	SYM_SWAP  = "swap"

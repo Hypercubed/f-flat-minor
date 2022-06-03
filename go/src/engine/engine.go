@@ -5,6 +5,7 @@ import (
 	"fmt"
 	. "m/src/utils"
 	. "math/big"
+	"os"
 )
 
 var stack = []Int(nil)
@@ -271,6 +272,11 @@ func Setup() {
 		y := pop()
 		push(*x.Exp(&y, &x, nil))
 	}, OP_POW)
+
+	defSystem(func() {
+		x := pop()
+		os.Exit(int(x.Int64()))
+	}, OP_EXIT)
 }
 
 func check(e error) {
@@ -323,4 +329,19 @@ func ExecuteBigIntCode(bc []Int) {
 			depth++
 		}
 	}
+}
+
+func FromBase64(s string) []Int {
+	bigints := make([]Int, 0)
+
+	for _, c := range Decode(s) {
+		op := new(Int).And(&c, NewInt(1))
+		v := new(Int).Rsh(&c, 1)
+		if op.Sign() == 0 {
+			bigints = append(bigints, *op)
+		}
+		bigints = append(bigints, *v)
+	}
+
+	return bigints
 }

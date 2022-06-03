@@ -37,10 +37,10 @@ export function decode(base64Vlqs: string): bigint[] {
  *   1 becomes 2 (10 binary), -1 becomes 3 (11 binary)
  *   2 becomes 4 (100 binary), -2 becomes 5 (101 binary)
  */
-function toVLQSigned(aValue: bigint): bigint {
-  return aValue < 0n
-    ? ((-aValue) << 1n) + 1n
-    : (aValue << 1n) + 0n;
+function toVLQSigned(x: bigint): bigint {
+  return x < 0n
+    ? ((-x) << 1n) + 1n
+    : (x << 1n) + 0n;
 }
 
 /**
@@ -61,11 +61,12 @@ function fromVLQSigned(aValue: bigint): bigint {
  * Returns the VLQ encoded value.
  */
 function vlqEncode(x: bigint): number[] {
+  if (x === 0n) return [0];
+  
   x = toVLQSigned(x);
   const sextets = [];
   while (x > 0) {
-    let sextet = 0;
-    sextet = Number(x & VLQ_BASE_MASK);
+    let sextet = Number(x & VLQ_BASE_MASK);
     x >>= 5n;
     if (x > 0) {
       sextet |= VLQ_CONTINUATION_BIT;

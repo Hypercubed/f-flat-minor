@@ -87,18 +87,18 @@ func CompileToBigIntArray(ir []IrInstruction) []Int {
 	return out
 }
 
-func CompileToByteArray(ir []IrInstruction) []byte {
-	out := make([]byte, 0)
+func CompileToBase64(ir []IrInstruction) string {
+	out := make([]Int, 0)
 	for _, element := range ir {
 		if element.op != "call" || element.value.Cmp(NewInt(0)) != 0 {
 			v := NewInt(0).Lsh(&element.value, 1)
 			if element.op == "call" {
 				v = v.Or(v, NewInt(1))
 			}
-			out = AppendSleb128(out, v)
+			out = append(out, *v)
 		}
 	}
-	return out
+	return Encode(out)
 }
 
 func Setup() {

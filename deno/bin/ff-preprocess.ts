@@ -4,10 +4,14 @@ import { readStdin } from '../src/read.ts';
 import { Preprocessor } from "../src/preprocess.ts";
 
 export function preprocess(filename = '-') {
-  const code = filename == '-' ? new TextDecoder().decode(readStdin()) : Deno.readTextFileSync(filename);
+  const encoder = new TextEncoder();
+  const decoder = new TextDecoder();
+
+  const code = filename == '-' ? decoder.decode(readStdin()) : Deno.readTextFileSync(filename);
+  
   const preprocessor = new Preprocessor();
   const processed = preprocessor.preprocess(Preprocessor.tokenize(code));
-  Deno.stdout.writeSync(new TextEncoder().encode(processed));
+  Deno.stdout.writeSync(encoder.encode(processed));
 }
 
 if (import.meta.main) {

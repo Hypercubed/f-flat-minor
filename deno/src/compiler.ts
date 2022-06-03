@@ -1,7 +1,6 @@
 #!/usr/bin/env deno
 
 import { Engine } from "./engine.ts";
-import { encodeBigIntArray } from "./leb128.ts";
 import { OpCodes, systemWords } from "./opcodes.ts";
 import { encode } from "./vlq.ts";
 
@@ -43,16 +42,6 @@ export class Compiler {
     });
 
     return encode(arr);
-  }
-
-  static compileToByteArray(ir: Array<IrInstruction>): Uint8Array {
-    const arr = ir.flatMap((i) => {
-      if (i.op === IROp.call && i.value === 0n) return []; // Remove NOPS
-      const vv = i.value << 1n;
-      return [i.op === IROp.push ? vv : (vv | 1n)];
-    });
-
-    return Uint8Array.from(encodeBigIntArray(arr));
   }
 
   private readonly engine = new Engine();

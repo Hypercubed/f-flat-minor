@@ -3,18 +3,23 @@ package main
 import (
 	"bufio"
 	"io"
+	"io/ioutil"
 	"m/src/engine"
-	. "m/src/utils"
-	. "math/big"
 	"os"
 )
+
+func check(e error) {
+	if e != nil {
+		panic(e)
+	}
+}
 
 func main() {
 	engine.Setup()
 
 	reader := bufio.NewReader(os.Stdin)
 
-	header := []byte("F♭A𝄫C♭")
+	header := []byte("FbAbbCb")
 
 	for i := 0; i < len(header); i++ {
 		c, err := reader.ReadByte()
@@ -23,26 +28,10 @@ func main() {
 		}
 	}
 
-	var out = make([]Int, 0)
+	buf, err := ioutil.ReadAll(reader)
+	check(err)
 
-	for {
-		c, err := ReadVarint(reader)
-		if err != nil {
-			break
-		}
-
-		op := new(Int).And(&c, NewInt(1))
-		v := new(Int).Rsh(&c, 1)
-		if op.Sign() == 0 {
-			out = append(out, *op)
-		}
-		out = append(out, *v)
-	}
-
-	// fmt.Println(" ")
-	// printBigIntArray(bout)
-	// fmt.Println(" ")
-	// fmt.Println(" ")
-
-	engine.ExecuteBigIntCode(out)
+	base64 := string(buf)
+	bigint := engine.FromBase64(base64)
+	engine.ExecuteBigIntCode(bigint)
 }
