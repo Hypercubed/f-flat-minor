@@ -5,6 +5,10 @@ function toPrintableCharacter(n: number) {
   return String.fromCharCode(n);
 }
 
+export function base64ToArrayBuffer(base64: string): Uint8Array {
+  return Uint8Array.from(atob(base64), c => c.charCodeAt(0))
+}
+
 export function dumpByteArray(byteArray: Uint8Array) {
   for (let i = 0; i < byteArray.length; i += 16) {
     const c = [...byteArray.slice(i, i + 16)];

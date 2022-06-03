@@ -1,9 +1,23 @@
 import { decodeByteArray } from "../src/leb128.ts";
 import { OpCodes } from "../src/opcodes.ts";
+import { decode } from "./vlq.ts";
 
 export class Engine {
   static fromByteArray(byteArray: Uint8Array): bigint[] {
     return decodeByteArray(Array.from(byteArray))
+      .flatMap((value) => {
+        const op = value & 1n;
+        const val = value >> 1n;
+        if (op) {
+          return [val];
+        } else {
+          return [0n, val];
+        }
+      });
+  }
+
+  static fromBase64(encoded: string): bigint[] {
+    return decode(encoded)
       .flatMap((value) => {
         const op = value & 1n;
         const val = value >> 1n;

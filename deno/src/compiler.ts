@@ -3,6 +3,7 @@
 import { Engine } from "./engine.ts";
 import { encodeBigIntArray } from "./leb128.ts";
 import { OpCodes, systemWords } from "./opcodes.ts";
+import { encode } from "./vlq.ts";
 
 const COMMENT_START = "/*";
 const COMMENT_END = "*/";
@@ -32,6 +33,16 @@ export class Compiler {
         return [0n, i.value];
       }
     });
+  }
+
+  static compileToBase64(ir: Array<IrInstruction>): string {
+    const arr = ir.flatMap((i) => {
+      if (i.op === IROp.call && i.value === 0n) return []; // Remove NO OPS
+      const vv = i.value << 1n;
+      return [i.op === IROp.push ? vv : (vv | 1n)];
+    });
+
+    return encode(arr);
   }
 
   static compileToByteArray(ir: Array<IrInstruction>): Uint8Array {
