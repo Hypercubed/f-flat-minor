@@ -176,14 +176,15 @@ func CompileToIR(t []string) []IrInstruction {
 		} else if strings.HasPrefix(element, "&") && len(element) > 1 {
 			push(getSymbol(element[1:]), element)
 		} else if strings.HasPrefix(element, "'") {
-			l := 1
+			l := 0
 			if strings.HasSuffix(element, "'") {
 				l++
 			}
-			for i := len(element) - l; i >= 1; i-- {
-				v := NewInt(int64(element[i]))
+			s := convertEsc2Char(element[1 : len(element)-l])
+			for i := len(s) - 1; i >= 0; i-- {
+				v := NewInt(int64(s[i]))
 				if i == 0 {
-					push(*v, element)
+					push(*v, s)
 				} else {
 					push(*v, "")
 				}
@@ -237,4 +238,18 @@ func Tokenize(code string) []string {
 	}
 
 	return tokens
+}
+
+func convertEsc2Char(str string) string {
+	str = strings.Replace(str, "\\0", "\u0000", -1)
+	str = strings.Replace(str, "\\b", "\b", -1)
+	str = strings.Replace(str, "\\n", "\n", -1)
+	str = strings.Replace(str, "\\t", "\t", -1)
+	str = strings.Replace(str, "\\r", "\r", -1)
+	str = strings.Replace(str, "\\\"", "\"", -1)
+	str = strings.Replace(str, "\\'", "'", -1)
+	str = strings.Replace(str, "\\\\", "\\", -1)
+	str = strings.Replace(str, "\\s", " ", -1)
+
+	return str
 }
