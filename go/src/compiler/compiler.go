@@ -153,7 +153,7 @@ func CompileToIR(t []string) []IrInstruction {
 
 		if s, ok := new(Int).SetString(element, 0); ok {
 			push(*s, element)
-		} else if strings.HasPrefix(element, ".") && len(element) > 1 {
+		} else if strings.HasPrefix(element, ".") && (len(element) > 1) {
 			tokens := regexp.MustCompile("\\s").Split(element, 2)
 			if tokens[0] == ".load" {
 				dat, err := os.ReadFile(tokens[1])
@@ -225,9 +225,11 @@ func check(e error) {
 func Tokenize(code string) []string {
 	lines := strings.Split(code, "\n")
 
+	reMacro := regexp.MustCompile("^\\.[^\\s]")
+
 	var tokens []string
 	for _, line := range lines {
-		if strings.HasPrefix(line, ".") {
+		if reMacro.Match([]byte(line)) {
 			tokens = append(tokens, line)
 		} else {
 			tokens = append(tokens, strings.Fields(line)...)

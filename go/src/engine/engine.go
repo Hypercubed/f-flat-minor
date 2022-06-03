@@ -144,6 +144,12 @@ func Setup() {
 	}, OP_MOD)
 
 	defSystem(func() {
+		x := pop()
+		y := pop()
+		push(*x.And(&y, &x))
+	}, OP_AND)
+
+	defSystem(func() {
 		panic(errors.New("OP_LSTASH not defined"))
 	}, OP_STASH)
 
@@ -187,10 +193,17 @@ func Setup() {
 	}, OP_DIV)
 
 	defSystem(func() {
-		x := pop()
-		y := pop()
-		push(*x.And(&y, &x))
-	}, OP_AND)
+		rPush(*NewInt(int64(len(stack))))
+	}, OP_MARK)
+
+	defSystem(func() {
+		m := rPop()
+		mm := int(m.Int64())
+		def := append([]Int(nil), stack[mm:]...)
+		stack = stack[:mm]
+		n := pop()
+		userDict[n.Int64()] = def
+	}, OP_DEF)
 
 	defSystem(func() {
 		x := pop()
@@ -205,20 +218,7 @@ func Setup() {
 
 	defSystem(func() {
 		rPush(*NewInt(int64(len(stack))))
-	}, OP_MARK)
-
-	defSystem(func() {
-		rPush(*NewInt(int64(len(stack))))
 	}, OP_BRA)
-
-	defSystem(func() {
-		m := rPop()
-		mm := int(m.Int64())
-		def := append([]Int(nil), stack[mm:]...)
-		stack = stack[:mm]
-		n := pop()
-		userDict[n.Int64()] = def
-	}, OP_DEF)
 
 	defSystem(func() {
 		m := rPop()

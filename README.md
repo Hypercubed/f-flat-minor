@@ -104,8 +104,8 @@ For each target language first implement a proof-of-concept in an online code ru
 | BRA      |   [    |    91 ([)     |   v2    |
 | KET      |   ]    |    93 (])     |   v2    |
 | POW      |   ^    |    94 (^)     |   v1    |
-| BOR      |   |    |    124 (|)    |   v2    |
-| BNOT     |   ~    |    126 (~)    |   v2    |
+| OR       |   |    |    124 (|)    |   v2    |
+| NOT      |   ~    |    126 (~)    |   v2    |
 ## License
 
 This project is licensed under the MIT License - see the LICENSE file for details
