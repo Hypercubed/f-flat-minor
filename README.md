@@ -6,7 +6,7 @@ f-flat-minor is a tiny toy language and baby brother to [f-flat](https://github.
 * Minimal dependencies (try to limit to the standard library for each language)
 * Parsing should be as simple as splitting on whitespace.
 * The stack should consist of only big integers.
-* Each implementation should generate and execute the same bytecode.
+* Each implementation should generate and execute the same "bytecode".
 * Each implementation should generate the same output.
 
 ## The Language
@@ -55,7 +55,7 @@ For each target language first implement a proof-of-concept in an online code ru
 | Language            | POC                                                       | Compiler | Interpreter | REPL |
 | ------------------- | --------------------------------------------------------- | -------- | ----------- | ---- |
 | Typescript/Deno     | [ 😀 ](https://replit.com/@Hypercubed/f-flat-minor-TS)     | v2       | v2          | v2   |
-| Go                  | [ 😀 ](https://replit.com/@Hypercubed/f-flat-minor-Go)     | v0       | v0          |
+| Go                  | [ 😀 ](https://replit.com/@Hypercubed/f-flat-minor-Go)     | v2       | v2          |
 | Python              | [ 😀 ](https://replit.com/@Hypercubed/f-flat-minor-Python) |
 | Ruby                | [ 😀 ](https://replit.com/@Hypercubed/f-flat-minor-Ruby)   |
 | Rust                | [ 😔 ](https://replit.com/@Hypercubed/f-flat-minor-Rust)   |
@@ -106,6 +106,7 @@ For each target language first implement a proof-of-concept in an online code ru
 | POW      |   ^    |    94 (^)     |   v1    |
 | OR       |   |    |    124 (|)    |   v2    |
 | NOT      |   ~    |    126 (~)    |   v2    |
+
 ## License
 
 This project is licensed under the MIT License - see the LICENSE file for details
