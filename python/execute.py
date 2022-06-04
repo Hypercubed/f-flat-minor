@@ -193,13 +193,15 @@ def ev(t):
     elif s == '[':
       o = nextOp()
       d = []
-      while i < l:
-        ss = t[i]
-        d.append(ss)
-        i += 1
+      dep = 1
+      while i < l and dep > 0:
         if t[i] == ']':
-          i += 1
-          break
+          dep -= 1
+        if t[i] == '[':
+          dep += 1
+        if dep > 0:
+          d.append(t[i])
+        i += 1
       defs[o] = d
       push(o)
     elif s == "/*":

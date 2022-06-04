@@ -66,12 +66,18 @@ def ev (arr)
     elsif item[-1] == "["
       d = Array.new
       o = $op = $op + 1
-      while i < l
+      dep = 1
+      while i < l && dep > 0
         i += 1
-        if arr[i] == ']'
-          break
+        if arr[i] == '['
+          dep += 1
         end
-        d.push(arr[i])
+        if arr[i] == ']'
+          dep -= 1
+        end
+        if dep > 0
+          d.push(arr[i])
+        end
       end
       $defs[o] = d
       push(o)
@@ -85,7 +91,7 @@ def ev (arr)
     elsif o = $syms[item]
       callOp(o)
     else
-      print('undefined ', item)
+      print('undefined call to ', item)
       exit()
     end
     i += 1
