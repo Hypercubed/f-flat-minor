@@ -1,26 +1,27 @@
 #!/usr/bin/env -S deno run --allow-read --unstable --allow-env
 
-import yargs from 'https://deno.land/x/yargs/deno.ts'
-import { Arguments } from 'https://deno.land/x/yargs/deno-types.ts'
-
-import { readLines } from 'https://deno.land/std/io/bufio.ts';
+import yargs from "https://deno.land/x/yargs@v17.5.1-deno/deno.ts";
+import { Arguments } from "https://deno.land/x/yargs@v17.5.1-deno/deno-types.ts";
+import { readLines } from "https://deno.land/std@0.92.0/io/bufio.ts";
 import * as path from "https://deno.land/std@0.57.0/path/mod.ts";
 
-import { Compiler } from '../src/compiler.ts';
-import { Engine } from '../src/engine.ts';
+import { Compiler } from "../src/compiler.ts";
+import { Engine } from "../src/engine.ts";
 import { Preprocessor } from "../src/preprocess.ts";
 
-const PROMPT = new TextEncoder().encode('F♭> ');
-const core = path.fromFileUrl(path.join(import.meta.url, '../../../ff/core.ff'));
+const PROMPT = new TextEncoder().encode("F♭> ");
+const core = path.fromFileUrl(
+  path.join(import.meta.url, "../../../ff/core.ff"),
+);
 
 export async function run(args: Arguments) {
   const compiler = new Compiler();
   const interpreter = new Engine();
   const preprocessor = new Preprocessor();
 
-  console.log('\nF♭ minor');
+  console.log("\nF♭ minor");
 
-  if (!('core' in args) || args.core) {
+  if (!("core" in args) || args.core) {
     run(`.load ${core}`);
   }
 
@@ -29,7 +30,7 @@ export async function run(args: Arguments) {
     for await (const line of readLines(Deno.stdin)) {
       run(line);
       interpreter.print();
-      console.log('');
+      console.log("");
       break;
     }
   }

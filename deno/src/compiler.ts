@@ -102,7 +102,7 @@ export class Compiler {
           const name = ss.replace(/:$/, "");
           push(this.getSymbol(name), `&${name}`);
         }
-        call(OpCodes.MARK, ':');
+        call(OpCodes.MARK, ":");
       } else if (ss === COMMENT_START) { // Comment
         const comment = ["/*"];
         while (i < s.length && ss !== COMMENT_END) {
@@ -110,9 +110,9 @@ export class Compiler {
           comment.push(ss);
         }
         call(0n, comment.join(" "));
-      } else if (ss === '[') {
+      } else if (ss === "[") {
         push(this.nextCode(), ss);
-        call(OpCodes.BRA, '[');
+        call(OpCodes.BRA, "[");
       } else if (ss[0] === "&" && ss.length > 1) { // Symbol
         push(this.getSymbol(ss.replace(/^&/, "")), ss);
       } else {

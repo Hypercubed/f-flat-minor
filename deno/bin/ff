@@ -1,42 +1,27 @@
-#!/usr/bin/env -S deno -q run --allow-env --allow-net --allow-read --unstable
+#!/usr/bin/env -S deno run --allow-net --allow-read --unstable --allow-env --no-check
+
+// @ts-nocheck anything
 
 import yargs from "https://deno.land/x/yargs@v17.5.1-deno/deno.ts";
-// import { Arguments } from "https://deno.land/x/yargs_parser@v20.2.4-deno/build/lib/yargs-parser-types";
 
-const argv = yargs(Deno.args)
-  // // deno-lint-ignore no-explicit-any
-  // .command('download <files...>', 'download a list of files', (yargs: any) => {
-  //   return yargs.positional('files', {
-  //     describe: 'a list of files to do something with'
-  //   })
-  // }, (argv: Arguments) => {
-  //   console.info(argv)
-  // })
-  // @ts-ignore error
-  .argv;
-
-switch (argv._.shift() || 'repl') {
-  case 'preprocess': {
-    (await import('./ff-preprocess.ts')).run(argv);
-    break;
-  }
-  case 'compile': {
+yargs(Deno.args)
+  .version('4')
+  .scriptName('ff')
+  .command('preprocess [file]', 'Fb preprocessor', {}, async (argv) => {
     (await import('./ff-compile.ts')).run(argv);
-    break;
-  }
-  case 'execute': {
+  })
+  .command('compile [file]', 'Fb compiler', {}, async (argv) => {
+    (await import('./ff-compile.ts')).run(argv);
+  })
+  .command('execute [file]', 'Fb executer', {}, async (argv) => {
     (await import('./ff-execute.ts')).run(argv);
-    break;
-  }
-  case 'run': {
+  })
+  .command('run [file]', 'Fb runner', {}, async (argv) => {
     (await import('./ff-run.ts')).run(argv);
-    break;
-  }
-  case 'repl': {
-    const { run } = await import('./ff-repl.ts');
-    await run(argv);
-    break;
-  }
-  default:
-    throw new Error('Unknown command');
-}
+  })
+  .command('repl', 'Start a Fb REPL', {}, async (argv) => {
+    await (await import('./ff-repl.ts')).run(argv);
+  })
+  .demandCommand()
+  .help()
+  .argv;

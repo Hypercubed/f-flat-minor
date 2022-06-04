@@ -4,10 +4,10 @@ const BASE64_ALPHABET =
 const char_to_integer = new Map<string, number>();
 
 BASE64_ALPHABET
-	.split('')
-	.forEach(function (char, i) {
-		char_to_integer.set(char, i);
-	});
+  .split("")
+  .forEach(function (char, i) {
+    char_to_integer.set(char, i);
+  });
 
 const VLQ_BASE_SHIFT = 5n;
 const VLQ_BASE = 1n << VLQ_BASE_SHIFT; // 0b100000
@@ -38,9 +38,7 @@ export function decode(base64Vlqs: string): bigint[] {
  *   2 becomes 4 (100 binary), -2 becomes 5 (101 binary)
  */
 function toVLQSigned(x: bigint): bigint {
-  return x < 0n
-    ? ((-x) << 1n) + 1n
-    : (x << 1n) + 0n;
+  return x < 0n ? ((-x) << 1n) + 1n : (x << 1n) + 0n;
 }
 
 /**
@@ -52,9 +50,7 @@ function toVLQSigned(x: bigint): bigint {
 function fromVLQSigned(aValue: bigint): bigint {
   const isNegative = (aValue & 1n) === 1n;
   const shifted = aValue >> 1n;
-  return isNegative
-    ? -shifted
-    : shifted;
+  return isNegative ? -shifted : shifted;
 }
 
 /**
@@ -62,7 +58,7 @@ function fromVLQSigned(aValue: bigint): bigint {
  */
 function vlqEncode(x: bigint): number[] {
   if (x === 0n) return [0];
-  
+
   x = toVLQSigned(x);
   const sextets = [];
   while (x > 0) {

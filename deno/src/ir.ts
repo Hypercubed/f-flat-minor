@@ -17,9 +17,9 @@ const VALUE_WIDTH = 10;
 
 export function printIr(ir: Array<IrInstruction>) {
   ir.forEach((i) => {
-    const o = '.' + i.op.padEnd(OP_WIDTH, ' ');
-    const n = ('' + i.value).padEnd(VALUE_WIDTH, ' ');
-    const c = i.comment?.trim() ? `/* ${i.comment} */` : '';
+    const o = "." + i.op.padEnd(OP_WIDTH, " ");
+    const n = ("" + i.value).padEnd(VALUE_WIDTH, " ");
+    const c = i.comment?.trim() ? `/* ${i.comment} */` : "";
     console.log(blue(n), o, c);
   });
 }

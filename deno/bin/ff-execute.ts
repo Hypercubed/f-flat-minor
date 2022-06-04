@@ -1,9 +1,9 @@
 #!/usr/bin/env -S deno run --allow-read --unstable --allow-env
 
-import yargs from 'https://deno.land/x/yargs/deno.ts'
-import { Arguments } from 'https://deno.land/x/yargs/deno-types.ts'
-
+import yargs from "https://deno.land/x/yargs@v17.5.1-deno/deno.ts";
+import { Arguments } from "https://deno.land/x/yargs@v17.5.1-deno/deno-types.ts";
 import { assertEquals } from "https://deno.land/std@0.92.0/testing/asserts.ts";
+
 import { HEADER } from "../src/constants.ts";
 import { base64ToArrayBuffer, dumpByteArray } from "../src/dump.ts";
 import { Engine } from "../src/engine.ts";
@@ -18,8 +18,8 @@ export function run(args: Arguments) {
 
   const interpreter = new Engine();
 
-  const filename = String(args._.shift() || '-');
-  const bin = filename == '-' ? readStdin() : Deno.readFileSync(filename);
+  const filename = String(args._.shift() || "-");
+  const bin = filename == "-" ? readStdin() : Deno.readFileSync(filename);
 
   for (let i = 0; i < uIntHEADER.length; i++) {
     assertEquals(uIntHEADER[i], bin[i], "Invalid Header");

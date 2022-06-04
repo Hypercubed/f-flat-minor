@@ -6,7 +6,7 @@ function toPrintableCharacter(n: number) {
 }
 
 export function base64ToArrayBuffer(base64: string): Uint8Array {
-  return Uint8Array.from(atob(base64), c => c.charCodeAt(0))
+  return Uint8Array.from(atob(base64), (c) => c.charCodeAt(0));
 }
 
 export function dumpByteArray(byteArray: Uint8Array) {
