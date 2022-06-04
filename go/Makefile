@@ -15,10 +15,10 @@ compile: ./cmd/compile/*.go ./src/**/*.go
 execute: ./cmd/execute/*.go ./src/**/*.go
 	go build ./cmd/execute
 
-default: compile execute
+run: ./cmd/run/*.go ./src/**/*.go
+	go build ./cmd/run
 
-run: compile execute
-	cat ../ff/example_v2.ff | ./compile | ./execute
+default: compile execute run
 
 test:	compile execute ff-tests example.bin example.txt 
 

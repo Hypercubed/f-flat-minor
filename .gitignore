@@ -6,5 +6,6 @@ go/*.bin
 
 go/compile
 go/execute
+go/run
 
 */node_modules/*

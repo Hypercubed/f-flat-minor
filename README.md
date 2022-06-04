@@ -52,8 +52,8 @@ For each target language first implement a proof-of-concept in an online code ru
 
 ## Progress
 
-| Language            | POC                                                       | Compiler | Interpreter | REPL |
-| ------------------- | --------------------------------------------------------- | -------- | ----------- | ---- |
+| Language            | POC                                                        | Compiler | Interpreter | REPL |
+| ------------------- | ---------------------------------------------------------- | -------- | ----------- | ---- |
 | Typescript/Deno     | [ 😀 ](https://replit.com/@Hypercubed/f-flat-minor-TS)     | v2       | v2          | v2   |
 | Go                  | [ 😀 ](https://replit.com/@Hypercubed/f-flat-minor-Go)     | v2       | v2          |
 | Python              | [ 😀 ](https://replit.com/@Hypercubed/f-flat-minor-Python) |
