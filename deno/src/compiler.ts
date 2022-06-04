@@ -81,7 +81,7 @@ export class Compiler {
 
   getSymbolMap() {
     const entries = Array.from(this.symbols.entries());
-    return Object.fromEntries(entries.map(([key, value]) => [Number(value), key]));
+    return Object.fromEntries(entries.map(([key, value]) => [String(value), key]));
   }
 
   compileToIR(s: string[]): IrInstruction[] {

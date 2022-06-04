@@ -4,6 +4,7 @@ import { Compiler } from "../src/compiler.ts";
 import { Engine } from "../src/engine.ts";
 import { Preprocessor } from "../src/preprocess.ts";
 import { readStdin } from "../src/read.ts";
+import { SourceMap } from "../src/source-maps.ts";
 
 export function run(filename = '-') {
   const textDecoder = new TextDecoder();
@@ -16,7 +17,7 @@ export function run(filename = '-') {
   code = preprocessor.preprocess(Preprocessor.tokenize(code));
   const ir = compiler.compileToIR(Compiler.tokenize(code));
 
-  const sourceMap = {
+  const sourceMap: SourceMap = {
     file: filename,
     sourceRoot : Deno.cwd(),
     symbols: compiler.getSymbolMap(),

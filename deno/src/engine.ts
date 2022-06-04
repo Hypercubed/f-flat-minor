@@ -1,4 +1,5 @@
 import { OpCodes } from "../src/opcodes.ts";
+import { SourceMap } from "./source-maps.ts";
 import { decode } from "./vlq.ts";
 
 export class Engine {
@@ -97,7 +98,7 @@ export class Engine {
     console.log(`[ ${s} ]`);
   }
 
-  addSourceMap(sourceMap: { symbols: Record<string,string>}) {
+  addSourceMap(sourceMap: SourceMap) {
     Object.keys(sourceMap.symbols).forEach(value => {
       this.symbols.set(BigInt(value), sourceMap.symbols[value]);
     });
