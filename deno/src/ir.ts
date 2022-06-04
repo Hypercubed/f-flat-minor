@@ -1,6 +1,16 @@
 import { blue } from "https://deno.land/std@0.139.0/fmt/colors.ts";
 
-import { IrInstruction, IROp } from './compiler.ts';
+export interface IrInstruction {
+  value: bigint;
+  op: IROp;
+  comment?: string;
+  name?: string;
+}
+
+export enum IROp {
+  call = "call",
+  push = "push",
+}
 
 const OP_WIDTH = 6;
 const VALUE_WIDTH = 10;

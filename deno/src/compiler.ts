@@ -1,33 +1,22 @@
 #!/usr/bin/env deno
 
-import { Engine } from "./engine.ts";
+import { IrInstruction, IROp } from "./ir.ts";
 import { OpCodes, systemWords } from "./opcodes.ts";
 import { encode } from "./vlq.ts";
 
 const COMMENT_START = "/*";
 const COMMENT_END = "*/";
 
-export enum IROp {
-  call = "call",
-  push = "push",
-}
-
-export interface IrInstruction {
-  value: bigint;
-  op: IROp;
-  comment?: string;
-}
-
 export class Compiler {
   static tokenize(s: string) {
     return s.split(/\s+/).filter(Boolean);
   }
 
-/**
- * Takes an array of IR instructions and returns an array of bigints
- * @param ir - Array<IrInstruction>
- * @returns The return value is a bigint array.
- */
+  /**
+   * Takes an array of IR instructions and returns an array of bigints
+   * @param ir - Array<IrInstruction>
+   * @returns The return value is a bigint array.
+   */
   static compileToBigArray(ir: Array<IrInstruction>): bigint[] {
     return ir.flatMap((i) => {
       if (i.op === IROp.call && i.value === 0n) return []; // Remove NOPS
@@ -39,11 +28,23 @@ export class Compiler {
     });
   }
 
-/**
- * Takes an array of IR instructions and returns a base64 encoded string
- * @param ir - Array<IrInstruction>
- * @returns A base64 encoded string of the IR instructions.
- */
+  static getSymbolMap(ir: Array<IrInstruction>): Record<string, string> {
+    const symbolMap: Record<string, string> = {};
+
+    ir.forEach(instruction => {
+      if (instruction.op == 'call' && instruction.name) {
+        symbolMap[instruction.value.toString()] = instruction.name;
+      }
+    });
+
+    return symbolMap;
+  }
+
+  /**
+   * Takes an array of IR instructions and returns a base64 encoded string
+   * @param ir - Array<IrInstruction>
+   * @returns A base64 encoded string of the IR instructions.
+   */
   static compileToBase64(ir: Array<IrInstruction>): string {
     const arr = ir.flatMap((i) => {
       if (i.op === IROp.call && i.value === 0n) return []; // Remove NO OPS
@@ -153,12 +154,12 @@ export class Compiler {
     }
     return ret;
 
-    function push(value: bigint | number, comment = "") {
+    function push(value: bigint | number, comment: string) {
       ret.push({ value: BigInt(value), op: IROp.push, comment });
     }
 
-    function call(value: bigint | number, comment = "") {
-      ret.push({ value: BigInt(value), op: IROp.call, comment });
+    function call(value: bigint | number, name: string) {
+      ret.push({ value: BigInt(value), op: IROp.call, comment: name, name });
     }
   }
 }

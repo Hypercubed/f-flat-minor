@@ -1,4 +1,5 @@
 import { OpCodes } from "../src/opcodes.ts";
+import { IrInstruction, IROp } from "./ir.ts";
 import { SourceMap } from "./source-maps.ts";
 import { decode } from "./vlq.ts";
 
@@ -67,6 +68,40 @@ export class Engine {
       throw new Error(`illegal call op ${code} ("${this.symbols.get(code)}")`)
     }
     throw new Error(`illegal call op ${code}`)
+  }
+
+  executeIr(ir: IrInstruction[]): bigint[] {
+    let ip = 0;
+    while (ip < ir.length) {
+      const i = ir[ip++];
+
+      if (i.op === IROp.call) {
+        if (i.value === 0n) continue;  // no-op
+
+        // Keep symbols
+        if (i.name && !this.symbols.has(i.value)) {
+          this.symbols.set(i.value, i.name);
+        }
+
+        if (i.value === BigInt(OpCodes.DEF) || i.value === BigInt(OpCodes.KET)) {
+          this.depth--;
+        }
+
+        if (this.depth) {
+          this.push(i.value);
+        } else {
+          this.callOp(i.value);
+        }
+
+        if (i.value === BigInt(OpCodes.MARK) || i.value === BigInt(OpCodes.BRA)) {
+          this.depth++;
+        }
+      } else {
+        if (this.depth) this.push(0n);
+        this.push(i.value);
+      }
+    }
+    return this.stack;
   }
 
   executeBigIntCode(bc: bigint[]): bigint[] {
