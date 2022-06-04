@@ -32,8 +32,7 @@ export async function repl() {
   function run(line: string) {
     const code = preprocessor.preprocess([line]);
     const ir = compiler.compileToIR(Compiler.tokenize(code));
-    const bigCode = Compiler.compileToBigArray(ir);
-    interpreter.executeBigIntCode(bigCode);
+    interpreter.executeIr(ir);
   }
 }
 
