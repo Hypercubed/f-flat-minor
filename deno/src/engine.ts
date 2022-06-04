@@ -3,6 +3,11 @@ import { IrInstruction, IROp } from "./ir.ts";
 import { SourceMap } from "./source-maps.ts";
 import { decode } from "./vlq.ts";
 
+const DEF = BigInt(OpCodes.DEF);
+const KET = BigInt(OpCodes.KET);
+const MARK = BigInt(OpCodes.MARK);
+const BRA = BigInt(OpCodes.BRA);
+
 export class Engine {
   static fromBase64(encoded: string): bigint[] {
     return decode(encoded)
@@ -19,7 +24,7 @@ export class Engine {
 
   private readonly stack: bigint[] = [];
   private readonly rStack: bigint[] = [];
-  private readonly defs = new Map<bigint, (() => void) | bigint[]>();
+  private readonly defs = new Map<bigint, (() => void | bigint) | bigint[]>();
 
   private symbols = new  Map<bigint,string>();
 
@@ -49,19 +54,28 @@ export class Engine {
     this.stack.splice(0, this.stack.length);
   }
 
-  defineSystem(fn: () => void, code: number) {
+  defineSystem(fn: () => void | bigint, code: number) {
     this.defs.set(BigInt(code), fn);
   }
 
   callOp(code: bigint): void {
+    const r = this.tcoCallOp(code);
+    if (Array.isArray(r) && r.length > 0) {
+      this.executeBigIntCode(r);
+    }
+  }
+
+  private tcoCallOp(code: bigint): undefined | bigint[] {
     if (this.defs.has(code)) {
       const r = this.defs.get(code);
       if (typeof r === "function") {
-        r();
-        return;
+        const rr = r();
+        if (rr !== undefined) {
+          return [rr];
+        }
+        return [];
       } else if (r) {
-        this.executeBigIntCode(r);
-        return;
+        return r;
       }
     }
     if (this.symbols?.has(code)) {
@@ -83,9 +97,7 @@ export class Engine {
           this.symbols.set(i.value, i.name);
         }
 
-        if (i.value === BigInt(OpCodes.DEF) || i.value === BigInt(OpCodes.KET)) {
-          this.depth--;
-        }
+        if (i.value === DEF || i.value === KET) this.depth--;
 
         if (this.depth) {
           this.push(i.value);
@@ -93,9 +105,7 @@ export class Engine {
           this.callOp(i.value);
         }
 
-        if (i.value === BigInt(OpCodes.MARK) || i.value === BigInt(OpCodes.BRA)) {
-          this.depth++;
-        }
+        if (i.value === MARK || i.value === BRA) this.depth++;
       } else {
         if (this.depth) this.push(0n);
         this.push(i.value);
@@ -104,26 +114,24 @@ export class Engine {
     return this.stack;
   }
 
-  executeBigIntCode(bc: bigint[]): bigint[] {
-    let ip = 0;
-    while (ip < bc.length) {
-      const op = bc[ip++];
+  executeBigIntCode(bigCode: bigint[]): bigint[] {
+    const queue = bigCode.slice();
 
-      if (op === BigInt(OpCodes.DEF) || op === BigInt(OpCodes.KET)) {
-        this.depth--;
-      }
+    while (queue.length > 0) {
+      const op = queue.shift() || 0n;
+
+      if (op === DEF || op === KET) this.depth--;
 
       if (this.depth) this.push(op);
 
       if (op === 0n) {
-        this.push(bc[ip++]);
-      } else {
-        if (!this.depth) this.callOp(op);
+        this.push(queue.shift() || 0n);
+      } else if (!this.depth) {
+        const q = this.tcoCallOp(op) || [];
+        queue.unshift(...q);
       }
 
-      if (op === BigInt(OpCodes.MARK) || op === BigInt(OpCodes.BRA)) {
-        this.depth++;
-      }
+      if (op === MARK || op === BRA) this.depth++;
     }
     return this.stack;
   }
@@ -143,7 +151,7 @@ export class Engine {
     this.defineSystem(() => {}, OpCodes.NOP);
   
     this.defineSystem(() => {
-      this.callOp(this.pop());
+      return this.pop();
     }, OpCodes.CALL);
   
     this.defineSystem(() => {
@@ -207,7 +215,9 @@ export class Engine {
       Deno.stdout.writeSync(data);
     }, OpCodes.PRNN);
   
-    this.defineSystem(() => this.pop(), OpCodes.DROP);
+    this.defineSystem(() => {
+      this.pop();
+    }, OpCodes.DROP);
   
     this.defineSystem(() => {
       const a = this.pop();
@@ -279,7 +289,7 @@ export class Engine {
     this.defineSystem(() => {
       const t = this.pop();
       if (this.pop() !== 0n) {
-        this.callOp(t);
+        return t;
       }
     }, OpCodes.IF);
   
