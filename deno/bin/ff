@@ -1,9 +1,19 @@
 #!/usr/bin/env -S deno -q run --allow-env --allow-net --allow-read --unstable
 
 import yargs from "https://deno.land/x/yargs@v17.5.1-deno/deno.ts";
+// import { Arguments } from "https://deno.land/x/yargs_parser@v20.2.4-deno/build/lib/yargs-parser-types";
 
-// @ts-ignore error
-const argv = yargs(Deno.args).argv;
+const argv = yargs(Deno.args)
+  // // deno-lint-ignore no-explicit-any
+  // .command('download <files...>', 'download a list of files', (yargs: any) => {
+  //   return yargs.positional('files', {
+  //     describe: 'a list of files to do something with'
+  //   })
+  // }, (argv: Arguments) => {
+  //   console.info(argv)
+  // })
+  // @ts-ignore error
+  .argv;
 
 switch (argv._.shift() || 'repl') {
   case 'preprocess': {
