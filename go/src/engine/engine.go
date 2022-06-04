@@ -1,7 +1,6 @@
 package engine
 
 import (
-	"errors"
 	"fmt"
 	. "m/src/utils"
 	. "math/big"
@@ -102,7 +101,9 @@ func Setup() {
 	}, OP_PUTC)
 
 	defSystem(func() {
-		panic(errors.New("OP_GETC not defined"))
+		ascii, _, err := GetChar()
+		check(err)
+		push(*NewInt(int64(ascii)))
 	}, OP_GETC)
 
 	defSystem(func() {
