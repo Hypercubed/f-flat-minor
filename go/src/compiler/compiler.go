@@ -133,6 +133,7 @@ func Setup() {
 	defSystem(SYM_NOT, OP_NOT)
 	defSystem(SYM_AND, OP_AND)
 	defSystem(SYM_OR, OP_OR)
+	defSystem(SYM_EXIT, OP_EXIT)
 }
 
 func CompileToIR(t []string) []IrInstruction {
@@ -172,6 +173,11 @@ func CompileToIR(t []string) []IrInstruction {
 					}
 				}
 				engine.ClearStack()
+			} else if tokens[0] == ".exit" {
+				os.Exit(0)
+			} else if tokens[0] == ".print" {
+				bigCode := CompileToBigIntArray(ret)
+				printBigIntArray(bigCode)
 			}
 		} else if strings.HasPrefix(element, "&") && len(element) > 1 {
 			push(getSymbol(element[1:]), element)

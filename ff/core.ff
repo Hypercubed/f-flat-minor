@@ -12,7 +12,7 @@ succ: dup ++ ;
 /* shuffle words */
 
 slip: q< eval q> ;
-dip: swap slip ;
+dip: swap slip ; /* [B] [A] dip  == A [B] */
 swapd: q< swap q> ;
 dig: swapd swap ; /* c b a -> b a c */
 bury: swap swapd ; /* c b a -> a c b */
@@ -73,13 +73,18 @@ sum: &+ reduce ;
 product: &* reduce ;
 
 /* math */
+neg?: 0 < ;
+pos?: 0 > ;
+sgn: dup neg? [ drop -1 ] [ pos? [ 1 ] [ 0 ] branch ] branch ;
+abs: dup sgn * ;
 sqr: dup * ;
 !: dup [ dup -- ! * ] [ drop 1 ] branch ;
 
 /* string printing */
 
+printcr: 10 putc ;
 print: dup [ putc print ] &drop branch ;
-println: print 10 putc ;
+println: print printcr ;
 
 /* testing */
 

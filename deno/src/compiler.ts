@@ -23,6 +23,11 @@ export class Compiler {
     return s.split(/\s+/).filter(Boolean);
   }
 
+/**
+ * Takes an array of IR instructions and returns an array of bigints
+ * @param ir - Array<IrInstruction>
+ * @returns The return value is a bigint array.
+ */
   static compileToBigArray(ir: Array<IrInstruction>): bigint[] {
     return ir.flatMap((i) => {
       if (i.op === IROp.call && i.value === 0n) return []; // Remove NOPS
@@ -34,6 +39,11 @@ export class Compiler {
     });
   }
 
+/**
+ * Takes an array of IR instructions and returns a base64 encoded string
+ * @param ir - Array<IrInstruction>
+ * @returns A base64 encoded string of the IR instructions.
+ */
   static compileToBase64(ir: Array<IrInstruction>): string {
     const arr = ir.flatMap((i) => {
       if (i.op === IROp.call && i.value === 0n) return []; // Remove NO OPS
@@ -44,7 +54,6 @@ export class Compiler {
     return encode(arr);
   }
 
-  private readonly engine = new Engine();
   private readonly symbols = new Map<string, bigint>();
   private _nextCode = 0x80;
 
@@ -68,6 +77,11 @@ export class Compiler {
       this.symbols.set(name, code);
     }
     return code;
+  }
+
+  getSymbolMap() {
+    const entries = Array.from(this.symbols.entries());
+    return Object.fromEntries(entries.map(([key, value]) => [Number(value), key]));
   }
 
   compileToIR(s: string[]): IrInstruction[] {

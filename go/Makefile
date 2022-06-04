@@ -4,7 +4,7 @@ NC = \033[0m
 GRN = \033[0;32m
 
 .DEFAULT_GOAL := default
-.PHONY : clean example run test example.bin example.txt ff-tests
+.PHONY : clean example run repl test example.bin example.txt ff-tests
 
 clean:
 	@rm -f ./example.*
@@ -18,7 +18,10 @@ execute: ./cmd/execute/*.go ./src/**/*.go
 run: ./cmd/run/*.go ./src/**/*.go
 	go build ./cmd/run
 
-default: compile execute run
+repl: ./cmd/repl/*.go ./src/**/*.go
+	go build ./cmd/repl
+
+default: compile execute run repl
 
 test:	compile execute ff-tests example.bin example.txt 
 

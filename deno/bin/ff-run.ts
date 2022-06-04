@@ -6,18 +6,25 @@ import { Preprocessor } from "../src/preprocess.ts";
 import { readStdin } from "../src/read.ts";
 
 export function run(filename = '-') {
-  let code = filename == '-' ? new TextDecoder().decode(readStdin()) : Deno.readTextFileSync(filename);
+  const textDecoder = new TextDecoder();
+  let code = filename == '-' ? textDecoder.decode(readStdin()) : Deno.readTextFileSync(filename);
 
   const preprocessor = new Preprocessor();
+  const compiler = new Compiler();
+  const interpreter = new Engine();
 
   code = preprocessor.preprocess(Preprocessor.tokenize(code));
-
-  const compiler = new Compiler();
-
   const ir = compiler.compileToIR(Compiler.tokenize(code));
+
+  const sourceMap = {
+    file: filename,
+    sourceRoot : Deno.cwd(),
+    symbols: compiler.getSymbolMap(),
+  };
+
   const bigCode = Compiler.compileToBigArray(ir);
 
-  const interpreter = new Engine();
+  interpreter.addSourceMap(sourceMap);
   interpreter.executeBigIntCode(bigCode);
 }
 

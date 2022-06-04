@@ -55,7 +55,7 @@ For each target language first implement a proof-of-concept in an online code ru
 | Language            | POC                                                        | Compiler | Interpreter | REPL |
 | ------------------- | ---------------------------------------------------------- | -------- | ----------- | ---- |
 | Typescript/Deno     | [ 😀 ](https://replit.com/@Hypercubed/f-flat-minor-TS)     | v2       | v2          | v2   |
-| Go                  | [ 😀 ](https://replit.com/@Hypercubed/f-flat-minor-Go)     | v2       | v2          |
+| Go                  | [ 😀 ](https://replit.com/@Hypercubed/f-flat-minor-Go)     | v2       | v2          | v2   |
 | Python              | [ 😀 ](https://replit.com/@Hypercubed/f-flat-minor-Python) |
 | Ruby                | [ 😀 ](https://replit.com/@Hypercubed/f-flat-minor-Ruby)   |
 | Rust                | [ 😔 ](https://replit.com/@Hypercubed/f-flat-minor-Rust)   |
@@ -78,6 +78,7 @@ For each target language first implement a proof-of-concept in an online code ru
 | CALL     |  eval  |       1       |   v0    |
 | PUTC     |  putc  |       2       |   v0    |
 | GETC     |  getc  |       3       |   v1    |
+| PRNC     |  prn   |       4       |   v3    |
 | DROP     |  drop  | 8 (backspace) |   v0    |
 | PUSHR    |   q<   |      14       |   v0    |
 | PULLR    |   q>   |      15       |   v0    |

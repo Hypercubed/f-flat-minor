@@ -21,6 +21,17 @@ func ClearStack() {
 	stack = nil
 }
 
+func Print() {
+	fmt.Print("[ ")
+	for i, num := range stack {
+		fmt.Print(num.Text(10))
+		if i < len(stack)-1 {
+			fmt.Print(" ")
+		}
+	}
+	fmt.Println(" ]")
+}
+
 func clone(x Int) Int {
 	r := NewInt(0)
 	return *r.Add(r, &x)
@@ -188,14 +199,7 @@ func Setup() {
 	}, OP_SUB)
 
 	defSystem(func() {
-		fmt.Print("[ ")
-		for i, num := range stack {
-			fmt.Print(num.Text(10))
-			if i < len(stack)-1 {
-				fmt.Print(" ")
-			}
-		}
-		fmt.Println(" ]")
+		Print()
 	}, OP_PRN)
 
 	defSystem(func() {

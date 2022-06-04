@@ -19,6 +19,8 @@ export class Engine {
   private readonly rStack: bigint[] = [];
   private readonly defs = new Map<bigint, (() => void) | bigint[]>();
 
+  private symbols = new  Map<bigint,string>();
+
   private depth = 0;
 
   constructor() {
@@ -60,6 +62,9 @@ export class Engine {
         return;
       }
     }
+    if (this.symbols?.has(code)) {
+      throw new Error(`illegal call op ${code} ("${this.symbols.get(code)}")`)
+    }
     throw new Error(`illegal call op ${code}`)
   }
 
@@ -90,6 +95,12 @@ export class Engine {
   print() {
     const s = this.stack.map(String).join(" ");
     console.log(`[ ${s} ]`);
+  }
+
+  addSourceMap(sourceMap: { symbols: Record<string,string>}) {
+    Object.keys(sourceMap.symbols).forEach(value => {
+      this.symbols.set(BigInt(value), sourceMap.symbols[value]);
+    });
   }
 
   private setup() {
@@ -149,6 +160,11 @@ export class Engine {
       Deno.setRaw(0, false);
       this.push(BigInt(input[0]));
     }, OpCodes.GETC);
+
+    this.defineSystem(() => {
+      const data = encoder.encode(String(this.pop()));
+      Deno.stdout.writeSync(data);
+    }, OpCodes.PRNN);
   
     this.defineSystem(() => this.pop(), OpCodes.DROP);
   

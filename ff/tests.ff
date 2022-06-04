@@ -7,8 +7,18 @@
 8 4 / 2 = assert
 8 5 % 3 = assert
 9 12 ^ 282429536481 = assert
+
+/* derived math */
 12 ! 479001600 = assert
 5 sqr 25 = assert
+
+0 sgn 0 = assert
+5 sgn 1 = assert
+-5 sgn -1 = assert
+
+0 abs 0 = assert
+5 abs 5 = assert
+-5 abs 5 = assert
 
 /* bitwise */
 

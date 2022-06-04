@@ -85,6 +85,11 @@ function base64Encode(sextets: number[]) {
   }).join("");
 }
 
+/**
+ * It takes a string of base64 encoded VLQs and returns an array of numbers
+ * @param {string} base64Vlqs - The base64 encoded VLQ string.
+ * @returns An array of numbers.
+ */
 function base64Decode(base64Vlqs: string): number[] {
   return base64Vlqs.split("").map((c) => {
     const sextet = char_to_integer.get(c);
@@ -95,6 +100,11 @@ function base64Decode(base64Vlqs: string): number[] {
   });
 }
 
+/**
+ * It takes an array of sextets and returns an array of VLQs
+ * @param {number[]} sextets - The array of sextets to split into VLQs.
+ * @returns An array of arrays of numbers.
+ */
 function splitVlqs(sextets: number[]): number[][] {
   const splitVlqs: number[][] = [];
   let vlq: number[] = [];
