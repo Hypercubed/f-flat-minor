@@ -1,4 +1,7 @@
-#!/usr/bin/env -S deno run --allow-read --unstable
+#!/usr/bin/env -S deno run --allow-read --unstable --allow-env
+
+import yargs from 'https://deno.land/x/yargs/deno.ts'
+import { Arguments } from 'https://deno.land/x/yargs/deno-types.ts'
 
 import { assertEquals } from "https://deno.land/std@0.92.0/testing/asserts.ts";
 import { HEADER } from "../src/constants.ts";
@@ -7,7 +10,7 @@ import { Engine } from "../src/engine.ts";
 import { printBigCodeIr } from "../src/ir.ts";
 import { readStdin } from "../src/read.ts";
 
-export function execute(filename = '-') {
+export function run(args: Arguments) {
   const encoder = new TextEncoder();
   const decoder = new TextDecoder();
 
@@ -15,6 +18,7 @@ export function execute(filename = '-') {
 
   const interpreter = new Engine();
 
+  const filename = String(args._.shift() || '-');
   const bin = filename == '-' ? readStdin() : Deno.readFileSync(filename);
 
   for (let i = 0; i < uIntHEADER.length; i++) {
@@ -41,6 +45,7 @@ export function execute(filename = '-') {
 }
 
 if (import.meta.main) {
-  const args = Deno.args.filter((arg) => !arg.startsWith('-'));
-  execute(args[0]);
+  // @ts-ignore error
+  const argv = yargs(Deno.args).argv;
+  run(argv);
 }

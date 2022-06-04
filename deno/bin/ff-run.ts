@@ -1,12 +1,17 @@
-#!/usr/bin/env -S deno run --allow-read --unstable
+#!/usr/bin/env -S deno run --allow-read --unstable --allow-env
+
+import yargs from 'https://deno.land/x/yargs/deno.ts'
+import { Arguments } from 'https://deno.land/x/yargs/deno-types.ts'
 
 import { Compiler } from "../src/compiler.ts";
 import { Engine } from "../src/engine.ts";
 import { Preprocessor } from "../src/preprocess.ts";
 import { readStdin } from "../src/read.ts";
 
-export function run(filename = '-') {
+export function run(argv: Arguments) {
   const textDecoder = new TextDecoder();
+
+  const filename = String(argv._.shift() || '-');
   let code = filename == '-' ? textDecoder.decode(readStdin()) : Deno.readTextFileSync(filename);
 
   const preprocessor = new Preprocessor();
@@ -22,6 +27,7 @@ export function run(filename = '-') {
 }
 
 if (import.meta.main) {
-  const args = Deno.args.filter((arg) => !arg.startsWith('-'));
-  run(args[0]);
+  // @ts-ignore error
+  const argv = yargs(Deno.args).argv;
+  run(argv);
 }

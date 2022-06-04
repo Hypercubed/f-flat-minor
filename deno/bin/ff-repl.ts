@@ -1,4 +1,7 @@
-#!/usr/bin/env -S deno run --allow-read --unstable
+#!/usr/bin/env -S deno run --allow-read --unstable --allow-env
+
+import yargs from 'https://deno.land/x/yargs/deno.ts'
+import { Arguments } from 'https://deno.land/x/yargs/deno-types.ts'
 
 import { readLines } from 'https://deno.land/std/io/bufio.ts';
 import * as path from "https://deno.land/std@0.57.0/path/mod.ts";
@@ -10,14 +13,16 @@ import { Preprocessor } from "../src/preprocess.ts";
 const PROMPT = new TextEncoder().encode('F♭> ');
 const core = path.fromFileUrl(path.join(import.meta.url, '../../../ff/core.ff'));
 
-export async function repl() {
+export async function run(args: Arguments) {
   const compiler = new Compiler();
   const interpreter = new Engine();
   const preprocessor = new Preprocessor();
 
   console.log('\nF♭ minor');
 
-  run(`.load ${core}`);
+  if (!('core' in args) || args.core) {
+    run(`.load ${core}`);
+  }
 
   while (true) {
     Deno.stdout.writeSync(PROMPT);
@@ -38,5 +43,7 @@ export async function repl() {
 }
 
 if (import.meta.main) {
-  await repl();
+  // @ts-ignore error
+  const argv = yargs(Deno.args).argv;
+  await run(argv);
 }

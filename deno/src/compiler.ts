@@ -13,34 +13,6 @@ export class Compiler {
   }
 
   /**
-   * Takes an array of IR instructions and returns an array of bigints
-   * @param ir - Array<IrInstruction>
-   * @returns The return value is a bigint array.
-   */
-  static compileToBigArray(ir: Array<IrInstruction>): bigint[] {
-    return ir.flatMap((i) => {
-      if (i.op === IROp.call && i.value === 0n) return []; // Remove NOPS
-      if (i.op === IROp.call) {
-        return [i.value];
-      } else {
-        return [0n, i.value];
-      }
-    });
-  }
-
-  static getSymbolMap(ir: Array<IrInstruction>): Record<string, string> {
-    const symbolMap: Record<string, string> = {};
-
-    ir.forEach(instruction => {
-      if (instruction.op == 'call' && instruction.name) {
-        symbolMap[instruction.value.toString()] = instruction.name;
-      }
-    });
-
-    return symbolMap;
-  }
-
-  /**
    * Takes an array of IR instructions and returns a base64 encoded string
    * @param ir - Array<IrInstruction>
    * @returns A base64 encoded string of the IR instructions.
@@ -66,11 +38,11 @@ export class Compiler {
     }
   }
 
-  nextCode(): bigint {
+  private nextCode(): bigint {
     return BigInt(this._nextCode++);
   }
 
-  getSymbol(name: string): bigint {
+  private getSymbol(name: string): bigint {
     name = name.toLowerCase();
     let code = this.symbols.get(name);
     if (code === undefined) {
@@ -78,11 +50,6 @@ export class Compiler {
       this.symbols.set(name, code);
     }
     return code;
-  }
-
-  getSymbolMap() {
-    const entries = Array.from(this.symbols.entries());
-    return Object.fromEntries(entries.map(([key, value]) => [String(value), key]));
   }
 
   compileToIR(s: string[]): IrInstruction[] {

@@ -1,27 +1,30 @@
-#!/usr/bin/env -S deno -q run --allow-net --allow-read --unstable
+#!/usr/bin/env -S deno -q run --allow-env --allow-net --allow-read --unstable
 
-const args = Deno.args.filter((arg) => !arg.startsWith('-'));
+import yargs from "https://deno.land/x/yargs@v17.5.1-deno/deno.ts";
 
-switch (Deno.args[0] || 'repl') {
+// @ts-ignore error
+const argv = yargs(Deno.args).argv;
+
+switch (argv._.shift() || 'repl') {
   case 'preprocess': {
-    (await import('./ff-preprocess.ts')).compile(args[1]);
+    (await import('./ff-preprocess.ts')).run(argv);
     break;
   }
   case 'compile': {
-    (await import('./ff-compile.ts')).compile(args[1]);
+    (await import('./ff-compile.ts')).run(argv);
     break;
   }
   case 'execute': {
-    (await import('./ff-execute.ts')).execute(args[1]);
+    (await import('./ff-execute.ts')).run(argv);
     break;
   }
   case 'run': {
-    (await import('./ff-run.ts')).run(args[1]);
+    (await import('./ff-run.ts')).run(argv);
     break;
   }
   case 'repl': {
-    const { repl } = await import('./ff-repl.ts');
-    await repl();
+    const { run } = await import('./ff-repl.ts');
+    await run(argv);
     break;
   }
   default:
