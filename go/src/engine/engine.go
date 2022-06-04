@@ -150,11 +150,22 @@ func Setup() {
 	}, OP_AND)
 
 	defSystem(func() {
-		panic(errors.New("OP_LSTASH not defined"))
+		l := len(stack)
+		for i := 0; i < l; i++ {
+			x := clone(stack[0])
+			stack = stack[1:]
+			rPush(x)
+		}
+		rPush(*NewInt(int64(l)))
 	}, OP_STASH)
 
 	defSystem(func() {
-		panic(errors.New("OP_FETCH not defined"))
+		x := rPop()
+		l := int(x.Int64())
+		for i := 0; i < l; i++ {
+			x := rPop()
+			stack = append([]Int{x}, stack...)
+		}
 	}, OP_FETCH)
 
 	defSystem(func() {
