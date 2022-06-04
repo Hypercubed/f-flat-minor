@@ -36,7 +36,8 @@ export function execute(filename = '-') {
     Deno.exit();
   }
 
-  interpreter.executeBigIntCode(bigCode);
+  interpreter.loadBigIntCode(bigCode);
+  interpreter.run();
 }
 
 if (import.meta.main) {

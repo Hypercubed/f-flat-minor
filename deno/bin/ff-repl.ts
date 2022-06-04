@@ -32,7 +32,8 @@ export async function repl() {
   function run(line: string) {
     const code = preprocessor.preprocess([line]);
     const ir = compiler.compileToIR(Compiler.tokenize(code));
-    interpreter.executeIr(ir);
+    interpreter.loadIR(ir);
+    interpreter.run();
   }
 }
 

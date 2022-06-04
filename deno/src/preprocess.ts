@@ -23,8 +23,8 @@ export class Preprocessor {
           }
           case ".m": {
             const ir = this.compiler.compileToIR(Compiler.tokenize(rest.join(' ')));
-            const bigCode = Compiler.compileToBigArray(ir);
-            this.engine.executeBigIntCode(bigCode);
+            this.engine.loadIR(ir);
+            this.engine.run();
             const stack = this.engine.getStack();
             this.engine.clear();
             return stack.map(String).join(" ") + ` /* ${line} */`;

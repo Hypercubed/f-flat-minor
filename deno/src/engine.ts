@@ -23,8 +23,8 @@ export class Engine {
   }
 
   private readonly stack: bigint[] = [];
-  private readonly rStack: bigint[] = [];
-  private readonly defs = new Map<bigint, (() => void | bigint) | bigint[]>();
+  private readonly queue: bigint[] = [];
+  private readonly defs = new Map<bigint, (() => void) | bigint[]>();
 
   private symbols = new  Map<bigint,string>();
 
@@ -38,15 +38,15 @@ export class Engine {
     return this.stack.slice();
   }
 
-  peek(): bigint {
+  private peek(): bigint {
     return this.stack[this.stack.length - 1] || 0n;
   }
   
-  pop(): bigint {
+  private pop(): bigint {
     return this.stack.pop() || 0n;
   }
 
-  push(n: bigint): void {
+  private push(n: bigint): void {
     this.stack.push(n);
   }
 
@@ -54,28 +54,18 @@ export class Engine {
     this.stack.splice(0, this.stack.length);
   }
 
-  defineSystem(fn: () => void | bigint, code: number) {
+  private defineSystem(fn: () => void, code: number) {
     this.defs.set(BigInt(code), fn);
   }
 
-  callOp(code: bigint): void {
-    const r = this.tcoCallOp(code);
-    if (Array.isArray(r) && r.length > 0) {
-      this.executeBigIntCode(r);
-    }
-  }
-
-  private tcoCallOp(code: bigint): undefined | bigint[] {
+  private callOp(code: bigint): void {
     if (this.defs.has(code)) {
       const r = this.defs.get(code);
       if (typeof r === "function") {
-        const rr = r();
-        if (rr !== undefined) {
-          return [rr];
-        }
-        return [];
+        return r();
       } else if (r) {
-        return r;
+        this.queue.unshift(...r);
+        return;
       }
     }
     if (this.symbols?.has(code)) {
@@ -84,7 +74,11 @@ export class Engine {
     throw new Error(`illegal call op ${code}`)
   }
 
-  executeIr(ir: IrInstruction[]): bigint[] {
+  loadBigIntCode(bigCode: bigint[]) {
+    this.queue.push(...bigCode);
+  }
+
+  loadIR(ir: IrInstruction[]) {
     let ip = 0;
     while (ip < ir.length) {
       const i = ir[ip++];
@@ -97,25 +91,17 @@ export class Engine {
           this.symbols.set(i.value, i.name);
         }
 
-        if (i.value === DEF || i.value === KET) this.depth--;
-
-        if (this.depth) {
-          this.push(i.value);
-        } else {
-          this.callOp(i.value);
-        }
-
-        if (i.value === MARK || i.value === BRA) this.depth++;
+        this.queue.push(i.value);
       } else {
-        if (this.depth) this.push(0n);
-        this.push(i.value);
+        this.queue.push(0n);
+        this.queue.push(i.value);
       }
     }
     return this.stack;
   }
 
-  executeBigIntCode(bigCode: bigint[]): bigint[] {
-    const queue = bigCode.slice();
+  run() {
+    const queue = this.queue;
 
     while (queue.length > 0) {
       const op = queue.shift() || 0n;
@@ -127,8 +113,7 @@ export class Engine {
       if (op === 0n) {
         this.push(queue.shift() || 0n);
       } else if (!this.depth) {
-        const q = this.tcoCallOp(op) || [];
-        queue.unshift(...q);
+        this.callOp(op)
       }
 
       if (op === MARK || op === BRA) this.depth++;
@@ -141,21 +126,24 @@ export class Engine {
     console.log(`[ ${s} ]`);
   }
 
-  addSourceMap(sourceMap: SourceMap) {
+  loadSourceMap(sourceMap: SourceMap) {
     Object.keys(sourceMap.symbols).forEach(value => {
       this.symbols.set(BigInt(value), sourceMap.symbols[value]);
     });
   }
 
   private setup() {
+    const encoder = new TextEncoder();
+
     this.defineSystem(() => {}, OpCodes.NOP);
   
     this.defineSystem(() => {
-      return this.pop();
+      const x = this.pop();
+      this.queue.unshift(x)
     }, OpCodes.CALL);
   
     this.defineSystem(() => {
-      const m = this.rStack.pop() || 0n;
+      const m = this.queue.pop() || 0n;
       const s: bigint[] = this.stack.splice(Number(m), this.stack.length) || [];
       const n = this.pop();
       if (n < 0x80n) {
@@ -165,7 +153,7 @@ export class Engine {
     }, OpCodes.DEF);
 
     this.defineSystem(() => {
-      const m = this.rStack.pop() || 0n;
+      const m = this.queue.pop() || 0n;
       const s: bigint[] = this.stack.splice(Number(m), this.stack.length) || [];
       const n = this.peek();
       this.defs.set(n, s);
@@ -173,12 +161,12 @@ export class Engine {
 
     this.defineSystem(() => {
       const m = this.stack.length;
-      this.rStack.push(BigInt(m));
+      this.queue.push(BigInt(m));
     }, OpCodes.BRA);
   
     this.defineSystem(() => {
       const m = this.stack.length;
-      this.rStack.push(BigInt(m));
+      this.queue.push(BigInt(m));
     }, OpCodes.MARK);
   
     this.defineSystem(() => this.clear(), OpCodes.CLR);
@@ -193,9 +181,10 @@ export class Engine {
       this.push(generateRandomBigInt(max));
     }, OpCodes.RND);
   
-    this.defineSystem(() => this.print(), OpCodes.PRN);
+    this.defineSystem(() => {
+      this.print()
+    }, OpCodes.PRN);
   
-    const encoder = new TextEncoder();
   
     this.defineSystem(() => {
       const data = encoder.encode(String.fromCharCode(Number(this.pop())));
@@ -289,16 +278,16 @@ export class Engine {
     this.defineSystem(() => {
       const t = this.pop();
       if (this.pop() !== 0n) {
-        return t;
+        this.queue.unshift(t)
       }
     }, OpCodes.IF);
   
     this.defineSystem(() => {
-      this.rStack.push(this.pop());
+      this.queue.push(this.pop());
     }, OpCodes.PUSHR);
   
     this.defineSystem(() => {
-      const a = this.rStack.pop() || 0n;
+      const a = this.queue.pop() || 0n;
       this.push(a);
     }, OpCodes.PULLR);
   
@@ -308,13 +297,13 @@ export class Engine {
 
     this.defineSystem(() => {
       const len = this.stack.length;
-      this.rStack.push(...this.stack.splice(0, len));
-      this.rStack.push(BigInt(len));
+      this.queue.push(...this.stack.splice(0, len));
+      this.queue.push(BigInt(len));
     }, OpCodes.STASH);
 
     this.defineSystem(() => {
-      const len = Number(this.rStack.pop());
-      this.stack.unshift(...this.rStack.splice(-len));
+      const len = Number(this.queue.pop());
+      this.stack.unshift(...this.queue.splice(-len));
     }, OpCodes.FETCH);
 
     this.defineSystem(() => {
@@ -332,16 +321,16 @@ export class Engine {
 
 /** Generates BigInts between 0 (inclusive) and high (exclusive) */
 function generateRandomBigInt(highBigInt: bigint) {
-  const difference = highBigInt;
-  const differenceLength = difference.toString().length;
-  let multiplier = '';
-  while (multiplier.length < differenceLength) {
-    multiplier += Math.random()
+  const diff = highBigInt;
+  const len = diff.toString().length;
+  let m = '';
+  while (m.length < len) {
+    m += Math.random()
       .toString()
       .split('.')[1];
   }
-  multiplier = multiplier.slice(0, differenceLength);
-  const divisor = '1' + '0'.repeat(differenceLength);
+  m = m.slice(0, len);
+  const divisor = '1' + '0'.repeat(len);
 
-  return (difference * BigInt(multiplier)) / BigInt(divisor);
+  return (diff * BigInt(m)) / BigInt(divisor);
 }

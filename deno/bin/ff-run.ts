@@ -15,7 +15,10 @@ export function run(filename = '-') {
 
   code = preprocessor.preprocess(Preprocessor.tokenize(code));
   const ir = compiler.compileToIR(Compiler.tokenize(code));
-  interpreter.executeIr(ir);
+
+
+  interpreter.loadIR(ir);
+  interpreter.run();
 }
 
 if (import.meta.main) {
