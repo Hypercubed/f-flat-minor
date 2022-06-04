@@ -54,7 +54,7 @@ For each target language first implement a proof-of-concept in an online code ru
 
 | Language            | POC                                                        | Compiler | Interpreter | REPL |
 | ------------------- | ---------------------------------------------------------- | -------- | ----------- | ---- |
-| Typescript/Deno     | [ 😀 ](https://replit.com/@Hypercubed/f-flat-minor-TS)     | v2       | v2          | v2   |
+| Typescript/Deno     | [ 😀 ](https://replit.com/@Hypercubed/f-flat-minor-TS)     | v3       | v3          | v3   |
 | Go                  | [ 😀 ](https://replit.com/@Hypercubed/f-flat-minor-Go)     | v2       | v2          | v2   |
 | Python              | [ 😀 ](https://replit.com/@Hypercubed/f-flat-minor-Python) |
 | Ruby                | [ 😀 ](https://replit.com/@Hypercubed/f-flat-minor-Ruby)   |
@@ -78,11 +78,12 @@ For each target language first implement a proof-of-concept in an online code ru
 | CALL     |  eval  |       1       |   v0    |
 | PUTC     |  putc  |       2       |   v0    |
 | GETC     |  getc  |       3       |   v1    |
-| PRNC     |  prn   |       4       |   v3    |
+| PRNN     |  prn   |       4       |   v3    |
 | DROP     |  drop  | 8 (backspace) |   v0    |
 | PUSHR    |   q<   |      14       |   v0    |
 | PULLR    |   q>   |      15       |   v0    |
 | CLR      |  clr   |      24       |   v1    |
+| RND      |  rnd   |      26       |   v3    |
 | EXIT     |  exit  |    27 (ESC)   |   v2    |
 | DUP      |  dup   |    33 (!)     |   v0    |
 | DEPTH    | depth  |    35 (#)     |   v1    |

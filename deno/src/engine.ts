@@ -179,6 +179,11 @@ export class Engine {
       const n = this.pop();
       Deno.exit(Number(n));
     }, OpCodes.EXIT);
+
+    this.defineSystem(() => {
+      const max = this.pop();
+      this.push(generateRandomBigInt(max));
+    }, OpCodes.RND);
   
     this.defineSystem(() => this.print(), OpCodes.PRN);
   
@@ -313,4 +318,20 @@ export class Engine {
       this.push(~a);
     }, OpCodes.NOT);
   }
+}
+
+/** Generates BigInts between 0 (inclusive) and high (exclusive) */
+function generateRandomBigInt(highBigInt: bigint) {
+  const difference = highBigInt;
+  const differenceLength = difference.toString().length;
+  let multiplier = '';
+  while (multiplier.length < differenceLength) {
+    multiplier += Math.random()
+      .toString()
+      .split('.')[1];
+  }
+  multiplier = multiplier.slice(0, differenceLength);
+  const divisor = '1' + '0'.repeat(differenceLength);
+
+  return (difference * BigInt(multiplier)) / BigInt(divisor);
 }
