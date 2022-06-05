@@ -26,18 +26,18 @@ default: compile execute run repl
 test:	compile execute ff-tests example.bin example.txt 
 
 ff-tests: compile execute
-	@echo "** Go FF Test **"
-	@cd ..; cat ./ff/tests.ff | ./go/compile | ./go/execute && printf "${GRN}OK${NC}\n" || printf "${RED}FAIL${NC}\n"
+	@printf "** Go FF Test **"
+	@cd ..; time cat ./ff/tests.ff | ./go/compile | ./go/execute > /dev/null && printf "${GRN}OK${NC}\n" || printf "${RED}FAILED${NC}\n"
 	@echo ""
 
 example.bin: compile
-	@echo "** Go Compile **"
+	@printf "** Go Compile **"
 	@time cat ../ff/example_v2.ff | ./compile > ./example.bin
 	@cmp --silent -- "./example.bin" "../fixtures/example_v2.bin" && printf "${GRN}OK${NC}\n" || printf "${RED}bins differ${NC}\n"
 	@echo ""
 
 example.txt: execute
-	@echo "** Go Execute **"
+	@printf "** Go Execute **"
 	@time cat ./example.bin | ./execute > ./example.txt
 	@cmp --silent -- "./example.txt" "../fixtures/example.txt" && printf "${GRN}OK${NC}\n" || printf "${RED}outouts differ${NC}\n"
 	@echo ""

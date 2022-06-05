@@ -2,8 +2,13 @@
 */.vscode
 
 deno/*.bin
-go/*.bin
+deno/*.txt
+deno/ff-compile
+deno/ff-execute
+deno/ff-run
 
+go/*.bin
+go/*.txt
 go/compile
 go/execute
 go/run

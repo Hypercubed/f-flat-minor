@@ -16,12 +16,12 @@ run: clean example
 test:	ff-tests example.txt
 
 ff-tests:
-	@echo "** Python FF Test **"
-	@cd ..; ./deno/bin/ff-preprocess.ts ./ff/tests.ff | python3 ./python/execute.py && printf "${GRN}OK${NC}\n" || printf "${RED}outouts differ${NC}\n"
+	@printf "** Python FF Test **"
+	@cd ..; time ./deno/bin/ff-preprocess.ts ./ff/tests.ff | python3 ./python/execute.py > /dev/null && printf "${GRN}OK${NC}\n" || printf "${RED}FAILED${NC}\n"
 	@echo ""
 
 example.txt:
-	@echo "** Python Compile and Execute **"
+	@printf "** Python Compile and Execute **"
 	@time cat ../ff/example_v2.ff | python3 ./execute.py > example.txt
 	@cmp --silent -- "./example.txt" "../fixtures/example.txt" && printf "${GRN}OK${NC}\n" || printf "${RED}outouts differ${NC}\n"
 	@echo ""

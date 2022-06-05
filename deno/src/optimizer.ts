@@ -5,6 +5,7 @@ const DEF = BigInt(OpCodes.DEF);
 const KET = BigInt(OpCodes.KET);
 const MARK = BigInt(OpCodes.MARK);
 const BRA = BigInt(OpCodes.BRA);
+const CALL = BigInt(OpCodes.CALL);
 
 export class Optimizer {
   optimizeIr(ir: Array<IrInstruction>) {
@@ -41,7 +42,7 @@ export class Optimizer {
           const def = optimized.splice(ip, end - ip + 1);
 
           // unwrap inlineDefs of length 1
-          if (def.length === 3) {
+          if (def.length === 3 && def[1].op === IROp.call) {
             n.value = def[1].value;
             n.name = def[1].name;
             maybeCalled.add(def[1].value);
@@ -65,6 +66,15 @@ export class Optimizer {
           const def = optimized.splice(ip - 1, end - ip + 2);
           ip = ip - 2;
           userDefs.add(def);
+        } else if (i.value === CALL) { // replace indirect calls
+          const p = optimized[ip - 1];
+          if (p.op === IROp.push) {
+            ip--;
+            optimized.splice(ip, 1);
+            optimized[ip].value = p.value;
+            optimized[ip].name = (p.name || "").replace(/^\&/, "");
+            optimized[ip].comment = (p.comment || "").replace(/\&/, "");
+          }
         }
       }
     }

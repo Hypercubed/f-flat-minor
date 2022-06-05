@@ -16,12 +16,12 @@ run: clean example
 test:	ff-tests example.txt
 
 ff-tests:
-	@echo "** Ruby FF Test **"
-	@cd ..; ./deno/bin/ff-preprocess.ts ./ff/tests.ff | ruby ./ruby/execute.rb && printf "${GRN}OK${NC}\n" || printf "${RED}outouts differ${NC}\n"
+	@printf "** Ruby FF Test **"
+	@cd ..; ./deno/bin/ff-preprocess.ts ./ff/tests.ff | ruby ./ruby/execute.rb > /dev/null && printf "${GRN}OK${NC}\n" || printf "${RED}FAILED${NC}\n"
 	@echo ""
 
 example.txt:
-	@echo "** Ruby Compile and Execute **"
+	@printf "** Ruby Compile and Execute **"
 	@time cat ../ff/example_v2.ff | ruby ./execute.rb > example.txt
 	@cmp --silent -- "./example.txt" "../fixtures/example.txt" && printf "${GRN}OK${NC}\n" || printf "${RED}outouts differ${NC}\n"
 	@echo ""

@@ -8,6 +8,7 @@
 8 5 % 3 = assert
 9 12 ^ 282429536481 = assert
 
+
 /* derived math */
 12 ! 479001600 = assert
 5 sqr 25 = assert
