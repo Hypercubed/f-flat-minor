@@ -24,7 +24,7 @@ export function printIr(ir: Array<IrInstruction>) {
   });
 }
 
-export function printBigCodeIr(bc: Array<bigint>) {
+export function bigCodeToIr(bc: Array<bigint>): Array<IrInstruction> {
   const ir: Array<IrInstruction> = [];
   let ip = 0;
   while (ip < bc.length) {
@@ -35,6 +35,9 @@ export function printBigCodeIr(bc: Array<bigint>) {
       ir.push({ op: IROp.call, value });
     }
   }
+  return ir;
+}
 
-  printIr(ir);
+export function printBigCodeIr(bc: Array<bigint>) {
+  printIr(bigCodeToIr(bc));
 }

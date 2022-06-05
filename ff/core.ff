@@ -42,7 +42,6 @@ and: * ;
 or: + ;
 
 nand: * eqz? ;
-and: nand not ;
 nor: + eqz? ;
 
 /* branching */

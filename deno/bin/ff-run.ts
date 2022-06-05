@@ -30,5 +30,6 @@ export function run(argv: Arguments) {
 if (import.meta.main) {
   // @ts-ignore error
   const argv = yargs(Deno.args).argv;
+  argv.file = argv._[0] || "-";
   run(argv);
 }

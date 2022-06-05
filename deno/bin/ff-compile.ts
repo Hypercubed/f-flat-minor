@@ -24,14 +24,14 @@ export function run(argv: Arguments) {
 
   const ir = compiler.compileToIR(Compiler.tokenize(code));
 
-  if (Deno.args.includes("--ir")) {
+  if (argv.ir) {
     printIr(ir);
     Deno.exit();
   }
 
   const base64Encoded = Compiler.compileToBase64(ir);
 
-  if (Deno.args.includes("--dump")) {
+  if (argv.dump) {
     const byteCode = base64ToArrayBuffer(base64Encoded);
     dumpByteArray(byteCode);
     Deno.exit();
@@ -44,5 +44,6 @@ export function run(argv: Arguments) {
 if (import.meta.main) {
   // @ts-ignore error
   const argv = yargs(Deno.args).argv;
+  argv.file = argv._[0] || "-";
   run(argv);
 }

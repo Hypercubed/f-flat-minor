@@ -112,7 +112,7 @@ export class Compiler {
         call(0n, comment.join(" "));
       } else if (ss === "[") {
         push(this.nextCode(), ss);
-        call(OpCodes.BRA, "[");
+        call(OpCodes.BRA);
       } else if (ss[0] === "&" && ss.length > 1) { // Symbol
         push(this.getSymbol(ss.replace(/^&/, "")), ss);
       } else {
@@ -121,11 +121,11 @@ export class Compiler {
     }
     return ret;
 
-    function push(value: bigint | number, comment: string) {
+    function push(value: bigint | number, comment = "") {
       ret.push({ value: BigInt(value), op: IROp.push, comment });
     }
 
-    function call(value: bigint | number, name: string) {
+    function call(value: bigint | number, name = "") {
       ret.push({ value: BigInt(value), op: IROp.call, comment: name, name });
     }
   }

@@ -3,6 +3,13 @@ import { IrInstruction, IROp } from "./ir.ts";
 import { SourceMap } from "./source-maps.ts";
 import { decode } from "./vlq.ts";
 
+const IMMEDIATE_WORDS = [
+  BigInt(OpCodes.DEF),
+  BigInt(OpCodes.KET),
+  BigInt(OpCodes.MARK),
+  BigInt(OpCodes.BRA)
+]
+
 const DEF = BigInt(OpCodes.DEF);
 const KET = BigInt(OpCodes.KET);
 const MARK = BigInt(OpCodes.MARK);
@@ -30,6 +37,8 @@ export class Engine {
 
   private depth = 0;
 
+  traceOn = false;
+
   constructor() {
     this.setup();
   }
@@ -47,6 +56,7 @@ export class Engine {
   }
 
   private push(n: bigint): void {
+    // console.log(n, ".push");
     this.stack.push(n);
   }
 
@@ -55,10 +65,30 @@ export class Engine {
   }
 
   private defineSystem(fn: () => void, code: number) {
-    this.defs.set(BigInt(code), fn);
+    const n = BigInt(code);
+    const name = this.getName(n);
+    if (this.defs.has(n)) {
+      throw new Error(`cannot redefine system word ${name}`);
+    }
+    this.defs.set(n, fn);
+  }
+
+  private defineUser(s: bigint[], n: bigint) {
+    const name = this.getName(n);
+    if (n < 0x80n) {
+      throw new Error(`cannot define system op ${name}`);
+    }
+    if (this.defs.has(n)) {
+      if (n < 0x80n) {
+        throw new Error(`cannot redefine system op ${name}`);
+      }
+      throw new Error(`cannot redefine user op ${name}`);
+    }
+    this.defs.set(n, s);
   }
 
   private callOp(code: bigint): void {
+    // console.log(code, ".call");
     if (this.defs.has(code)) {
       const r = this.defs.get(code);
       if (typeof r === "function") {
@@ -68,10 +98,11 @@ export class Engine {
         return;
       }
     }
-    if (this.symbols?.has(code)) {
-      throw new Error(`illegal call op ${code} ("${this.symbols.get(code)}")`);
+    const name = this.getName(code);
+    if (code < 0x80n) {
+      throw new Error(`undefined system op call ${name}`);
     }
-    throw new Error(`illegal call op ${code}`);
+    throw new Error(`undefined user op call ${name}`);
   }
 
   loadBigIntCode(bigCode: bigint[]) {
@@ -106,19 +137,30 @@ export class Engine {
     while (queue.length > 0) {
       const op = queue.shift() || 0n;
 
-      if (op === DEF || op === KET) this.depth--;
+      this.traceOn && this.trace(op);
 
-      if (this.depth) this.push(op);
+      const immediate = !this.depth || IMMEDIATE_WORDS.includes(op);
 
       if (op === 0n) {
+        if (!immediate) this.push(op);
         this.push(queue.shift() || 0n);
-      } else if (!this.depth) {
-        this.callOp(op);
+      } else {
+        if (!immediate) this.push(op);
+        if (immediate) this.callOp(op);
       }
-
-      if (op === MARK || op === BRA) this.depth++;
     }
     return this.stack;
+  }
+
+  trace(op: bigint) {
+    const name = this.getName(op);
+    const s = this.stack.map(String).join(" ");
+    const q = this.queue.map(String).join(" ");
+    console.log(`[ ${s} ] ${name} [ ${q} ]`);
+  }
+
+  getName(op: bigint) {
+    return this.symbols?.has(op) ? this.symbols.get(op) : String(op);
   }
 
   print() {
@@ -143,28 +185,29 @@ export class Engine {
     }, OpCodes.CALL);
 
     this.defineSystem(() => {
+      this.depth--;
       const m = this.queue.pop() || 0n;
       const s: bigint[] = this.stack.splice(Number(m), this.stack.length) || [];
       const n = this.pop();
-      if (n < 0x80n) {
-        throw new Error(`cannot redefine system word ${n}`);
-      }
-      this.defs.set(n, s);
+      this.defineUser(s, n);
     }, OpCodes.DEF);
 
     this.defineSystem(() => {
+      this.depth--;
       const m = this.queue.pop() || 0n;
       const s: bigint[] = this.stack.splice(Number(m), this.stack.length) || [];
       const n = this.peek();
-      this.defs.set(n, s);
+      this.defineUser(s, n);
     }, OpCodes.KET);
 
     this.defineSystem(() => {
+      this.depth++;
       const m = this.stack.length;
       this.queue.push(BigInt(m));
     }, OpCodes.BRA);
 
     this.defineSystem(() => {
+      this.depth++;
       const m = this.stack.length;
       this.queue.push(BigInt(m));
     }, OpCodes.MARK);

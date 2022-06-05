@@ -7,7 +7,7 @@ import { assertEquals } from "https://deno.land/std@0.92.0/testing/asserts.ts";
 import { HEADER } from "../src/constants.ts";
 import { base64ToArrayBuffer, dumpByteArray } from "../src/dump.ts";
 import { Engine } from "../src/engine.ts";
-import { printBigCodeIr } from "../src/ir.ts";
+import { bigCodeToIr, printBigCodeIr } from "../src/ir.ts";
 import { readStdin } from "../src/read.ts";
 
 export function run(args: Arguments) {
@@ -27,7 +27,7 @@ export function run(args: Arguments) {
 
   const base64 = decoder.decode(bin.subarray(uIntHEADER.length));
 
-  if (Deno.args.includes("--dump")) {
+  if (args.dump) {
     const byteCode = base64ToArrayBuffer(base64);
     dumpByteArray(byteCode);
     Deno.exit();
@@ -35,8 +35,21 @@ export function run(args: Arguments) {
 
   const bigCode = Engine.fromBase64(base64);
 
-  if (Deno.args.includes("--ir")) {
+  if (args.ir) {
     printBigCodeIr(bigCode);
+    Deno.exit();
+  }
+
+  if (args.d) {
+    const ir = bigCodeToIr(bigCode);
+    const s = ir.map(i => {
+      if (i.op == "call") {
+        return `$_${i.value}`;
+      } else {
+        return i.value;
+      }
+    }).join(" ");
+    console.log(s);
     Deno.exit();
   }
 
@@ -47,5 +60,6 @@ export function run(args: Arguments) {
 if (import.meta.main) {
   // @ts-ignore error
   const argv = yargs(Deno.args).argv;
+  argv.file = argv._[0] || "-";
   run(argv);
 }
