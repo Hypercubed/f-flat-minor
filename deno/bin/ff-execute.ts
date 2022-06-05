@@ -18,7 +18,7 @@ export function run(args: Arguments) {
 
   const interpreter = new Engine();
 
-  const filename = String(args._.shift() || "-");
+  const filename = args.file || "-";
   const bin = filename == "-" ? readStdin() : Deno.readFileSync(filename);
 
   for (let i = 0; i < uIntHEADER.length; i++) {

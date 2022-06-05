@@ -19,7 +19,13 @@ yargs(Deno.args)
   .command('run [file]', 'Fb runner', {}, async (argv) => {
     (await import('./ff-run.ts')).run(argv);
   })
-  .command('repl', 'Start a Fb REPL', {}, async (argv) => {
+  .command('repl', 'Start a Fb REPL', {
+    'no-core': {
+      type: 'boolean',
+      default: false,
+      description: 'Disable loading of core module',
+    },
+  }, async (argv) => {
     await (await import('./ff-repl.ts')).run(argv);
   })
   .demandCommand()

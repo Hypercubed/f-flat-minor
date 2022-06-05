@@ -15,7 +15,7 @@ export function run(argv: Arguments) {
 
   const uIntHEADER = textEncoder.encode(HEADER);
 
-  const filename = String(argv._.shift() || "-");
+  const filename = argv.file || "-";
   const code = filename == "-"
     ? new TextDecoder().decode(readStdin())
     : Deno.readTextFileSync(filename);

@@ -134,6 +134,7 @@ func Setup() {
 	defSystem(SYM_AND, OP_AND)
 	defSystem(SYM_OR, OP_OR)
 	defSystem(SYM_EXIT, OP_EXIT)
+	defSystem(SYM_RND, OP_RND)
 }
 
 func CompileToIR(t []string) []IrInstruction {

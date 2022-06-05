@@ -35,6 +35,7 @@ const (
 	OP_OR    = '|'
 	OP_AND   = '&'
 	OP_NOT   = '~'
+	OP_RND   = 26
 )
 
 const (
@@ -70,4 +71,5 @@ const (
 	SYM_OR    = "|"
 	SYM_AND   = "&"
 	SYM_NOT   = "~"
+	SYM_RND   = "rnd"
 )

@@ -10,7 +10,7 @@ export function run(args: Arguments) {
   const encoder = new TextEncoder();
   const decoder = new TextDecoder();
 
-  const filename = String(args._.shift() || "-");
+  const filename = args.file || "-";
   const code = filename == "-"
     ? decoder.decode(readStdin())
     : Deno.readTextFileSync(filename);

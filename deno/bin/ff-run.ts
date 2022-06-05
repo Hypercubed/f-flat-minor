@@ -11,7 +11,7 @@ import { readStdin } from "../src/read.ts";
 export function run(argv: Arguments) {
   const textDecoder = new TextDecoder();
 
-  const filename = String(argv._.shift() || "-");
+  const filename = argv.file || "-";
   let code = filename == "-"
     ? textDecoder.decode(readStdin())
     : Deno.readTextFileSync(filename);

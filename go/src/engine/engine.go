@@ -4,7 +4,9 @@ import (
 	"fmt"
 	. "m/src/utils"
 	. "math/big"
+	"math/rand"
 	"os"
+	"time"
 )
 
 var stack = []Int(nil)
@@ -96,6 +98,8 @@ func call(c int64) {
 }
 
 func Setup() {
+	rand := rand.New(rand.NewSource(time.Now().UnixNano()))
+
 	defSystem(func() {
 		// nop
 	}, OP_NOP)
@@ -293,6 +297,11 @@ func Setup() {
 		x := pop()
 		os.Exit(int(x.Int64()))
 	}, OP_EXIT)
+
+	defSystem(func() {
+		x := pop()
+		push(*x.Rand(rand, &x))
+	}, OP_RND)
 }
 
 func check(e error) {
