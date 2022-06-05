@@ -111,8 +111,9 @@ export class Compiler {
         }
         call(0n, comment.join(" "));
       } else if (ss === "[") {
-        push(this.nextCode(), ss);
-        call(OpCodes.BRA);
+        const code = this.nextCode();
+        push(code, `$_${code}`);
+        call(OpCodes.BRA, ss);
       } else if (ss[0] === "&" && ss.length > 1) { // Symbol
         push(this.getSymbol(ss.replace(/^&/, "")), ss);
       } else {

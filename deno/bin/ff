@@ -8,7 +8,7 @@ yargs(Deno.args)
   .version('4')
   .scriptName('ff')
   .command('preprocess [file]', 'Fb preprocessor', {}, async (argv) => {
-    (await import('./ff-compile.ts')).run(argv);
+    (await import('./ff-preprocess.ts')).run(argv);
   })
   .command('compile [file]', 'Fb compiler', {}, async (argv) => {
     (await import('./ff-compile.ts')).run(argv);

@@ -8,6 +8,7 @@ import { Engine } from "../src/engine.ts";
 import { Preprocessor } from "../src/preprocess.ts";
 import { readStdin } from "../src/read.ts";
 import { printIr } from "../src/ir.ts";
+import { Optimizer } from "../src/optimizer.ts";
 
 export function run(argv: Arguments) {
   const textDecoder = new TextDecoder();
@@ -18,17 +19,22 @@ export function run(argv: Arguments) {
     : Deno.readTextFileSync(filename);
 
   const preprocessor = new Preprocessor();
-  const compiler = new Compiler();
-  const interpreter = new Engine();
-
   code = preprocessor.preprocess(Preprocessor.tokenize(code));
-  const ir = compiler.compileToIR(Compiler.tokenize(code));
 
+  const compiler = new Compiler();
+  let ir = compiler.compileToIR(Compiler.tokenize(code));
+  
+  if (argv.opt) {
+    const optimizer = new Optimizer();
+    ir = optimizer.optimizeIr(ir);
+  }
+  
   if (argv.ir) {
     printIr(ir);
     Deno.exit();
   }
-
+  
+  const interpreter = new Engine();
   interpreter.traceOn = argv.trace;
 
   interpreter.loadIR(ir);

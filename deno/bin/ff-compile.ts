@@ -9,6 +9,7 @@ import { readStdin } from "../src/read.ts";
 import { printIr } from "../src/ir.ts";
 import { Compiler } from "../src/compiler.ts";
 import { HEADER } from "../src/constants.ts";
+import { Optimizer } from "../src/optimizer.ts";
 
 export function run(argv: Arguments) {
   const textEncoder = new TextEncoder();
@@ -22,7 +23,12 @@ export function run(argv: Arguments) {
 
   const compiler = new Compiler();
 
-  const ir = compiler.compileToIR(Compiler.tokenize(code));
+  let ir = compiler.compileToIR(Compiler.tokenize(code));
+
+  if (argv.opt) {
+    const optimizer = new Optimizer();
+    ir = optimizer.optimizeIr(ir);
+  }
 
   if (argv.ir) {
     printIr(ir);
