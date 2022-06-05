@@ -1,4 +1,4 @@
-import { OpCodes } from "../src/opcodes.ts";
+import { OpCodes, systemWords } from "../src/opcodes.ts";
 import { IrInstruction, IROp } from "./ir.ts";
 import { SourceMap } from "./source-maps.ts";
 import { decode } from "./vlq.ts";
@@ -8,12 +8,7 @@ const IMMEDIATE_WORDS = [
   BigInt(OpCodes.KET),
   BigInt(OpCodes.MARK),
   BigInt(OpCodes.BRA)
-]
-
-const DEF = BigInt(OpCodes.DEF);
-const KET = BigInt(OpCodes.KET);
-const MARK = BigInt(OpCodes.MARK);
-const BRA = BigInt(OpCodes.BRA);
+];
 
 export class Engine {
   static fromBase64(encoded: string): bigint[] {
@@ -159,8 +154,8 @@ export class Engine {
     console.log(`[ ${s} ] ${name} [ ${q} ]`);
   }
 
-  getName(op: bigint) {
-    return this.symbols?.has(op) ? this.symbols.get(op) : String(op);
+  getName(op: bigint, def = String(op)) {
+    return this.symbols?.has(op) ? this.symbols.get(op) : String(def);
   }
 
   print() {
@@ -176,6 +171,11 @@ export class Engine {
 
   private setup() {
     const encoder = new TextEncoder();
+
+    let name: keyof typeof systemWords;
+    for (name in systemWords) {
+      this.symbols.set(BigInt(systemWords[name]), name);
+    }
 
     this.defineSystem(() => {}, OpCodes.NOP);
 

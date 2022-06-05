@@ -40,11 +40,13 @@ export function run(args: Arguments) {
     Deno.exit();
   }
 
+  interpreter.loadBigIntCode(bigCode);
+
   if (args.d) {
     const ir = bigCodeToIr(bigCode);
     const s = ir.map(i => {
       if (i.op == "call") {
-        return `$_${i.value}`;
+        return interpreter.getName(i.value, `$_${i.value}`);
       } else {
         return i.value;
       }
@@ -53,7 +55,8 @@ export function run(args: Arguments) {
     Deno.exit();
   }
 
-  interpreter.loadBigIntCode(bigCode);
+  interpreter.traceOn = args.trace;
+
   interpreter.run();
 }
 

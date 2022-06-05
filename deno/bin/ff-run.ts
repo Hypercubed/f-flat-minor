@@ -7,6 +7,7 @@ import { Compiler } from "../src/compiler.ts";
 import { Engine } from "../src/engine.ts";
 import { Preprocessor } from "../src/preprocess.ts";
 import { readStdin } from "../src/read.ts";
+import { printIr } from "../src/ir.ts";
 
 export function run(argv: Arguments) {
   const textDecoder = new TextDecoder();
@@ -22,6 +23,13 @@ export function run(argv: Arguments) {
 
   code = preprocessor.preprocess(Preprocessor.tokenize(code));
   const ir = compiler.compileToIR(Compiler.tokenize(code));
+
+  if (argv.ir) {
+    printIr(ir);
+    Deno.exit();
+  }
+
+  interpreter.traceOn = argv.trace;
 
   interpreter.loadIR(ir);
   interpreter.run();
