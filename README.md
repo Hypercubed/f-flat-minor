@@ -18,19 +18,16 @@ Each implementation should compile and execute the following code:
 
 --: 1 - ;
 rot: swap q< swap q> swap ;
-choose: rot &swap ? drop ;
+choose: rot  [ swap ] ? drop ;
 branch: choose eval ;
 
 /* factorial */
 
-fact_t: dup -- fact * ;
-fact_f: drop 1 ;
-fact: dup &fact_t &fact_f branch ;
+fact: dup [ dup -- fact * ] [ drop 1 ] branch ;
 
 /* string printing */
 
-print_t: putc print ;
-print: dup &print_t &drop branch ;
+print: dup [ putc print ] [ drop ] branch ;
 println: print 10 putc ;
 
 0 32 'Factorial' print
