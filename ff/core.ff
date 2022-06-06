@@ -19,18 +19,19 @@ bury: swap swapd ; /* c b a -> a c b */
 rot: swap swapd swap ; /* c b a -> a b c */
 dupd: q< dup q> ;
 over: dupd swap ;
-dup2: dupd swap dupd swap ;
+dup2: over over ;
 run: dup slip ;
 
 /* inquisitive */
 
 not: 0 = ;
-ne?: = not ;
 eqz?: 0 = ;
-neqz?: 0 = not ;
-divisor?: % eqz? ;
-even?: 2 divisor? ;
-odd?: even? not ;
+truthy?: eqz? .inline not .inline ;
+ne?: = not .inline ;
+neqz?: eqz? .inline not .inline ;
+divisor?: % eqz? .inline ;
+even?: 2 divisor? .inline ;
+odd?: even? .inline not ;
 
 /* binary operators */
 
@@ -38,9 +39,8 @@ bxor: dup2 ~ & bury swap ~ & | ;
 
 /* logical */
 
-and: * ;
-or: + ;
-
+and: * truthy? ;
+or: + truthy? ;
 nand: * eqz? ;
 nor: + eqz? ;
 
@@ -60,21 +60,21 @@ head: &drop reduce ;
 /* counters */
 
 repeat_loop: run q> repeat_next ;
-repeat_next: dup -- q< &repeat_loop ? ;
+repeat_next: dup -- q< [ repeat_loop ] ? ;
 repeat: repeat_next q> drop drop ;  
 
-range: dupd swap - &succ swap repeat ;
-count: 0 swap ++ &succ swap repeat drop ;
+range: dupd swap - [ succ ] swap repeat ;
+count: 0 swap ++ [ succ ] swap repeat drop ;
 
 reduce: depth 2 - repeat ;
 
-sum: &+ reduce ;
-product: &* reduce ;
+sum: [ + ] reduce ;
+product: [ * ] reduce ;
 
 /* math */
 neg?: 0 < ;
 pos?: 0 > ;
-sgn: dup neg? [ drop -1 ] [ pos? [ 1 ] [ 0 ] branch ] branch ;
+sgn: dup neg? [ drop -1 ] [ pos? 1 0 choose ] branch ;
 abs: dup sgn * ;
 sqr: dup * ;
 !: dup [ dup -- ! * ] [ drop 1 ] branch ;
@@ -82,7 +82,7 @@ sqr: dup * ;
 /* string printing */
 
 printcr: 10 putc ;
-print: dup [ putc print ] &drop branch ;
+print: dup [ putc print ] [ drop ] branch ;
 println: print printcr ;
 
 /* testing */

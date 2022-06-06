@@ -5,6 +5,7 @@ export interface IrInstruction {
   op: IROp;
   comment?: string;
   name?: string;
+  meta?: Record<string, unknown>;
 }
 
 export enum IROp {

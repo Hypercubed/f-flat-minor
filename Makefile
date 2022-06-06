@@ -1,10 +1,22 @@
 SHELL := /bin/bash
+SUBDIRS := deno go python ruby
 
-.DEFAULT_GOAL := test
-.PHONY : test
+define FOREACH
+	@for DIR in $(SUBDIRS);\
+	do \
+		$(MAKE) -C $$DIR $(1) --no-print-directory; \
+	done
+endef
 
+.DEFAULT_GOAL := default
+
+.PHONY: default
+default: test clean
+
+.PHONY: clean
+clean:
+	$(call FOREACH,$@)
+
+.PHONY: test
 test:
-	@make -C ./deno test clean --no-print-directory
-	@make -C ./go test clean --no-print-directory
-	@make -C ./python test clean --no-print-directory
-	@make -C ./ruby test clean --no-print-directory
+	$(call FOREACH,$@)

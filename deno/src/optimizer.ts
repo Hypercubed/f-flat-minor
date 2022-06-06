@@ -11,25 +11,21 @@ export class Optimizer {
   optimizeIr(ir: Array<IrInstruction>) {
     const optimized = ir.slice();
 
-    const userDefs = new Set<IrInstruction[]>();
-    const inlineDefs = new Set<IrInstruction[]>();
+    const namedDefs = new Map<BigInt, IrInstruction[]>();
+    const anonDefs = new Set<IrInstruction[]>();
 
     const maybeCalled = new Set<BigInt>();
     
-    let ip = -1;
+    let ip = 0;
     while (ip < optimized.length) {
-      const i = optimized[++ip];
-      if (!i) continue;
+      const i = optimized[ip];
 
       maybeCalled.add(i.value);
 
       if (i.op === IROp.call) {
         if (i.value === 0n) {  // no-ops
           optimized.splice(ip, 1);
-          continue;
-        }
-        
-        if (i.value === KET) { // inline defs
+        } else if (i.value === KET) { // anon defs
           const end = ip;
           while (ip-- > 0) {
             const j = optimized[ip];
@@ -41,7 +37,7 @@ export class Optimizer {
 
           const def = optimized.splice(ip, end - ip + 1);
 
-          // unwrap inlineDefs of length 1
+          // unwrap anonDefs of length 1
           if (def.length === 3 && def[1].op === IROp.call) {
             n.value = def[1].value;
             n.name = def[1].name;
@@ -52,7 +48,7 @@ export class Optimizer {
             def.unshift(n);
             def[def.length - 1].value = DEF;
             def[def.length - 1].name = ";";
-            inlineDefs.add(def);
+            anonDefs.add(def);
             maybeCalled.add(def[0].value);
           }
         } else if (i.value === DEF) { // user defs
@@ -65,7 +61,7 @@ export class Optimizer {
           }
           const def = optimized.splice(ip - 1, end - ip + 2);
           ip = ip - 2;
-          userDefs.add(def);
+          namedDefs.set(def[0].value, def);
         } else if (i.value === CALL) { // replace indirect calls
           const p = optimized[ip - 1];
           if (p.op === IROp.push) {
@@ -77,19 +73,35 @@ export class Optimizer {
           }
         }
       }
+
+      ip++;
     }
- 
+
     // Add hoisted inline defs
-    inlineDefs.forEach(def => {
+    anonDefs.forEach(def => {
       optimized.unshift(...def);
     });
 
     // Add hoisted user defs
-    userDefs.forEach(def => {
+    namedDefs.forEach(def => {
       if (maybeCalled.has(def[0].value)) {
         optimized.unshift(...def);
       }
     });
+
+    // Inline defs marked as inline
+    ip = 0;
+    while (ip < optimized.length) {
+      const i = optimized[ip];
+      if (i.op === IROp.call && i.meta?.inline) {
+        const def = namedDefs.get(i.value);
+        if (def) {
+          optimized.splice(ip, 1, ...def.slice(2, -1));
+          ip--;
+        }
+      }
+      ip++;
+    }
 
     return optimized;
   }

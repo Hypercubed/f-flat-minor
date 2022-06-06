@@ -79,6 +79,10 @@ export class Compiler {
           case ".call":
             ret[ret.length - 1].op = IROp.call;
             break;
+          case ".inline":
+            ret[ret.length - 1].meta ||= {};
+            ret[ret.length - 1].meta!.inline = true;
+            break;
           case ".exit":
             Deno.exit();
             break;
