@@ -10,7 +10,8 @@ import (
 )
 
 var stack = []Int(nil)
-var r_stack = []Int(nil)
+var queue = []Int(nil)
+
 var symbolMap = make(map[string]int64)
 var systemDict = make(map[int64]func())
 var userDict = make(map[int64][]Int)
@@ -23,6 +24,7 @@ func ClearStack() {
 	stack = nil
 }
 
+// Prints the stack
 func Print() {
 	fmt.Print("[ ")
 	for i, num := range stack {
@@ -34,64 +36,71 @@ func Print() {
 	fmt.Println(" ]")
 }
 
-func clone(x Int) Int {
-	r := NewInt(0)
-	return *r.Add(r, &x)
+// Clone returns a copy of x.
+func clone(x *Int) *Int {
+	return NewInt(0).Set(x)
 }
 
-func peek() Int {
+// If the stack is not empty, return a pointer to the last element in the stack.
+func peek() *Int {
 	l := len(stack)
 	if l > 0 {
-		return clone(stack[l-1])
+		return &stack[l-1]
 	}
-	return *NewInt(0)
+	panic("Stack is empty")
 }
 
-func pop() Int {
+// If the stack is not empty, pop the last element off the stack and return it
+func pop() *Int {
 	l := len(stack)
 	if l > 0 {
-		r := clone(stack[l-1])
+		r := stack[l-1]
 		stack = stack[:l-1]
-		return r
+		return &r
 	}
-	return *NewInt(0)
+	panic("Stack is empty")
 }
 
-func push(a Int) {
-	stack = append(stack, a)
+// Push takes a pointer to an Int and appends it to the stack.
+func push(a *Int) {
+	stack = append(stack, *a)
 }
 
-func rPeek() Int {
-	l := len(r_stack)
+// func queuePeek() *Int {
+// 	l := len(queue)
+// 	if l > 0 {
+// 		return &queue[l-1]
+// 	}
+// 	panic("Queue is empty")
+// }
+
+// If the queue is not empty, remove the last element from the queue and return it.
+func queuePop() *Int {
+	l := len(queue)
 	if l > 0 {
-		return clone(r_stack[l-1])
+		r := queue[l-1]
+		queue = queue[:l-1]
+		return &r
 	}
-	return *NewInt(0)
+	panic("Queue is empty")
 }
 
-func rPop() Int {
-	l := len(r_stack)
-	if l > 0 {
-		r := clone(r_stack[l-1])
-		r_stack = r_stack[:l-1]
-		return r
-	}
-	return *NewInt(0)
+// Append the value of the pointer to the queue.
+func queuePush(a *Int) {
+	queue = append(queue, *a)
 }
 
-func rPush(a Int) {
-	r_stack = append(r_stack, a)
-}
-
+// It takes a function and an integer, and adds the function to a map of functions, indexed by the
+// integer
 func defSystem(fn func(), code int64) {
 	systemDict[code] = fn
 }
 
 func call(c int64) {
 	if fn, ok := systemDict[c]; ok {
-		fn()
+		defer fn()
 	} else if d, ok := userDict[c]; ok {
-		ExecuteBigIntCode(d)
+		defer ExecuteBigIntCode(d)
 	} else {
 		panic(fmt.Sprintf("Unknown opcode %d", c))
 	}
@@ -110,15 +119,14 @@ func Setup() {
 	}, OP_CALL)
 
 	defSystem(func() {
-		x := pop()
-		c := rune(x.Int64())
+		c := rune(pop().Int64())
 		fmt.Print(string(c))
 	}, OP_PUTC)
 
 	defSystem(func() {
 		ascii, _, err := GetChar()
 		check(err)
-		push(*NewInt(int64(ascii)))
+		push(NewInt(int64(ascii)))
 	}, OP_GETC)
 
 	defSystem(func() {
@@ -126,11 +134,11 @@ func Setup() {
 	}, OP_DROP)
 
 	defSystem(func() {
-		rPush(pop())
+		queuePush(pop())
 	}, OP_PUSHR)
 
 	defSystem(func() {
-		push(rPop())
+		push(queuePop())
 	}, OP_PULLR)
 
 	defSystem(func() {
@@ -138,68 +146,62 @@ func Setup() {
 	}, OP_CLR)
 
 	defSystem(func() {
-		push(peek())
+		push(clone(peek()))
 	}, OP_DUP)
 
 	defSystem(func() {
 		l := len(stack)
-		push(*NewInt(int64(l)))
+		push(NewInt(int64(l)))
 	}, OP_DEPTH)
 
 	defSystem(func() {
-		x := pop()
-		y := pop()
+		x, y := pop(), pop()
 		push(x)
 		push(y)
 	}, OP_SWAP)
 
 	defSystem(func() {
-		x := pop()
-		y := pop()
-		push(*x.Mod(&y, &x))
+		x, y := pop(), peek()
+		y.Mod(y, x)
 	}, OP_MOD)
 
 	defSystem(func() {
-		x := pop()
-		y := pop()
-		push(*x.And(&y, &x))
+		x, y := pop(), peek()
+		y.And(y, x)
 	}, OP_AND)
 
 	defSystem(func() {
 		l := len(stack)
 		for i := 0; i < l; i++ {
-			x := clone(stack[0])
+			x := stack[0]
 			stack = stack[1:]
-			rPush(x)
+			queuePush(&x)
 		}
-		rPush(*NewInt(int64(l)))
+		queuePush(NewInt(int64(l)))
 	}, OP_STASH)
 
 	defSystem(func() {
-		x := rPop()
+		x := queuePop()
 		l := int(x.Int64())
 		for i := 0; i < l; i++ {
-			x := rPop()
-			stack = append([]Int{x}, stack...)
+			x := queuePop()
+			stack = append([]Int{*x}, stack...)
 		}
 	}, OP_FETCH)
 
 	defSystem(func() {
-		x := pop()
-		y := pop()
-		push(*x.Mul(&y, &x))
+		x, y := pop(), peek()
+		y.Mul(y, x)
 	}, OP_MUL)
 
 	defSystem(func() {
-		x := pop()
-		y := pop()
-		push(*y.Add(&y, &x))
+		x, y := pop(), peek()
+		y.Add(y, x)
 	}, OP_ADD)
 
 	defSystem(func() {
-		x := pop()
-		y := pop()
-		push(*y.Sub(&y, &x))
+		x, y := pop(), peek()
+		y.Sub(y, x)
 	}, OP_SUB)
 
 	defSystem(func() {
@@ -207,90 +209,80 @@ func Setup() {
 	}, OP_PRN)
 
 	defSystem(func() {
-		x := pop()
-		y := pop()
-		push(*x.Div(&y, &x))
+		x, y := pop(), peek()
+		y.Div(y, x)
 	}, OP_DIV)
 
 	defSystem(func() {
-		rPush(*NewInt(int64(len(stack))))
+		l := len(stack)
+		queuePush(NewInt(int64(l)))
 	}, OP_MARK)
 
 	defSystem(func() {
-		m := rPop()
-		mm := int(m.Int64())
+		mm := int(queuePop().Int64())
 		def := append([]Int(nil), stack[mm:]...)
 		stack = stack[:mm]
-		n := pop()
-		userDict[n.Int64()] = def
+		userDict[pop().Int64()] = def
 	}, OP_DEF)
 
 	defSystem(func() {
-		x := pop()
-		y := pop()
-		push(*x.Or(&y, &x))
+		x, y := pop(), peek()
+		y.Or(y, x)
 	}, OP_OR)
 
 	defSystem(func() {
-		x := pop()
-		push(*x.Not(&x))
+		x := peek()
+		x.Not(x)
 	}, OP_NOT)
 
 	defSystem(func() {
-		rPush(*NewInt(int64(len(stack))))
+		queuePush(NewInt(int64(len(stack))))
 	}, OP_BRA)
 
 	defSystem(func() {
-		m := rPop()
-		mm := int(m.Int64())
+		mm := int(queuePop().Int64())
 		def := append([]Int(nil), stack[mm:]...)
 		stack = stack[:mm]
-		n := peek()
-		userDict[n.Int64()] = def
+		userDict[peek().Int64()] = def
 	}, OP_KET)
 
 	defSystem(func() {
-		x := pop()
-		y := pop()
-		if y.Cmp(&x) == -1 {
-			push(*NewInt(1))
+		x, y := pop(), pop()
+		if y.Cmp(x) == -1 {
+			push(NewInt(1))
 		} else {
-			push(*NewInt(0))
+			push(NewInt(0))
 		}
 	}, OP_LT)
 
 	defSystem(func() {
-		x := pop()
-		y := pop()
-		if y.Cmp(&x) == 0 {
-			push(*NewInt(1))
+		x, y := pop(), pop()
+		if y.Cmp(x) == 0 {
+			push(NewInt(1))
 		} else {
-			push(*NewInt(0))
+			push(NewInt(0))
 		}
 	}, OP_EQ)
 
 	defSystem(func() {
-		x := pop()
-		y := pop()
-		if y.Cmp(&x) == 1 {
-			push(*NewInt(1))
+		x, y := pop(), pop()
+		if y.Cmp(x) == 1 {
+			push(NewInt(1))
 		} else {
-			push(*NewInt(0))
+			push(NewInt(0))
 		}
 	}, OP_GT)
 
 	defSystem(func() {
-		t := pop()
-		i := pop()
-		if i.Cmp(NewInt(0)) != 0 {
-			call(t.Int64())
+		x, y := pop(), pop()
+		if y.Cmp(NewInt(0)) != 0 {
+			call(x.Int64())
 		}
 	}, OP_IF)
 
 	defSystem(func() {
-		x := pop()
-		y := pop()
-		push(*x.Exp(&y, &x, nil))
+		x, y := pop(), peek()
+		y.Exp(y, x, nil)
 	}, OP_POW)
 
 	defSystem(func() {
@@ -299,8 +291,8 @@ func Setup() {
 	}, OP_EXIT)
 
 	defSystem(func() {
-		x := pop()
-		push(*x.Rand(rand, &x))
+		x := peek()
+		x.Rand(rand, x)
 	}, OP_RND)
 }
 
@@ -329,28 +321,34 @@ func printBigIntArray(a []Int) {
 	fmt.Printf("%s %d", "BigInts", len(a))
 }
 
+var MARK = NewInt(OP_MARK)
+var DEF = NewInt(OP_DEF)
+
+var BRA = NewInt(OP_BRA)
+var KET = NewInt(OP_KET)
+
 func ExecuteBigIntCode(bc []Int) {
 	depth := 0
 
 	for i := 0; i < len(bc); i++ {
 		op := bc[i]
 
-		if op.Cmp(NewInt(OP_DEF)) == 0 || op.Cmp(NewInt(OP_KET)) == 0 {
+		if op.Cmp(DEF) == 0 || op.Cmp(KET) == 0 {
 			depth--
 		}
 
 		if depth > 0 {
-			stack = append(stack, op)
+			push(&op)
 		}
 
 		if op.Cmp(NewInt(0)) == 0 {
 			i++
-			stack = append(stack, bc[i])
+			push(&bc[i])
 		} else if depth < 1 {
 			call(op.Int64())
 		}
 
-		if op.Cmp(NewInt(OP_MARK)) == 0 || op.Cmp(NewInt(OP_BRA)) == 0 {
+		if op.Cmp(MARK) == 0 || op.Cmp(BRA) == 0 {
 			depth++
 		}
 	}

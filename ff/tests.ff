@@ -8,7 +8,6 @@
 8 5 % 3 = assert
 9 12 ^ 282429536481 = assert
 
-
 /* derived math */
 12 ! 479001600 = assert
 5 sqr 25 = assert
@@ -73,4 +72,4 @@ false 5 8 choose 8 = assert
 1 2 3 bury 2 = assert 1 = assert 3 = assert
 1 2 3 rot 1 = assert 2 = assert 3 = assert
 
-0 'Passed println
+0 'Passed' println

@@ -11,6 +11,7 @@ go/*.bin
 go/*.txt
 go/compile
 go/execute
+go/repl
 go/run
 
 */node_modules/*

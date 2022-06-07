@@ -27,7 +27,7 @@ test:	compile execute ff-tests example.bin example.txt
 
 ff-tests: compile execute
 	@printf "** Go FF Test **"
-	@cd ..; time cat ./ff/tests.ff | ./go/compile | ./go/execute > /dev/null && printf "${GRN}OK${NC}\n" || printf "${RED}FAILED${NC}\n"
+	@cd ..; time cat ./ff/tests.ff | ./go/compile | ./go/execute && printf "${GRN}OK${NC}\n" || printf "${RED}FAILED${NC}\n"
 	@echo ""
 
 example.bin: compile
