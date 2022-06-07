@@ -9,35 +9,26 @@ GRN = \033[0;32m
 clean:
 	@rm -f ./example.*
 
-compile: ./cmd/compile/*.go ./src/**/*.go
-	go build ./cmd/compile
+build/%: ./cmd/compile/*.go ./src/**/*.go
+	go build -o ./build/$* ./cmd/$*
 
-execute: ./cmd/execute/*.go ./src/**/*.go
-	go build ./cmd/execute
+build: build/compile build/execute build/run build/repl
 
-run: ./cmd/run/*.go ./src/**/*.go
-	go build ./cmd/run
+test:	build ff-tests example.bin example.txt 
 
-repl: ./cmd/repl/*.go ./src/**/*.go
-	go build ./cmd/repl
-
-build: compile execute run repl
-
-test:	compile execute ff-tests example.bin example.txt 
-
-ff-tests: compile execute
+ff-tests: build/run
 	@printf "** Go FF Test **"
-	@cd ..; time cat ./ff/tests.ff | ./go/compile | ./go/execute && printf "${GRN}OK${NC}\n" || printf "${RED}FAILED${NC}\n"
+	@cd ..; time cat ./ff/tests.ff | ./go/build/run && printf "${GRN}OK${NC}\n" || printf "${RED}FAILED${NC}\n"
 	@echo ""
 
-example.bin: compile
+example.bin: build/compile
 	@printf "** Go Compile **"
-	@time cat ../ff/example_v2.ff | ./compile > ./example.bin
+	@time cat ../ff/example_v2.ff | ./build/compile > ./example.bin
 	@cmp --silent -- "./example.bin" "../fixtures/example_v2.bin" && printf "${GRN}OK${NC}\n" || printf "${RED}bins differ${NC}\n"
 	@echo ""
 
-example.txt: execute
+example.txt: build/execute
 	@printf "** Go Execute **"
-	@time cat ./example.bin | ./execute > ./example.txt
+	@time cat ./example.bin | ./build/execute > ./example.txt
 	@cmp --silent -- "./example.txt" "../fixtures/example.txt" && printf "${GRN}OK${NC}\n" || printf "${RED}outouts differ${NC}\n"
 	@echo ""

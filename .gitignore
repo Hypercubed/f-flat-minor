@@ -3,16 +3,10 @@
 
 deno/*.bin
 deno/*.txt
-deno/ff-compile
-deno/ff-execute
-deno/ff-run
-deno/ff-preprocess
+deno/build/**
 
 go/*.bin
 go/*.txt
-go/compile
-go/execute
-go/repl
-go/run
+go/build/**
 
 */node_modules/*
