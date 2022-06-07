@@ -17,7 +17,7 @@ test:	ff-tests example.txt
 
 ff-tests:
 	@printf "** Python FF Test **"
-	@cd ..; time ./deno/bin/ff-preprocess.ts ./ff/tests.ff | python3 ./python/execute.py > /dev/null && printf "${GRN}OK${NC}\n" || printf "${RED}FAILED${NC}\n"
+	@cd ..; time ./deno/ff-preprocess ./ff/tests.ff | python3 ./python/execute.py > /dev/null && printf "${GRN}OK${NC}\n" || printf "${RED}FAILED${NC}\n"
 	@echo ""
 
 example.txt:

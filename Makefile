@@ -13,10 +13,15 @@ endef
 .PHONY: default
 default: test clean
 
+.PHONY: build
+build:
+	@$(MAKE) -C deno $@ --no-print-directory;
+	@$(MAKE) -C go $@ --no-print-directory;
+
 .PHONY: clean
 clean:
 	$(call FOREACH,$@)
 
 .PHONY: test
-test:
+test: build
 	$(call FOREACH,$@)

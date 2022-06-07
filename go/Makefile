@@ -3,7 +3,7 @@ RED = \033[0;31m
 NC = \033[0m
 GRN = \033[0;32m
 
-.DEFAULT_GOAL := default
+.DEFAULT_GOAL := build
 .PHONY : clean example run repl test example.bin example.txt ff-tests
 
 clean:
@@ -21,7 +21,7 @@ run: ./cmd/run/*.go ./src/**/*.go
 repl: ./cmd/repl/*.go ./src/**/*.go
 	go build ./cmd/repl
 
-default: compile execute run repl
+build: compile execute run repl
 
 test:	compile execute ff-tests example.bin example.txt 
 

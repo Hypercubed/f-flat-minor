@@ -3,7 +3,7 @@ RED=\033[0;31m
 NC=\033[0m
 GRN=\033[0;32m
 
-.DEFAULT_GOAL := default
+.DEFAULT_GOAL := build
 .PHONY : clean example run test ff-tests example.bin example.txt
 
 clean:
@@ -11,16 +11,19 @@ clean:
 
 test:	ff-tests example.bin example.txt
 
-ff-compile: ./bin/*.ts
+ff-compile: ./**/*.ts
 	deno compile --unstable --allow-env --allow-read ./bin/ff-compile.ts
 
-ff-execute: ./bin/*.ts
+ff-execute: ./**/*.ts
 	deno compile --unstable --allow-env --allow-read ./bin/ff-execute.ts
 
-ff-run: ./bin/*.ts
+ff-run: ./**/*.ts
 	deno compile --unstable --allow-env --allow-read ./bin/ff-run.ts
 
-default: ff-execute ff-compile ff-run
+ff-preprocess: ./**/*.ts
+	deno compile --unstable --allow-env --allow-read ./bin/ff-preprocess.ts
+
+build: ff-execute ff-compile ff-run ff-preprocess
 
 ff-tests: ff-run
 	@printf "** Deno FF Test **"

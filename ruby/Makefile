@@ -17,7 +17,7 @@ test:	ff-tests example.txt
 
 ff-tests:
 	@printf "** Ruby FF Test **"
-	@cd ..; ./deno/bin/ff-preprocess.ts ./ff/tests.ff | ruby ./ruby/execute.rb > /dev/null && printf "${GRN}OK${NC}\n" || printf "${RED}FAILED${NC}\n"
+	@cd ..; time ./deno/ff-preprocess ./ff/tests.ff | ruby ./ruby/execute.rb > /dev/null && printf "${GRN}OK${NC}\n" || printf "${RED}FAILED${NC}\n"
 	@echo ""
 
 example.txt:

@@ -6,6 +6,7 @@ deno/*.txt
 deno/ff-compile
 deno/ff-execute
 deno/ff-run
+deno/ff-preprocess
 
 go/*.bin
 go/*.txt
