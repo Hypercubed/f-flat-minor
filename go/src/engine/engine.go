@@ -13,7 +13,7 @@ var stack = []*Int(nil)
 var queue = []*Int(nil)
 
 var symbolMap = make(map[string]int64)
-var systemDict = make(map[int64]func())
+var systemDict = make(map[byte]func())
 var userDict = make(map[int64][]*Int)
 
 func GetStack() []*Int {
@@ -92,14 +92,14 @@ func queuePush(a *Int) {
 
 // It takes a function and an integer, and adds the function to a map of functions, indexed by the
 // integer
-func defSystem(fn func(), code int64) {
-	systemDict[code] = fn
+func defSystem(fn func(), code int) {
+	systemDict[byte(code)] = fn
 }
 
-func call(c int64) {
-	if fn, ok := systemDict[c]; ok {
+func call(c *Int) {
+	if fn, ok := systemDict[byte(c.Int64())]; ok {
 		defer fn()
-	} else if d, ok := userDict[c]; ok {
+	} else if d, ok := userDict[c.Int64()]; ok {
 		defer ExecuteBigIntCode(d)
 	} else {
 		panic(fmt.Sprintf("Unknown opcode %d", c))
@@ -115,7 +115,7 @@ func Setup() {
 
 	defSystem(func() {
 		x := pop()
-		call(x.Int64())
+		call(x)
 	}, OP_CALL)
 
 	defSystem(func() {
@@ -276,7 +276,7 @@ func Setup() {
 	defSystem(func() {
 		x, y := pop(), pop()
 		if y.Cmp(NewInt(0)) != 0 {
-			call(x.Int64())
+			call(x)
 		}
 	}, OP_IF)
 
@@ -345,7 +345,7 @@ func ExecuteBigIntCode(bc []*Int) {
 			i++
 			push(clone(bc[i]))
 		} else if depth < 1 {
-			call(op.Int64())
+			call(op)
 		}
 
 		if op.Cmp(MARK) == 0 || op.Cmp(BRA) == 0 {
