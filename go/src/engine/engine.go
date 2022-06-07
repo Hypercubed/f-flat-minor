@@ -338,7 +338,7 @@ func ExecuteBigIntCode(bc []*Int) {
 		}
 
 		if depth > 0 {
-			push(op)
+			push(clone(op))
 		}
 
 		if op.Cmp(NewInt(0)) == 0 {
