@@ -11,7 +11,7 @@ import (
 )
 
 type IrInstruction struct {
-	value   Int
+	value   *Int
 	op      string
 	comment string
 }
@@ -29,12 +29,12 @@ func nextCode() int64 {
 	return c
 }
 
-func getSymbol(name string) Int {
+func getSymbol(name string) *Int {
 	if c, ok := symbolMap[name]; ok {
-		return *NewInt(c)
+		return NewInt(c)
 	}
 	symbolMap[name] = nextCode()
-	return *NewInt(symbolMap[name])
+	return NewInt(symbolMap[name])
 }
 
 func printIr(ir []IrInstruction) {
@@ -50,7 +50,7 @@ func lpad(s string, pad string, plength int) string {
 	return s
 }
 
-func printBigIntArray(a []Int) {
+func printBigIntArray(a []*Int) {
 	for i, element := range a {
 		fmt.Printf(lpad(element.Text(16), "0", 2))
 		fmt.Printf(" ")
@@ -74,12 +74,12 @@ func printByteArray(a []byte) {
 	fmt.Printf("%s %d", "Bytes", len(a))
 }
 
-func CompileToBigIntArray(ir []IrInstruction) []Int {
-	out := make([]Int, 0)
+func CompileToBigIntArray(ir []IrInstruction) []*Int {
+	out := make([]*Int, 0)
 	for _, element := range ir {
 		if element.op != "call" || element.value.Cmp(NewInt(0)) != 0 {
 			if element.op == "push" {
-				out = append(out, *NewInt(0))
+				out = append(out, NewInt(0))
 			}
 			out = append(out, element.value)
 		}
@@ -91,7 +91,7 @@ func CompileToBase64(ir []IrInstruction) string {
 	out := make([]Int, 0)
 	for _, element := range ir {
 		if element.op != "call" || element.value.Cmp(NewInt(0)) != 0 {
-			v := NewInt(0).Lsh(&element.value, 1)
+			v := NewInt(0).Lsh(element.value, 1)
 			if element.op == "call" {
 				v = v.Or(v, NewInt(1))
 			}
@@ -140,11 +140,11 @@ func Setup() {
 func CompileToIR(t []string) []IrInstruction {
 	ret := make([]IrInstruction, 0)
 
-	push := func(value Int, comment string) {
+	push := func(value *Int, comment string) {
 		ret = append(ret, IrInstruction{value: value, op: "push", comment: comment})
 	}
 
-	call := func(code Int, comment string) {
+	call := func(code *Int, comment string) {
 		ret = append(ret, IrInstruction{value: code, op: "call", comment: comment})
 	}
 
@@ -154,7 +154,7 @@ func CompileToIR(t []string) []IrInstruction {
 		element := t[i]
 
 		if s, ok := new(Int).SetString(element, 0); ok {
-			push(*s, element)
+			push(s, element)
 		} else if strings.HasPrefix(element, ".") && (len(element) > 1) {
 			tokens := regexp.MustCompile("\\s").Split(element, 2)
 			if tokens[0] == ".load" {
@@ -191,9 +191,9 @@ func CompileToIR(t []string) []IrInstruction {
 			for i := len(s) - 1; i >= 0; i-- {
 				v := NewInt(int64(s[i]))
 				if i == 0 {
-					push(*v, s)
+					push(v, s)
 				} else {
-					push(*v, "")
+					push(v, "")
 				}
 			}
 		} else if strings.HasSuffix(element, SYM_MARK) {
@@ -201,7 +201,7 @@ func CompileToIR(t []string) []IrInstruction {
 				name := element[:len(element)-1]
 				push(getSymbol(name), name)
 			}
-			call(*NewInt(OP_MARK), SYM_MARK)
+			call(NewInt(OP_MARK), SYM_MARK)
 		} else if element == "/*" {
 			i++
 			var comment = element + " "
@@ -212,10 +212,10 @@ func CompileToIR(t []string) []IrInstruction {
 					break
 				}
 			}
-			call(*NewInt(0), comment)
+			call(NewInt(0), comment)
 		} else if element == SYM_BRA {
-			push(*NewInt(nextCode()), element)
-			call(*NewInt(OP_BRA), element)
+			push(NewInt(nextCode()), element)
+			call(NewInt(OP_BRA), element)
 		} else {
 			call(getSymbol(element), element)
 		}

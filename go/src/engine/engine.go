@@ -9,14 +9,14 @@ import (
 	"time"
 )
 
-var stack = []Int(nil)
-var queue = []Int(nil)
+var stack = []*Int(nil)
+var queue = []*Int(nil)
 
 var symbolMap = make(map[string]int64)
 var systemDict = make(map[int64]func())
-var userDict = make(map[int64][]Int)
+var userDict = make(map[int64][]*Int)
 
-func GetStack() []Int {
+func GetStack() []*Int {
 	return stack
 }
 
@@ -45,7 +45,7 @@ func clone(x *Int) *Int {
 func peek() *Int {
 	l := len(stack)
 	if l > 0 {
-		return &stack[l-1]
+		return stack[l-1]
 	}
 	panic("Stack is empty")
 }
@@ -56,14 +56,14 @@ func pop() *Int {
 	if l > 0 {
 		r := stack[l-1]
 		stack = stack[:l-1]
-		return &r
+		return r
 	}
 	panic("Stack is empty")
 }
 
 // Push takes a pointer to an Int and appends it to the stack.
 func push(a *Int) {
-	stack = append(stack, *a)
+	stack = append(stack, a)
 }
 
 // func queuePeek() *Int {
@@ -80,14 +80,14 @@ func queuePop() *Int {
 	if l > 0 {
 		r := queue[l-1]
 		queue = queue[:l-1]
-		return &r
+		return r
 	}
 	panic("Queue is empty")
 }
 
 // Append the value of the pointer to the queue.
 func queuePush(a *Int) {
-	queue = append(queue, *a)
+	queue = append(queue, a)
 }
 
 // It takes a function and an integer, and adds the function to a map of functions, indexed by the
@@ -175,7 +175,7 @@ func Setup() {
 		for i := 0; i < l; i++ {
 			x := stack[0]
 			stack = stack[1:]
-			queuePush(&x)
+			queuePush(x)
 		}
 		queuePush(NewInt(int64(l)))
 	}, OP_STASH)
@@ -185,7 +185,7 @@ func Setup() {
 		l := int(x.Int64())
 		for i := 0; i < l; i++ {
 			x := queuePop()
-			stack = append([]Int{*x}, stack...)
+			stack = append([]*Int{x}, stack...)
 		}
 	}, OP_FETCH)
 
@@ -220,7 +220,7 @@ func Setup() {
 
 	defSystem(func() {
 		mm := int(queuePop().Int64())
-		def := append([]Int(nil), stack[mm:]...)
+		def := append([]*Int(nil), stack[mm:]...)
 		stack = stack[:mm]
 		userDict[pop().Int64()] = def
 	}, OP_DEF)
@@ -241,7 +241,7 @@ func Setup() {
 
 	defSystem(func() {
 		mm := int(queuePop().Int64())
-		def := append([]Int(nil), stack[mm:]...)
+		def := append([]*Int(nil), stack[mm:]...)
 		stack = stack[:mm]
 		userDict[peek().Int64()] = def
 	}, OP_KET)
@@ -327,7 +327,7 @@ var DEF = NewInt(OP_DEF)
 var BRA = NewInt(OP_BRA)
 var KET = NewInt(OP_KET)
 
-func ExecuteBigIntCode(bc []Int) {
+func ExecuteBigIntCode(bc []*Int) {
 	depth := 0
 
 	for i := 0; i < len(bc); i++ {
@@ -338,12 +338,12 @@ func ExecuteBigIntCode(bc []Int) {
 		}
 
 		if depth > 0 {
-			push(&op)
+			push(op)
 		}
 
 		if op.Cmp(NewInt(0)) == 0 {
 			i++
-			push(&bc[i])
+			push(clone(bc[i]))
 		} else if depth < 1 {
 			call(op.Int64())
 		}
@@ -354,16 +354,16 @@ func ExecuteBigIntCode(bc []Int) {
 	}
 }
 
-func FromBase64(s string) []Int {
-	bigints := make([]Int, 0)
+func FromBase64(s string) []*Int {
+	bigints := make([]*Int, 0)
 
 	for _, c := range Decode(s) {
 		op := new(Int).And(&c, NewInt(1))
 		v := new(Int).Rsh(&c, 1)
 		if op.Sign() == 0 {
-			bigints = append(bigints, *op)
+			bigints = append(bigints, op)
 		}
-		bigints = append(bigints, *v)
+		bigints = append(bigints, v)
 	}
 
 	return bigints
