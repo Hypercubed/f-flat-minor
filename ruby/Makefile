@@ -22,6 +22,6 @@ ff-tests:
 
 example.txt:
 	@printf "** Ruby Compile and Execute **"
-	@time cat ../ff/example_v2.ff | ruby ./execute.rb > example.txt
-	@cmp --silent -- "./example.txt" "../fixtures/example.txt" && printf "${GRN}OK${NC}\n" || printf "${RED}outouts differ${NC}\n"
+	@time cat ../ff/example_v2.ff | ruby ./execute.rb > ./artifacts/example.txt
+	@cmp --silent -- "./artifacts/example.txt" "../fixtures/example.txt" && printf "${GRN}OK${NC}\n" || printf "${RED}outouts differ${NC}\n"
 	@echo ""

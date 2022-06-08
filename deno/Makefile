@@ -7,7 +7,7 @@ GRN=\033[0;32m
 .PHONY : clean example run test ff-tests example.bin example.txt build
 
 clean:
-	@rm -f ./example.*
+	@rm -f ./artifacts ./build
 
 test:	ff-tests example.bin example.txt
 
@@ -23,12 +23,12 @@ ff-tests: build/run
 
 example.bin: build/compile
 	@printf "** Deno Compile **"
-	@time ./build/compile ../ff/example_v2.ff > ./example.bin
-	@cmp --silent -- "./example.bin" "../fixtures/example_v2.bin" && printf "${GRN}OK${NC}\n" || printf "${RED}bins differ${NC}\n"
+	@time ./build/compile ../ff/example_v2.ff > ./artifacts/example.bin
+	@cmp --silent -- "./artifacts/example.bin" "../fixtures/example_v2.bin" && printf "${GRN}OK${NC}\n" || printf "${RED}bins differ${NC}\n"
 	@echo ""
 
 example.txt: build/execute
 	@echo "** Deno Execute **"
-	@time ./build/execute ./example.bin > ./example.txt
-	@cmp --silent -- "./example.txt" "../fixtures/example.txt" && printf "${GRN}OK${NC}\n" || printf "${RED}outouts differ${NC}\n"
+	@time ./build/execute ./artifacts/example.bin > ./artifacts/example.txt
+	@cmp --silent -- "./artifacts/example.txt" "../fixtures/example.txt" && printf "${GRN}OK${NC}\n" || printf "${RED}outouts differ${NC}\n"
 	@echo ""

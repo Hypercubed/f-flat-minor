@@ -22,6 +22,6 @@ ff-tests:
 
 example.txt:
 	@printf "** Python Compile and Execute **"
-	@time cat ../ff/example_v2.ff | python3 ./execute.py > example.txt
-	@cmp --silent -- "./example.txt" "../fixtures/example.txt" && printf "${GRN}OK${NC}\n" || printf "${RED}outouts differ${NC}\n"
+	@time cat ../ff/example_v2.ff | python3 ./execute.py > ./artifacts/example.txt
+	@cmp --silent -- "./artifacts/example.txt" "../fixtures/example.txt" && printf "${GRN}OK${NC}\n" || printf "${RED}outouts differ${NC}\n"
 	@echo ""

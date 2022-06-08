@@ -1,12 +1,7 @@
 .vscode/*
 */.vscode
 
-deno/*.bin
-deno/*.txt
-deno/build/**
-
-go/*.bin
-go/*.txt
-go/build/**
+*/artifacts/*
+*/build/**
 
 */node_modules/*

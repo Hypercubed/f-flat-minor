@@ -11,7 +11,7 @@ endef
 .DEFAULT_GOAL := default
 
 .PHONY: default
-default: test clean
+default: test
 
 .PHONY: build
 build:
