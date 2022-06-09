@@ -1,0 +1,9 @@
+.load ./ff/core.ff
+
+5 ++ .
+
+6 &+ eval .
+
+succ .inline .
+
+pred .

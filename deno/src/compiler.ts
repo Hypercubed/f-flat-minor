@@ -83,6 +83,10 @@ export class Compiler {
             ret[ret.length - 1].meta ||= {};
             ret[ret.length - 1].meta!.inline = true;
             break;
+          case ".pointer":
+            ret[ret.length - 1].meta ||= {};
+            ret[ret.length - 1].meta!.pointer = true;
+            break;
           case ".exit":
             Deno.exit();
             break;
@@ -120,6 +124,8 @@ export class Compiler {
         call(OpCodes.BRA, ss);
       } else if (ss[0] === "&" && ss.length > 1) { // Symbol
         push(this.getSymbol(ss.replace(/^&/, "")), ss);
+        ret[ret.length - 1].meta ||= {};
+        ret[ret.length - 1].meta!.pointer = true;
       } else {
         call(this.getSymbol(ss), ss);
       }

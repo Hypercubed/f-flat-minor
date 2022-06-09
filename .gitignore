@@ -2,6 +2,6 @@
 */.vscode
 
 */artifacts/*
-*/build/**
+*/build/*
 
 */node_modules/*

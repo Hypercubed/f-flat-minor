@@ -4,12 +4,12 @@ NC=\033[0m
 GRN=\033[0;32m
 
 .DEFAULT_GOAL := build
-.PHONY : clean example run test ff-tests example.bin example.txt build
+.PHONY : clean example run test ff-tests example.bin example.txt build optimized
 
 clean:
 	@rm -f ./artifacts ./build
 
-test:	ff-tests example.bin example.txt
+test:	ff-tests example.bin example.txt optimized
 
 build/%: ./**/*.ts
 	deno compile --unstable --allow-env --allow-read -o ./build/$* ./bin/ff-$*.ts
@@ -28,7 +28,13 @@ example.bin: build/compile
 	@echo ""
 
 example.txt: build/execute
-	@echo "** Deno Execute **"
+	@printf "** Deno Execute **"
 	@time ./build/execute ./artifacts/example.bin > ./artifacts/example.txt
+	@cmp --silent -- "./artifacts/example.txt" "../fixtures/example.txt" && printf "${GRN}OK${NC}\n" || printf "${RED}outouts differ${NC}\n"
+	@echo ""
+
+optimized: build/run
+	@printf "** Deno Execute Optimized **"
+	@time ./build/run ../ff/example_v2.ff --opt > ./artifacts/example.txt
 	@cmp --silent -- "./artifacts/example.txt" "../fixtures/example.txt" && printf "${GRN}OK${NC}\n" || printf "${RED}outouts differ${NC}\n"
 	@echo ""
