@@ -3,25 +3,25 @@ RED = \033[0;31m
 NC = \033[0m
 GRN = \033[0;32m
 
-.PHONY : clean example run test example.txt ff-tests
-
+.PHONY : clean 
 clean:
 	@rm -f ./example.*
 
-example:
-	cat ../ff/example_v2.ff | ruby ./execute.rb
+.PHONY : test
+test:	ff-tests example
 
-run: clean example
-
-test:	ff-tests example.txt
-
+.PHONY : ff-tests
 ff-tests:
 	@printf "** Ruby FF Test **"
-	@cd ..; time ./deno/build/preprocess ./ff/tests.ff | ruby ./ruby/execute.rb > /dev/null && printf "${GRN}OK${NC}\n" || printf "${RED}FAILED${NC}\n"
+	@cd ..; time ./deno/build/preprocess ./ff/tests.ffp | ruby ./ruby/execute.rb > /dev/null && printf "${GRN}OK${NC}\n" || printf "${RED}FAILED${NC}\n"
 	@echo ""
 
-example.txt:
-	@printf "** Ruby Compile and Execute **"
-	@time cat ../ff/example_v2.ff | ruby ./execute.rb > ./artifacts/example.txt
+.PHONY : ./artifacts/example.txt
+./artifacts/example.txt:
+	@printf "** Ruby Run **"
+	@time cat ../ff/example.ff | ruby ./execute.rb > ./artifacts/example.txt
+
+.PHONY : example
+example: ./artifacts/example.txt
 	@cmp --silent -- "./artifacts/example.txt" "../fixtures/example.txt" && printf "${GRN}OK${NC}\n" || printf "${RED}outouts differ${NC}\n"
 	@echo ""

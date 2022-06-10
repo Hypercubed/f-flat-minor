@@ -4,37 +4,53 @@ NC=\033[0m
 GRN=\033[0;32m
 
 .DEFAULT_GOAL := build
-.PHONY : clean example run test ff-tests example.bin example.txt build optimized
 
+.PHONY : clean
 clean:
-	@rm -f ./artifacts ./build
+	$(RM) ./artifacts ./build
 
-test:	ff-tests example.bin example.txt optimized
+.PHONY : test
+test:	ff-tests test-compile test-execute test-optimized
+
+build: build/execute build/compile build/run build/preprocess
+
+# Steps
 
 build/%: ./**/*.ts
 	deno compile --unstable --allow-env --allow-read -o ./build/$* ./bin/ff-$*.ts
 
-build: build/execute build/compile build/run build/preprocess
-
+.PHONY : ff-tests
 ff-tests: build/run
 	@printf "** Deno FF Test **"
-	@cd ..; time ./deno/build/run ./ff/tests.ff > /dev/null && printf "${GRN}OK${NC}\n" || printf "${RED}FAILED${NC}\n"
+	@cd ..; time ./deno/build/run ./ff/tests.ffp > /dev/null && printf "${GRN}OK${NC}\n" || printf "${RED}FAILED${NC}\n"
 	@echo ""
 
-example.bin: build/compile
+.PHONY : ./artifacts/%.ffb
+./artifacts/%.ffb: build/compile
 	@printf "** Deno Compile **"
-	@time ./build/compile ../ff/example_v2.ff > ./artifacts/example.bin
-	@cmp --silent -- "./artifacts/example.bin" "../fixtures/example_v2.bin" && printf "${GRN}OK${NC}\n" || printf "${RED}bins differ${NC}\n"
+	@time ./build/compile ../ff/$*.ff > ./artifacts/$*.ffb
+
+.PHONY : test-compile
+test-compile: ./artifacts/example.ffb
+	@cmp --silent -- "./artifacts/example.ffb" "../fixtures/example.ffb" && printf "${GRN}OK${NC}\n" || printf "${RED}bins differ${NC}\n"
 	@echo ""
 
-example.txt: build/execute
+.PHONY : ./artifacts/example.txt
+./artifacts/example.txt: build/execute
 	@printf "** Deno Execute **"
-	@time ./build/execute ./artifacts/example.bin > ./artifacts/example.txt
+	@time ./build/execute ./artifacts/example.ffb > ./artifacts/example.txt
+
+.PHONY : test-execute
+test-execute: ./artifacts/example.txt
 	@cmp --silent -- "./artifacts/example.txt" "../fixtures/example.txt" && printf "${GRN}OK${NC}\n" || printf "${RED}outouts differ${NC}\n"
 	@echo ""
 
-optimized: build/run
+.PHONY : ./artifacts/optimized.txt
+./artifacts/optimized.txt: build/run
 	@printf "** Deno Execute Optimized **"
-	@time ./build/run ../ff/example_v2.ff --opt > ./artifacts/example.txt
-	@cmp --silent -- "./artifacts/example.txt" "../fixtures/example.txt" && printf "${GRN}OK${NC}\n" || printf "${RED}outouts differ${NC}\n"
+	@time ./build/run ../ff/example.ff --opt > ./artifacts/optimized.txt
+
+.PHONY : test-optimized
+test-optimized: ./artifacts/optimized.txt
+	@cmp --silent -- "./artifacts/optimized.txt" "../fixtures/example.txt" && printf "${GRN}OK${NC}\n" || printf "${RED}outouts differ${NC}\n"
 	@echo ""
