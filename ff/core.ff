@@ -33,7 +33,7 @@ bi2: q< q< dup2 q> eval bury q> eval ;
 not: 0 = ;
 zero?: 0 = ;
 truthy?: zero? not ;
-ne?: = not ;
+!=: = not ;
 nzero?: zero? not ;
 divisor?: % zero? ;
 even?: 2 divisor? ;
@@ -42,6 +42,7 @@ odd?: even? not ;
 /* comparison */
 <=: > not ;
 >=: < not ;
+
 sort2: dup2 > [ swap ] ? ;
 min: sort2 drop ;
 max: sort2 nip ;

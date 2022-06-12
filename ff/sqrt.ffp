@@ -3,18 +3,40 @@
 isqrt-closer: dup2 / over + 2 / ;
 isqrt-loop: isqrt-closer dup2 > [ nip isqrt-loop ] ? ;
 
-isqrt: dup 2 / isqrt-loop drop nip ;
+isqrtn: dup 2 / isqrt-loop drop nip ;
 
+isqrt:
+  dup 0 < [ 1 0 / ] [
+    dup 0 = [ drop 0 ] [
+      dup 4 < [ drop 1 ] [
+        isqrtn
+      ] branch
+    ] branch
+  ] branch ;
+
+0 isqrt . clr
+1 isqrt . clr
+2 isqrt . clr
+3 isqrt . clr
+4 isqrt . clr
+25 isqrt . clr
 125348 isqrt . clr
 100 8 ^ 2 * isqrt . clr
 
 isqrtrem: dup isqrt dup bury 2 ^ - ;
 
+1 isqrtrem . clr
+2 isqrtrem . clr
+3 isqrtrem . clr
+4 isqrtrem . clr
+
+7 isqrtrem . clr
+9 isqrtrem . clr
+11 isqrtrem . clr
+
 25 isqrtrem . clr
 24 isqrtrem . clr
 26 isqrtrem . clr
-9 isqrtrem . clr
-7 isqrtrem . clr
-11 isqrtrem . clr
+
 1048576 isqrtrem . clr
 
