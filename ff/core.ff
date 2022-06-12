@@ -26,6 +26,7 @@ tuck: swap over ;
 sip: over slip ;       /* b [A*] -> b a* b    (aka keep) */
 sipd: q< sip q> ;      /* c b [A*] -> c a* c b */
 bi: sipd eval ;
+bi2: q< q< dup2 q> eval bury q> eval ;
 
 /* inquisitive */
 
@@ -97,6 +98,7 @@ abs: dup sgn * ;
 sqr: dup * ;
 !: dup [ dup -- ! * ] [ drop 1 ] branch ;
 nck: dup2 - ! swap ! * [ ! ] dip / ;  /* n choose k */
+divrem: [ / ] [ % ] bi2 ;
 
 /* string printing */
 

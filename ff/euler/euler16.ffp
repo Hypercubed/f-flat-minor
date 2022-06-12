@@ -1,0 +1,5 @@
+.load ./ff/core.ff
+
+spread: dup [ 10 [ % ] [ / ] bi2 spread ] ? ;
+
+2 1000 ^ spread sum . /* 1366 */

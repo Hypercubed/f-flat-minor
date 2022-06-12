@@ -76,10 +76,12 @@ For each target language first implement a proof-of-concept in an online code ru
 | PUTC     |  putc  |       2       |   v0    |
 | GETC     |  getc  |       3       |   v1    |
 | PRNN     |  prn   |       4       |   v3    |
-| CLOCK      |  clock   |       5       |   v3    |
+| CLOCK    |  clock |       5       |   v3    |
 | DROP     |  drop  | 8 (backspace) |   v0    |
 | PUSHR    |   q<   |      14       |   v0    |
 | PULLR    |   q>   |      15       |   v0    |
+| SHIFTL   |  <<    |      16       |   v3    |
+| SHIFTR   |  >>    |      17       |   v3    |
 | CLR      |  clr   |      24       |   v1    |
 | RND      |  rnd   |      26       |   v3    |
 | EXIT     |  exit  |    27 (ESC)   |   v2    |

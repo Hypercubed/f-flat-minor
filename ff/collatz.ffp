@@ -1,0 +1,9 @@
+.load ./ff/core.ff
+
+c: q< ++ q> ;
+
+next: dup even? [ 2 / ] [ 3 * 1 + ] branch ;
+collatz: c . dup 1 > [ next collatz ] ? ;
+
+0 27 .
+collatz

@@ -36,6 +36,7 @@ export function run(argv: Arguments) {
   
   const interpreter = new Engine();
   interpreter.traceOn = argv.trace;
+  interpreter.base = argv.base || 10;
 
   interpreter.loadIR(ir);
   interpreter.run();

@@ -1,0 +1,12 @@
+.load ./ff/core.ff
+
+next: ++ dup [ dup ^ ] dip ;
+step: dup 1000 < [ next step ] ? ;
+
+0 step drop sum 
+
+10 10 ^ % /* last 10 digits */
+
+.
+
+/* 9110846700 */

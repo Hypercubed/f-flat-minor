@@ -1,0 +1,13 @@
+.load ./ff/core.ff
+
+next: swap dupd + ;
+
+c: q< q< ++ q> q> ;
+
+n:
+.m 10 1000 ^
+;
+
+r: c dup n < [ next r ] ? ;
+
+0 1 1 r drop drop ++ . /* 4782 */

@@ -1,0 +1,22 @@
+.load ./ff/core.ff
+
+p: [ . ] dip ;
+
+R: dup 1 > [ 1 >> ] [ [ 1 << ] dip ] branch ;
+L: 1 << ;
+
+WRITE: dup [ + ] dip ;
+CLEAR: dup [ - ] dip ;
+
+state: p dup2 & not ;
+
+s0: state [       R s0 ] [       R s1 ] branch ;
+s1: state [ WRITE R s2 ] [       R s1 ] branch ;
+s2: state [       L s3 ] [       R s2 ] branch ;
+s3: state [       L s3 ] [ CLEAR L s4 ] branch ;
+s4: state [          H ] [       L s4 ] branch ;
+
+H: state drop ;
+
+7 5 << 15 + /* 3 + 4 */
+1 8 << s0 /* start at head */

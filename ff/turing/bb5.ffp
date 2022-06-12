@@ -1,0 +1,21 @@
+.load ./ff/core.ff
+
+p: [ . ] dip ;
+
+R: dup 1 > [ 1 >> ] [ [ 1 << ] dip ] branch ;
+L: 1 << ;
+
+ONE: dup [ + ] dip ;
+ZERO: dup [ - ] dip ;
+
+state: dup2 & not ;
+
+A: state [ ONE R B ] [       L C ] branch ;
+B: state [ ONE R C ] [       R B ] branch ;
+C: state [ ONE R D ] [ ZERO  L E ] branch ;
+D: state [ ONE L A ] [       L D ] branch ;
+E: state [ ONE H   ] [ ZERO  L A ] branch ;
+
+H: state drop ;
+
+0 1 A .

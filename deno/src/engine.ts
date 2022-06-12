@@ -33,6 +33,7 @@ export class Engine {
   private depth = 0;
 
   traceOn = false;
+  base = 10;
 
   constructor() {
     this.setup();
@@ -159,7 +160,7 @@ export class Engine {
   }
 
   print() {
-    const s = this.stack.map(String).join(" ");
+    const s = this.stack.map(x => x.toString(this.base)).join(" ");
     console.log(`[ ${s} ]`);
   }
 
@@ -250,7 +251,7 @@ export class Engine {
     }, OpCodes.GETC);
 
     this.defineSystem(() => {
-      const data = encoder.encode(String(this.pop()));
+      const data = encoder.encode(this.pop().toString(this.base));
       Deno.stdout.writeSync(data);
     }, OpCodes.PRNN);
 
@@ -298,6 +299,18 @@ export class Engine {
       const b = this.pop();
       this.push(b % a);
     }, OpCodes.MOD);
+
+    this.defineSystem(() => {
+      const a = this.pop();
+      const b = this.pop();
+      this.push(b << a);
+    }, OpCodes.SHIFTL);
+
+    this.defineSystem(() => {
+      const a = this.pop();
+      const b = this.pop();
+      this.push(b >> a);
+    }, OpCodes.SHIFTR);
 
     this.defineSystem(() => {
       const a = this.pop();
