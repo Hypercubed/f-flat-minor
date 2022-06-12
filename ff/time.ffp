@@ -1,0 +1,22 @@
+.load ./ff/core.ff
+
+0 'Compiled\sAt:\s' print
+
+.m clock
+prn cr clr
+
+0 'Started\sAt:\s' print
+
+clock dup prn cr
+
+1000 ! drop
+
+0 'Ended\sAt:\s' print
+
+clock dup prn cr
+
+0 'Difference:\s' print
+
+swap - prn
+
+0 '\sms' println

@@ -233,6 +233,10 @@ export class Engine {
     }, OpCodes.PRN);
 
     this.defineSystem(() => {
+      this.push(BigInt(Date.now()));
+    }, OpCodes.CLOCK);
+
+    this.defineSystem(() => {
       const data = encoder.encode(String.fromCharCode(Number(this.pop())));
       Deno.stdout.writeSync(data);
     }, OpCodes.PUTC);

@@ -1,74 +1,111 @@
 .load ./ff/core.ff
 
+assert: zero? [ 0 10 'Failed' println 1 exit ] ? ;
+assert_eq: = assert ;
+assert_false: not assert ;
+
 /* math */
-1 2 + 3 = assert
-3 4 - -1 = assert
-5 6 * 30 = assert
-8 4 / 2 = assert
-8 5 % 3 = assert
-9 12 ^ 282429536481 = assert
+1 2 + 3 assert_eq
+3 4 - -1 assert_eq
+5 6 * 30 assert_eq
+8 4 / 2 assert_eq
+8 5 % 3 assert_eq
+9 12 ^ 282429536481 assert_eq
 
 
 /* derived math */
-12 ! 479001600 = assert
-5 sqr 25 = assert
+12 ! 479001600 assert_eq
+5 sqr 25 assert_eq
 
-0 sgn 0 = assert
-5 sgn 1 = assert
--5 sgn -1 = assert
+0 sgn 0 assert_eq
+5 sgn 1 assert_eq
+-5 sgn -1 assert_eq
 
-0 abs 0 = assert
-5 abs 5 = assert
--5 abs 5 = assert
+0 abs 0 assert_eq
+5 abs 5 assert_eq
+-5 abs 5 assert_eq
 
 /* bitwise */
 
-5 3 & 1 = assert
-5 3 | 7 = assert
-5 ~ -6 = assert
+5 3 & 1 assert_eq
+5 3 | 7 assert_eq
+5 ~ -6 assert_eq
 
 /* logical */
 
 true true and assert
-true false and not assert
-false true and not assert
-false false and not assert
+true false and assert_false
+false true and assert_false
+false false and assert_false
 
 true true or assert
 true false or assert
 false true or assert
-false false or not assert
+false false or assert_false
 
 /* comparison */
 
 1 2 < assert
-4 3 < not assert
-5 6 > not assert
+2 2 < assert_false
+4 3 < assert_false
+5 6 > assert_false
+6 6 > assert_false
 8 7 > assert
-9 10 = not assert
-11 11 = assert
+9 10 = assert_false
+11 11 assert_eq
+
+1 2 <= assert
+2 2 <= assert
+6 6 >= assert
+8 7 >= assert
+
+1 5 max 5 assert_eq
+13 8 max 13 assert_eq
+1 5 min 1 assert_eq
+13 8 min 8 assert_eq
+
+5 10 1 clamp 5 assert_eq
+5 10 6 clamp 6 assert_eq
+5 10 11 clamp 10 assert_eq
+
+1 3 2 between? assert
+3 1 2 between? assert
+1 2 3 between? assert_false
+3 2 1 between? assert_false
 
 /* string */
 
-'A' 65 = assert
-/* '\s' 32 = assert
-'\n' 10 = assert */
+'A' 65 assert_eq
+'a' 97 assert_eq
+
+'a' ucase 'A' assert_eq
+'A' ucase 'A' assert_eq
+'Z' lcase 'z' assert_eq
+'z' lcase 'z' assert_eq
+
+'\s' 32 assert_eq
+'\n' 10 assert_eq
 
 /* control */
 
-5 true [ 3 + ] ? 8 = assert
-5 false [ 3 + ] ? 5 = assert
+5 true [ 3 + ] ? 8 assert_eq
+5 false [ 3 + ] ? 5 assert_eq
 
-true 5 8 choose 5 = assert
-false 5 8 choose 8 = assert
+true 5 8 choose 5 assert_eq
+false 5 8 choose 8 assert_eq
 
-5 true [ 3 + ] [ 3 - ] branch 8 = assert
-5 false [ 3 + ] [ 3 - ] branch 2 = assert
+5 true [ 3 + ] [ 3 - ] branch 8 assert_eq
+5 false [ 3 + ] [ 3 - ] branch 2 assert_eq
+
+0 [ succ ] 5 times sum 15 assert_eq
+0 [ succ ++ ] 5 times sum 30 assert_eq
 
 /* shuffing */
 
-3 dup 3 = assert 3 = assert
-3 5 dup2 5 = assert 3 = assert 5 = assert 3 = assert
+3 dup 3 assert_eq 3 assert_eq
+3 5 dup2 5 assert_eq 3 assert_eq 5 assert_eq 3 assert_eq
 
-1 2 3 bury 2 = assert 1 = assert 3 = assert
-1 2 3 rot 1 = assert 2 = assert 3 = assert
+1 2 3 bury 2 assert_eq 1 assert_eq 3 assert_eq
+1 2 3 rot 1 assert_eq 2 assert_eq 3 assert_eq
+
+5 [ 2 * ] [ 2 + ] bi 7 assert_eq 10 assert_eq

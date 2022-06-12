@@ -95,6 +95,11 @@ export class Compiler {
               console.log(key, value);
             });
             break;
+          case ".words": {
+            const words = Array.from(this.symbols, ([word]) => word).join(" ");
+            console.log(words);
+            break;            
+          }
         }
       } else if (ss[0] === "'") { // String
         convertEsc2Char(ss)

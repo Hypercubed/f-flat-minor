@@ -1,0 +1,8 @@
+.load ./ff/core.ff
+
+ps: prn printsp ;
+
+line: dup 0 swap [ dup2 ++ q< q< nck ps q> q> ] seq nck ps printcr ;
+
+0 [ dup line ++ ] 16 times
+

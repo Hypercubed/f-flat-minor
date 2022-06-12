@@ -21,17 +21,31 @@ dupd: q< dup q> ;
 over: dupd swap ;
 dup2: over over ;
 run: dup slip ;
+nip: [ drop ] dip ;
+tuck: swap over ;
+sip: over slip ;       /* b [A*] -> b a* b    (aka keep) */
+sipd: q< sip q> ;      /* c b [A*] -> c a* c b */
+bi: sipd eval ;
 
 /* inquisitive */
 
 not: 0 = ;
-eqz?: 0 = ;
-truthy?: eqz? .inline not .inline ;
-ne?: = not .inline ;
-neqz?: eqz? .inline not .inline ;
-divisor?: % eqz? .inline ;
-even?: 2 divisor? .inline ;
-odd?: even? .inline not ;
+zero?: 0 = ;
+truthy?: zero? not ;
+ne?: = not ;
+nzero?: zero? not ;
+divisor?: % zero? ;
+even?: 2 divisor? ;
+odd?: even? not ;
+
+/* comparison */
+<=: > not ;
+>=: < not ;
+sort2: dup2 > [ swap ] ? ;
+min: sort2 drop ;
+max: sort2 nip ;
+clamp: dig max min ;
+between?: [ sort2 ] dip swap dupd < bury < and ;
 
 /* binary operators */
 
@@ -41,13 +55,15 @@ bxor: dup2 ~ & bury swap ~ & | ;
 
 and: * truthy? ;
 or: + truthy? ;
-nand: * eqz? ;
-nor: + eqz? ;
+nand: * zero? ;
+nor: + zero? ;
 
 /* branching */
 
 choose: rot [ swap ] ? drop ;
 branch: choose eval ;
+if: slip ? ;
+ifte: slipd branch ;
 
 /* stack */
 
@@ -55,36 +71,45 @@ empty?: depth 0 = ;
 one?: depth 1 = ;
 
 tail: q< clr q> ;
-head: &drop reduce ;
+head: [ drop ] reduce ;
 
 /* counters */
 
-repeat_loop: run q> repeat_next ;
-repeat_next: dup -- q< [ repeat_loop ] ? ;
-repeat: repeat_next q> drop drop ;  
+_runn: dup -- q< [ run q> _runn ] ? ;
+runn: _runn q> drop ;
 
-range: dupd swap - [ succ ] swap repeat ;
-count: 0 swap ++ [ succ ] swap repeat drop ;
+times: runn drop ;
+seq: swap times ;
 
-reduce: depth 2 - repeat ;
+range: dupd swap - [ succ ] seq ;
+count: 0 swap ++ [ succ ] seq drop ;
+
+reduce: depth 2 - times ;
 
 sum: [ + ] reduce ;
 product: [ * ] reduce ;
 
 /* math */
-neg?: 0 < ;
-pos?: 0 > ;
-sgn: dup neg? [ drop -1 ] [ pos? 1 0 choose ] branch ;
+negitive?: 0 < ;
+positive?: 0 > ;
+sgn: dup negitive? [ drop -1 ] [ positive? 1 0 choose ] branch ;
 abs: dup sgn * ;
 sqr: dup * ;
 !: dup [ dup -- ! * ] [ drop 1 ] branch ;
+nck: dup2 - ! swap ! * [ ! ] dip / ;  /* n choose k */
 
 /* string printing */
 
-printcr: 10 putc ;
+space: 32 ;
+newline: 10 ;
+
+sp: space putc ;
+cr: newline putc ;
 print: dup [ putc print ] [ drop ] branch ;
-println: print printcr ;
+println: print cr ;
 
-/* testing */
+ucase?: dup 'a' -- 'z' ++ dig between? ;
+lcase?: dup 'A' -- 'Z' ++ dig between? ;
 
-assert: eqz? [ 0 10 'Failed' println 1 exit ] ? ;
+ucase: ucase? [ 32 - ] ? ;
+lcase: lcase? [ 32 + ] ? ;

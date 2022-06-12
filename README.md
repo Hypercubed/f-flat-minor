@@ -76,6 +76,7 @@ For each target language first implement a proof-of-concept in an online code ru
 | PUTC     |  putc  |       2       |   v0    |
 | GETC     |  getc  |       3       |   v1    |
 | PRNN     |  prn   |       4       |   v3    |
+| CLOCK      |  clock   |       5       |   v3    |
 | DROP     |  drop  | 8 (backspace) |   v0    |
 | PUSHR    |   q<   |      14       |   v0    |
 | PULLR    |   q>   |      15       |   v0    |
@@ -99,7 +100,7 @@ For each target language first implement a proof-of-concept in an online code ru
 | LT       |   <    |    60 (<)     |   v2    |
 | EQ       |   =    |    61 (=)     |   v0    |
 | GT       |   >    |    62 (>)     |   v2    |
-| IF       |   ?    |    63 (?)     |   v0    |
+| WHEN     |   ?    |    63 (?)     |   v0    |
 | BRA      |   [    |    91 ([)     |   v2    |
 | KET      |   ]    |    93 (])     |   v2    |
 | POW      |   ^    |    94 (^)     |   v1    |

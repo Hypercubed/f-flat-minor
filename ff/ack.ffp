@@ -1,0 +1,45 @@
+.load ./ff/core.ff
+
+
+
+/* Buck's function used for m < 4 */
+F0: nip 1 + ;
+F1: nip 2 + ;
+F2: nip 2 * ;
+F3: nip 2 swap ^ ;
+
+/* Recursive function for m > 4 */
+ackn: dup
+  [ [ dup 1 - swap ] dip 1 - ack ack ]
+  [ drop 1 - 1 ack ] branch ;
+
+ack: over
+  [
+    over 1 =
+    [ F1 .inline ]
+    [ 
+      over 2 =
+      [ F2 .inline 3 + ]
+      [ 
+        over 3 =
+        [ 3 + F3 .inline 3 - ]
+        [ ackn ] branch
+      ] branch
+    ] branch
+  ]
+  [ F0 .inline ] branch ;
+
+0 0 . ack . cr clr /* 1 */
+0 4 . ack . cr clr /* 5 */
+1 0 . ack . cr clr /* 2 */
+2 2 . ack . cr clr /* 7 */
+3 3 . ack . cr clr /* 61 */
+3 4 . ack . cr clr /* 125 */
+3 6 . ack . cr clr /* 509 */
+3 8 . ack . cr clr /* 2045 */
+4 0 . ack . cr clr /* 13 */
+4 1 . ack . cr clr /* 65533 */
+4 2 . ack 10000000 % . cr clr 
+
+/* 2003529930406846464979072351560255750447825475569751419265016973710894059556311453089506130880...
+699146577530041384717124577965048175856395072895337539755822087777506072339445587895905719156733 */
