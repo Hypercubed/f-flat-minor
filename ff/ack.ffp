@@ -1,37 +1,32 @@
 .load ./ff/core.ff
 
+/* Kunth operators */
+^^: -- dup [ [ dup ] swap times [ ^ ] ] dip times ;
+^^^: -- dup [ [ dup ] swap times [ ^^ ] ] dip times ;
 
+/* Buck's functions used for m <= 5 */
+F:  over 0 = [ nip 1 + ] [
+    over 1 = [ nip 2 + ] [ 
+    over 2 = [ nip 2 * ] [
+    over 3 = [ nip 2 swap ^ ] [
+    over 4 = [ nip 2 swap ^^ ]
+             [ nip 2 swap ^^^ ] branch
+  ] branch
+  ] branch
+  ] branch
+  ] branch ;
 
-/* Buck's function used for m < 4 */
-F0: nip 1 + ;
-F1: nip 2 + ;
-F2: nip 2 * ;
-F3: nip 2 swap ^ ;
-
-/* Recursive function for m > 4 */
-ackn: dup
+/* Recursive function */
+ackn: over [ dup
   [ [ dup 1 - swap ] dip 1 - ack ack ]
-  [ drop 1 - 1 ack ] branch ;
+  [ drop 1 - 1 ack ] branch ] [ nip 1 + ] branch ;
 
-ack: over
-  [
-    over 1 =
-    [ F1 .inline ]
-    [ 
-      over 2 =
-      [ F2 .inline 3 + ]
-      [ 
-        over 3 =
-        [ 3 + F3 .inline 3 - ]
-        [ ackn ] branch
-      ] branch
-    ] branch
-  ]
-  [ F0 .inline ] branch ;
+/*  terms of Buck's function */
+ack: 3 + F 3 - ;
 
-0 0 . ack . cr clr /* 1 */
-0 4 . ack . cr clr /* 5 */
-1 0 . ack . cr clr /* 2 */
+0 0 . ackn . cr clr /* 1 */
+0 4 . ackn . cr clr /* 5 */
+1 0 . ackn . cr clr /* 2 */
 2 2 . ack . cr clr /* 7 */
 3 3 . ack . cr clr /* 61 */
 3 4 . ack . cr clr /* 125 */
@@ -40,6 +35,7 @@ ack: over
 4 0 . ack . cr clr /* 13 */
 4 1 . ack . cr clr /* 65533 */
 4 2 . ack 10 60 ^ % . cr clr /* 856395072895337539755822087777506072339445587895905719156733 */
+5 0 . ack . cr clr /* 65533 */
 
 /* 2003529930406846464979072351560255750447825475569751419265016973710894059556311453089506130880...
 699146577530041384717124577965048175856395072895337539755822087777506072339445587895905719156733 */
