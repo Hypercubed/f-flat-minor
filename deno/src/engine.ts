@@ -34,6 +34,17 @@ export class Engine {
 
   traceOn = false;
   base = 10;
+  statsOn = false;
+  profileOn = false;
+
+  stats = {
+    system_instructions_called: 0,
+    user_instructions_called: 0,
+    max_stack_depth: 0,
+    max_queue_depth: 0
+  }
+
+  profile: Record<string | number, [number, number]> = {};
 
   constructor() {
     this.setup();
@@ -52,8 +63,11 @@ export class Engine {
   }
 
   private push(n: bigint): void {
-    // console.log(n, ".push");
     this.stack.push(n);
+  }
+
+  private poke(n: bigint): void {
+    this.stack[this.stack.length - 1] = n;
   }
 
   clear(): void {
@@ -83,22 +97,47 @@ export class Engine {
     this.defs.set(n, s);
   }
 
-  private callOp(code: bigint): void {
-    // console.log(code, ".call");
-    if (this.defs.has(code)) {
-      const r = this.defs.get(code);
-      if (typeof r === "function") {
-        return r();
-      } else if (r) {
-        this.queue.unshift(...r);
+  private callSystem(code: bigint) {
+    const r = this.defs.get(code);
+    if (typeof r === "function") {
+      this.statsOn && this.stats.system_instructions_called++;
+      if (this.profileOn) {
+        const start = performance.now();
+        r();
+        const end = performance.now();
+        const name = this.getName(code) || Number(code);
+        this.profile[name] ||= [ 0, 0 ]
+        this.profile[name][0]++;
+        this.profile[name][1] += (end - start);
         return;
       }
+      return r();
     }
     const name = this.getName(code);
-    if (code < 0x80n) {
-      throw new Error(`undefined system op call ${name}`);
+    throw new Error(`undefined system op call ${name}`);
+  }
+
+  private callUser(code: bigint) {
+    const r = this.defs.get(code);
+    if (Array.isArray(r)) {
+      this.statsOn && this.stats.user_instructions_called++;
+      this.queue.unshift(...r);
+      if (this.profileOn) {
+        const name = this.getName(code) || Number(code);
+        this.profile[name] ||= [ 0, 0 ]
+        this.profile[name][0]++;
+      }
+      return;
     }
+    const name = this.getName(code);
     throw new Error(`undefined user op call ${name}`);
+  }
+
+  private callOp(code: bigint): void {
+    if (code < 0x80n) {
+      return this.callSystem(code);
+    }
+    return this.callUser(code);
   }
 
   loadBigIntCode(bigCode: bigint[]) {
@@ -143,6 +182,11 @@ export class Engine {
       } else {
         if (!immediate) this.push(op);
         if (immediate) this.callOp(op);
+      }
+
+      if (this.statsOn) {
+        this.stats.max_stack_depth = Math.max(this.stats.max_stack_depth, this.stack.length);
+        this.stats.max_queue_depth = Math.max(this.stats.max_queue_depth, queue.length);
       }
     }
     return this.stack;
@@ -260,10 +304,10 @@ export class Engine {
     }, OpCodes.DROP);
 
     this.defineSystem(() => {
-      const a = this.pop();
-      const b = this.pop();
-      this.push(a);
-      this.push(b);
+      const a = this.peek();
+      const b = this.stack[this.stack.length - 2];
+      this.stack[this.stack.length - 2] = a;
+      this.poke(b);
     }, OpCodes.SWAP);
 
     this.defineSystem(() => {
@@ -272,56 +316,47 @@ export class Engine {
 
     this.defineSystem(() => {
       const a = this.pop();
-      const b = this.pop();
-      this.push(b + a);
+      this.stack[this.stack.length - 1] += a;
     }, OpCodes.ADD);
 
     this.defineSystem(() => {
       const a = this.pop();
-      const b = this.pop();
-      this.push(b - a);
+      this.stack[this.stack.length - 1] -= a;
     }, OpCodes.SUB);
 
     this.defineSystem(() => {
       const a = this.pop();
-      const b = this.pop();
-      this.push(b * a);
+      this.stack[this.stack.length - 1] *= a;
     }, OpCodes.MUL);
 
     this.defineSystem(() => {
       const a = this.pop();
-      const b = this.pop();
-      this.push(b / a);
+      this.stack[this.stack.length - 1] /= a;
     }, OpCodes.DIV);
 
     this.defineSystem(() => {
       const a = this.pop();
-      const b = this.pop();
-      this.push(b % a);
+      this.stack[this.stack.length - 1] %= a;
     }, OpCodes.MOD);
 
     this.defineSystem(() => {
       const a = this.pop();
-      const b = this.pop();
-      this.push(b << a);
+      this.stack[this.stack.length - 1] <<= a;
     }, OpCodes.SHIFTL);
 
     this.defineSystem(() => {
       const a = this.pop();
-      const b = this.pop();
-      this.push(b >> a);
+      this.stack[this.stack.length - 1] >>= a;
     }, OpCodes.SHIFTR);
 
     this.defineSystem(() => {
       const a = this.pop();
-      const b = this.pop();
-      this.push(b & a);
+      this.stack[this.stack.length - 1] &= a;
     }, OpCodes.AND);
 
     this.defineSystem(() => {
       const a = this.pop();
-      const b = this.pop();
-      this.push(b ** a);
+      this.stack[this.stack.length - 1] **= a;
     }, OpCodes.POW);
 
     this.defineSystem(() => {
@@ -371,8 +406,7 @@ export class Engine {
 
     this.defineSystem(() => {
       const a = this.pop();
-      const b = this.pop();
-      this.push(b | a);
+      this.stack[this.stack.length - 1] |= a;
     }, OpCodes.OR);
 
     this.defineSystem(() => {

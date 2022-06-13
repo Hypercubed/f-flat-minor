@@ -8,7 +8,18 @@ const BRA = BigInt(OpCodes.BRA);
 const CALL = BigInt(OpCodes.CALL);
 
 export class Optimizer {
+  statsOn = false;
+  stats = {
+    user_defined_anon_defs: 0,
+    user_defined_named_defs: 0,
+    inlined_calls: 0,
+    post_optimization_user_defs: 0,
+  }
+
   optimizeIr(ir: Array<IrInstruction>) {
+    // deno-lint-ignore no-this-alias
+    const self = this;
+    
     const optimized = ir.slice();
 
     const namedDefs = new Map<BigInt, IrInstruction[]>();
@@ -24,6 +35,8 @@ export class Optimizer {
         if (i.value === 0n) {  // no-ops
           optimized.splice(ip, 1);
         } else if (i.value === KET) { // anon defs
+          this.statsOn && this.stats.user_defined_anon_defs++;
+
           const end = ip;
           while (ip-- > 0) {
             const j = optimized[ip];
@@ -50,6 +63,8 @@ export class Optimizer {
             anonDefs.set(n.value, def);
           }
         } else if (i.value === DEF) { // user defs
+          this.statsOn && this.stats.user_defined_named_defs++;
+
           const end = ip;
           while (ip-- > 0) {
             const j = optimized[ip];
@@ -82,6 +97,7 @@ export class Optimizer {
       if (i.op === IROp.call && i.meta?.inline) {
         const def = namedDefs.get(i.value);
         if (def) {
+          this.statsOn && this.stats.inlined_calls++;
           optimized.splice(ip, 1, ...def.slice(2, -1));
           ip--;
         }
@@ -106,6 +122,7 @@ export class Optimizer {
       if (!calledWords.has(b)) {
         const def = namedDefs.get(b) || anonDefs.get(b);
         if (def) {
+          self.statsOn && self.stats.post_optimization_user_defs++;
           calledWords.add(b);
           optimized.unshift(...def);
           return appReferencedWords(def);

@@ -1,4 +1,4 @@
-#!/usr/bin/env -S deno run --allow-read --unstable --allow-env
+#!/usr/bin/env -S deno run --allow-read --unstable --allow-env --allow-hrtime
 
 import yargs from "https://deno.land/x/yargs@v17.5.1-deno/deno.ts";
 import { Arguments } from "https://deno.land/x/yargs@v17.5.1-deno/deno-types.ts";
@@ -26,7 +26,14 @@ export function run(argv: Arguments) {
   
   if (argv.opt) {
     const optimizer = new Optimizer();
+    optimizer.statsOn = argv.stats || false;
     ir = optimizer.optimizeIr(ir);
+    if (argv.stats) {
+      console.log();
+      console.log('Optimizer stats:');
+      console.log(optimizer.stats);
+      console.log();
+    }
   }
   
   if (argv.ir) {
@@ -37,9 +44,49 @@ export function run(argv: Arguments) {
   const interpreter = new Engine();
   interpreter.traceOn = argv.trace;
   interpreter.base = argv.base || 10;
+  interpreter.statsOn = argv.stats || false;
+  interpreter.profileOn = argv.profile || false;
 
   interpreter.loadIR(ir);
+
+  const start = Date.now();
   interpreter.run();
+
+  if (argv.stats) {
+    const end = Date.now();
+    const ops = interpreter.stats.system_instructions_called + interpreter.stats.user_instructions_called;
+    console.log();
+    console.log('Interpreter stats:');
+    console.log(interpreter.stats);
+    console.log();
+    console.log(Math.round(ops / (end - start)) + " ops/ms");
+    console.log();
+  }
+
+  if (argv.profile) {
+    console.log();
+    console.log('Profile:');
+
+    const profileTable = Object.keys(interpreter.profile).map((name) => {
+      const calls = interpreter.profile[name][0];
+      const time = interpreter.profile[name][1];
+      return {
+        name,
+        calls,
+        time,
+        'ops/ms': time > 0 ? Math.round(calls / time) : undefined
+      }
+    }).sort((a, b) => b.calls - a.calls);
+
+    const system = profileTable.filter((p) => p.time);
+    const user = profileTable.filter((p) => !p.time);
+
+    console.table(system, ['name', 'calls', 'ops/ms']);
+
+    console.table(user, ['name', 'calls']);
+
+    console.log();
+  }
 }
 
 if (import.meta.main) {

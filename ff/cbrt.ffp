@@ -1,0 +1,24 @@
+.load ./ff/core.ff
+
+icbrt-closer: dup2 2 ^ / over 2 * + 3 / ;
+icbrt-loop: icbrt-closer dup2 > [ nip icbrt-loop ] ? ;
+icbrtn: dup 3 / icbrt-loop drop nip ;
+
+icbrt: dup sgn swap over * dup 1 > [ icbrtn ] ? * ;
+
+0 icbrt . clr
+1 icbrt . clr
+5 icbrt . clr
+8 icbrt . clr
+27 icbrt . clr
+35937 icbrt . clr
+117649 icbrt . clr
+970299 icbrt . clr
+
+
+-1 icbrt . clr
+-5 icbrt . clr
+-970299 icbrt . clr
+
+.m 999983 3 ^
+icbrt . clr
