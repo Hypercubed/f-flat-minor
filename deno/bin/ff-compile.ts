@@ -27,7 +27,14 @@ export function run(argv: Arguments) {
 
   if (argv.opt) {
     const optimizer = new Optimizer();
-    ir = optimizer.optimizeIr(ir);
+    optimizer.statsOn = argv.stats || false;
+    ir = optimizer.optimize(ir);
+    if (argv.stats) {
+      console.log();
+      console.log('Optimizer stats:');
+      console.log(optimizer.stats);
+      console.log();
+    }
   }
 
   if (argv.ir) {

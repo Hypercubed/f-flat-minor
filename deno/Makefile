@@ -22,7 +22,7 @@ build/%: ./**/*.ts
 .PHONY : ff-tests
 ff-tests: build/run
 	@printf "** Deno FF Test **"
-	@cd ..; time ./deno/build/run ./ff/tests.ffp > /dev/null && printf "${GRN}OK${NC}\n" || printf "${RED}FAILED${NC}\n"
+	@cd ..; time ./deno/build/run ./ff/tests.ffp --opt > /dev/null && printf "${GRN}OK${NC}\n" || printf "${RED}FAILED${NC}\n"
 	@echo ""
 
 .PHONY : ./artifacts/%.ffb

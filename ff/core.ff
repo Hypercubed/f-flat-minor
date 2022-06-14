@@ -33,6 +33,7 @@ bi2: q< q< dup2 q> eval bury q> eval ;
 not: 0 = ;
 zero?: 0 = ;
 truthy?: zero? not ;
+falsey?: zero? ;
 !=: = not ;
 nzero?: zero? not ;
 divisor?: % zero? ;

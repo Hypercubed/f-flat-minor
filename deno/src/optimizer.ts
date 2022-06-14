@@ -16,39 +16,69 @@ export class Optimizer {
     post_optimization_user_defs: 0,
   }
 
-  optimizeIr(ir: Array<IrInstruction>) {
-    // deno-lint-ignore no-this-alias
-    const self = this;
-    
-    const optimized = ir.slice();
+  private namedDefs = new Map<BigInt, IrInstruction[]>();
+  private anonDefs = new Map<BigInt, IrInstruction[]>();
+  private calledWords = new Set<BigInt>();
 
-    const namedDefs = new Map<BigInt, IrInstruction[]>();
-    const anonDefs = new Map<BigInt, IrInstruction[]>();
+  private optimized: Array<IrInstruction> = [];
 
-    const calledWords = new Set<BigInt>();
-    
+/**
+ * It takes an array of IR instructions, and returns an array of optimized IR instructions
+ * @param ir - The IR to optimize.
+ * @returns The optimized ir.
+ */
+  optimize(ir: Array<IrInstruction>) {
+    this.reset();
+
+    this.stats = {
+      user_defined_anon_defs: 0,
+      user_defined_named_defs: 0,
+      inlined_calls: 0,
+      post_optimization_user_defs: 0,
+    };
+
+    this.optimized = this.pullDefs(ir);
+    this.optimized = this.inlineWords(this.optimized);
+    this.optimized = this.optimizeIr(this.optimized);
+    this.addReferencedWords(this.optimized);
+    return this.optimized;
+  }
+
+  private reset() {
+    this.optimized = [];
+    this.namedDefs = new Map<BigInt, IrInstruction[]>();
+    this.anonDefs = new Map<BigInt, IrInstruction[]>();
+    this.calledWords = new Set<BigInt>();
+  }
+
+/**
+ * It removes all user defined functions from the IR and stores them in a map
+ * @param ir - Array<IrInstruction>
+ * @returns The IR with all the defs pulled out.
+ */
+  private pullDefs(ir: Array<IrInstruction>) {
+    const _ir = ir.slice();
+
     let ip = 0;
-    while (ip < optimized.length) {
-      const i = optimized[ip];
+    while (ip < _ir.length) {
+      const i = _ir[ip];
 
       if (i.op === IROp.call) {
-        if (i.value === 0n) {  // no-ops
-          optimized.splice(ip, 1);
-        } else if (i.value === KET) { // anon defs
+        if (i.value === KET) { // anon defs
           this.statsOn && this.stats.user_defined_anon_defs++;
 
           const end = ip;
           while (ip-- > 0) {
-            const j = optimized[ip];
+            const j = _ir[ip];
             if (j.op === IROp.call && j.value === BRA) {
               break;
             }
           }
-          const n = optimized[ip - 1];
+          const n = _ir[ip - 1];
           n.meta ||= {};
           n.meta.pointer = true;
 
-          const def = optimized.splice(ip, end - ip + 1);
+          const def = _ir.splice(ip, end - ip + 1);
 
           // unwrap anonDefs of length 1
           if (def.length === 3 && def[1].op === IROp.call) {
@@ -60,73 +90,118 @@ export class Optimizer {
             def.unshift(n);
             def[def.length - 1].value = DEF;
             def[def.length - 1].name = ";";
-            anonDefs.set(n.value, def);
+            this.anonDefs.set(n.value, def);
           }
         } else if (i.value === DEF) { // user defs
           this.statsOn && this.stats.user_defined_named_defs++;
 
           const end = ip;
           while (ip-- > 0) {
-            const j = optimized[ip];
+            const j = _ir[ip];
             if (j.op === IROp.call && j.value === MARK) {
               break;
             }
           }
-          const def = optimized.splice(ip - 1, end - ip + 2);
+          const def = _ir.splice(ip - 1, end - ip + 2);
           ip = ip - 2;
-          namedDefs.set(def[0].value, def);
+          this.namedDefs.set(def[0].value, def);
+        }
+      }
+
+      ip++;
+    }
+    return _ir;
+  }
+
+/**
+ * It removes no-ops and replaces obvious indirect calls with direct calls
+ * @param ir - The IR to optimize
+ * @returns The optimized IR.
+ */
+  private optimizeIr(ir: Array<IrInstruction>) {
+    const _ir = ir.slice();
+
+    let ip = 0;
+    while (ip < _ir.length) {
+      const i = _ir[ip];
+
+      if (i.op === IROp.call) {
+        if (i.value === 0n) {  // no-ops
+          _ir.splice(ip, 1);
         } else if (i.value === CALL) { // replace obvious indirect calls
-          const p = optimized[ip - 1];
+          const p = _ir[ip - 1];
           if (p.op === IROp.push) {
             ip--;
-            optimized.splice(ip, 1);
-            optimized[ip].value = p.value;
-            optimized[ip].name = (p.name || "").replace(/^\&/, "");
-            optimized[ip].comment = (p.comment || "").replace(/\&/, "");
+            _ir.splice(ip, 1);
+            _ir[ip].value = p.value;
+            _ir[ip].name = (p.name || "").replace(/^\&/, "");
+            _ir[ip].comment = (p.comment || "").replace(/\&/, "");
           }
         }
       }
 
       ip++;
     }
+    return _ir;
+  }
 
-    // Inline defs marked as inline
-    ip = 0;
-    while (ip < optimized.length) {
-      const i = optimized[ip];
+/**
+ * It removes all `call` instructions that have the `inline` meta flag set, and replaces them with the
+ * instructions from the function definition
+ * @param ir - Array<IrInstruction>
+ * @returns The inlined words.
+ */
+  private inlineWords(ir: Array<IrInstruction>) {
+    const _ir = ir.slice();
+
+    let ip = 0;
+    while (ip < _ir.length) {
+      const i = _ir[ip];
       if (i.op === IROp.call && i.meta?.inline) {
-        const def = namedDefs.get(i.value);
+        const def = this.namedDefs.get(i.value);
         if (def) {
           this.statsOn && this.stats.inlined_calls++;
-          optimized.splice(ip, 1, ...def.slice(2, -1));
+          _ir.splice(ip, 1, ...def.slice(2, -1));
           ip--;
         }
       }
       ip++;
     }
 
-    appReferencedWords(optimized);
-    return optimized;
+    return _ir;
+  }
 
-    function appReferencedWords(_ir: Array<IrInstruction>) {
-      for (const i of _ir.slice()) {
-        if (i.op === IROp.push && i.meta?.pointer) {
-          addDef(i.value);
-        } else if (i.op === IROp.call) {
-          addDef(i.value);
-        }
+/**
+ * It adds all the words that are referenced by the IR to the list of words that are defined in the
+ * program
+ * @param ir - Array<IrInstruction>
+ */
+  private addReferencedWords(ir: Array<IrInstruction>) {
+    for (const i of ir.slice()) {
+      if (i.op === IROp.push && i.meta?.pointer) {
+        this.addDef(i.value);
+      } else if (i.op === IROp.call) {
+        this.addDef(i.value);
       }
     }
+  }
 
-    function addDef(b: BigInt) {
-      if (!calledWords.has(b)) {
-        const def = namedDefs.get(b) || anonDefs.get(b);
-        if (def) {
-          self.statsOn && self.stats.post_optimization_user_defs++;
-          calledWords.add(b);
-          optimized.unshift(...def);
-          return appReferencedWords(def);
-        }    
+/**
+ * "If the word is not already in the calledWords set, then if it is in the namedDefs or anonDefs map,
+ * then add it to the calledWords set, optimize it, inline it, and add it to the optimized array."
+ * @param {BigInt} b - The word being called
+ * @returns the result of the addReferencedWords function.
+ */
+  private addDef(b: BigInt) {
+    if (!this.calledWords.has(b)) {
+      let def = this.namedDefs.get(b) || this.anonDefs.get(b);
+      if (def) {
+        this.statsOn && this.stats.post_optimization_user_defs++;
+        this.calledWords.add(b);
+        def = this.optimizeIr(def);
+        def = this.inlineWords(def);
+        this.optimized.unshift(...def);
+        return this.addReferencedWords(def);
       }
     }
   }

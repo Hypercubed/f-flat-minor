@@ -44,7 +44,7 @@ export class Engine {
     max_queue_depth: 0
   }
 
-  profile: Record<string | number, [number, number]> = {};
+  private profile: Record<string | number, [number, number | undefined]> = {};
 
   constructor() {
     this.setup();
@@ -108,7 +108,8 @@ export class Engine {
         const name = this.getName(code) || Number(code);
         this.profile[name] ||= [ 0, 0 ]
         this.profile[name][0]++;
-        this.profile[name][1] += (end - start);
+        this.profile[name][1] != 0;
+        this.profile[name][1]! += (end - start);
         return;
       }
       return r();
@@ -123,8 +124,8 @@ export class Engine {
       this.statsOn && this.stats.user_instructions_called++;
       this.queue.unshift(...r);
       if (this.profileOn) {
-        const name = this.getName(code) || Number(code);
-        this.profile[name] ||= [ 0, 0 ]
+        const name = this.getName(code, `&${code}`);
+        this.profile[name] ||= [ 0, undefined ]
         this.profile[name][0]++;
       }
       return;
@@ -199,8 +200,8 @@ export class Engine {
     console.log(`[ ${s} ] ${name} [ ${q} ]`);
   }
 
-  getName(op: bigint, def = String(op)) {
-    return this.symbols?.has(op) ? this.symbols.get(op) : String(def);
+  getName(op: bigint, def = String(op)): string {
+    return this.symbols.has(op) ? this.symbols.get(op)! : String(def);
   }
 
   print() {
@@ -235,18 +236,16 @@ export class Engine {
 
     this.defineSystem(() => {
       this.depth--;
-      const m = this.queue.pop() || 0n;
-      const s: bigint[] = this.stack.splice(Number(m), this.stack.length) || [];
-      const n = this.pop();
-      this.defineUser(s, n);
+      const m = this.queue.pop();
+      const s: bigint[] = this.stack.splice(Number(m || 0)) || [];
+      this.defineUser(s, this.pop());
     }, OpCodes.DEF);
 
     this.defineSystem(() => {
       this.depth--;
-      const m = this.queue.pop() || 0n;
-      const s: bigint[] = this.stack.splice(Number(m), this.stack.length) || [];
-      const n = this.peek();
-      this.defineUser(s, n);
+      const m = this.queue.pop();
+      const s: bigint[] = this.stack.splice(Number(m || 0)) || [];
+      this.defineUser(s, this.peek());
     }, OpCodes.KET);
 
     this.defineSystem(() => {
@@ -413,6 +412,37 @@ export class Engine {
       const a = this.pop();
       this.push(~a);
     }, OpCodes.NOT);
+  }
+
+  printProfile() {
+    console.log();
+    console.log('Profile:');
+  
+    const profileTable = Object.keys(this.profile).map((name) => {
+      const calls = this.profile[name][0];
+      const time = this.profile[name][1];
+      return {
+        name,
+        calls,
+        time,
+        system: typeof time !== 'undefined',
+        'ops/ms': time ? Math.round(calls / time) : ''
+      }
+    }).sort((a, b) => b.calls - a.calls);
+  
+    const system = profileTable.filter((p) => p.system);
+    const user = profileTable.filter((p) => !p.system);
+  
+    console.table(system, ['name', 'calls', 'ops/ms']);
+    console.table(user, ['name', 'calls']);
+    console.log();
+  }
+
+  printStats() {
+    console.log();
+    console.log('Interpreter stats:');
+    console.log(this.stats);
+    console.log();
   }
 }
 

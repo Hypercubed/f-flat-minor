@@ -27,7 +27,7 @@ export function run(argv: Arguments) {
   if (argv.opt) {
     const optimizer = new Optimizer();
     optimizer.statsOn = argv.stats || false;
-    ir = optimizer.optimizeIr(ir);
+    ir = optimizer.optimize(ir);
     if (argv.stats) {
       console.log();
       console.log('Optimizer stats:');
@@ -51,41 +51,17 @@ export function run(argv: Arguments) {
 
   const start = Date.now();
   interpreter.run();
+  const end = Date.now();
 
   if (argv.stats) {
-    const end = Date.now();
     const ops = interpreter.stats.system_instructions_called + interpreter.stats.user_instructions_called;
-    console.log();
-    console.log('Interpreter stats:');
-    console.log(interpreter.stats);
-    console.log();
+    interpreter.printStats();
     console.log(Math.round(ops / (end - start)) + " ops/ms");
     console.log();
   }
 
   if (argv.profile) {
-    console.log();
-    console.log('Profile:');
-
-    const profileTable = Object.keys(interpreter.profile).map((name) => {
-      const calls = interpreter.profile[name][0];
-      const time = interpreter.profile[name][1];
-      return {
-        name,
-        calls,
-        time,
-        'ops/ms': time > 0 ? Math.round(calls / time) : undefined
-      }
-    }).sort((a, b) => b.calls - a.calls);
-
-    const system = profileTable.filter((p) => p.time);
-    const user = profileTable.filter((p) => !p.time);
-
-    console.table(system, ['name', 'calls', 'ops/ms']);
-
-    console.table(user, ['name', 'calls']);
-
-    console.log();
+    interpreter.printProfile();
   }
 }
 
@@ -95,3 +71,4 @@ if (import.meta.main) {
   argv.file = argv._[0] || "-";
   run(argv);
 }
+

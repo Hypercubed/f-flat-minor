@@ -1,8 +1,8 @@
 .load ./ff/core.ff
 
-assert: zero? [ 0 10 'Failed' println 1 exit ] ? ;
-assert_eq: = assert ;
-assert_false: not assert ;
+assert: falsey? [ 0 10 'Failed' println .inline 1 exit ] ? ;
+assert_eq: = assert .inline ;
+assert_false: not assert .inline ;
 
 /* math */
 1 2 + 3 assert_eq

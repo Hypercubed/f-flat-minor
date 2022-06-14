@@ -41,6 +41,10 @@ export function run(args: Arguments) {
   }
 
   interpreter.loadBigIntCode(bigCode);
+  interpreter.traceOn = args.trace;
+  interpreter.base = args.base || 10;
+  interpreter.statsOn = args.stats || false;
+  interpreter.profileOn = args.profile || false;
 
   if (args.d) {
     const ir = bigCodeToIr(bigCode);
@@ -55,9 +59,20 @@ export function run(args: Arguments) {
     Deno.exit();
   }
 
-  interpreter.traceOn = args.trace;
-
+  const start = Date.now();
   interpreter.run();
+  const end = Date.now();
+
+  if (args.stats) {
+    const ops = interpreter.stats.system_instructions_called + interpreter.stats.user_instructions_called;
+    interpreter.printStats();
+    console.log(Math.round(ops / (end - start)) + " ops/ms");
+    console.log();
+  }
+
+  if (args.profile) {
+    interpreter.printProfile();
+  }
 }
 
 if (import.meta.main) {
