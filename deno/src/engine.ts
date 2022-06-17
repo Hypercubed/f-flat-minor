@@ -154,8 +154,8 @@ export class Engine {
         if (i.value === 0n) continue; // no-op
 
         // Keep symbols
-        if (i.name && !this.symbols.has(i.value)) {
-          this.symbols.set(i.value, i.name);
+        if (i.meta?.name && !this.symbols.has(i.value)) {
+          this.symbols.set(i.value, i.meta?.name);
         }
 
         this.queue.push(i.value);

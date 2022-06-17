@@ -69,7 +69,7 @@ export class Compiler {
       }
 
       if (maybeNumber !== undefined) {
-        ret.push({ value: maybeNumber, op: IROp.push, comment: ss });
+        push(maybeNumber);
       } else if (ss.length > 1 && ss.startsWith(".")) {
         const [cmd] = ss.split(" ");
         switch (cmd) {
@@ -108,41 +108,42 @@ export class Compiler {
           .split("")
           .reverse()
           .forEach((c, i) => {
-            push(c.charCodeAt(0), i === 0 ? ss : "");
+            push(c.charCodeAt(0), i === 0 ? { comment: ss } : {});
           });
       } else if (ss.endsWith(":")) { // Definition
         if (ss.length > 1) {
           const name = ss.replace(/:$/, "");
-          push(this.getSymbol(name), `&${name}`);
+          push(this.getSymbol(name), { name: `&${name}`, pointer: true });
         }
-        call(OpCodes.MARK, ":");
+        call(OpCodes.MARK, { name: ":" });
       } else if (ss === COMMENT_START) { // Comment
-        const comment = ["/*"];
-        while (i < s.length && ss !== COMMENT_END) {
+        const comment = [];
+        while (i < s.length) {
           ss = s[i++];
+          if (ss === COMMENT_END) {
+            break;
+          }
           comment.push(ss);
         }
-        call(0n, comment.join(" "));
+        call(0n, { comment: comment.join(" ") });
       } else if (ss === "[") {
         const code = this.nextCode();
-        push(code, `$_${code}`);
-        call(OpCodes.BRA, ss);
+        push(code, { name: `$_${code}` });
+        call(OpCodes.BRA, { name: ss });
       } else if (ss[0] === "&" && ss.length > 1) { // Symbol
-        push(this.getSymbol(ss.replace(/^&/, "")), ss);
-        ret[ret.length - 1].meta ||= {};
-        ret[ret.length - 1].meta!.pointer = true;
+        push(this.getSymbol(ss.replace(/^&/, "")), { name: ss, pointer: true });
       } else {
-        call(this.getSymbol(ss), ss);
+        call(this.getSymbol(ss), { name: ss });
       }
     }
     return ret;
 
-    function push(value: bigint | number, comment = "") {
-      ret.push({ value: BigInt(value), op: IROp.push, comment });
+    function push(value: bigint | number, meta = {}) {
+      ret.push({ value: BigInt(value), op: IROp.push, meta });
     }
 
-    function call(value: bigint | number, name = "") {
-      ret.push({ value: BigInt(value), op: IROp.call, comment: name, name });
+    function call(value: bigint | number, meta = {}) {
+      ret.push({ value: BigInt(value), op: IROp.call, meta });
     }
   }
 }

@@ -1,11 +1,16 @@
 import { blue } from "https://deno.land/std@0.139.0/fmt/colors.ts";
 
+interface Meta {
+  comment: string;
+  name: string;
+  inline: boolean;
+  pointer: boolean;
+}
+
 export interface IrInstruction {
   value: bigint;
   op: IROp;
-  comment?: string;
-  name?: string;
-  meta?: Record<string, unknown>;
+  meta?: Partial<Meta>;
 }
 
 export enum IROp {
@@ -16,12 +21,34 @@ export enum IROp {
 const OP_WIDTH = 6;
 const VALUE_WIDTH = 10;
 
-export function printIr(ir: Array<IrInstruction>) {
+export function printHighLevelIr(ir: Array<IrInstruction>) {
   ir.forEach((i) => {
-    const o = "." + i.op.padEnd(OP_WIDTH, " ");
+    const c = i.meta?.comment?.trim() ? `/* ${i.meta?.comment} */` : "";
+    const n = ("" + i.meta?.name?.toUpperCase()).padEnd(VALUE_WIDTH, " ");
+    const v = ("" + i.value).padEnd(VALUE_WIDTH, " ");
+    const o = i.op.toUpperCase();
+
+    if (i.op === IROp.call && i.meta?.name) {
+      console.log(o, n, c);
+      return;
+    } else if (i.op === IROp.push) {
+      console.log(o, blue(v), c);
+      return;
+    } else if (i.op === IROp.call && i.value === 0n) {
+      console.log("    ", c);
+      return;
+    } else {
+      console.log(o, blue(v), n, c);
+    }
+  });
+}
+
+export function printLowLevelIr(ir: Array<IrInstruction>) {
+  ir.forEach((i) => {
+    const o = "" + i.op.toUpperCase().padEnd(OP_WIDTH, " ");
     const n = ("" + i.value).padEnd(VALUE_WIDTH, " ");
-    const c = i.comment?.trim() ? `/* ${i.comment} */` : "";
-    console.log(blue(n), o, c);
+    const c = (i.meta?.comment?.trim() || i.meta?.name?.trim()) ? `/* ${i.meta?.name || ""} ${i.meta?.comment || ""} */` : "";
+    console.log(o, blue(n), c);
   });
 }
 
