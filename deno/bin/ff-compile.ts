@@ -27,7 +27,6 @@ export function run(argv: Arguments) {
 
   if (argv.opt) {
     const optimizer = new Optimizer();
-    optimizer.statsOn = argv.stats || false;
     ir = optimizer.optimize(ir);
     if (argv.stats) {
       console.log();

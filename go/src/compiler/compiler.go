@@ -17,7 +17,7 @@ type IrInstruction struct {
 }
 
 var symbolMap = make(map[string]int64)
-var code int64 = 0x80
+var code int64 = -1
 
 func defSystem(name string, value int64) {
 	symbolMap[name] = value
@@ -25,11 +25,12 @@ func defSystem(name string, value int64) {
 
 func nextCode() int64 {
 	c := code
-	code++
+	code--
 	return c
 }
 
 func getSymbol(name string) *Int {
+	name = strings.ToLower(name)
 	if c, ok := symbolMap[name]; ok {
 		return NewInt(c)
 	}
@@ -106,14 +107,21 @@ func Setup() {
 	defSystem(SYM_CALL, OP_CALL)
 	defSystem(SYM_PUTC, OP_PUTC)
 	defSystem(SYM_GETC, OP_GETC)
+	// defSystem(SYM_PUT, OP_PUT)
+	// defSystem(SYM_CLOCK, OP_CLOCK)
 	defSystem(SYM_DROP, OP_DROP)
 	defSystem(SYM_PUSHR, OP_PUSHR)
 	defSystem(SYM_PULLR, OP_PULLR)
+	defSystem(SYM_SHL, OP_SHL)
+	defSystem(SYM_SHR, OP_SHR)
 	defSystem(SYM_CLR, OP_CLR)
+	defSystem(SYM_RND, OP_RND)
+	defSystem(SYM_EXIT, OP_EXIT)
 	defSystem(SYM_DUP, OP_DUP)
 	defSystem(SYM_DEPTH, OP_DEPTH)
 	defSystem(SYM_SWAP, OP_SWAP)
 	defSystem(SYM_MOD, OP_MOD)
+	defSystem(SYM_AND, OP_AND)
 	defSystem(SYM_STASH, OP_STASH)
 	defSystem(SYM_FETCH, OP_FETCH)
 	defSystem(SYM_MUL, OP_MUL)
@@ -130,11 +138,8 @@ func Setup() {
 	defSystem(SYM_BRA, OP_BRA)
 	defSystem(SYM_KET, OP_KET)
 	defSystem(SYM_POW, OP_POW)
-	defSystem(SYM_NOT, OP_NOT)
-	defSystem(SYM_AND, OP_AND)
 	defSystem(SYM_OR, OP_OR)
-	defSystem(SYM_EXIT, OP_EXIT)
-	defSystem(SYM_RND, OP_RND)
+	defSystem(SYM_NOT, OP_NOT)
 }
 
 func CompileToIR(t []string) []IrInstruction {

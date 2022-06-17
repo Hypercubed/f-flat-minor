@@ -129,9 +129,23 @@ func Setup() {
 		push(NewInt(int64(ascii)))
 	}, OP_GETC)
 
+	// PUT
+
+	// CLOCK
+
 	defSystem(func() {
 		pop()
 	}, OP_DROP)
+
+	defSystem(func() {
+		x, y := pop(), peek()
+		y.Lsh(y, uint(x.Int64()))
+	}, OP_SHL)
+
+	defSystem(func() {
+		x, y := pop(), peek()
+		y.Rsh(y, uint(x.Int64()))
+	}, OP_SHR)
 
 	defSystem(func() {
 		queuePush(pop())
@@ -144,6 +158,16 @@ func Setup() {
 	defSystem(func() {
 		ClearStack()
 	}, OP_CLR)
+
+	defSystem(func() {
+		x := peek()
+		x.Rand(rand, x)
+	}, OP_RND)
+
+	defSystem(func() {
+		x := pop()
+		os.Exit(int(x.Int64()))
+	}, OP_EXIT)
 
 	defSystem(func() {
 		push(clone(peek()))
@@ -226,27 +250,6 @@ func Setup() {
 	}, OP_DEF)
 
 	defSystem(func() {
-		x, y := pop(), peek()
-		y.Or(y, x)
-	}, OP_OR)
-
-	defSystem(func() {
-		x := peek()
-		x.Not(x)
-	}, OP_NOT)
-
-	defSystem(func() {
-		queuePush(NewInt(int64(len(stack))))
-	}, OP_BRA)
-
-	defSystem(func() {
-		mm := int(queuePop().Int64())
-		def := append([]*Int(nil), stack[mm:]...)
-		stack = stack[:mm]
-		userDict[peek().Int64()] = def
-	}, OP_KET)
-
-	defSystem(func() {
 		x, y := pop(), pop()
 		if y.Cmp(x) == -1 {
 			push(NewInt(1))
@@ -281,19 +284,30 @@ func Setup() {
 	}, OP_IF)
 
 	defSystem(func() {
+		queuePush(NewInt(int64(len(stack))))
+	}, OP_BRA)
+
+	defSystem(func() {
+		mm := int(queuePop().Int64())
+		def := append([]*Int(nil), stack[mm:]...)
+		stack = stack[:mm]
+		userDict[peek().Int64()] = def
+	}, OP_KET)
+
+	defSystem(func() {
 		x, y := pop(), peek()
 		y.Exp(y, x, nil)
 	}, OP_POW)
 
 	defSystem(func() {
-		x := pop()
-		os.Exit(int(x.Int64()))
-	}, OP_EXIT)
+		x, y := pop(), peek()
+		y.Or(y, x)
+	}, OP_OR)
 
 	defSystem(func() {
 		x := peek()
-		x.Rand(rand, x)
-	}, OP_RND)
+		x.Not(x)
+	}, OP_NOT)
 }
 
 func check(e error) {

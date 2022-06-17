@@ -85,11 +85,11 @@ export class Engine {
 
   private defineUser(s: bigint[], n: bigint) {
     const name = this.getName(n);
-    if (n < 0x80n) {
+    if (n > -1) {
       throw new Error(`cannot define system op ${name}`);
     }
     if (this.defs.has(n)) {
-      if (n < 0x80n) {
+      if (n > -1) {
         throw new Error(`cannot redefine system op ${name}`);
       }
       throw new Error(`cannot redefine user op ${name}`);
@@ -135,7 +135,7 @@ export class Engine {
   }
 
   private callOp(code: bigint): void {
-    if (code < 0x80n) {
+    if (code > -1n) {
       return this.callSystem(code);
     }
     return this.callUser(code);
@@ -197,7 +197,7 @@ export class Engine {
     const name = this.getName(op);
     const s = this.stack.map(String).join(" ");
     const q = this.queue.map(String).join(" ");
-    console.log(`[ ${s} ] ${name} [ ${q} ]`);
+    console.log(`[ ${s} ] ${name} [ ${q.slice(0 , 10)}...`);
   }
 
   getName(op: bigint, def = String(op)): string {

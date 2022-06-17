@@ -7,15 +7,21 @@ const (
 	OP_CALL  = 1
 	OP_PUTC  = 2
 	OP_GETC  = 3
+	OP_PUT   = 4
+	OP_CLOCK = 5
 	OP_DROP  = 8
 	OP_PUSHR = 14
 	OP_PULLR = 15
+	OP_SHL   = 16
+	OP_SHR   = 17
 	OP_CLR   = 25
+	OP_RND   = 26
 	OP_EXIT  = 27
 	OP_DUP   = '!'
 	OP_DEPTH = '#'
 	OP_SWAP  = '$'
 	OP_MOD   = '%'
+	OP_AND   = '&'
 	OP_STASH = '('
 	OP_FETCH = ')'
 	OP_MUL   = '*'
@@ -33,9 +39,7 @@ const (
 	OP_KET   = ']'
 	OP_POW   = '^'
 	OP_OR    = '|'
-	OP_AND   = '&'
 	OP_NOT   = '~'
-	OP_RND   = 26
 )
 
 const (
@@ -43,15 +47,21 @@ const (
 	SYM_CALL  = "eval"
 	SYM_PUTC  = "putc"
 	SYM_GETC  = "getc"
+	SYM_PUT   = "prn"
+	SYM_CLOCK = "clock"
 	SYM_DROP  = "drop"
 	SYM_PUSHR = "q<"
 	SYM_PULLR = "q>"
+	SYM_SHL   = "<<"
+	SYM_SHR   = ">>"
 	SYM_CLR   = "clr"
+	SYM_RND   = "rnd"
 	SYM_EXIT  = "exit"
 	SYM_DUP   = "dup"
 	SYM_DEPTH = "depth"
 	SYM_SWAP  = "swap"
 	SYM_MOD   = "%"
+	SYM_AND   = "&"
 	SYM_STASH = "("
 	SYM_FETCH = ")"
 	SYM_MUL   = "*"
@@ -69,7 +79,5 @@ const (
 	SYM_KET   = "]"
 	SYM_POW   = "^"
 	SYM_OR    = "|"
-	SYM_AND   = "&"
 	SYM_NOT   = "~"
-	SYM_RND   = "rnd"
 )

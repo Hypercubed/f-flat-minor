@@ -28,7 +28,7 @@ export class Compiler {
   }
 
   private readonly symbols = new Map<string, bigint>();
-  private _nextCode = 0x80;
+  private _nextCode = -1;
 
   constructor() {
     let name: keyof typeof systemWords;
@@ -39,7 +39,7 @@ export class Compiler {
   }
 
   private nextCode(): bigint {
-    return BigInt(this._nextCode++);
+    return BigInt(this._nextCode--);
   }
 
   private getSymbol(name: string): bigint {
