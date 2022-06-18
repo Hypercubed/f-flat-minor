@@ -174,11 +174,11 @@ export class Optimizer {
               _ir[ip].meta!.comment = (p.meta?.comment || "").replace(/\&/, "");
             }
           } else {
-            binaryRewrites.forEach(([B, A]) => {
-              const p = _ir[ip - 1];
+            binaryRewrites.forEach(([A, B]) => {
+              const p = _ir[ip + 1];
               if (i.value === A && p.op === IROp.call && p.value === B) {
-                ip--;
                 _ir.splice(ip, 2);
+                ip--;
               }
             });
           }
@@ -186,6 +186,7 @@ export class Optimizer {
           const p = _ir[ip + 1];
           if (p.op === IROp.call && p.value === DROP) {
             _ir.splice(ip, 2);
+            ip--;
           }
         }
 
