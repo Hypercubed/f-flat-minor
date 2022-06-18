@@ -12,6 +12,12 @@ const DROP = BigInt(OpCodes.DROP);
 const PUSHR = BigInt(OpCodes.PUSHR);
 const PULLR = BigInt(OpCodes.PULLR);
 
+const binaryRewrites = [
+  [SWAP, SWAP],
+  [DUP, DROP],
+  [PUSHR, PULLR]
+];
+
 export class Optimizer {
   stats = {
     pre_optimization_ir_size: 0,
@@ -163,24 +169,14 @@ export class Optimizer {
               _ir[ip].meta!.name = (p.meta?.name || "").replace(/^\&/, "");
               _ir[ip].meta!.comment = (p.meta?.comment || "").replace(/\&/, "");
             }
-          } else if (i.value === SWAP) {  // remove swap swap
-            const p = _ir[ip - 1];
-            if (p.op === IROp.call && p.value === SWAP) {
-              ip--;
-              _ir.splice(ip, 2);
-            }
-          } else if (i.value === DUP) {  // remove dup drop
-            const p = _ir[ip - 1];
-            if (p.op === IROp.call && p.value === DROP) {
-              ip--;
-              _ir.splice(ip, 2);
-            }
-          } else if (i.value === PUSHR) {  // remove q< q>
-            const p = _ir[ip - 1];
-            if (p.op === IROp.call && p.value === PULLR) {
-              ip--;
-              _ir.splice(ip, 2);
-            }
+          } else {
+            binaryRewrites.forEach(([A, B]) => {
+              const p = _ir[ip - 1];
+              if (i.value === A && p.op === IROp.call && p.value === B) {
+                ip--;
+                _ir.splice(ip, 2);
+              }
+            });
           }
         }
         ip++;
