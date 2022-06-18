@@ -106,10 +106,12 @@ export class Optimizer {
 
           // Convert anon def to named def
           def[0].value = MARK;
-          def[0].name = ":";
+          def[0].meta ??= {};
+          def[0].meta.name = ":";
           def.unshift(n);
           def[def.length - 1].value = DEF;
-          def[def.length - 1].name = ";";
+          def[def.length - 1].meta ??= {};
+          def[def.length - 1].meta!.name = ";";
 
           this.defs.set(n.value, def);
         } else if (i.value === DEF) { // named defs
@@ -157,8 +159,9 @@ export class Optimizer {
               ip--;
               _ir.splice(ip, 1);
               _ir[ip].value = p.value;
-              _ir[ip].name = (p.name || "").replace(/^\&/, "");
-              _ir[ip].comment = (p.comment || "").replace(/\&/, "");
+              _ir[ip].meta ??= {};
+              _ir[ip].meta!.name = (p.meta?.name || "").replace(/^\&/, "");
+              _ir[ip].meta!.comment = (p.meta?.comment || "").replace(/\&/, "");
             }
           } else if (i.value === SWAP) {  // remove swap swap
             const p = _ir[ip - 1];

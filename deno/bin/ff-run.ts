@@ -7,7 +7,7 @@ import { Compiler } from "../src/compiler.ts";
 import { Engine } from "../src/engine.ts";
 import { Preprocessor } from "../src/preprocess.ts";
 import { readStdin } from "../src/read.ts";
-import { printIr } from "../src/ir.ts";
+import { printHighLevelIr, printLowLevelIr } from "../src/ir.ts";
 import { Optimizer } from "../src/optimizer.ts";
 
 export function run(argv: Arguments) {
@@ -23,6 +23,11 @@ export function run(argv: Arguments) {
 
   const compiler = new Compiler();
   let ir = compiler.compileToIR(Compiler.tokenize(code));
+
+  if (argv.hlir) {
+    printHighLevelIr(ir);
+    Deno.exit();
+  }
   
   if (argv.opt) {
     const optimizer = new Optimizer();
@@ -35,8 +40,8 @@ export function run(argv: Arguments) {
     }
   }
   
-  if (argv.ir) {
-    printIr(ir);
+  if (argv.hlir || argv.ir) {
+    printLowLevelIr(ir);
     Deno.exit();
   }
   

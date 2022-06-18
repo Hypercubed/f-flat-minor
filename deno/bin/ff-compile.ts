@@ -6,7 +6,7 @@ import { Arguments } from "https://deno.land/x/yargs@v17.5.1-deno/deno-types.ts"
 import { base64ToArrayBuffer, dumpByteArray } from "../src/dump.ts";
 
 import { readStdin } from "../src/read.ts";
-import { printHighLevelIr, printIr, printLowLevelIr } from "../src/ir.ts";
+import { printHighLevelIr, printLowLevelIr } from "../src/ir.ts";
 import { Compiler } from "../src/compiler.ts";
 import { HEADER } from "../src/constants.ts";
 import { Optimizer } from "../src/optimizer.ts";
@@ -23,7 +23,12 @@ export function run(argv: Arguments) {
 
   const compiler = new Compiler();
 
-  let ir = compiler.compileToIR(Compiler.tokenize(code));
+  let ir = compiler.compileToIR(Compiler.tokenize(code), filename);
+
+  if (argv.hlir) {
+    printHighLevelIr(ir);
+    Deno.exit();
+  }  
 
   if (argv.opt) {
     const optimizer = new Optimizer();
@@ -34,11 +39,6 @@ export function run(argv: Arguments) {
       console.log(optimizer.stats);
       console.log();
     }
-  }
-
-  if (argv.hlir) {
-    printHighLevelIr(ir);
-    Deno.exit();
   }
 
   if (argv.ir || argv.llir) {

@@ -1,10 +1,12 @@
-import { blue } from "https://deno.land/std@0.139.0/fmt/colors.ts";
+import { blue, green, red, cyan } from "https://deno.land/std@0.139.0/fmt/colors.ts";
 
 interface Meta {
   comment: string;
   name: string;
   inline: boolean;
   pointer: boolean;
+  filename: string;
+  line: number;
 }
 
 export interface IrInstruction {
@@ -23,32 +25,41 @@ const VALUE_WIDTH = 10;
 
 export function printHighLevelIr(ir: Array<IrInstruction>) {
   ir.forEach((i) => {
-    const c = i.meta?.comment?.trim() ? `/* ${i.meta?.comment} */` : "";
+    const c = i.meta?.comment?.trim() ? `; ${i.meta?.comment}` : "";
     const n = ("" + i.meta?.name?.toUpperCase()).padEnd(VALUE_WIDTH, " ");
     const v = ("" + i.value).padEnd(VALUE_WIDTH, " ");
     const o = i.op.toUpperCase();
 
+    let m = '';
+    m = i.meta?.inline ? ".inline" : "";
+    m = i.meta?.pointer ? ".pointer" : m;
+    m = m.trim();
+
     if (i.op === IROp.call && i.meta?.name) {
-      console.log(o, n, c);
+      console.log(blue(o), green(n), red(m), c);
+      return;
+    } else if (i.op === IROp.push && i.meta?.pointer) {
+      console.log(blue(o), green(n), red(m), c);
       return;
     } else if (i.op === IROp.push) {
-      console.log(o, blue(v), c);
+      console.log(blue(o), cyan(v), red(m), c);
       return;
     } else if (i.op === IROp.call && i.value === 0n) {
-      console.log("    ", c);
+      console.log("    ", red(m), c);
       return;
     } else {
-      console.log(o, blue(v), n, c);
+      console.log(blue(o), cyan(v), green(n), red(m), c);
     }
   });
 }
 
 export function printLowLevelIr(ir: Array<IrInstruction>) {
   ir.forEach((i) => {
-    const o = "" + i.op.toUpperCase().padEnd(OP_WIDTH, " ");
-    const n = ("" + i.value).padEnd(VALUE_WIDTH, " ");
-    const c = (i.meta?.comment?.trim() || i.meta?.name?.trim()) ? `/* ${i.meta?.name || ""} ${i.meta?.comment || ""} */` : "";
-    console.log(o, blue(n), c);
+    const o = i.op.toUpperCase().padEnd(OP_WIDTH, " ");
+    const n = i.meta?.name?.toUpperCase() || "";
+    const v = ("" + i.value).padEnd(VALUE_WIDTH, " ");
+    const c = [n, i.meta?.comment || ""].join(" ").trim();
+    console.log(blue(o), cyan(v), c ? `; ${c}` : "");
   });
 }
 
@@ -67,5 +78,5 @@ export function bigCodeToIr(bc: Array<bigint>): Array<IrInstruction> {
 }
 
 export function printBigCodeIr(bc: Array<bigint>) {
-  printIr(bigCodeToIr(bc));
+  printLowLevelIr(bigCodeToIr(bc));
 }

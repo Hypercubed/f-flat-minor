@@ -52,7 +52,7 @@ export class Compiler {
     return code;
   }
 
-  compileToIR(s: string[]): IrInstruction[] {
+  compileToIR(s: string[], filename = ""): IrInstruction[] {
     let i = 0;
     const l = s.length;
     let ss = "";
@@ -139,11 +139,11 @@ export class Compiler {
     return ret;
 
     function push(value: bigint | number, meta = {}) {
-      ret.push({ value: BigInt(value), op: IROp.push, meta });
+      ret.push({ value: BigInt(value), op: IROp.push, meta: { ...meta, filename } });
     }
 
     function call(value: bigint | number, meta = {}) {
-      ret.push({ value: BigInt(value), op: IROp.call, meta });
+      ret.push({ value: BigInt(value), op: IROp.call, meta:{ ...meta, filename } });
     }
   }
 }
