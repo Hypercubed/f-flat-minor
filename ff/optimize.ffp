@@ -1,9 +1,15 @@
 .load ./ff/core.ff
 
-5 ++ .
+1 2 swap swap .
 
-6 &+ eval .
+dup drop .
+
+&+ eval .
 
 succ .inline .
 
-pred .
+clock drop .
+
+~ ~ .
+
+15 drop .

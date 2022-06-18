@@ -15,7 +15,11 @@ const PULLR = BigInt(OpCodes.PULLR);
 const binaryRewrites = [
   [SWAP, SWAP],
   [DUP, DROP],
-  [PUSHR, PULLR]
+  [PUSHR, PULLR],
+  [BigInt(OpCodes.CLOCK), DROP],
+  [BigInt(OpCodes.RND), DROP],
+  [BigInt(OpCodes.DEPTH), DROP],
+  [BigInt(OpCodes.NOT), BigInt(OpCodes.NOT)],
 ];
 
 export class Optimizer {
@@ -170,7 +174,7 @@ export class Optimizer {
               _ir[ip].meta!.comment = (p.meta?.comment || "").replace(/\&/, "");
             }
           } else {
-            binaryRewrites.forEach(([A, B]) => {
+            binaryRewrites.forEach(([B, A]) => {
               const p = _ir[ip - 1];
               if (i.value === A && p.op === IROp.call && p.value === B) {
                 ip--;
@@ -178,7 +182,13 @@ export class Optimizer {
               }
             });
           }
+        } else if (i.op === IROp.push) {  // N drop no-ops
+          const p = _ir[ip + 1];
+          if (p.op === IROp.call && p.value === DROP) {
+            _ir.splice(ip, 2);
+          }
         }
+
         ip++;
       }
 
@@ -196,9 +206,9 @@ export class Optimizer {
    * @returns The inlined words.
    */
   private inlineWords(ir: Array<IrInstruction>, len = 1) {
-    let ret: Array<IrInstruction>;
-    do {
-      ret = ir.flatMap(i => {
+    let ret = ir;
+    // do {
+      ret = ret.flatMap(i => {
         if (i.op === IROp.call && this.defs.has(i.value)) {
           const def = this.defs.get(i.value);
           if (def && (i.meta?.inline || def.length <= (len + 3))) {
@@ -208,7 +218,7 @@ export class Optimizer {
         }
         return i;
       });
-    } while(ret.length !== ir.length);  // todo: catch run away loop
+    // } while(ret.length !== ir.length);  // todo: catch run away loop
     return ret;
   }
 
