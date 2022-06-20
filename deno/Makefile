@@ -35,7 +35,7 @@ test-compile: ./artifacts/example.ffb
 test-execute: ./artifacts/example.txt
 	@printf "** Deno Execute **"
 	@time ./build/execute ./artifacts/example.ffb > ./artifacts/example.txt
-	@cmp --silent -- "./artifacts/example.txt" "../ff/example.ff.test" && $(CHECK)
+	@cmp --silent -- "./artifacts/example.txt" "../ff/example.out" && $(CHECK)
 	@echo ""
 	@echo ""
 
@@ -47,12 +47,25 @@ ff: build/run
 	@echo ""
 	@cd ..; \
 		for f in ${FF}; do \
-			if [ -f $${f}.test ]; then \
+			out=$${f%.*}.out; \
+			if [ -f "$${out}" ]; then \
 				printf "$${f} "; \
-				./deno/build/run $${f} 2>/dev/null | cmp - $${f}.test -s && $(CHECK); \
-				./deno/build/run $${f} --opt 2>/dev/null | cmp - $${f}.test -s && $(CHECK); \
+				./deno/build/run $${f} 2>/dev/null | cmp - $${out} -s && $(CHECK); \
+				./deno/build/run $${f} --opt 2>/dev/null | cmp - $${out} -s && $(CHECK); \
 				echo ""; \
 			fi \
 		done
 	@echo ""
+
+.PHONY : reset
+reset: build/run
+	@cd ..; \
+		for f in ${FF}; do \
+			out=$${f%.*}.out; \
+			if [ -f "$${out}" ]; then \
+				echo "Reseting $${f} $${out}"; \
+				./deno/build/run $${f} > $${out} \
+				echo ""; \
+			fi \
+		done
 

@@ -137,7 +137,9 @@ func Setup() {
 
 	// PUT
 
-	// CLOCK
+	defSystem(func() {
+		push(NewInt(int64(time.Now().Unix())))
+	}, OP_CLOCK)
 
 	defSystem(func() {
 		pop()

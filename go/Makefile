@@ -33,7 +33,7 @@ test:	build ff ./artifacts/example.ffb ./artifacts/example.txt
 ./artifacts/example.txt: build/execute
 	@printf "** Go Execute **"
 	@time cat ./artifacts/example.ffb | ./build/execute > ./artifacts/example.txt
-	@cmp --silent -- "./artifacts/example.txt" "../ff/example.ff.test" && $(CHECK)
+	@cmp --silent -- "./artifacts/example.txt" "../ff/example.out" && $(CHECK)
 	@echo ""
 	@echo ""
 
@@ -45,9 +45,10 @@ ff: build/run
 	@echo ""
 	@cd ..; \
 		for f in ${FF}; do \
-			if [ -f $${f}.test ]; then \
-				printf "$${f} "; \
-				cat $${f} | ./go/build/run 2>/dev/null | cmp - $${f}.test -s && $(CHECK); \
+			out=$${f%.*}.out; \
+			if [ -f "$${out}" ]; then \
+				printf "cmp $${f} $${out} "; \
+				cat $${f} | ./go/build/run 2>/dev/null | cmp - $${out} -s && $(CHECK); \
 				echo ""; \
 			fi \
 		done

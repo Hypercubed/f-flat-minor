@@ -21,7 +21,7 @@ test:	ff example
 
 .PHONY : example
 example: ./artifacts/example.txt
-	@cmp --silent -- "./artifacts/example.txt" "../fixtures/example.txt" && printf "${GRN}OK${NC}\n" || printf "${RED}outouts differ${NC}\n"
+	@cmp --silent -- "./artifacts/example.txt" "../ff/example.out" && printf "${GRN}OK${NC}\n" || printf "${RED}outouts differ${NC}\n"
 	@echo ""
 
 FF = ./ff{,/*}/*.{ff,ffp}
@@ -32,9 +32,10 @@ ff:
 	@echo ""
 	@cd ..; \
 		for f in ${FF}; do \
-			if [ -f $${f}.test ]; then \
-				printf "$${f} "; \
-				./deno/build/preprocess $${f} | ruby ./ruby/execute.rb 2>/dev/null | cmp - $${f}.test -s && $(CHECK); \
+			out=$${f%.*}.out; \
+			if [ -f "$${out}" ]; then \
+				printf "cmp $${f} $${out} "; \
+				./deno/build/preprocess $${f} | ruby ./ruby/execute.rb 2>/dev/null | cmp - $${out} -s && $(CHECK); \
 				echo ""; \
 			fi \
 		done

@@ -18,23 +18,25 @@ test:	ff example
 ./artifacts/example.txt:
 	@printf "** Python Run **"
 	@time cat ../ff/example.ff | python3 ./execute.py > ./artifacts/example.txt
+	@echo ""
 
 .PHONY : example
 example: ./artifacts/example.txt
-	@cmp -s -- "./artifacts/example.txt" "../fixtures/example.txt" && $(CHECK)
+	@cmp -s -- "./artifacts/example.txt" "../ff/example.out" && $(CHECK)
 	@echo ""
 
 FF = ./ff{,/*}/*.{ff,ffp}
 
 .PHONY : ff
 ff:
-	@printf "** Deno Execute FF Files **"
+	@printf "** Python Execute FF Files **"
 	@echo ""
 	@cd ..; \
 		for f in ${FF}; do \
-			if [ -f $${f}.test ]; then \
-				printf "$${f} "; \
-				./deno/build/preprocess $${f} | python3 ./python/execute.py 2>/dev/null | cmp - $${f}.test -s && $(CHECK); \
+			out=$${f%.*}.out; \
+			if [ -f "$${out}" ]; then \
+				printf "cmp $${f} $${out} "; \
+				./deno/build/preprocess $${f} | python3 ./python/execute.py 2>/dev/null | cmp - $${out} -s && $(CHECK); \
 				echo ""; \
 			fi \
 		done
