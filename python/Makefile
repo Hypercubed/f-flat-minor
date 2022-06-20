@@ -36,6 +36,7 @@ ff:
 			out=$${f%.*}.out; \
 			if [ -f "$${out}" ]; then \
 				printf "cmp $${f} $${out} "; \
+				cat $${f} | python3 ./python/execute.py 2>/dev/null | cmp - $${out} -s && $(CHECK); \
 				./deno/build/preprocess $${f} | python3 ./python/execute.py 2>/dev/null | cmp - $${out} -s && $(CHECK); \
 				echo ""; \
 			fi \

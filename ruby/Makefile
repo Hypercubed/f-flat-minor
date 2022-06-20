@@ -35,6 +35,7 @@ ff:
 			out=$${f%.*}.out; \
 			if [ -f "$${out}" ]; then \
 				printf "cmp $${f} $${out} "; \
+				cat $${f} | ruby ./ruby/execute.rb 2>/dev/null | cmp - $${out} -s && $(CHECK); \
 				./deno/build/preprocess $${f} | ruby ./ruby/execute.rb 2>/dev/null | cmp - $${out} -s && $(CHECK); \
 				echo ""; \
 			fi \

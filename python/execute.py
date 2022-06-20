@@ -6,6 +6,9 @@ import sys
 import time
 import re
 
+# TODO: tail call opt
+sys.setrecursionlimit(7000)
+
 stack = []
 r_stack = []
 ops = {}
@@ -92,6 +95,9 @@ def lsh():
 def clock():
   push(int(time.time()))
 
+def depth():
+  push(int(len(stack)))
+
 def printStack():
   print('[ ', end='')
   for i in range(len(stack)):
@@ -102,9 +108,9 @@ def callOp(o):
   if o in defs:
     f = defs[o]
     if isinstance(f, list):
-      ev(f)
+      return ev(f)
     else:
-      defs[o]()
+      return defs[o]()
 
 def call():
   o = stack.pop()
@@ -157,7 +163,7 @@ define('q>', popq)
 define('clock', clock)
 define('clr', clr)
 define('dup', dup)
-# depth
+define('depth', depth)
 define('swap', swap)
 define('%', mod)
 # stash
