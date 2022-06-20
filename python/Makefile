@@ -7,21 +7,15 @@ define CHECK =
 	printf "${GRN}OK${NC} " || printf "${RED}FAILED${NC} "
 endef
 
-.PHONY : clean
-clean:
-	@rm -f ./example.*
-
 .PHONY : test
-test:	ff example
+test:	ff interpret
 
-.PHONY : ./artifacts/example.txt
-./artifacts/example.txt:
-	@printf "** Python Run **"
-	@time cat ../ff/example.ff | python3 ./execute.py > ./artifacts/example.txt
-
-.PHONY : example
-example: ./artifacts/example.txt
-	@cmp -s -- "./artifacts/example.txt" "../ff/example.out" && $(CHECK)
+.PHONY : interpret
+interpret:
+	@printf "** Python Interpreter **"
+	@time cat ../ff/example.ff \
+		| python3 ./execute.py \
+		| cmp -s - "../ff/example.out" && $(CHECK)
 	@echo ""
 	@echo ""
 
@@ -29,7 +23,7 @@ FF = ./ff{,/*}/*.{ff,ffp}
 
 .PHONY : ff
 ff:
-	@printf "** Python Execute FF Files **"
+	@printf "** Python FF Tests **"
 	@echo ""
 	@cd ..; \
 		for f in ${FF}; do \

@@ -11,10 +11,10 @@ endef
 
 .PHONY : clean
 clean:
-	$(RM) ./artifacts ./build
+	$(RM) ./build
 
 .PHONY : test
-test:	ff test-compile test-execute
+test:	ff compile execute interpret
 
 build: build/execute build/compile build/run build/preprocess
 
@@ -23,19 +23,27 @@ build: build/execute build/compile build/run build/preprocess
 build/%: ./**/*.ts
 	deno compile --unstable --allow-env --allow-read -o ./build/$* ./bin/ff-$*.ts
 
-.PHONY : test-compile
-test-compile: ./artifacts/example.ffb
-	@printf "** Deno Compile **"
-	@time ./build/compile ../ff/example.ff > ./artifacts/example.ffb
-	@cmp --silent -- "./artifacts/example.ffb" "../fixtures/example.ffb" && $(CHECK)
+.PHONY : compile
+compile: build/compile
+	@printf "** Deno Compiler **"
+	@time ./build/compile ../ff/example.ff \
+		| cmp --s - "../fixtures/example.ffb" && $(CHECK)
 	@echo ""
 	@echo ""
 
-.PHONY : test-execute
-test-execute: ./artifacts/example.txt
-	@printf "** Deno Execute **"
-	@time ./build/execute ./artifacts/example.ffb > ./artifacts/example.txt
-	@cmp --silent -- "./artifacts/example.txt" "../ff/example.out" && $(CHECK)
+.PHONY : execute
+execute: build/execute 
+	@printf "** Deno Executer **"
+	@time ./build/execute ../fixtures/example.ffb \
+		| cmp -s - "../ff/example.out" && $(CHECK)
+	@echo ""
+	@echo ""
+
+.PHONY : interpret
+interpret: build/run
+	@printf "** Deno Interpreter **"
+	@time ./build/run ../ff/example.ff \
+		| cmp -s - "../ff/example.out" && $(CHECK)
 	@echo ""
 	@echo ""
 
@@ -43,7 +51,7 @@ FF = ./ff{,/*}/*.{ff,ffp}
 
 .PHONY : ff
 ff: build/run
-	@printf "** Deno Execute FF Files **"
+	@printf "** Deno FF Tests **"
 	@echo ""
 	@cd ..; \
 		for f in ${FF}; do \

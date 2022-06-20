@@ -1,7 +1,7 @@
 .vscode/*
 */.vscode
 
-.dart_tool/
+*/.dart_tool/
 .packages
 
 */artifacts/*

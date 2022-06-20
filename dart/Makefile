@@ -7,24 +7,37 @@ define CHECK =
 	printf "${GRN}OK${NC} " || printf "${RED}FAILED${NC} "
 endef
 
-.PHONY : clean 
-clean:
-	@rm -f ./example.*
-
 .PHONY : test
-test:	example
+test:	interpret
 
 build: bin/dart.exe
 
 bin/%.exe: ./bin/*.dart
 	dart compile exe bin/$*.dart
 
-.PHONY : ./artifacts/example.txt
-./artifacts/example.txt: bin/dart.exe
-	@printf "** Dart Run **"
-	@time cat ../ff/example_v0.ff | ./bin/dart.exe > ./artifacts/example.txt
+.PHONY : interpret
+interpret: bin/dart.exe
+	@printf "** Dart Interpreter **"
+	@time cat ../ff/example_v0.ff \
+		| ./bin/dart.exe \
+		| cmp -s - "../ff/example.out" && $(CHECK)
+	@echo ""
+	@echo ""
 
-.PHONY : example
-example: ./artifacts/example.txt
-	@cmp --silent -- "./artifacts/example.txt" "../ff/example.out" && printf "${GRN}OK${NC}\n" || printf "${RED}outouts differ${NC}\n"
+FF = ./ff{,/*}/*.{ff,ffp}
+
+.PHONY : ff
+ff:
+	@printf "** Dart FF Tests **"
+	@echo ""
+	@cd ..; \
+		for f in ${FF}; do \
+			out=$${f%.*}.out; \
+			if [ -f "$${out}" ]; then \
+				printf "cmp $${f} $${out} "; \
+				cat $${f} | ./dart/bin/dart.exe 2>/dev/null | cmp - $${out} -s && $(CHECK); \
+				./deno/build/preprocess $${f} | ./dart/bin/dart.exe 2>/dev/null | cmp - $${out} -s && $(CHECK); \
+				echo ""; \
+			fi \
+		done
 	@echo ""

@@ -11,7 +11,7 @@ endef
 
 .PHONY : clean 
 clean:
-	@rm -f ./artifacts ./build
+	@rm -f ./build
 
 build/%: ./cmd/compile/*.go ./src/**/*.go
 	go build -o ./build/$* ./cmd/$*
@@ -19,21 +19,32 @@ build/%: ./cmd/compile/*.go ./src/**/*.go
 build: build/compile build/execute build/run build/repl
 
 .PHONY : test
-test:	build ff ./artifacts/example.ffb ./artifacts/example.txt
+test:	ff compile execute interpret
 
-.PHONY : ./artifacts/example.ffb
-./artifacts/example.ffb: build/compile
-	@printf "** Go Compile **"
-	@time cat ../ff/example.ff | ./build/compile > ./artifacts/example.ffb
-	@cmp --silent -- "./artifacts/example.ffb" "../fixtures/example.ffb" && $(CHECK)
+.PHONY : compile
+compile: build/compile
+	@printf "** Go Compiler **"
+	@time cat ../ff/example.ff \
+		| ./build/compile \
+		| cmp -s -- "./artifacts/example.ffb" "../fixtures/example.ffb" && $(CHECK)
 	@echo ""
 	@echo ""
 
-.PHONY : ./artifacts/example.txt
-./artifacts/example.txt: build/execute
-	@printf "** Go Execute **"
-	@time cat ./artifacts/example.ffb | ./build/execute > ./artifacts/example.txt
-	@cmp --silent -- "./artifacts/example.txt" "../ff/example.out" && $(CHECK)
+.PHONY : execute
+execute: build/execute
+	@printf "** Go Executer **"
+	@time cat ../fixtures/example.ffb \
+		| ./build/execute \
+		| cmp -s -- "./artifacts/example.txt" "../ff/example.out" && $(CHECK)
+	@echo ""
+	@echo ""
+
+.PHONY : interpret
+interpret: build/run
+	@printf "** Go Interpreter **"
+	@time cat ../ff/example.ff \
+		| ./build/run \
+		| cmp -s -- "./artifacts/example.txt" "../ff/example.out" && $(CHECK)
 	@echo ""
 	@echo ""
 
@@ -41,7 +52,7 @@ FF = ./ff{,/*}/*.{ff,ffp}
 
 .PHONY : ff
 ff: build/run
-	@printf "** Deno Execute FF Files **"
+	@printf "** Go FF Tests **"
 	@echo ""
 	@cd ..; \
 		for f in ${FF}; do \

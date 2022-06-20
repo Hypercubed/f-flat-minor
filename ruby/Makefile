@@ -7,28 +7,23 @@ define CHECK =
 	printf "${GRN}OK${NC} " || printf "${RED}FAILED${NC} "
 endef
 
-.PHONY : clean 
-clean:
-	@rm -f ./example.*
-
 .PHONY : test
-test:	ff example
+test:	ff interpret
 
-.PHONY : ./artifacts/example.txt
-./artifacts/example.txt:
-	@printf "** Ruby Run **"
-	@time cat ../ff/example.ff | ruby ./execute.rb > ./artifacts/example.txt
-
-.PHONY : example
-example: ./artifacts/example.txt
-	@cmp --silent -- "./artifacts/example.txt" "../ff/example.out" && printf "${GRN}OK${NC}\n" || printf "${RED}outouts differ${NC}\n"
+.PHONY : interpret
+interpret:
+	@printf "** Ruby Interpreter **"
+	@time cat ../ff/example.ff \
+		| ruby ./execute.rb \
+		| cmp -s - "./artifacts/example.txt" && $(CHECK);
+	@echo ""
 	@echo ""
 
 FF = ./ff{,/*}/*.{ff,ffp}
 
 .PHONY : ff
 ff:
-	@printf "** Ruby Execute FF Files **"
+	@printf "** Ruby FF Tests **"
 	@echo ""
 	@cd ..; \
 		for f in ${FF}; do \
