@@ -44,29 +44,65 @@ Factorial 100:
 [ 93326215443944152681699238856266700490715968264381621468592963895217599993229915608941463976156518286253697920827223758251185210916864000000000000000000000000 ]
 ```
 
+<details>
+  <summary>For an initial POC an interpreter can implement v0 generating the same output</summary>
+  
+```forth
+/* common definitions */
+
+--: 1 - ;
+rot: swap q< swap q> swap ;
+choose: rot &swap ? drop ;
+branch: choose eval ;
+
+/_ factorial _/
+
+fact_t: dup -- fact \* ;
+fact_f: drop 1 ;
+fact: dup &fact_t &fact_f branch ;
+
+/_ string printing _/
+
+print_t: putc print ;
+print: dup &print_t &drop branch ;
+println: print 10 putc ;
+
+0 32 'Factorial print
+0 '100: println
+
+100 fact .
+
+```
+
+</details>
+
 ## Phased Approach
 
 For each target language first implement a proof-of-concept in an online code runner ([replit](replit.com/) for example). Then, if satisfied, split the POC into a compiler and runner within this repo.
 
 ## Progress
 
-| Language            | POC                                                        | Interpreter | Compiler | REPL |
-| ------------------- | ---------------------------------------------------------- | ----------- | -------- | ---- |
-| Typescript/Deno     | [ 😀 ](https://replit.com/@Hypercubed/f-flat-minor-TS)     | ✓           | ✓        | ✓    |
-| Go                  | [ 😀 ](https://replit.com/@Hypercubed/f-flat-minor-Go)     | ✓           | ✓        | ✓    |
-| Python              | [ 😀 ](https://replit.com/@Hypercubed/f-flat-minor-Python) | ✓           |
-| Ruby                | [ 😀 ](https://replit.com/@Hypercubed/f-flat-minor-Ruby)   | ✓           |
-| Rust                | [ 😔 ](https://replit.com/@Hypercubed/f-flat-minor-Rust)   |
-| Dart                | [ 😀 ](https://replit.com/@Hypercubed/f-flat-minor-Dart)   | ✓           |
-| AssemblyScript      | [ 😐 ](https://tinyurl.com/yc3wn325)                       | ✓           |
-| Swift               | [ 😐 ](https://replit.com/@Hypercubed/f-flat-minor-Swift)  |
-| C/C++/C#/LLVM       |
-| Lisp/Clojure/Racket |
-| Haskell             |
-| Julia               |
-| Erlang/BEAM         |
-| Perl/Raku           |
-| Java/Scala          |
+| Language              | POC                                                        | Interpreter | Compiler/Executer | REPL |
+| --------------------- | ---------------------------------------------------------- | ----------- | ----------------- | ---- |
+| Typescript/Deno       | [ 😀 ](https://replit.com/@Hypercubed/f-flat-minor-TS)     | ✓           | ✓                 | ✓    |
+| Go                    | [ 😀 ](https://replit.com/@Hypercubed/f-flat-minor-Go)     | ✓           | ✓                 | ✓    |
+| Python                | [ 😀 ](https://replit.com/@Hypercubed/f-flat-minor-Python) | ✓           |
+| Ruby                  | [ 😀 ](https://replit.com/@Hypercubed/f-flat-minor-Ruby)   | ✓           |
+| Dart                  | [ 😀 ](https://replit.com/@Hypercubed/f-flat-minor-Dart)   | ✓           |
+| AssemblyScript        | [ 😐 ](https://tinyurl.com/yc3wn325)                       | ✓           |
+| Rust                  | [ 😔 ](https://replit.com/@Hypercubed/f-flat-minor-Rust)   |
+| Swift                 | [ 😐 ](https://replit.com/@Hypercubed/f-flat-minor-Swift)  |
+| C/C++/LLVM            |
+| F#                    |
+| Lisp/Clojure/Racket   |
+| Haskell               |
+| Julia                 |
+| Lua                   |
+| Erlang/BEAM           |
+| Perl/Raku             |
+| Java/Scala/Kotlin/JVM |
+| Forth/Factor/Cat      |
+| F-flat                |
 
 ## Vocabulary
 
@@ -113,3 +149,4 @@ For each target language first implement a proof-of-concept in an online code ru
 ## License
 
 This project is licensed under the MIT License - see the LICENSE file for details
+```
