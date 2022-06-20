@@ -1,4 +1,4 @@
-.load ./ff/core.ff
+.load core.ff
 
 /* Kunth operators */
 ^^: -- dup [ [ dup ] swap times [ ^ ] ] dip times ;

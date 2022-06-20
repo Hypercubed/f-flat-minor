@@ -16,7 +16,7 @@ export function run(args: Arguments) {
     : Deno.readTextFileSync(filename);
 
   const preprocessor = new Preprocessor();
-  const processed = preprocessor.preprocess(Preprocessor.tokenize(code));
+  const processed = preprocessor.preprocess(Preprocessor.tokenize(code), filename);
   Deno.stdout.writeSync(encoder.encode(processed));
 }
 

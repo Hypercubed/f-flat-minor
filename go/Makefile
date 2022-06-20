@@ -6,7 +6,7 @@ include ../defs.mk
 clean:
 	@rm -f ./build
 
-build/%: ./cmd/compile/*.go ./src/**/*.go
+build/%: ./cmd/**/*.go ./src/**/*.go
 	go build -o ./build/$* ./cmd/$*
 
 build: build/compile build/execute build/run build/repl
@@ -17,8 +17,7 @@ test:	ff compile execute interpret
 .PHONY : compile
 compile: build/compile
 	@printf "** Go Compiler **"
-	@time cat ../ff/example.ff \
-		| ./build/compile \
+	@time ./build/compile -in ../ff/example.ff \
 		| cmp -s -- "./artifacts/example.ffb" "../fixtures/example.ffb" && $(CHECK)
 	@echo ""
 	@echo ""
@@ -35,8 +34,7 @@ execute: build/execute
 .PHONY : interpret
 interpret: build/run
 	@printf "** Go Interpreter **"
-	@time cat ../ff/example.ff \
-		| ./build/run \
+	@time ./build/run -in ../ff/example.ff \
 		| cmp -s -- "./artifacts/example.txt" "../ff/example.out" && $(CHECK)
 	@echo ""
 	@echo ""
@@ -50,7 +48,7 @@ ff: build/run
 			out=$${f%.*}.out; \
 			if [ -f "$${out}" ]; then \
 				printf "cmp $${f} $${out} "; \
-				cat $${f} | ./go/build/run 2>/dev/null | cmp - $${out} -s && $(CHECK); \
+				./go/build/run -in $${f} 2>/dev/null | cmp - $${out} -s && $(CHECK); \
 				echo ""; \
 			fi \
 		done

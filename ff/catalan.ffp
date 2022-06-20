@@ -1,4 +1,4 @@
-.load ./ff/core.ff
+.load ./core.ff
 
 cat: dup dup 2 * swap nck swap 1 + / ;
 

@@ -1,4 +1,4 @@
-.load ./ff/core.ff
+.load ./core.ff
 
 readch: getc dup putc dup 13 != [ readch ] ? ;
 readln: readch drop ;

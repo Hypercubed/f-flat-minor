@@ -6,6 +6,8 @@ import (
 	. "m/src/utils"
 	. "math/big"
 	"os"
+	"path"
+	"path/filepath"
 	"regexp"
 	"strings"
 )
@@ -142,7 +144,7 @@ func Setup() {
 	defSystem(SYM_NOT, OP_NOT)
 }
 
-func CompileToIR(t []string) []IrInstruction {
+func CompileToIR(t []string, filename string) []IrInstruction {
 	ret := make([]IrInstruction, 0)
 
 	push := func(value *Int, comment string) {
@@ -163,12 +165,13 @@ func CompileToIR(t []string) []IrInstruction {
 		} else if strings.HasPrefix(element, ".") && (len(element) > 1) {
 			tokens := regexp.MustCompile("\\s").Split(element, 2)
 			if tokens[0] == ".load" {
-				dat, err := os.ReadFile(tokens[1])
+				filepath := getFilepath(tokens[1], filename)
+				dat, err := os.ReadFile(filepath)
 				check(err)
-				ir := CompileToIR(Tokenize(string(dat)))
+				ir := CompileToIR(Tokenize(string(dat)), filename)
 				ret = append(ret, ir...)
 			} else if tokens[0] == ".m" {
-				ir := CompileToIR(Tokenize(tokens[1]))
+				ir := CompileToIR(Tokenize(tokens[1]), filename)
 				bigCode := CompileToBigIntArray(ir)
 				engine.ExecuteBigIntCode(bigCode)
 				for i, item := range engine.GetStack() {
@@ -264,4 +267,17 @@ func convertEsc2Char(str string) string {
 	str = strings.Replace(str, "\\s", " ", -1)
 
 	return str
+}
+
+func getFilepath(filename string, source string) string {
+	if filename != "" && !path.IsAbs(filename) {
+		relative := path.Join(filepath.Dir(source), filename)
+		if _, err := os.Stat(relative); err == nil {
+			return relative
+		}
+	}
+	if _, err := os.Stat(filename); err == nil {
+		return filename
+	}
+	panic(fmt.Sprintf("File not found: %s", filename))
 }

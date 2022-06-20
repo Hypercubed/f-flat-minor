@@ -1,3 +1,6 @@
+import * as fs from "https://deno.land/std/fs/mod.ts";
+import * as path from "https://deno.land/std/path/mod.ts";
+
 import { Compiler } from "./compiler.ts";
 import { Engine } from "./engine.ts";
 
@@ -9,7 +12,7 @@ export class Preprocessor {
   private readonly engine = new Engine();
   private readonly compiler = new Compiler();
 
-  preprocess(lines: string[]): string {
+  preprocess(lines: string[], filename = "-"): string {
     return lines.map((line) => {
       if (line.length > 1 && line[0] === ".") {
         const [cmd, ...rest] = line.split(" ");
@@ -18,8 +21,9 @@ export class Preprocessor {
             Deno.exit();
             break;
           case ".load": {
-            const code = Deno.readTextFileSync(rest.join(" "));
-            return this.preprocess(Preprocessor.tokenize(code));
+            const filepath = this.findFile(rest.join(" "), filename);
+            const code = Deno.readTextFileSync(filepath);
+            return this.preprocess(Preprocessor.tokenize(code), filepath);
           }
           case ".m": {
             const ir = this.compiler.compileToIR(
@@ -35,5 +39,21 @@ export class Preprocessor {
       }
       return line;
     }).join("\n");
+  }
+
+  findFile(filename: string, source = "-"): string {
+    if (source && source !== "-" && !path.isAbsolute(filename)) {
+      const dir = path.dirname(source);
+      const relative = path.resolve(dir, filename);
+      if (fs.existsSync(relative)) {
+        return relative;
+      }
+    }
+
+    if (fs.existsSync(filename)) {
+      return filename;
+    }
+
+    throw 'File not found: "' + filename + '"';
   }
 }

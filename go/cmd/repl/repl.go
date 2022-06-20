@@ -9,8 +9,9 @@ import (
 )
 
 func executor(code string) {
+	filepath := "./ff/core.ff"
 	tokens := compiler.Tokenize(code)
-	ir := compiler.CompileToIR(tokens)
+	ir := compiler.CompileToIR(tokens, filepath)
 	bigInt := compiler.CompileToBigIntArray(ir)
 	engine.ExecuteBigIntCode(bigInt)
 	engine.Print()

@@ -1,4 +1,4 @@
-.load ./ff/core.ff
+.load ../core.ff
 
 /* http://projecteuler.net/index.php?section=problems&id=2 */
 

@@ -1,4 +1,4 @@
-.load ./ff/core.ff
+.load ./core.ff
 
 ps: prn printsp ;
 

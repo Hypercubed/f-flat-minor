@@ -1,4 +1,4 @@
-.load ./ff/core.ff
+.load ./core.ff
 
 gcd_t: dup bury % gcd_r ;
 gcd_r: dup [ gcd_t ] ? ;
