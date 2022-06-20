@@ -4,4 +4,6 @@
 */artifacts/*
 */build/*
 
+dart/bin/*.exe
+
 */node_modules/*

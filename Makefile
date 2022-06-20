@@ -1,5 +1,5 @@
 SHELL := /bin/bash
-SUBDIRS := deno go python ruby
+SUBDIRS := deno go python ruby dart
 
 define FOREACH
 	@for DIR in $(SUBDIRS);\

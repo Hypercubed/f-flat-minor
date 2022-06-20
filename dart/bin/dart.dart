@@ -1,6 +1,9 @@
 import 'dart:io';
+import 'dart:convert';
 
 final List<BigInt> stack = [];
+final List<BigInt> queue = [];
+
 final symbols = Map<String, BigInt>();
 final defs = Map<BigInt, dynamic>();
 
@@ -34,13 +37,15 @@ void setup() {
     stack.clear();
   });
 
-  define('call', () {
+  define('eval', () {
     var code = stack.removeLast();
     callOp(code);
   });
 
   define('.', () {
-    print(stack);
+    stdout.write('[ ');
+    stdout.write(stack.join(" "));
+    stdout.write(' ]\n');
   });
 
   define('putc', () {
@@ -52,6 +57,16 @@ void setup() {
 
   define('dup', () {
     var a = stack.last;
+    stack.add(a);
+  });
+
+  define('q<', () {
+    var a = stack.removeLast();
+    queue.add(a);
+  });
+
+  define('q>', () {
+    var a = queue.removeLast();
     stack.add(a);
   });
 
@@ -84,6 +99,12 @@ void setup() {
     var b = stack.removeLast();
     var a = stack.removeLast();
     stack.add(a ~/ b);
+  });
+
+  define('=', () {
+    var b = stack.removeLast();
+    var a = stack.removeLast();
+    stack.add(a == b ? BigInt.one : BigInt.zero);
   });
 
   define('?', () {
@@ -160,31 +181,41 @@ void ev(List<String> tokens) {
 void main() {
   setup();
 
-  final stopwatch = Stopwatch()..start();
-	ev(tokenize('''
-    /* common definitions */
+  // final stopwatch = Stopwatch()..start();
 
-    --: 1 - ;
-    rot: q< swap q> swap ;
-    choose: 0 = &swap ? drop ;
-    branch: rot choose eval ;
+  while (true) {
+    var line = stdin.readLineSync();
+    if (line == null) {
+      break;
+    }
+    ev(tokenize(line));
+  }
 
-    /* factorial */
+	// ev(tokenize('''
+  //   /* common definitions */
 
-    fact_t: dup -- fact * ;
-    fact_f: drop 1 ;
-    fact: dup &fact_t &fact_f branch ;
+  //   --: 1 - ;
+  //   rot: q< swap q> swap ;
+  //   choose: 0 = &swap ? drop ;
+  //   branch: rot choose eval ;
 
-    /* string printing */
+  //   /* factorial */
 
-    print_t: putc print ;
-    print: dup &print_t &drop branch ;
-    println: print 10 putc ;
+  //   fact_t: dup -- fact * ;
+  //   fact_f: drop 1 ;
+  //   fact: dup &fact_t &fact_f branch ;
 
-    0 32 'Factorial print
-    0 '100: println
+  //   /* string printing */
 
-    100 fact .
-  '''));
-  print('${stopwatch.elapsed.inMilliseconds}ms');
+  //   print_t: putc print ;
+  //   print: dup &print_t &drop branch ;
+  //   println: print 10 putc ;
+
+  //   0 32 'Factorial print
+  //   0 '100: println
+
+  //   100 fact .
+  // '''));
+  
+  // print('${stopwatch.elapsed.inMilliseconds}ms');
 }
