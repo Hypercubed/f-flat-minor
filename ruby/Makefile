@@ -28,7 +28,7 @@ FF = ./ff{,/*}/*.{ff,ffp}
 
 .PHONY : ff
 ff:
-	@printf "** Deno Execute FF Files **"
+	@printf "** Ruby Execute FF Files **"
 	@echo ""
 	@cd ..; \
 		for f in ${FF}; do \

@@ -4,6 +4,7 @@
 
 import sys
 import time
+import re
 
 stack = []
 r_stack = []
@@ -26,6 +27,9 @@ def push(x):
 
 def pop():
   return stack.pop()
+
+def clr():
+  return stack.clear()
 
 def nop():
   return
@@ -77,11 +81,22 @@ def gt():
   a = stack.pop()
   stack[-1] = int(stack[-1] > a)
 
+def rsh():
+  a = stack.pop()
+  stack[-1] = int(stack[-1] >> a)
+
+def lsh():
+  a = stack.pop()
+  stack[-1] = int(stack[-1] << a)
+
+def clock():
+  push(int(time.time()))
+
 def printStack():
   print('[ ', end='')
   for i in range(len(stack)):
-    print(stack[i], end='')
-  print(' ]')
+    print(f'{stack[i]} ', end='')
+  print(']')
 
 def callOp(o):
   if o in defs:
@@ -139,7 +154,8 @@ define('putc', putc)
 define('drop', lambda: stack.pop() )
 define('q<', pushq)
 define('q>', popq)
-# clr
+define('clock', clock)
+define('clr', clr)
 define('dup', dup)
 # depth
 define('swap', swap)
@@ -153,6 +169,8 @@ define('.', printStack)
 define('/', div)
 # mark
 # def
+define('<<', lsh)
+define('>>', rsh)
 define('<', lt)
 define('=', eq)
 define('>', gt)
@@ -164,6 +182,9 @@ define('|', bor)
 define('&', band)
 define('~', bnot)
 
+def unescape(text):
+  return text.replace('\\n', '\n').replace('\\s', ' ')
+
 def ev(t):
   i = 0
   l = len(t)
@@ -172,13 +193,16 @@ def ev(t):
     i += 1
     if s.lstrip("-").isnumeric():
       push(s)
+    elif s.startswith('.') and len(s) > 1:
+      continue
     elif s.startswith('&') and len(s) > 1:
       n = s[1:]
       if n in ops:
         push(ops[n])
     elif s.startswith('\''):
-      n = s[1:-1][::-1] if s.endswith('\'') else s[1:][::-1]
-      stack.extend([ord(c) for c in n])
+      n = s[1:-1] if s.endswith('\'') else s[1:]
+      n = unescape(n)
+      stack.extend([ord(c) for c in n[::-1]])
     elif s.endswith(':'):
       n = s[:-1]
       d = []

@@ -1,5 +1,7 @@
 #!/usr/bin/env ruby
 
+require 'date'
+
 # f-flat-minor v0
 
 $stack = Array.new
@@ -37,6 +39,10 @@ def callOp (o)
   end
 end
 
+def unescape (text)
+  text.gsub("\\n", "\n").gsub("\\s", " ")
+end
+
 def ev (arr)
   l = arr.length()
   i = 0
@@ -44,9 +50,11 @@ def ev (arr)
     item = arr[i]
     if is_integer?(item)
       push item.to_i
+    elsif item[0] == "." && item.length() > 1
+      # no-op
     elsif item[0] == "'"
       e = item[-1] == "'" ? item[1..-2] : item[1..-1]
-      e.reverse!.each_byte do |c|
+      unescape(e).reverse!.each_byte do |c|
         push(c)
       end
     elsif item[0] == "&" && item.length() > 1
@@ -94,6 +102,7 @@ def ev (arr)
       print('undefined call to ', item)
       exit()
     end
+    
     i += 1
   end
 end
@@ -117,27 +126,35 @@ define('putc', lambda {||
 
 # getc
 
+define('clock', lambda {||
+  push Date.today.to_time.to_i
+})
+
 define('drop', lambda {||
   pop
 })
 
 define('q<', lambda {||
-a = pop()
-$r_stack.push(a)
+  a = pop()
+  $r_stack.push(a)
 })
 
 define('q>', lambda {||
-a = $r_stack.pop
-push a
+  a = $r_stack.pop
+  push a
 })
 
-# clr
+define('clr', lambda {||
+  $stack.clear
+})
 
 define('dup', lambda {||
   push($stack[-1])
 })
 
-# depth
+define('depth', lambda {||
+  push($stack.length())
+})
 
 define('swap', lambda {||
   a = pop()
@@ -176,6 +193,16 @@ define('.', lambda {||
 define('/', lambda {||
   a = pop()
   $stack[-1] /= a
+})
+
+define('>>', lambda {||
+  a = pop()
+  $stack[-1] >>= a
+})
+
+define('<<', lambda {||
+  a = pop()
+  $stack[-1] <<= a
 })
 
 # mark

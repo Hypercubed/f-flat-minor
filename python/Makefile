@@ -18,11 +18,11 @@ test:	ff example
 ./artifacts/example.txt:
 	@printf "** Python Run **"
 	@time cat ../ff/example.ff | python3 ./execute.py > ./artifacts/example.txt
-	@echo ""
 
 .PHONY : example
 example: ./artifacts/example.txt
 	@cmp -s -- "./artifacts/example.txt" "../ff/example.out" && $(CHECK)
+	@echo ""
 	@echo ""
 
 FF = ./ff{,/*}/*.{ff,ffp}
