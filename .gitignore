@@ -1,6 +1,9 @@
 .vscode/*
 */.vscode
 
+.dart_tool/
+.packages
+
 */artifacts/*
 */build/*
 
