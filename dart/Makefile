@@ -1,11 +1,4 @@
-SHELL := /bin/bash
-RED = \033[0;31m
-NC = \033[0m
-GRN = \033[0;32m
-
-define CHECK =
-	printf "${GRN}OK${NC} " || printf "${RED}FAILED${NC} "
-endef
+include ../defs.mk
 
 .PHONY : test
 test:	interpret
@@ -24,10 +17,8 @@ interpret: bin/dart.exe
 	@echo ""
 	@echo ""
 
-FF = ./ff{,/*}/*.{ff,ffp}
-
 .PHONY : ff
-ff:
+ff: bin/dart.exe
 	@printf "** Dart FF Tests **"
 	@echo ""
 	@cd ..; \

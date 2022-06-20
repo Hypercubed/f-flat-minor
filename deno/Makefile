@@ -1,19 +1,13 @@
-SHELL := /bin/bash
-RED=\033[0;31m
-NC=\033[0m
-GRN=\033[0;32m
+include ../defs.mk
 
 .DEFAULT_GOAL := build
-
-define CHECK =
-	printf "${GRN}OK${NC} " || printf "${RED}FAILED${NC} "
-endef
 
 .PHONY : clean
 clean:
 	$(RM) ./build
 
 .PHONY : test
+
 test:	ff compile execute interpret
 
 build: build/execute build/compile build/run build/preprocess
@@ -46,8 +40,6 @@ interpret: build/run
 		| cmp -s - "../ff/example.out" && $(CHECK)
 	@echo ""
 	@echo ""
-
-FF = ./ff{,/*}/*.{ff,ffp}
 
 .PHONY : ff
 ff: build/run

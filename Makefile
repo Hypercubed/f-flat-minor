@@ -1,17 +1,6 @@
-SHELL := /bin/bash
-SUBDIRS := deno go python ruby dart
+include defs.mk
 
-define FOREACH
-	@for DIR in $(SUBDIRS);\
-	do \
-		$(MAKE) -s -C $$DIR $(1) --no-print-directory; \
-	done
-endef
-
-.DEFAULT_GOAL := default
-
-.PHONY: default
-default: test
+.DEFAULT_GOAL := test
 
 .PHONY: build
 build:
