@@ -4,6 +4,18 @@
 
 ( 10 count sum ) /* 55 */
 
-( 1 10 range product ) /* 3628800 */
+( 1 10 range product ) /*  3628800 */
 
-.
+. clr
+
+1 10 range [ - ] 0 foldr /* 5 */
+
+1 10 range [ - ] 0 foldl /* -55 */
+
+. clr
+
+1 10 range [ 2 swap ^ ] map . clr
+
+1 10 range [ 2 % ] filter . clr
+
+0 9 range [ 2 swap ^ ] map . [ + ] reduce .

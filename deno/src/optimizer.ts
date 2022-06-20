@@ -5,31 +5,135 @@ const DEF = BigInt(OpCodes.DEF);
 const KET = BigInt(OpCodes.KET);
 const MARK = BigInt(OpCodes.MARK);
 const BRA = BigInt(OpCodes.BRA);
-const CALL = BigInt(OpCodes.CALL);
-const SWAP = BigInt(OpCodes.SWAP);
-const DUP = BigInt(OpCodes.DUP);
-const DROP = BigInt(OpCodes.DROP);
-const PUSHR = BigInt(OpCodes.PUSHR);
-const PULLR = BigInt(OpCodes.PULLR);
 
-const binaryRewrites = [
-  [SWAP, SWAP],
-  [DUP, DROP],
-  [PUSHR, PULLR],
-  [BigInt(OpCodes.CLOCK), DROP],
-  [BigInt(OpCodes.RND), DROP],
-  [BigInt(OpCodes.DEPTH), DROP],
-  [BigInt(OpCodes.NOT), BigInt(OpCodes.NOT)],
+const Call = (op: number | bigint) => {
+  op = BigInt(op);
+  return (inst: IrInstruction) => inst.op === IROp.call && inst.value === op;
+}
+
+const Push = (value: number | bigint) => {
+  value = BigInt(value);
+  return (inst: IrInstruction) => inst.op === IROp.push && inst.value === value;
+}
+
+const PushAny = (inst: IrInstruction) => inst.op === IROp.push;
+const PushNz = (inst: IrInstruction) => inst.op === IROp.push && inst.value !== 0n;
+
+interface Rule {
+  name?: string;
+  pattern: Array<(inst: IrInstruction) => boolean>,
+  replacement: ((...args: IrInstruction[]) => IrInstruction[])
+}
+
+const rules: Rule[] = [
+  {
+    name: "No operation",
+    pattern: [Call(OpCodes.NOP)], // No operation
+    replacement: () => [],
+  },
+  {
+    name: "Null Sequence - SWAP SWAP",
+    pattern: [Call(OpCodes.SWAP), Call(OpCodes.SWAP)],
+    replacement: () => [],
+  },
+  {
+    name: "Null Sequence - DUP DROP",
+    pattern: [Call(OpCodes.DUP), Call(OpCodes.DROP)],
+    replacement: () => [],
+  },
+  {
+    name: "Null Sequence - PUSHR PULLR",
+    pattern: [Call(OpCodes.PUSHR), Call(OpCodes.PULLR)],
+    replacement: () => [],
+  },
+  {
+    name: "Null Sequence - CLOCK DROP",
+    pattern: [Call(OpCodes.CLOCK), Call(OpCodes.DROP)],
+    replacement: () => [],
+  },
+  {
+    name: "Null Sequence - RND DROP",
+    pattern: [Call(OpCodes.RND), Call(OpCodes.DROP)],
+    replacement: () => [],
+  },
+  {
+    name: "Null Sequence - DEPTH DROP",
+    pattern: [Call(OpCodes.DEPTH), Call(OpCodes.DROP)],
+    replacement: () => [],
+  },
+  {
+    name: "Algebraic Simplification - NOT NOT",
+    pattern: [Call(OpCodes.NOT), Call(OpCodes.NOT)],
+    replacement: () => [],
+  },
+  {
+    name: "Indirect calls - n EVAL",
+    pattern: [PushAny, Call(OpCodes.CALL)],
+    replacement: (a) => [
+      { op: IROp.call, value: a.value, meta: { name: a.meta?.name?.replace(/^&/, "") } },
+    ]
+  },
+  {
+    name: "Null Sequence - n DROP",
+    pattern: [PushAny, Call(OpCodes.DROP)],
+    replacement: () => [],
+  },
+  {
+    name: "Algebraic Simplification - a b ADD",
+    pattern: [PushAny, PushAny, Call(OpCodes.ADD)],
+    replacement: (a, b) => [
+      { op: IROp.push, value: a.value + b.value },
+    ],
+  },
+  {
+    name: "Algebraic Simplification - a b SUB",
+    pattern: [PushAny, PushAny, Call(OpCodes.SUB)],
+    replacement: (a, b) => [
+      { op: IROp.push, value: a.value - b.value },
+    ],
+  },
+  {
+    name: "Algebraic Simplification - a b MUL",
+    pattern: [PushAny, PushAny, Call(OpCodes.MUL)],
+    replacement: (a, b) => [
+      { op: IROp.push, value: a.value * b.value },
+    ],
+  },
+  {
+    name: "Algebraic Simplification - a b DIV",
+    pattern: [PushAny, PushNz, Call(OpCodes.DIV)],
+    replacement: (a, b) => [
+      { op: IROp.push, value: a.value / b.value },
+    ],
+  },
+  {
+    name: "Constant propagation - a DUP",
+    pattern: [PushAny, Call(OpCodes.DUP)],
+    replacement: (a) => [ a, a ],
+  },
+  {
+    name: "Unreachable Code - 0 &b IF",
+    pattern: [Push(0), PushAny, Call(OpCodes.IF)],
+    replacement: () => [ ],
+  },
+  {
+    name: "Flows-Of-Control Optimizations - !0 &b IF",
+    pattern: [PushNz, PushAny, Call(OpCodes.IF)],
+    replacement: (_a, b, _c) => [  { op: IROp.call, value: b.value, meta: { name: b.meta?.name?.replace(/^&/, "") } } ],
+  },
+  // ∗ 2^n -> n <<
+  // / 2^n -> n >>
 ];
 
 export class Optimizer {
   stats = {
     pre_optimization_ir_size: 0,
+    post_optimization_ir_size: 0,
     user_defined_anon_defs: 0,
     user_defined_named_defs: 0,
-    inlined_calls: 0,
     post_optimization_user_defs: 0,
-    post_optimization_ir_size: 0,
+    inlined_calls: 0,
+    peephole_optimizations: 0,
   }
 
   private defs = new Map<BigInt, IrInstruction[]>();
@@ -49,12 +153,17 @@ export class Optimizer {
 
     this.optimized = ir;
 
-    this.optimized = this.optimizeIr(this.optimized);
-    this.optimized = this.pullDefs(this.optimized);
     this.optimized = this.inlineWords(this.optimized, 1);
+    this.optimized = this.peepholeOptimization(this.optimized);
+    this.optimized = this.pullDefs(this.optimized);
+    // TODO: dedup definitions
+
+    this.optimized = this.peepholeOptimization(this.optimized);
+    this.optimized = this.inlineWords(this.optimized, 1);
+    this.optimized = this.peepholeOptimization(this.optimized);
 
     this.defs.forEach((def, key) => {
-      def = this.optimizeIr(def);
+      def = this.peepholeOptimization(def);
       this.defs.set(key, def);
     });
 
@@ -64,7 +173,7 @@ export class Optimizer {
     // });
 
     this.addReferencedWords(this.optimized);
-    this.optimized = this.optimizeIr(this.optimized);
+    this.optimized = this.peepholeOptimization(this.optimized);
 
     this.stats.post_optimization_ir_size = this.optimized.length;
     return this.optimized;
@@ -77,11 +186,12 @@ export class Optimizer {
 
     this.stats = {
       pre_optimization_ir_size: 0,
+      post_optimization_ir_size: 0,
       user_defined_anon_defs: 0,
       user_defined_named_defs: 0,
-      inlined_calls: 0,
       post_optimization_user_defs: 0,
-      post_optimization_ir_size: 0,
+      inlined_calls: 0,
+      peephole_optimizations: 0,
     };
   }
 
@@ -136,7 +246,7 @@ export class Optimizer {
           }
           const def = _ir.splice(ip - 1, end - ip + 2);
           ip = ip - 2;
-          
+
           this.defs.set(def[0].value, def);
         }
       }
@@ -151,42 +261,23 @@ export class Optimizer {
    * @param ir - The IR to optimize
    * @returns The optimized IR.
    */
-  private optimizeIr(ir: Array<IrInstruction>) {
+  private peepholeOptimization(ir: Array<IrInstruction>) {
     const _ir = ir.slice();
 
     while (true) {
       const len = _ir.length;
       let ip = 0;
       while (ip < _ir.length) {
-        const i = _ir[ip];
-
-        if (i.op === IROp.call) {
-          if (i.value === 0n) {  // no-ops
-            _ir.splice(ip, 1);
-          } else if (i.value === CALL) { // replace obvious indirect calls
-            const p = _ir[ip - 1];
-            if (p.op === IROp.push) {
-              ip--;
-              _ir.splice(ip, 1);
-              _ir[ip].value = p.value;
-              _ir[ip].meta ??= {};
-              _ir[ip].meta!.name = (p.meta?.name || "").replace(/^\&/, "");
-              _ir[ip].meta!.comment = (p.meta?.comment || "").replace(/\&/, "");
-            }
-          } else {
-            binaryRewrites.forEach(([A, B]) => {
-              const p = _ir[ip + 1];
-              if (i.value === A && p.op === IROp.call && p.value === B) {
-                _ir.splice(ip, 2);
-                ip--;
-              }
-            });
-          }
-        } else if (i.op === IROp.push) {  // N drop no-ops
-          const p = _ir[ip + 1];
-          if (p.op === IROp.call && p.value === DROP) {
-            _ir.splice(ip, 2);
-            ip--;
+        for (const rule of rules) {
+          const pattern = rule.pattern;
+          const replacement = rule.replacement;
+          const match = pattern.every((fn, i) => fn(_ir[ip + i]));
+          if (match) {
+            this.stats.peephole_optimizations++;
+            const args = _ir.slice(ip, ip + pattern.length);
+            _ir.splice(ip, pattern.length, ...replacement(...args));
+            ip = Math.max(0, ip - 4);
+            break;
           }
         }
 
@@ -212,10 +303,21 @@ export class Optimizer {
       ret = ret.flatMap(i => {
         if (i.op === IROp.call && this.defs.has(i.value)) {
           const def = this.defs.get(i.value);
-          if (def && (i.meta?.inline || def.length <= (len + 3))) {
-            this.stats.inlined_calls++;
-            return def.slice(2, -1);
+          if (def) {
+            if (def[def.length - 1].meta?.inline) {
+              this.stats.inlined_calls++;
+              return this.inlineWords(def.slice(2, -1), Infinity);
+            }
+            if (i.meta?.inline) {
+              this.stats.inlined_calls++;
+              return this.inlineWords(def.slice(2, -1), Infinity);
+            }
+            if (def.length <= (len + 3)) {
+              this.stats.inlined_calls++;
+              return def.slice(2, -1);
+            }
           }
+
         }
         return i;
       });

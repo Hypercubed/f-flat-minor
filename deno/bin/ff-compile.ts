@@ -14,8 +14,6 @@ import { Optimizer } from "../src/optimizer.ts";
 export function run(argv: Arguments) {
   const textEncoder = new TextEncoder();
 
-  const uIntHEADER = textEncoder.encode(HEADER);
-
   const filename = argv.file || "-";
   const code = filename == "-"
     ? new TextDecoder().decode(readStdin())
@@ -54,6 +52,7 @@ export function run(argv: Arguments) {
     Deno.exit();
   }
 
+  const uIntHEADER = textEncoder.encode(HEADER);
   Deno.stdout.writeSync(uIntHEADER);
   Deno.stdout.writeSync(textEncoder.encode(base64Encoded));
 }

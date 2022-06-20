@@ -70,34 +70,49 @@ ifte: slipd branch ;
 
 /* stack */
 
-empty?: depth 0 = ;
-one?: depth 1 = ;
-
+empty?: depth zero? ;
 tail: q< clr q> ;
 head: [ drop ] reduce ;
+pushtop: depth 1 > [ swap q< pushtop q> ] ? ;
 
 /* counters */
 
-_runn: dup -- q< [ run q> _runn ] ? ;
-runn: _runn q> drop ;
+_loop: dup [ -- q< dup q< eval q> q> _loop ] ? ;
+loop: _loop drop ;
 
-times: runn drop ;
+times: loop drop ;
 seq: swap times ;
 
 range: dupd swap - [ succ ] seq ;
 count: 0 swap ++ [ succ ] seq drop ;
 
+reduce_r*: depth 3 > [ dup slip reduce_r* ] ? ;
+reduce_r: reduce_r* eval ;
+foldr: pushtop reduce_r ;
+
+reduce_l*: depth 3 > [ swap q< reduce_l* dup slip q> swap ] ? ;
+reduce_l: reduce_l* eval ;
+foldl: pushtop reduce_l ;
+
+map*: depth 2 > [ swap q< map* dup slip q> swap ] ? ;
+map: map* eval ;
+
+filter*: depth 2 > [ swap q< filter* over over eval [ nip ] ? q> swap ] ? ;
+filter: filter* dupd eval [ nip ] ? ;
+
 reduce: depth 2 - times ;
 
-sum: [ + ] reduce ;
-product: [ * ] reduce ;
+sum: depth 1 > [ + sum ] ? ;
+product: depth 1 > [ * product ] ? ;
+reverse: depth 1 > [ q< reverse q> pushtop ] ? ;
 
 /* math */
 negitive?: 0 < ;
 positive?: 0 > ;
-sgn: dup negitive? [ drop -1 ] [ positive? 1 0 choose ] branch ;
-abs: dup sgn * ;
+sgn: dup positive? swap negitive? - ;
+abs: dup negitive? [ -1 * ] ? ;
 sqr: dup * ;
+lg: dup 1 > [ 1 >> lg ++ ] [ drop 0 ] branch ;
 !: dup [ dup -- ! * ] [ drop 1 ] branch ;
 nck: dup2 - ! swap ! * [ ! ] dip / ;  /* n choose k */
 divrem: [ / ] [ % ] bi2 ;

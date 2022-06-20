@@ -55,11 +55,17 @@ export class Engine {
   }
 
   private peek(): bigint {
-    return this.stack[this.stack.length - 1] || 0n;
+    const l = this.stack.length;
+    if (l > 0)
+      return this.stack[l - 1];
+    throw new Error("Peek: stack underflow");
   }
 
   private pop(): bigint {
-    return this.stack.pop() || 0n;
+    const l = this.stack.length;
+    if (l > 0)
+      return this.stack.pop()!;
+    throw new Error("Pop: stack underflow");
   }
 
   private push(n: bigint): void {
@@ -67,7 +73,12 @@ export class Engine {
   }
 
   private poke(n: bigint): void {
-    this.stack[this.stack.length - 1] = n;
+    const l = this.stack.length;
+    if (l > 0) {
+      this.stack[l - 1] = n;
+      return;
+    }
+    throw new Error("Poke: stack underflow");
   }
 
   clear(): void {

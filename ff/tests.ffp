@@ -12,6 +12,7 @@ assert_false: not assert .inline ;
 8 5 % 3 assert_eq
 9 12 ^ 282429536481 assert_eq
 
+5 4 3 2 ^ ^ ^ 10 10 ^ % 8212890625 assert_eq
 
 /* derived math */
 12 ! 479001600 assert_eq
@@ -24,6 +25,12 @@ assert_false: not assert .inline ;
 0 abs 0 assert_eq
 5 abs 5 assert_eq
 -5 abs 5 assert_eq
+
+1 lg 0 assert_eq
+16 lg 4 assert_eq
+1024 lg 10 assert_eq
+
+52656145834278593348959013841835216159447547700274555627155488768 lg 215 assert_eq
 
 /* bitwise */
 
@@ -91,6 +98,7 @@ false false or assert_false
 5 true [ 3 + ] ? 8 assert_eq
 5 false [ 3 + ] ? 5 assert_eq
 
+
 true 5 8 choose 5 assert_eq
 false 5 8 choose 8 assert_eq
 
@@ -108,4 +116,15 @@ false 5 8 choose 8 assert_eq
 1 2 3 bury 2 assert_eq 1 assert_eq 3 assert_eq
 1 2 3 rot 1 assert_eq 2 assert_eq 3 assert_eq
 
-5 [ 2 * ] [ 2 + ] bi 7 assert_eq 10 assert_eq
+5 [ 2 * ] [ 2 + ] bi 7 assert_eq 10 assert_eq 
+
+/* aggregate */
+
+1 2 3 sum 6 assert_eq
+
+5 8 12 product 480 assert_eq
+
+1 10 range [ - ] 0 foldr 5 assert_eq
+1 10 range [ - ] 0 foldl -55 assert_eq
+
+0 9 range [ 2 swap ^ ] map [ + ] 0 foldr 1023 assert_eq

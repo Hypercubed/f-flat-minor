@@ -47,7 +47,7 @@ func peek() *Int {
 	if l > 0 {
 		return stack[l-1]
 	}
-	panic("Stack is empty")
+	panic("Peek: Stack is empty")
 }
 
 // If the stack is not empty, pop the last element off the stack and return it
@@ -58,7 +58,7 @@ func pop() *Int {
 		stack = stack[:l-1]
 		return r
 	}
-	panic("Stack is empty")
+	panic("Pop: Stack is empty")
 }
 
 // Push takes a pointer to an Int and appends it to the stack.
@@ -97,12 +97,18 @@ func defSystem(fn func(), code int) {
 }
 
 func call(c *Int) {
-	if fn, ok := systemDict[byte(c.Int64())]; ok {
-		defer fn()
-	} else if d, ok := userDict[c.Int64()]; ok {
-		defer ExecuteBigIntCode(d)
+	if c.Sign() == -1 {
+		if d, ok := userDict[c.Int64()]; ok {
+			defer ExecuteBigIntCode(d)
+		} else {
+			panic(fmt.Sprintf("Unknown user opcode %d", c))
+		}
 	} else {
-		panic(fmt.Sprintf("Unknown opcode %d", c))
+		if fn, ok := systemDict[byte(c.Int64())]; ok {
+			defer fn()
+		} else {
+			panic(fmt.Sprintf("Unknown system opcode %d", c))
+		}
 	}
 }
 

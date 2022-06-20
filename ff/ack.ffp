@@ -18,8 +18,8 @@ F:  over 0 = [ nip 1 + ] [
 
 /* Recursive function for m > 5 */
 ackn: over [ dup
-  [ [ dup 1 - swap ] dip 1 - ack ack ]
-  [ drop 1 - 1 ack ] branch ] [ nip 1 + ] branch ;
+  [ [ dup -- swap ] dip -- ack ack ]
+  [ drop -- 1 ack ] branch ] [ nip ++ ] branch ;
 
 /*  terms of Buck's function */
 ack: over 6 < [ 3 + F 3 - ] [ ackn ] branch ;

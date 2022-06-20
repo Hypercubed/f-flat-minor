@@ -9,10 +9,12 @@ import { Preprocessor } from "../src/preprocess.ts";
 import { readStdin } from "../src/read.ts";
 import { printHighLevelIr, printLowLevelIr } from "../src/ir.ts";
 import { Optimizer } from "../src/optimizer.ts";
+import { HEADER } from "../src/constants.ts";
 
 export function run(argv: Arguments) {
   const textDecoder = new TextDecoder();
-
+  const textEncoder = new TextEncoder();
+  
   const filename = argv.file || "-";
   let code = filename == "-"
     ? textDecoder.decode(readStdin())
@@ -22,7 +24,14 @@ export function run(argv: Arguments) {
   code = preprocessor.preprocess(Preprocessor.tokenize(code));
 
   const compiler = new Compiler();
+
+  let start = Date.now();
   let ir = compiler.compileToIR(Compiler.tokenize(code));
+  let end = Date.now();
+  
+  if (argv.stats) {
+    console.log(`Compiled in ${end - start}ms`);
+  }
 
   if (argv.hlir) {
     printHighLevelIr(ir);
@@ -31,17 +40,28 @@ export function run(argv: Arguments) {
   
   if (argv.opt) {
     const optimizer = new Optimizer();
+    start = Date.now();
     ir = optimizer.optimize(ir);
+    end = Date.now();
     if (argv.stats) {
       console.log();
       console.log('Optimizer stats:');
       console.log(optimizer.stats);
       console.log();
+      console.log(`Optimized in ${end - start}ms`);
     }
   }
   
   if (argv.hlir || argv.ir) {
     printLowLevelIr(ir);
+    Deno.exit();
+  }
+
+  if (argv.enc) {
+    const base64Encoded = Compiler.compileToBase64(ir);
+    const uIntHEADER = textEncoder.encode(HEADER);
+    Deno.stdout.writeSync(uIntHEADER);
+    Deno.stdout.writeSync(textEncoder.encode(base64Encoded));
     Deno.exit();
   }
   
@@ -53,14 +73,15 @@ export function run(argv: Arguments) {
 
   interpreter.loadIR(ir);
 
-  const start = Date.now();
+  start = Date.now();
   interpreter.run();
-  const end = Date.now();
+  end = Date.now();
 
   if (argv.stats) {
     const ops = interpreter.stats.system_instructions_called + interpreter.stats.user_instructions_called;
     interpreter.printStats();
-    console.log(Math.round(ops / (end - start)) + " ops/ms");
+    console.log();
+    console.log(`Executed in ${end - start}ms, `, Math.round(ops / (end - start)) + " ops/ms");
     console.log();
   }
 
