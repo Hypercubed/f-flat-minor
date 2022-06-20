@@ -86,19 +86,19 @@ seq: swap times ;
 range: dupd swap - [ succ ] seq ;
 count: 0 swap ++ [ succ ] seq drop ;
 
-reduce_r*: depth 3 > [ dup slip reduce_r* ] ? ;
-reduce_r: reduce_r* eval ;
+_reduce_r: depth 3 > [ dup slip _reduce_r ] ? ;
+reduce_r: _reduce_r eval ;
 foldr: pushtop reduce_r ;
 
-reduce_l*: depth 3 > [ swap q< reduce_l* dup slip q> swap ] ? ;
-reduce_l: reduce_l* eval ;
+_reduce_l: depth 3 > [ swap q< _reduce_l dup slip q> swap ] ? ;
+reduce_l: _reduce_l eval ;
 foldl: pushtop reduce_l ;
 
-map*: depth 2 > [ swap q< map* dup slip q> swap ] ? ;
-map: map* eval ;
+_map: depth 2 > [ swap q< _map dup slip q> swap ] ? ;
+map: _map eval ;
 
-filter*: depth 2 > [ swap q< filter* over over eval [ nip ] ? q> swap ] ? ;
-filter: filter* dupd eval [ nip ] ? ;
+_filter: depth 2 > [ swap q< _filter over over eval not [ nip ] ? q> swap ] ? ;
+filter: _filter dupd eval not [ drop ] ? ;
 
 reduce: depth 2 - times ;
 

@@ -1,9 +1,11 @@
 .load ./ff/core.ff
 
-1 100 range sum sqr
+/* http://projecteuler.net/index.php?section=problems&id=5 */
 
-( 1 100 range sqr [ [ sqr ] dip + ] reduce )
+sum-of-squares: [ sqr + ] 0 foldl ;
+square-of-sum: sum sqr ;
 
-- .
+100 count square-of-sum
+( 100 count sum-of-squares ) - .
 
 /* 25164150 */

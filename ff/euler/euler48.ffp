@@ -1,12 +1,9 @@
 .load ./ff/core.ff
 
-next: ++ dup [ dup ^ ] dip ;
-step: dup 1000 < [ next step ] ? ;
+/* http://projecteuler.net/index.php?section=problems&id=48 */
 
-0 step drop sum 
-
+1 1000 range [ dup ^ ] map sum
 10 10 ^ % /* last 10 digits */
-
 .
 
 /* 9110846700 */

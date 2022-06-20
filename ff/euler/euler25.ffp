@@ -1,5 +1,7 @@
 .load ./ff/core.ff
 
+/* http://projecteuler.net/index.php?section=problems&id=25 */
+
 next: swap dupd + ;
 
 c: q< q< ++ q> q> ;

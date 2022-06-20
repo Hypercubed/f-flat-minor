@@ -1,5 +1,7 @@
 .load ./ff/core.ff
 
-spread: dup [ 10 [ % ] [ / ] bi2 spread ] ? ;
+/* http://projecteuler.net/index.php?section=problems&id=16 */
 
-2 1000 ^ spread sum . /* 1366 */
+digits: dup [ 10 [ % ] [ / ] bi2 digits ] ? ;
+
+2 1000 ^ digits sum . /* 1366 */

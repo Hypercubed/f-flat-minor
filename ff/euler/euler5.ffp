@@ -1,5 +1,7 @@
 .load ./ff/core.ff
 
+/* http://projecteuler.net/index.php?section=problems&id=5 */
+
 gcd_t: dup bury % gcd_r ;
 gcd_r: dup [ gcd_t ] ? ;
 gcd: gcd_r drop ;

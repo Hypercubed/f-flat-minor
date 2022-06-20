@@ -1,14 +1,11 @@
 .load ./ff/core.ff
 
+/* http://projecteuler.net/index.php?section=problems&id=2 */
+
 fib: dup2 + ;
-loop: dup 4000000 < [ fib loop ] ? ;
+fib-up: dup 4000000 < [ fib fib-up ] ? ;
 
-1 2 loop drop
-0 [
-  [ dup even? not [ drop 0 ] ? ]
-  dip +
-] reduce
-
-.
+1 2 fib-up drop
+[ even? ] filter sum .
 
 /* 4613732 */
