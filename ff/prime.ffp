@@ -1,0 +1,52 @@
+.load ./core.ff
+
+simple?: [ even? ] [ 3 divisor? ] bi or ;
+
+_trial_loop: dup2 [ dup * > ] [ % 0 > ] bi2 and [ 2 + _trial_loop ] ? ;
+_trial: 5 _trial_loop dup * < ;
+
+prime?: dup 4 < [ 1 > ] [
+    dup simple? [ drop false ] [ _trial ] branch
+  ] branch ;
+
+wilson: [ 1 - ! 1 + ] [ divisor? ] bi ;
+
+/* prime?: dup 4 < [ 1 > ] [
+    dup simple? [ drop false ] [ wilson ] branch
+  ] branch ; */
+
+0 dup prn prime? . clr /* false */
+1 dup prn prime? . clr /* false */
+2 dup prn prime? . clr /* true */
+3 dup prn prime? . clr /* true */
+4 dup prn prime? . clr /* false */
+5 dup prn prime? . clr /* true */
+28 dup prn prime? . clr /* false */
+29 dup prn prime? . clr /* true */
+49 dup prn prime? . clr /* false */
+97 dup prn prime? . clr /* true */
+98 dup prn prime? . clr /* false */
+
+-16 dup prn prime? . clr /* false */
+8191 dup prn prime? . clr /* true */
+8192 dup prn prime? . clr /* false */
+
+/* 999999000001 prime? . clr true */
+/* 67280421310721	prime? . clr true */
+/* 170141183460469231731687303715884105727 prime? . clr true */
+
+_next-prime: dup prime? not [ 2 + _next-prime ] ? ;
+next-prime: dup 2 < [ drop 2 ] [ 1 + dup even? + _next-prime ] branch ;
+
+5 next-prime . clr /* 7 */
+47 next-prime . clr /* 53 */
+89 next-prime . clr /* 97 */
+7727 next-prime . clr /* 7741 */
+
+th-prime: 0 swap [ next-prime ] swap times ;
+
+6 th-prime . clr /* 13 */
+
+/* 10001 th-prime . 104743 */
+
+
