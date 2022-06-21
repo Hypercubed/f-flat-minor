@@ -1,4 +1,5 @@
 #!/usr/bin/env deno
+import { blue, green, red, cyan } from "https://deno.land/std@0.139.0/fmt/colors.ts";
 
 import { IrInstruction, IROp } from "./ir.ts";
 import { OpCodes, systemWords } from "./opcodes.ts";
@@ -145,6 +146,76 @@ export class Compiler {
     function call(value: bigint | number, meta = {}) {
       ret.push({ value: BigInt(value), op: IROp.call, meta:{ ...meta, filename } });
     }
+  }
+
+  validate(ir: IrInstruction[]): string[] {
+    const _ir = ir.slice();
+
+    const issues: string[] = [];
+
+    let ip = 0;
+    while (ip < _ir.length) {
+      const _i = _ir[ip];
+
+      if (_i.op === IROp.call && _i.value === BigInt(OpCodes.DEF)) {
+        let j = 0;
+        for (j = ip; j > 0; j--) {
+          if (_ir[j].op === IROp.call && _ir[j].value === BigInt(OpCodes.MARK)) {
+            break;
+          }
+        }
+        const def = _ir.splice(j-1, ip-j+2);
+        issues.push(...this.validateDef(def));
+        ip = j-1;
+      }
+
+      ip++;
+    }
+
+    issues.push(...this.validateDef(_ir, 'main'))
+
+    return issues;
+  }
+
+  private validateDef(ir: IrInstruction[], name?: string): string[] {
+    const issues: string[] = [];
+    let ip = 0;
+
+    let def = 0;
+    let braket = 0;
+    let q = 0;
+
+    name = green(name || ir[0].meta!.name || "main");
+    const filename = blue(ir[0].meta!.filename! || "-");
+
+    while (ip < ir.length) {
+      const _i = ir[ip];
+
+      if (_i.op === IROp.call) {
+        if (_i.op === IROp.call && _i.value === BigInt(OpCodes.MARK)) def++;
+        if (_i.op === IROp.call && _i.value === BigInt(OpCodes.DEF)) def--;
+
+        if (_i.op === IROp.call && _i.value === BigInt(OpCodes.BRA)) braket++;
+        if (_i.op === IROp.call && _i.value === BigInt(OpCodes.KET)) braket--;
+
+        if (_i.op === IROp.call && _i.value === BigInt(OpCodes.PUSHR)) q++;
+        if (_i.op === IROp.call && _i.value === BigInt(OpCodes.PULLR)) q--;
+
+        // TODO: stash/fetch
+
+        if (braket < 0) issues.push(`${filename}: Bracket ( ${cyan('[ ]')} ) mismatch in ${name}`);
+        if (q < 0) issues.push(`${filename}: Queue push ( ${cyan('q< q>')} ) mismatch in ${name}`);
+        if (def < 0) issues.push(`${filename}: Definition ( ${cyan(': ;')} ) mismatch in ${name}`);
+      }
+
+      ip++;
+    }
+
+    if (braket !== 0) issues.push(`${filename}: Unbalanced brackets ( ${cyan('[ ]')} ) in ${name}`);
+    if (q !== 0) issues.push(`${filename}: Unbalanced queue push ( ${cyan('q< q>')} ) in ${name}`);
+    if (def !== 0) issues.push(`${filename}: Unbalanced definition ( ${cyan(': ;')} ) in ${name}`);
+
+    return issues;
   }
 }
 
