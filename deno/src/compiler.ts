@@ -185,8 +185,8 @@ export class Compiler {
     let braket = 0;
     let q = 0;
 
-    name = green(name || ir[0].meta!.name || "main");
-    const filename = blue(ir[0].meta!.filename! || "-");
+    name = green(name || ir[0].meta?.name?.replace(/^&/, '') || "main");
+    const filename = blue(ir[0].meta?.filename! || "-");
 
     while (ip < ir.length) {
       const _i = ir[ip];

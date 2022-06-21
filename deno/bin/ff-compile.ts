@@ -1,5 +1,6 @@
 #!/usr/bin/env -S deno run --allow-net --allow-read --unstable --allow-env
 
+import { red } from "https://deno.land/std@0.139.0/fmt/colors.ts";
 import yargs from "https://deno.land/x/yargs@v17.5.1-deno/deno.ts";
 import { Arguments } from "https://deno.land/x/yargs@v17.5.1-deno/deno-types.ts";
 
@@ -21,7 +22,30 @@ export function run(argv: Arguments) {
 
   const compiler = new Compiler();
 
+  let start = Date.now();
   let ir = compiler.compileToIR(Compiler.tokenize(code), filename);
+  let end = Date.now();
+
+  if (argv.stats) {
+    console.log(`Compiled in ${end - start}ms`);
+  }
+
+  if (!('validate' in argv) || argv.validate) {
+    const issues = compiler.validate(ir);
+
+    if (issues.length > 0) {
+      console.error();
+      console.error(red(`${issues.length} compiler issues found:`));
+      console.error();
+      issues.forEach((issue) => {
+        console.error(`  ${issue}`);
+      });
+      console.error();
+      console.error(`Use --no-validate to bypass compiler errors`);
+      console.error();
+      Deno.exit(1);
+    }
+  }
 
   if (argv.hlir) {
     printHighLevelIr(ir);
@@ -30,12 +54,15 @@ export function run(argv: Arguments) {
 
   if (argv.opt) {
     const optimizer = new Optimizer();
+    start = Date.now();
     ir = optimizer.optimize(ir);
+    end = Date.now();
     if (argv.stats) {
       console.log();
       console.log('Optimizer stats:');
       console.log(optimizer.stats);
       console.log();
+      console.log(`Optimized in ${end - start}ms`);
     }
   }
 
