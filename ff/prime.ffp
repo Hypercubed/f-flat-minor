@@ -1,42 +1,118 @@
 .load ./core.ff
 
-simple?: [ even? ] [ 3 divisor? ] bi or ;
+drop2: drop drop ;
+or_else: q< over slip swap q> swap [ drop2 true ] [ eval ] branch ;
+and_also: q< over slip swap q> swap [ eval ] [ drop2 false ] branch   ;
 
-_trial_loop: dup2 [ dup * > ] [ % 0 > ] bi2 and [ 2 + _trial_loop ] ? ;
-_trial: 5 _trial_loop dup * < ;
+simple-composite?: [ even? ] [ 3 divisor? ] or_else ;
+p-test: 6 % [ 1 = ] [ 5 = ] or_else not ;
+
+pp: dup prn sp ;
+
+_factor_by_2:
+  over 1 & 0 =
+  [ [ 1 >> ] dip ++ _factor_by_2 ]
+  ? ;
+
+factor_by_2: 0 _factor_by_2 ; /* n -> d s */
+
+nrnd: over - rnd + ;
+nip3: nip nip nip ;
+
+^mod: swap ^ over % ;  /* n d a -> n a^d%n */
+
+InnerWitnessLoop: /* s n x -> */
+  dup2 swap %  /* s n x x%n */
+  [ over ] dip swap /* s n x x%n n */
+  -- = /* s n x x%n=n-1 */
+  [ false ]
+  [               /* s n x */
+    dup *         /* s n x^2 */
+    InnerWitness
+  ]
+  branch ;
+
+InnerWitness: /* s n x -> */
+  rot -- dup  /* x n s-1 s-1 -> */
+  0 =         /* x n s-1 */
+  [ true ]
+  [ rot InnerWitnessLoop ]
+  branch
+;
+
+/* returns true if composite, false if maybe prime */
+WitnessLoop: /* n -> n */
+  pred dup factor_by_2 /* n n-1 d s */
+  dig 2 swap nrnd /* n d s a */
+  [ bury ] dip /* s n d a */
+  ^mod /* s n a^d%n */
+  dup [ 1 = ] [ over -- = ] or_else
+    [ drop drop drop false ]
+    [ InnerWitnessLoop nip nip nip ]
+    branch ;
+
+WitnessLoop2: &WitnessLoop dup or_else ;
+WitnessLoop4: &WitnessLoop2 dup or_else ;
+WitnessLoop8: &WitnessLoop4 dup or_else ;
+WitnessLoop16: &WitnessLoop8 dup or_else ;
+
+maybe_prime?: dup 4 <
+  [ 1 > ]
+  [ &simple-composite? &WitnessLoop4 or_else not ]
+  branch ;
+
+TrialLoop: dup2 [ dup * > ] [ % 0 > ] bi2 and [ 2 + TrialLoop ] ? ;
+TrialByDivision: 5 TrialLoop dup * < ;
 
 prime?: dup 4 < [ 1 > ] [
-    dup simple? [ drop false ] [ _trial ] branch
+    dup simple-composite? [ drop false ] [ TrialByDivision ] branch
   ] branch ;
 
-wilson: [ 1 - ! 1 + ] [ divisor? ] bi ;
+0 dup [ prime? ] [ maybe_prime? ] bi . clr /* false */
+1 dup [ prime? ] [ maybe_prime? ] bi . clr /* false */
+2 dup [ prime? ] [ maybe_prime? ] bi . clr /* true */
+3 dup [ prime? ] [ maybe_prime? ] bi . clr /* true */
+4 dup [ prime? ] [ maybe_prime? ] bi . clr /* false */
+5 dup [ prime? ] [ maybe_prime? ] bi . clr /* true */
+6 dup [ prime? ] [ maybe_prime? ] bi . clr /* false */
+7 dup [ prime? ] [ maybe_prime? ] bi . clr /* true */
+8 dup [ prime? ] [ maybe_prime? ] bi . clr /* false */
+9 dup [ prime? ] [ maybe_prime? ] bi . clr /* false */
+10 dup [ prime? ] [ maybe_prime? ] bi . clr /* false */
 
-/* prime?: dup 4 < [ 1 > ] [
-    dup simple? [ drop false ] [ wilson ] branch
-  ] branch ; */
+28 dup [ prime? ] [ maybe_prime? ] bi . clr /* false */
+29 dup [ prime? ] [ maybe_prime? ] bi . clr /* true */
+49 dup [ prime? ] [ maybe_prime? ] bi . clr /* false */
+97 dup [ prime? ] [ maybe_prime? ] bi . clr /* true */
+98 dup [ prime? ] [ maybe_prime? ] bi . clr /* false */
 
-0 dup prn prime? . clr /* false */
-1 dup prn prime? . clr /* false */
-2 dup prn prime? . clr /* true */
-3 dup prn prime? . clr /* true */
-4 dup prn prime? . clr /* false */
-5 dup prn prime? . clr /* true */
-28 dup prn prime? . clr /* false */
-29 dup prn prime? . clr /* true */
-49 dup prn prime? . clr /* false */
-97 dup prn prime? . clr /* true */
-98 dup prn prime? . clr /* false */
+221 dup [ prime? ] [ maybe_prime? ] bi . clr /* false */
+223 dup [ prime? ] [ maybe_prime? ] bi . clr /* true */
 
--16 dup prn prime? . clr /* false */
-8191 dup prn prime? . clr /* true */
-8192 dup prn prime? . clr /* false */
+561 dup [ prime? ] [ maybe_prime? ] bi . clr /* false  (Carmichael number) */
 
-/* 999999000001 prime? . clr true */
-/* 67280421310721	prime? . clr true */
-/* 170141183460469231731687303715884105727 prime? . clr true */
+8191 dup [ prime? ] [ maybe_prime? ] bi . clr /* true */
+8192 dup [ prime? ] [ maybe_prime? ] bi . clr /* false */
+
+131071 dup [ prime? ] [ maybe_prime? ] bi . clr /* true */
+524287 dup [ prime? ] [ maybe_prime? ] bi . clr /* true */
+6700417	dup [ prime? ] [ maybe_prime? ] bi . clr /* true */
+
+
+2147483651 dup prime? . clr /* false */
+/* 2147483651 dup maybe_prime? . clr false */
+
+2147483647 dup prime? . clr /* true */
+/* 2147483647 maybe_prime? . clr */
+
+fermat: dup -- rnd ++ over -- ^ swap % 1 = ;
 
 _next-prime: dup prime? not [ 2 + _next-prime ] ? ;
 next-prime: dup 2 < [ drop 2 ] [ 1 + dup even? + _next-prime ] branch ;
+
+wilson: [ 1 - ! 1 + ] [ divisor? ] bi ;
+
+0 exit
 
 5 next-prime . clr /* 7 */
 47 next-prime . clr /* 53 */

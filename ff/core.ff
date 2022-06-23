@@ -25,7 +25,7 @@ nip: [ drop ] dip ;
 tuck: swap over ;
 sip: over slip ;       /* b [A*] -> b a* b    (aka keep) */
 sipd: q< sip q> ;      /* c b [A*] -> c a* c b */
-bi: sipd eval ;
+bi: q< over q< eval q> q> dig q< eval q> swap ;
 bi2: q< q< dup2 q> eval bury q> eval ;
 
 /* inquisitive */
