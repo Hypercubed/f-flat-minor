@@ -5,7 +5,7 @@ require 'date'
 # f-flat-minor v0
 
 $stack = Array.new
-$r_stack = Array.new
+$queue = Array.new
 
 $op = -1
 $syms = Hash.new
@@ -32,7 +32,7 @@ end
 def callOp (o)
   if f = $defs[o]
     if f.kind_of?(Array)
-      ev(f)
+      $queue = f + $queue
     else
       f.()
     end
@@ -43,11 +43,10 @@ def unescape (text)
   text.gsub("\\n", "\n").gsub("\\s", " ")
 end
 
-def ev (arr)
-  l = arr.length()
-  i = 0
-  while i < l
-    item = arr[i]
+def run ()
+  while $queue.length() > 0
+    item = $queue.shift
+
     if is_integer?(item)
       push item.to_i
     elsif item[0] == "." && item.length() > 1
@@ -63,36 +62,35 @@ def ev (arr)
       end
     elsif item[-1] == ":"
       d = Array.new
-      while i < l
-        i += 1
-        if arr[i] == ';'
+      while $queue.length() > 0
+        s = $queue.shift
+        if s == ';'
           break
         end
-        d.push(arr[i])
+        d.push(s)
       end
       define(item[0..-2], d)
     elsif item[-1] == "["
       d = Array.new
       o = $op = $op + 1
       dep = 1
-      while i < l && dep > 0
-        i += 1
-        if arr[i] == '['
+      while $queue.length() > 0 && dep > 0
+        s = $queue.shift
+        if s == '['
           dep += 1
         end
-        if arr[i] == ']'
+        if s == ']'
           dep -= 1
         end
         if dep > 0
-          d.push(arr[i])
+          d.push(s)
         end
       end
       $defs[o] = d
       push(o)
     elsif item == "/*"
-      while i < l
-        i += 1
-        if arr[i] == '*/'
+      while $queue.length() > 0
+        if $queue.shift == '*/'
           break
         end
       end
@@ -102,8 +100,6 @@ def ev (arr)
       print('undefined call to ', item)
       exit()
     end
-    
-    i += 1
   end
 end
 
@@ -136,11 +132,11 @@ define('drop', lambda {||
 
 define('q<', lambda {||
   a = pop()
-  $r_stack.push(a)
+  $queue.push(a)
 })
 
 define('q>', lambda {||
-  a = $r_stack.pop
+  a = $queue.pop
   push a
 })
 
@@ -248,7 +244,7 @@ define('rand', lambda {||
   $stack[-1] = rand($stack[-1])
 })
 
-define('|', lambda {||
+define(124.chr, lambda {||
   a = pop()
   $stack[-1] |= a
 })
@@ -258,5 +254,5 @@ define('~', lambda {||
 })
 
 $code = ARGF.read
-
-ev(tokenize($code))
+$queue = tokenize($code)
+run()

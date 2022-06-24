@@ -6,11 +6,9 @@ import random
 import sys
 import time
 
-# TODO: tail call opt
-sys.setrecursionlimit(28000)
-
 stack = []
-r_stack = []
+queue = []
+
 ops = {}
 defs = {}
 op = -1
@@ -105,10 +103,11 @@ def printStack():
   print(']')
 
 def callOp(o):
+  global queue
   if o in defs:
     f = defs[o]
     if isinstance(f, list):
-      return ev(f)
+      queue = f + queue
     else:
       return defs[o]()
 
@@ -147,10 +146,10 @@ def drop():
 
 def pushq():
   a = stack.pop()
-  r_stack.append(a)
+  queue.append(a)
 
 def popq():
-  a = r_stack.pop()
+  a = queue.pop()
   stack.append(a)
 
 def rand():
@@ -196,13 +195,10 @@ define('~', bnot)
 def unescape(text):
   return text.replace('\\n', '\n').replace('\\s', ' ')
 
-def ev(t):
-  i = 0
-  l = len(t)
-
-  while i < l:
-    s = t[i]
-    i += 1
+def run():
+  while len(queue) > 0:
+    s = queue.pop(0)
+    
     if s.lstrip("-").isnumeric():
       push(s)
     elif s.startswith('.') and len(s) > 1:
@@ -218,33 +214,30 @@ def ev(t):
     elif s.endswith(':'):
       n = s[:-1]
       d = []
-      while i < l:
-        ss = t[i]
+      while len(queue) > 0:
+        ss = queue.pop(0)
         d.append(ss)
-        i += 1
-        if t[i] == ';':
-          i += 1
+        if queue[0] == ';':
+          queue.pop(0)
           break
       define(n, d)
     elif s == '[':
       o = nextOp()
       d = []
       dep = 1
-      while i < l and dep > 0:
-        if t[i] == ']':
+      while len(queue) > 0 and dep > 0:
+        ss = queue.pop(0)
+        if ss == ']':
           dep -= 1
-        if t[i] == '[':
+        if ss == '[':
           dep += 1
         if dep > 0:
-          d.append(t[i])
-        i += 1
+          d.append(ss)
       defs[o] = d
       push(o)
     elif s == "/*":
-      while i < l:
-        i += 1
-        if t[i] == '*/':
-          i += 1
+      while len(queue) > 0:
+        if queue.pop(0) == '*/':
           break
     else:
       if s in ops:
@@ -256,4 +249,5 @@ def ev(t):
 lines = sys.stdin.readlines()
 code = ' '.join(lines)
 
-ev(code.split())
+queue = code.split()
+run()
