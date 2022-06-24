@@ -13,11 +13,11 @@ fact: dup &fact_t &fact_f branch ;
 
 /* string printing */
 
-print_t: putc print ;
-print: dup &print_t &drop branch ;
-println: print 10 putc ;
+print_t: putc prints ;
+prints: dup &print_t &drop branch ;
+println: prints 10 putc ;
 
-0 32 'Factorial print
+0 32 'Factorial prints
 0 '100: println
 
 100 fact .

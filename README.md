@@ -112,7 +112,7 @@ For each target language first implement a proof-of-concept in an online code ru
 | CALL     |  eval  |       1       |   v0    |
 | PUTC     |  putc  |       2       |   v0    |
 | GETC     |  getc  |       3       |   v1    |
-| PUT      |  put   |       4       |   v1    |
+| PRINT    |  print  |       4       |   v1    |
 | CLOCK    | clock  |       5       |   v1    |
 | DROP     |  drop  | 8 (backspace) |   v0    |
 | PUSHR    |   q<   |      14       |   v0    |
@@ -120,7 +120,7 @@ For each target language first implement a proof-of-concept in an online code ru
 | SHIFTL   |   <<   |      16       |   v1    |
 | SHIFTR   |   >>   |      17       |   v1    |
 | CLR      |  clr   |      24       |   v1    |
-| RND      |  rnd   |      26       |   v1    |
+| RAND     |  rand   |      26       |   v1    |
 | EXIT     |  exit  |   27 (ESC)    |   v1    |
 | DUP      |  dup   |    33 (!)     |   v0    |
 | DEPTH    | depth  |    35 (#)     |   v1    |

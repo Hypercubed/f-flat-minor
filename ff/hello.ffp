@@ -1,10 +1,10 @@
-.load ./core.ff
+.load ./lib/core.ff
 
-0 'Hello\sWorld!\n' print
+0 'Hello\sWorld!\n' prints
 
-0 10 'World!' 32 'Hello print
+0 10 'World!' 32 'Hello prints
 
-0 10 '! 'd 'l 'r 'o 'W 32 'o 'l dup 'e 'H print
+0 10 '! 'd 'l 'r 'o 'W 32 'o 'l dup 'e 'H prints
 
 'H' putc
 'e' putc

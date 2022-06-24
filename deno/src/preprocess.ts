@@ -11,10 +11,11 @@ export class Preprocessor {
 
   private readonly engine = new Engine();
   private readonly compiler = new Compiler();
+  private readonly imported = new Set<string>();
 
   preprocess(lines: string[], filename = "-"): string {
     return lines.map((line) => {
-      if (line.length > 1 && line[0] === ".") {
+      if (line.length > 1 && (line[0] === ".")) {
         const [cmd, ...rest] = line.split(" ");
         switch (cmd) {
           case ".exit":
@@ -24,6 +25,15 @@ export class Preprocessor {
             const filepath = this.findFile(rest.join(" "), filename);
             const code = Deno.readTextFileSync(filepath);
             return this.preprocess(Preprocessor.tokenize(code), filepath);
+          }
+          case ".import": {
+            const filepath = this.findFile(rest.join(" "), filename);
+            if (!this.imported.has(filepath)) {
+              this.imported.add(filepath);
+              const code = Deno.readTextFileSync(filepath);
+              return this.preprocess(Preprocessor.tokenize(code), filepath);
+            }
+            return "";
           }
           case ".m": {
             const ir = this.compiler.compileToIR(

@@ -1,4 +1,4 @@
-.load ./core.ff
+.load ./lib/core.ff
 
 0 1 0 1 . clr
 0 0 1 1 . clr

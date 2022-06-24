@@ -1,4 +1,4 @@
-.load ../core.ff
+.load ../lib/core.ff
 
 p: [ . ] dip ;
 

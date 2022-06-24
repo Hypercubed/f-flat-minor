@@ -11,10 +11,10 @@ fact: dup [ dup -- fact * ] [ drop 1 ] branch ;
 
 /* string printing */
 
-print: dup [ putc print ] [ drop ] branch ;
-println: print 10 putc ;
+prints: dup [ putc prints ] [ drop ] branch ;
+println: prints 10 putc ;
 
-0 32 'Factorial' print
+0 32 'Factorial' prints
 0 '100:' println
 
 100 fact .

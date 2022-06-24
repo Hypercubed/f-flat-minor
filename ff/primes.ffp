@@ -1,0 +1,71 @@
+.import ./lib/core.ff
+.import ./lib/primes.ffp
+
+0 println
+0 'Primes:' println
+
+0 dup [ prime? ] [ maybe_prime? ] bi . clr /* false */
+1 dup [ prime? ] [ maybe_prime? ] bi . clr /* false */
+2 dup [ prime? ] [ maybe_prime? ] bi . clr /* true */
+3 dup [ prime? ] [ maybe_prime? ] bi . clr /* true */
+4 dup [ prime? ] [ maybe_prime? ] bi . clr /* false */
+5 dup [ prime? ] [ maybe_prime? ] bi . clr /* true */
+6 dup [ prime? ] [ maybe_prime? ] bi . clr /* false */
+7 dup [ prime? ] [ maybe_prime? ] bi . clr /* true */
+8 dup [ prime? ] [ maybe_prime? ] bi . clr /* false */
+9 dup [ prime? ] [ maybe_prime? ] bi . clr /* false */
+10 dup [ prime? ] [ maybe_prime? ] bi . clr /* false */
+
+28 dup [ prime? ] [ maybe_prime? ] bi . clr /* false */
+29 dup [ prime? ] [ maybe_prime? ] bi . clr /* true */
+49 dup [ prime? ] [ maybe_prime? ] bi . clr /* false */
+97 dup [ prime? ] [ maybe_prime? ] bi . clr /* true */
+98 dup [ prime? ] [ maybe_prime? ] bi . clr /* false */
+
+221 dup [ prime? ] [ maybe_prime? ] bi . clr /* false */
+223 dup [ prime? ] [ maybe_prime? ] bi . clr /* true */
+
+561 dup [ prime? ] [ maybe_prime? ] bi . clr /* false  (Carmichael number) */
+
+5853 dup [ prime? ] [ maybe_prime? ] bi . clr /* false */
+
+7727 dup [ prime? ] [ maybe_prime? ] bi . clr /* true */
+7728 dup [ prime? ] [ maybe_prime? ] bi . clr /* false */
+7729 dup [ prime? ] [ maybe_prime? ] bi . clr /* false */
+
+8191 dup [ prime? ] [ maybe_prime? ] bi . clr /* true */
+8192 dup [ prime? ] [ maybe_prime? ] bi . clr /* false */
+
+131071 dup [ prime? ] [ maybe_prime? ] bi . clr /* true */
+524287 dup [ prime? ] [ maybe_prime? ] bi . clr /* true */
+6700417	dup [ prime? ] [ maybe_prime? ] bi . clr /* true */
+
+2147483651 dup prime?
+/* over maybe_prime? */
+. clr  /* false */
+
+2147483647 dup prime? 
+/* over maybe_prime? */
+. clr /* true */
+
+0 println
+0 'Next\sPrimes:' println
+
+0 dup next-prime . clr /* 2 */
+1 dup next-prime . clr /* 2 */
+2 dup next-prime . clr /* 3 */
+5 dup next-prime . clr /* 7 */
+47 dup next-prime . clr /* 53 */
+89 dup next-prime . clr /* 97 */
+7727 dup next-prime . clr /* 7741 */
+
+0 println
+0 'N-th\sPrimes:' println
+
+6 dup th-prime . clr /* 13 */
+168 dup th-prime . clr /* 997 */
+169 dup th-prime . clr /* 1009 */
+1000 dup th-prime . clr /* 7919 */
+10001 dup th-prime . clr /* 104743 */
+
+

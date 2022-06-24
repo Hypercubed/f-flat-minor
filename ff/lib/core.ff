@@ -27,6 +27,8 @@ sip: over slip ;       /* b [A*] -> b a* b    (aka keep) */
 sipd: q< sip q> ;      /* c b [A*] -> c a* c b */
 bi: q< over q< eval q> q> dig q< eval q> swap ;
 bi2: q< q< dup2 q> eval bury q> eval ;
+drop2: drop drop ;
+
 
 /* inquisitive */
 
@@ -39,6 +41,11 @@ nzero?: zero? not ;
 divisor?: % zero? ;
 even?: 2 divisor? ;
 odd?: even? not ;
+
+/* short circuit */
+
+or_else: q< over slip swap q> swap [ drop2 true ] [ eval ] branch ;
+and_also: q< over slip swap q> swap [ eval ] [ drop2 false ] branch ;
 
 /* comparison */
 <=: > not ;
@@ -124,8 +131,8 @@ newline: 10 ;
 
 sp: space putc ;
 cr: newline putc ;
-print: dup [ putc print ] [ drop ] branch ;
-println: print cr ;
+prints: dup [ putc prints ] [ drop ] branch ;
+println: prints cr ;
 
 ucase?: dup 'a' -- 'z' ++ dig between? ;
 lcase?: dup 'A' -- 'Z' ++ dig between? ;

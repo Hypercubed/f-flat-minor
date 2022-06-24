@@ -1,4 +1,4 @@
-.load ./core.ff
+.load ./lib/core.ff
 
 0 'Type\sa\snumber' println
 

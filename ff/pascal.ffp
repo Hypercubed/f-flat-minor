@@ -1,6 +1,6 @@
-.load ./core.ff
+.load ./lib/core.ff
 
-ps: prn printsp ;
+ps: print printsp ;
 
 line: dup 0 swap [ dup2 ++ q< q< nck ps q> q> ] seq nck ps printcr ;
 

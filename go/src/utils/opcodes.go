@@ -15,7 +15,7 @@ const (
 	OP_SHL   = 16
 	OP_SHR   = 17
 	OP_CLR   = 25
-	OP_RND   = 26
+	OP_RAND  = 26
 	OP_EXIT  = 27
 	OP_DUP   = '!'
 	OP_DEPTH = '#'
@@ -47,7 +47,7 @@ const (
 	SYM_CALL  = "eval"
 	SYM_PUTC  = "putc"
 	SYM_GETC  = "getc"
-	SYM_PUT   = "prn"
+	SYM_PRINT = "print"
 	SYM_CLOCK = "clock"
 	SYM_DROP  = "drop"
 	SYM_PUSHR = "q<"
@@ -55,7 +55,7 @@ const (
 	SYM_SHL   = "<<"
 	SYM_SHR   = ">>"
 	SYM_CLR   = "clr"
-	SYM_RND   = "rnd"
+	SYM_RAND  = "rand"
 	SYM_EXIT  = "exit"
 	SYM_DUP   = "dup"
 	SYM_DEPTH = "depth"

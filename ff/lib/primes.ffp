@@ -1,0 +1,95 @@
+.import ./core.ff
+
+simple-composite?: [ even? ] [ 3 divisor? ] or_else ;
+p-test: 6 % [ 1 = ] [ 5 = ] or_else not ;
+
+pp: dup print sp ;
+
+_factor_by_2:
+  over 1 & 0 =
+  [ [ 1 >> ] dip ++ _factor_by_2 ]
+  ? ;
+
+factor_by_2: 0 _factor_by_2 ; /* n -> d s */
+
+nrand: over - rand + ;
+nip3: nip nip nip ;
+
+^mod: swap ^ over % ;  /* n d a -> n a^d%n */
+
+inner_witness_loop: /* s n x -> */
+  dup2 swap %  /* s n x x%n */
+  [ over ] dip swap /* s n x x%n n */
+  -- = /* s n x x%n=n-1 */
+  [ false ]
+  [               /* s n x */
+    dup *         /* s n x^2 */
+    inner_witness
+  ]
+  branch ;
+
+inner_witness: /* s n x -> */
+  rot -- dup  /* x n s-1 s-1 -> */
+  0 =         /* x n s-1 */
+  [ true ]
+  [ rot inner_witness_loop ]
+  branch
+;
+
+/* returns true if composite, false if maybe prime */
+witness_loop: /* n -> n */
+  pred dup factor_by_2 /* n n-1 d s */
+  dig 2 swap nrand /* n d s a */
+  [ bury ] dip /* s n d a */
+  ^mod /* s n a^d%n */
+  dup [ 1 = ] [ over -- = ] or_else
+    [ drop drop drop false ]
+    [ inner_witness_loop nip nip nip ]
+    branch ;
+
+witness_loop2: [ witness_loop ] dup or_else ;
+witness_loop4: [ witness_loop2 ] dup or_else ;
+witness_loop8: [ witness_loop4 ] dup or_else ;
+witness_loop16: [ witness_loop8 ] dup or_else ;
+
+maybe_prime?: dup 4 <
+  [ 1 > ]
+  [ [ simple-composite? ] &witness_loop2 or_else not ]
+  branch ;
+
+trial_loop: dup2 [ dup * > ] [ % 0 > ] bi2 and [ 2 + trial_loop ] ? ;
+trile_by_division: 5 trial_loop dup * < ;
+
+gcd_t: dup bury % gcd_r ;
+gcd_r: dup [ gcd_t ] ? ;
+gcd: gcd_r drop ;
+
+/* First 10000 primes encoded as bits */
+
+N: 
+.load ./primes-encoded.ff
+;
+
+M: 104729 ;
+
+prime-lookup: N swap >> 1 & ;
+
+_prime?: dup simple-composite? [ drop false ] [ trile_by_division ] branch ;
+
+prime?: dup M <= [ prime-lookup ] [ _prime? ] branch ;
+
+fermat: dup -- rand ++ over -- ^ swap % 1 = ;
+
+_count_zero_bits: dup 1 & 0 = [ swap ++ swap 1 >> _count_zero_bits ] ? ;
+count_zero_bits: 0 swap _count_zero_bits drop ;
+
+small-next-prime: ++ dup N swap >> count_zero_bits + ;
+
+_next-prime-by-trial: dup prime? not [ 2 + _next-prime-by-trial ] ? ;
+next-prime-by-trial: dup 2 < [ drop 2 ] [ 1 + dup even? + _next-prime-by-trial ] branch ;
+
+next-prime: dup M < [ small-next-prime ] [ next-prime-by-trial ] branch ;
+
+wilson: [ 1 - ! 1 + ] [ divisor? ] bi ;
+
+th-prime: 0 swap [ next-prime ] swap times ;

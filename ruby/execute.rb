@@ -244,6 +244,10 @@ define('&', lambda {||
   $stack[-1] &= a
 })
 
+define('rand', lambda {||
+  $stack[-1] = rand($stack[-1])
+})
+
 define('|', lambda {||
   a = pop()
   $stack[-1] |= a

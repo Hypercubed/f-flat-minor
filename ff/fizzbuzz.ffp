@@ -1,8 +1,8 @@
 /* source https://rosettacode.org/wiki/FizzBuzz#the_unrolled_approach */
 
-.load ./core.ff
+.load ./lib/core.ff
 
-n: dup prn printcr ++ ;
+n: dup print printcr ++ ;
 f: 0 'Fizz' println ++ ;
 b: 0 'Buzz' println ++ ;
 fb: 0 'FizzBuzz' println ++ ;

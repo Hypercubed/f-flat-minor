@@ -170,7 +170,7 @@ func Setup() {
 	defSystem(func() {
 		x := peek()
 		x.Rand(rand, x)
-	}, OP_RND)
+	}, OP_RAND)
 
 	defSystem(func() {
 		x := pop()

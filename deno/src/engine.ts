@@ -281,7 +281,7 @@ export class Engine {
     this.defineSystem(() => {
       const max = this.pop();
       this.push(generateRandomBigInt(max));
-    }, OpCodes.RND);
+    }, OpCodes.RAND);
 
     this.defineSystem(() => {
       this.print();
@@ -307,7 +307,7 @@ export class Engine {
     this.defineSystem(() => {
       const data = encoder.encode(this.pop().toString(this.base));
       Deno.stdout.writeSync(data);
-    }, OpCodes.PRNN);
+    }, OpCodes.PRINT);
 
     this.defineSystem(() => {
       this.pop();

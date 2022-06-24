@@ -2,12 +2,12 @@
 
 # f-flat-minor v0
 
+import random
 import sys
 import time
-import re
 
 # TODO: tail call opt
-sys.setrecursionlimit(7000)
+sys.setrecursionlimit(28000)
 
 stack = []
 r_stack = []
@@ -153,6 +153,10 @@ def popq():
   a = r_stack.pop()
   stack.append(a)
 
+def rand():
+  a = stack.pop()
+  stack.append(random.randint(0, a))
+
 define('nop', nop)
 define('eval', call)
 define('putc', putc)
@@ -162,6 +166,7 @@ define('q<', pushq)
 define('q>', popq)
 define('clock', clock)
 define('clr', clr)
+define('rand', rand)
 define('dup', dup)
 define('depth', depth)
 define('swap', swap)
@@ -194,6 +199,7 @@ def unescape(text):
 def ev(t):
   i = 0
   l = len(t)
+
   while i < l:
     s = t[i]
     i += 1

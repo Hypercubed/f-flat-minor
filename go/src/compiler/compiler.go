@@ -109,7 +109,7 @@ func Setup() {
 	defSystem(SYM_CALL, OP_CALL)
 	defSystem(SYM_PUTC, OP_PUTC)
 	defSystem(SYM_GETC, OP_GETC)
-	// defSystem(SYM_PUT, OP_PUT)
+	// defSystem(SYM_PRINT, OP_PRINT)
 	defSystem(SYM_CLOCK, OP_CLOCK)
 	defSystem(SYM_DROP, OP_DROP)
 	defSystem(SYM_PUSHR, OP_PUSHR)
@@ -117,7 +117,7 @@ func Setup() {
 	defSystem(SYM_SHL, OP_SHL)
 	defSystem(SYM_SHR, OP_SHR)
 	defSystem(SYM_CLR, OP_CLR)
-	defSystem(SYM_RND, OP_RND)
+	defSystem(SYM_RAND, OP_RAND)
 	defSystem(SYM_EXIT, OP_EXIT)
 	defSystem(SYM_DUP, OP_DUP)
 	defSystem(SYM_DEPTH, OP_DEPTH)
@@ -168,7 +168,13 @@ func CompileToIR(t []string, filename string) []IrInstruction {
 				filepath := getFilepath(tokens[1], filename)
 				dat, err := os.ReadFile(filepath)
 				check(err)
-				ir := CompileToIR(Tokenize(string(dat)), filename)
+				ir := CompileToIR(Tokenize(string(dat)), filepath)
+				ret = append(ret, ir...)
+			} else if tokens[0] == ".import" {
+				filepath := getFilepath(tokens[1], filename)
+				dat, err := os.ReadFile(filepath)
+				check(err)
+				ir := CompileToIR(Tokenize(string(dat)), filepath)
 				ret = append(ret, ir...)
 			} else if tokens[0] == ".m" {
 				ir := CompileToIR(Tokenize(tokens[1]), filename)
@@ -272,6 +278,8 @@ func convertEsc2Char(str string) string {
 func getFilepath(filename string, source string) string {
 	if filename != "" && !path.IsAbs(filename) {
 		relative := path.Join(filepath.Dir(source), filename)
+		println(source)
+		println(relative)
 		if _, err := os.Stat(relative); err == nil {
 			return relative
 		}

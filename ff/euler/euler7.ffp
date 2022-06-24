@@ -1,19 +1,6 @@
-.load ../core.ff
+.import ../lib/core.ff
+.import ../lib/primes.ffp
 
 /* http://projecteuler.net/index.php?section=problems&id=7 */
-
-simple?: [ even? ] [ 3 divisor? ] bi or ;
-
-_prime_loop: dup2 [ dup * > ] [ % 0 > ] bi2 and [ 2 + _prime_loop ] ? ;
-_prime?: 5 _prime_loop dup * < ;
-
-prime?: dup 4 < [ 1 > ] [
-    dup simple? [ drop false ] [ _prime? ] branch
-  ] branch ;
-
-_next-prime: dup prime? not [ 2 + _next-prime ] ? ;
-next-prime: dup 2 < [ drop 2 ] [ 1 + dup even? + _next-prime ] branch ;
-
-th-prime: 0 swap [ next-prime ] swap times ;
 
 10001 th-prime . /* 104743 */

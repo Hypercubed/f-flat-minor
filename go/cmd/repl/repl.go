@@ -27,7 +27,7 @@ func main() {
 
 	fmt.Println("\nF♭ minor")
 
-	executor(".load ./ff/core.ff")
+	executor(".load ./ff/lib/core.ff")
 
 	p := prompt.New(
 		executor,

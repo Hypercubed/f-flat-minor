@@ -11,7 +11,7 @@ import { Preprocessor } from "../src/preprocess.ts";
 
 const PROMPT = new TextEncoder().encode("F♭> ");
 const core = path.fromFileUrl(
-  path.join(import.meta.url, "../../../ff/core.ff"),
+  path.join(import.meta.url, "../../../ff/lib/core.ff"),
 );
 
 export async function run(args: Arguments) {

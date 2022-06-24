@@ -1,4 +1,4 @@
-.load ./core.ff
+.load ./lib/core.ff
 
 icbrt-closer: dup2 2 ^ / over 2 * + 3 / ;
 icbrt-loop: icbrt-closer dup2 > [ nip icbrt-loop ] ? ;

@@ -1,4 +1,4 @@
-.load ./core.ff
+.load ./lib/core.ff
 
 isqrt-closer: dup2 / over + 2 / ;
 isqrt-loop: isqrt-closer dup2 > [ nip isqrt-loop ] ? ;

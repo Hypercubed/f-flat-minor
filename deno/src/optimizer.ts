@@ -52,8 +52,8 @@ const rules: Rule[] = [
     replacement: () => [],
   },
   {
-    name: "Null Sequence - RND DROP",
-    pattern: [Call(OpCodes.RND), Call(OpCodes.DROP)],
+    name: "Null Sequence - RAND DROP",
+    pattern: [Call(OpCodes.RAND), Call(OpCodes.DROP)],
     replacement: () => [],
   },
   {
