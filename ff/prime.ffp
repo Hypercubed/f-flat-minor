@@ -51,22 +51,53 @@ WitnessLoop: /* n -> n */
     [ InnerWitnessLoop nip nip nip ]
     branch ;
 
-WitnessLoop2: &WitnessLoop dup or_else ;
-WitnessLoop4: &WitnessLoop2 dup or_else ;
-WitnessLoop8: &WitnessLoop4 dup or_else ;
-WitnessLoop16: &WitnessLoop8 dup or_else ;
+WitnessLoop2: [ WitnessLoop ] dup or_else ;
+WitnessLoop4: [ WitnessLoop2 ] dup or_else ;
+WitnessLoop8: [ WitnessLoop4 ] dup or_else ;
+WitnessLoop16: [ WitnessLoop8 ] dup or_else ;
 
 maybe_prime?: dup 4 <
   [ 1 > ]
-  [ &simple-composite? &WitnessLoop4 or_else not ]
+  [ [ simple-composite? ] &WitnessLoop2 or_else not ]
   branch ;
 
 TrialLoop: dup2 [ dup * > ] [ % 0 > ] bi2 and [ 2 + TrialLoop ] ? ;
 TrialByDivision: 5 TrialLoop dup * < ;
 
-prime?: dup 4 < [ 1 > ] [
-    dup simple-composite? [ drop false ] [ TrialByDivision ] branch
-  ] branch ;
+gcd_t: dup bury % gcd_r ;
+gcd_r: dup [ gcd_t ] ? ;
+gcd: gcd_r drop ;
+
+/* First 10000 primes encoded as bits */
+
+N: 
+.load ./primes-encoded.ff
+;
+
+M: 104729 ;
+
+prime-lookup: N swap >> 1 & ;
+
+_prime?: dup simple-composite? [ drop false ] [ TrialByDivision ] branch ;
+
+prime?: dup M <= [ prime-lookup ] [ _prime? ] branch ;
+
+fermat: dup -- rnd ++ over -- ^ swap % 1 = ;
+
+_count_zero_bits: dup 1 & 0 = [ swap ++ swap 1 >> _count_zero_bits ] ? ;
+count_zero_bits: 0 swap _count_zero_bits drop ;
+
+small-next-prime: ++ dup N swap >> count_zero_bits + ;
+
+_next-prime-by-trial: dup prime? not [ 2 + _next-prime-by-trial ] ? ;
+next-prime-by-trial: dup 2 < [ drop 2 ] [ 1 + dup even? + _next-prime-by-trial ] branch ;
+
+next-prime: dup M < [ small-next-prime ] [ next-prime-by-trial ] branch ;
+
+wilson: [ 1 - ! 1 + ] [ divisor? ] bi ;
+
+0 println
+0 'Primes:' println
 
 0 dup [ prime? ] [ maybe_prime? ] bi . clr /* false */
 1 dup [ prime? ] [ maybe_prime? ] bi . clr /* false */
@@ -91,6 +122,12 @@ prime?: dup 4 < [ 1 > ] [
 
 561 dup [ prime? ] [ maybe_prime? ] bi . clr /* false  (Carmichael number) */
 
+5853 dup [ prime? ] [ maybe_prime? ] bi . clr /* false */
+
+7727 dup [ prime? ] [ maybe_prime? ] bi . clr /* true */
+7728 dup [ prime? ] [ maybe_prime? ] bi . clr /* false */
+7729 dup [ prime? ] [ maybe_prime? ] bi . clr /* false */
+
 8191 dup [ prime? ] [ maybe_prime? ] bi . clr /* true */
 8192 dup [ prime? ] [ maybe_prime? ] bi . clr /* false */
 
@@ -98,31 +135,36 @@ prime?: dup 4 < [ 1 > ] [
 524287 dup [ prime? ] [ maybe_prime? ] bi . clr /* true */
 6700417	dup [ prime? ] [ maybe_prime? ] bi . clr /* true */
 
+2147483651 dup prime?
+/* over maybe_prime? */
+. clr  /* false */
 
-2147483651 dup prime? . clr /* false */
-/* 2147483651 dup maybe_prime? . clr false */
+2147483647 dup prime? 
+/* over maybe_prime? */
+. clr /* true */
 
-2147483647 dup prime? . clr /* true */
-/* 2147483647 maybe_prime? . clr */
 
-fermat: dup -- rnd ++ over -- ^ swap % 1 = ;
 
-_next-prime: dup prime? not [ 2 + _next-prime ] ? ;
-next-prime: dup 2 < [ drop 2 ] [ 1 + dup even? + _next-prime ] branch ;
+0 println
+0 'Next\sPrimes:' println
 
-wilson: [ 1 - ! 1 + ] [ divisor? ] bi ;
-
-0 exit
-
-5 next-prime . clr /* 7 */
-47 next-prime . clr /* 53 */
-89 next-prime . clr /* 97 */
-7727 next-prime . clr /* 7741 */
+0 dup next-prime . clr /* 2 */
+1 dup next-prime . clr /* 2 */
+2 dup next-prime . clr /* 3 */
+5 dup next-prime . clr /* 7 */
+47 dup next-prime . clr /* 53 */
+89 dup next-prime . clr /* 97 */
+7727 dup next-prime . clr /* 7741 */
 
 th-prime: 0 swap [ next-prime ] swap times ;
 
-6 th-prime . clr /* 13 */
+0 println
+0 'N-th\sPrimes:' println
 
-/* 10001 th-prime . 104743 */
+6 dup th-prime . clr /* 13 */
+168 dup th-prime . clr /* 997 */
+169 dup th-prime . clr /* 1009 */
+1000 dup th-prime . clr /* 7919 */
+10001 dup th-prime . clr /* 104743 */
 
 

@@ -1,9 +1,12 @@
 .load ./core.ff
 
-gcd_t: dup bury % gcd_r ;
-gcd_r: dup [ gcd_t ] ? ;
-gcd: gcd_r drop ;
+gcd_t: dup bury % dup [ gcd_t ] ? ;
+gcd: dup [ gcd_t ] ? drop ;
 
-109876463 177777648  gcd .
+lcm: dup2 gcd / * ;
 
-/* 1234567 */
+109876463 177777648  gcd . clr /* 1234567 */
+
+109876463 177777648  lcm . clr /* 15822210672 */
+
+
