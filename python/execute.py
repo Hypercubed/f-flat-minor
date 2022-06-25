@@ -143,6 +143,19 @@ def popq():
 def rand():
   stack.append(random.randint(0, stack.pop()))
 
+def stash():
+  global queue
+  l = len(stack)
+  queue = queue + stack
+  del stack[:]
+  queue.append(l)
+
+def fetch():
+  global stack
+  l = queue.pop()
+  stack = queue[-l:] + stack
+  del queue[-l:]
+
 define('nop', nop)
 define('eval', call)
 define('putc', putc)
@@ -157,8 +170,8 @@ define('dup', dup)
 define('depth', depth)
 define('swap', swap)
 define('%', mod)
-# stash
-# fetch
+define('(', stash)
+define(')', fetch)
 define('*', mul)
 define('+', add)
 define('-', sub)

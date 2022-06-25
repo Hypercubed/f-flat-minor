@@ -65,9 +65,9 @@
 6 dup th-prime . clr /* 13 */
 168 dup th-prime . clr /* 997 */
 169 dup th-prime . clr /* 1009 */
-1000 dup th-prime . clr /* 7919 */
 
-/* slow */
+/* work but too slow for automated tests */
+/* 1000 dup th-prime . clr 7919 */
 /* 10001 dup th-prime . clr 104743 */
 
 

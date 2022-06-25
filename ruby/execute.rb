@@ -169,8 +169,18 @@ define('%', lambda {||
   $stack[-1] %= a
 })
 
-# stash
-# fetch
+define('(', lambda {||
+  l = $stack.length
+  $queue = $queue + $stack
+  $stack.clear
+  $queue.push l
+})
+
+define(')', lambda {||
+  l = $queue.pop
+  $stack = $queue[-l..$queue.length] + $stack
+  $queue = $queue[0..-l-1]
+})
 
 define('*', lambda {||
   a = $stack.pop

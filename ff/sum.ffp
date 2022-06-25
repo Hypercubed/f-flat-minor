@@ -8,14 +8,12 @@
 
 . clr
 
-1 10 range [ - ] 0 foldr /* 5 */
+1 10 range [ - ] 0 foldr . clr /* 5 */
 
-1 10 range [ - ] 0 foldl /* -55 */
-
-. clr
+1 10 range [ - ] 0 foldl . clr /* -55 */
 
 1 10 range [ 2 swap ^ ] map . clr
 
 1 10 range [ 2 % ] filter . clr
 
-0 9 range [ 2 swap ^ ] map . [ + ] reduce .
+0 9 range [ 2 swap ^ ] map [ + ] reduce .
