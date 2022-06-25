@@ -13,5 +13,5 @@ prime?: dup 4 < [ 1 > ] [
 
 /* 10 count [ prime? ] filter sum . 17 */
 
-0 2000000 range [ prime? ] filter sum . /* 142913828922 */
+0 2000000 range [ prime? ] filter sum! . /* 142913828922 */
 

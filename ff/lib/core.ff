@@ -78,8 +78,6 @@ ifte: slipd branch ;
 /* stack */
 
 empty?: depth zero? ;
-tail: q< clr q> ;
-head: [ drop ] reduce ;
 pushtop: depth 1 > [ swap q< pushtop q> ] ? ;
 
 /* counters */
@@ -93,25 +91,29 @@ seq: swap times ;
 range: dupd swap - [ succ ] seq ;
 count: 0 swap ++ [ succ ] seq drop ;
 
+/* stack reduction */
+tail!: q< clr q> ;
+head!: [ drop ] reduce ;
+
 _reduce_r: depth 3 > [ dup slip _reduce_r ] ? ;
-reduce_r: _reduce_r eval ;
-foldr: pushtop reduce_r ;
+reduce_r!: _reduce_r eval ;
+foldr!: pushtop reduce_r! ;
 
 _reduce_l: depth 3 > [ swap q< _reduce_l dup slip q> swap ] ? ;
-reduce_l: _reduce_l eval ;
-foldl: pushtop reduce_l ;
+reduce_l!: _reduce_l eval ;
+foldl!: pushtop reduce_l! ;
 
 _map: depth 2 > [ swap q< _map dup slip q> swap ] ? ;
-map: _map eval ;
+map!: _map eval ;
 
 _filter: depth 2 > [ swap q< _filter over over eval not [ nip ] ? q> swap ] ? ;
-filter: _filter dupd eval not [ drop ] ? ;
+filter!: _filter dupd eval not [ drop ] ? ;
 
-reduce: depth 2 - times ;
+reduce!: depth 2 - times ;
 
-sum: depth 1 > [ + sum ] ? ;
-product: depth 1 > [ * product ] ? ;
-reverse: depth 1 > [ q< reverse q> pushtop ] ? ;
+sum!: depth 1 > [ + sum! ] ? ;
+product!: depth 1 > [ * product! ] ? ;
+reverse!: depth 1 > [ q< reverse q> pushtop ] ? ;
 
 /* math */
 negitive?: 0 < ;
@@ -131,7 +133,9 @@ newline: 10 ;
 
 sp: space putc ;
 cr: newline putc ;
-prints: dup [ putc prints ] [ drop ] branch ;
+
+_prints: dup [ putc _prints ] ? ;
+prints: _prints drop ;
 println: prints cr ;
 
 ucase?: dup 'a' -- 'z' ++ dig between? ;

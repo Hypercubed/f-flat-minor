@@ -2,7 +2,7 @@
 
 /* http://projecteuler.net/index.php?section=problems&id=5 */
 
-sum-of-squares: [ sqr + ] 0 foldl ;
+sum-of-squares: [ sqr + ] 0 foldl! ;
 square-of-sum: sum sqr ;
 
 100 count square-of-sum

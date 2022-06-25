@@ -1,4 +1,4 @@
-.load ./lib/core.ff
+.load ../lib/core.ff
 
 assert: falsey? [ 0 10 'Failed' println .inline 1 exit ] ? ;
 assert_eq: = assert .inline ;
@@ -105,8 +105,8 @@ false 5 8 choose 8 assert_eq
 5 true [ 3 + ] [ 3 - ] branch 8 assert_eq
 5 false [ 3 + ] [ 3 - ] branch 2 assert_eq
 
-0 [ succ ] 5 times sum 15 assert_eq
-0 [ succ ++ ] 5 times sum 30 assert_eq
+0 [ succ ] 5 times sum! 15 assert_eq
+0 [ succ ++ ] 5 times sum! 30 assert_eq
 
 /* shuffing */
 
@@ -120,13 +120,13 @@ false 5 8 choose 8 assert_eq
 
 /* aggregate */
 
-1 2 3 sum 6 assert_eq
+1 2 3 sum! 6 assert_eq
 
-5 8 12 product 480 assert_eq
+5 8 12 product! 480 assert_eq
 
-1 10 range [ - ] 0 foldr 5 assert_eq
-1 10 range [ - ] 0 foldl -55 assert_eq
+1 10 range [ - ] 0 foldr! 5 assert_eq
+1 10 range [ - ] 0 foldl! -55 assert_eq
 
-0 9 range [ 2 swap ^ ] map [ + ] reduce 1023 assert_eq
+0 9 range [ 2 swap ^ ] map! [ + ] reduce! 1023 assert_eq
 
 0 'OK' println

@@ -4,4 +4,4 @@
 
 digits: dup [ 10 [ % ] [ / ] bi2 digits ] ? ;
 
-2 1000 ^ digits sum . /* 1366 */
+2 1000 ^ digits sum! . /* 1366 */

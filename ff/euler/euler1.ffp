@@ -4,6 +4,6 @@
 
 mod?: [ 3 divisor? ] [ 5 divisor? ] bi or ;
 
-999 count [ mod? ] filter sum .
+999 count [ mod? ] filter! sum! .
 
 /* 233168 */

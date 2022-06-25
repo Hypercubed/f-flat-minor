@@ -1,5 +1,5 @@
-.import ./lib/core.ff
-.import ./lib/primes.ffp
+.import ../lib/core.ff
+.import ../lib/primes.ffp
 
 0 println
 0 'Primes:' println

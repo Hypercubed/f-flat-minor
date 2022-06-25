@@ -8,6 +8,6 @@ gcd: gcd_r drop ;
 
 lcm: dup2 gcd / * ;
 
-1 20 range [ lcm ] reduce .
+1 20 range [ lcm ] reduce! .
 
 /* 232792560 */

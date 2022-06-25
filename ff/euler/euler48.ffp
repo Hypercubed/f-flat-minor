@@ -2,7 +2,7 @@
 
 /* http://projecteuler.net/index.php?section=problems&id=48 */
 
-1 1000 range [ dup ^ ] map sum
+1 1000 range [ dup ^ ] map! sum!
 10 10 ^ % /* last 10 digits */
 .
 
