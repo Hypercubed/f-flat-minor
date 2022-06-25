@@ -7,7 +7,7 @@ test:	ff interpret
 interpret:
 	@printf "** Python Interpreter **"
 	@time cat ../ff/example.ff \
-		| python3 ./execute.py \
+		| ./execute.py \
 		| cmp -s - "../ff/example.out" && $(CHECK)
 	@echo ""
 	@echo ""
@@ -19,10 +19,15 @@ ff:
 	@cd ..; \
 		for f in ${FF}; do \
 			out=$${f%.*}.out; \
-			if [ -f "$${out}" ]; then \
+			if [ -f "$${out}" ]; \
+			then \
 				printf "cmp $${f} $${out} "; \
-				cat $${f} | python3 ./python/execute.py 2>/dev/null | cmp - $${out} -s && $(CHECK); \
-				./deno/build/preprocess $${f} | python3 ./python/execute.py 2>/dev/null | cmp - $${out} -s && $(CHECK); \
+				if [ "$${f: -4}" == ".ffp" ]; \
+				then \
+					./deno/build/preprocess $${f} | ./python/execute.py 2>/dev/null | cmp - $${out} -s && $(CHECK); \
+				else \
+					cat $${f} | ./python/execute.py 2>/dev/null | cmp - $${out} -s && $(CHECK); \
+				fi; \
 				echo ""; \
 			fi \
 		done

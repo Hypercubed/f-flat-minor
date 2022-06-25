@@ -11,6 +11,8 @@ $op = -1
 $syms = Hash.new
 $defs = Hash.new
 
+$systemOps = 0
+
 def define (str, d)
   $op = $op + 1
   $syms[str] = $op
@@ -21,21 +23,29 @@ def is_integer? (str)
   str.to_i.to_s == str
 end
 
-def push(a)
-  $stack.push(a)
+def callSystem(o)
+  if f = $defs[o]
+    f.()
+  else
+    puts "Error: undefined system operation #{o}"
+    exit
+  end
 end
 
-def pop()
-  $stack.pop
+def callUser(o)
+  if f = $defs[o]
+    $queue = f + $queue
+  else
+    puts "Error: undefined user operation #{o}"
+    exit
+  end
 end
 
 def callOp (o)
-  if f = $defs[o]
-    if f.kind_of?(Array)
-      $queue = f + $queue
-    else
-      f.()
-    end
+  if o <= $systemOps
+    callSystem(o)
+  else
+    callUser(o)
   end
 end
 
@@ -48,17 +58,17 @@ def run ()
     item = $queue.shift
 
     if is_integer?(item)
-      push item.to_i
+      $stack.push item.to_i
     elsif item[0] == "." && item.length() > 1
       # no-op
     elsif item[0] == "'"
       e = item[-1] == "'" ? item[1..-2] : item[1..-1]
       unescape(e).reverse!.each_byte do |c|
-        push(c)
+        $stack.push c
       end
     elsif item[0] == "&" && item.length() > 1
       if o = $syms[item[1..-1]]
-        push(o)
+        $stack.push o
       end
     elsif item[-1] == ":"
       d = Array.new
@@ -67,7 +77,7 @@ def run ()
         if s == ';'
           break
         end
-        d.push(s)
+        d.push s
       end
       define(item[0..-2], d)
     elsif item[-1] == "["
@@ -87,7 +97,7 @@ def run ()
         end
       end
       $defs[o] = d
-      push(o)
+      $stack.push o
     elsif item == "/*"
       while $queue.length() > 0
         if $queue.shift == '*/'
@@ -95,10 +105,10 @@ def run ()
         end
       end
     elsif o = $syms[item]
-      callOp(o)
+      callOp o
     else
       print('undefined call to ', item)
-      exit()
+      exit
     end
   end
 end
@@ -111,33 +121,29 @@ define('nop', lambda {||
 })
 
 define('eval', lambda {||
-  o = pop()
-  callOp(o)
+  callOp $stack.pop
 })
 
 define('putc', lambda {||
-  a = pop()
-  putc a
+  putc $stack.pop
 })
 
 # getc
 
 define('clock', lambda {||
-  push Date.today.to_time.to_i
+  $stack.push Date.today.to_time.to_i
 })
 
 define('drop', lambda {||
-  pop
+  $stack.pop
 })
 
 define('q<', lambda {||
-  a = pop()
-  $queue.push(a)
+  $queue.push $stack.pop
 })
 
 define('q>', lambda {||
-  a = $queue.pop
-  push a
+  $stack.push $queue.pop
 })
 
 define('clr', lambda {||
@@ -145,22 +151,21 @@ define('clr', lambda {||
 })
 
 define('dup', lambda {||
-  push($stack[-1])
+  $stack.push $stack[-1]
 })
 
 define('depth', lambda {||
-  push($stack.length())
+  $stack.push $stack.length()
 })
 
 define('swap', lambda {||
-  a = pop()
-  b = pop()
-  push(a)
-  push(b)
+  a = $stack[-1]
+  $stack[-1] = $stack[-2]
+  $stack[-2] = a
 })
 
 define('%', lambda {||
-  a = pop()
+  a = $stack.pop
   $stack[-1] %= a
 })
 
@@ -168,17 +173,17 @@ define('%', lambda {||
 # fetch
 
 define('*', lambda {||
-  a = pop()
+  a = $stack.pop
   $stack[-1] *= a
 })
 
 define('+', lambda {||
-  a = pop()
+  a = $stack.pop
   $stack[-1] += a
 })
 
 define('-', lambda {||
-  a = pop()
+  a = $stack.pop
   $stack[-1] -= a
 })
 
@@ -187,17 +192,17 @@ define('.', lambda {||
 })
 
 define('/', lambda {||
-  a = pop()
+  a = $stack.pop
   $stack[-1] /= a
 })
 
 define('>>', lambda {||
-  a = pop()
+  a = $stack.pop
   $stack[-1] >>= a
 })
 
 define('<<', lambda {||
-  a = pop()
+  a = $stack.pop
   $stack[-1] <<= a
 })
 
@@ -205,23 +210,23 @@ define('<<', lambda {||
 # def
 
 define('<', lambda {||
-  a = pop()
+  a = $stack.pop
   $stack[-1] = ($stack[-1] < a) && 1 || 0
 })
 
 define('=', lambda {||
-  a = pop()
+  a = $stack.pop
   $stack[-1] = ($stack[-1] == a) && 1 || 0
 })
 
 define('>', lambda {||
-  a = pop()
+  a = $stack.pop
   $stack[-1] = ($stack[-1] > a) && 1 || 0
 })
 
 define('?', lambda {||
-  a = pop()
-  b = pop()
+  a = $stack.pop
+  b = $stack.pop
   if b != 0
     callOp(a)
   end
@@ -231,12 +236,12 @@ define('?', lambda {||
 # ket
 
 define('^', lambda {||
-  a = pop()
+  a = $stack.pop
   $stack[-1] = $stack[-1]**a
 })
 
 define('&', lambda {||
-  a = pop()
+  a = $stack.pop
   $stack[-1] &= a
 })
 
@@ -245,13 +250,15 @@ define('rand', lambda {||
 })
 
 define(124.chr, lambda {||
-  a = pop()
+  a = $stack.pop
   $stack[-1] |= a
 })
 
 define('~', lambda {||
   $stack[-1] = ~$stack[-1]
 })
+
+$systemOps = $op
 
 $code = ARGF.read
 $queue = tokenize($code)

@@ -7,7 +7,7 @@ test:	ff interpret
 interpret:
 	@printf "** Ruby Interpreter **"
 	@time cat ../ff/example.ff \
-		| ruby ./execute.rb \
+		| ./execute.rb \
 		| cmp -s - "./artifacts/example.txt" && $(CHECK);
 	@echo ""
 	@echo ""
@@ -19,10 +19,15 @@ ff:
 	@cd ..; \
 		for f in ${FF}; do \
 			out=$${f%.*}.out; \
-			if [ -f "$${out}" ]; then \
+			if [ -f "$${out}" ]; \
+			then \
 				printf "cmp $${f} $${out} "; \
-				cat $${f} | ruby ./ruby/execute.rb 2>/dev/null | cmp - $${out} -s && $(CHECK); \
-				./deno/build/preprocess $${f} | ruby ./ruby/execute.rb 2>/dev/null | cmp - $${out} -s && $(CHECK); \
+				if [ "$${f: -4}" == ".ffp" ]; \
+				then \
+					./deno/build/preprocess $${f} | ./ruby/execute.rb 2>/dev/null | cmp - $${out} -s && $(CHECK); \
+				else \
+					cat $${f} | ./ruby/execute.rb 2>/dev/null | cmp - $${out} -s && $(CHECK); \
+				fi; \
 				echo ""; \
 			fi \
 		done
