@@ -8,8 +8,9 @@ import * as path from "https://deno.land/std@0.57.0/path/mod.ts";
 import { Compiler } from "../src/compiler.ts";
 import { Engine } from "../src/engine.ts";
 import { Preprocessor } from "../src/preprocess.ts";
+import { GREETINGS, SHORT } from "../src/constants.ts";
 
-const PROMPT = new TextEncoder().encode("F♭> ");
+const PROMPT = new TextEncoder().encode(`${SHORT}> `);
 const core = path.fromFileUrl(
   path.join(import.meta.url, "../../../ff/lib/core.ff"),
 );
@@ -19,7 +20,8 @@ export async function run(args: Arguments) {
   const interpreter = new Engine();
   const preprocessor = new Preprocessor();
 
-  console.log("\nF♭ minor");
+  console.log();
+  console.log(GREETINGS);
 
   if (!("core" in args) || args.core) {
     run(`.load ${core}`);

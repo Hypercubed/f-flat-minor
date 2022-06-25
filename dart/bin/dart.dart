@@ -181,8 +181,6 @@ void ev(List<String> tokens) {
 void main() {
   setup();
 
-  // final stopwatch = Stopwatch()..start();
-
   while (true) {
     var line = stdin.readLineSync();
     if (line == null) {
@@ -190,32 +188,4 @@ void main() {
     }
     ev(tokenize(line));
   }
-
-	// ev(tokenize('''
-  //   /* common definitions */
-
-  //   --: 1 - ;
-  //   rot: q< swap q> swap ;
-  //   choose: 0 = &swap ? drop ;
-  //   branch: rot choose eval ;
-
-  //   /* factorial */
-
-  //   fact_t: dup -- fact * ;
-  //   fact_f: drop 1 ;
-  //   fact: dup &fact_t &fact_f branch ;
-
-  //   /* string printing */
-
-  //   print_t: putc print ;
-  //   print: dup &print_t &drop branch ;
-  //   println: print 10 putc ;
-
-  //   0 32 'Factorial print
-  //   0 '100: println
-
-  //   100 fact .
-  // '''));
-  
-  // print('${stopwatch.elapsed.inMilliseconds}ms');
 }

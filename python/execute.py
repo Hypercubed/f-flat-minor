@@ -5,6 +5,7 @@
 import random
 import sys
 import time
+import getopt
 
 stack = []
 queue = []
@@ -99,21 +100,26 @@ def printStack():
 
 def callSystem(o):
   if o in defs:
-    defs[o]()
+    return defs[o]()
+  else:
+    print('undefined system call', o)
+    exit()
 
 def callUser(o):
   global queue
   if o in defs:
     queue = defs[o] + queue
-
-def callOp(o):
-  if o <= systemOps:
-    callSystem(o)
+    return
   else:
-    callUser(o)
+    print('undefined user call', o)
+    exit()
 
 def call():
-  callOp(stack.pop())
+  o = stack.pop()
+  if o <= systemOps:
+    return callSystem(o)
+  else:
+    return callUser(o)
 
 def swap():
   a = stack[-1]
@@ -121,9 +127,12 @@ def swap():
   stack[-2] = a
 
 def q():
-  a = stack.pop()
+  o = stack.pop()
   if (stack.pop() != 0):
-    callOp(a)
+    if o <= systemOps:
+      return callSystem(o)
+    else:
+      return callUser(o)
 
 def dup():
   stack.append(stack[-1])
@@ -144,9 +153,8 @@ def rand():
   stack.append(random.randint(0, stack.pop()))
 
 def stash():
-  global queue
   l = len(stack)
-  queue = queue + stack
+  queue.extend(stack)
   del stack[:]
   queue.append(l)
 
@@ -213,43 +221,60 @@ def run():
       n = s[1:-1] if s.endswith('\'') else s[1:]
       n = unescape(n)
       stack.extend([ord(c) for c in n[::-1]])
-    elif s.endswith(':'):
+    elif s.endswith(':') and len(s) > 1:
       n = s[:-1]
       d = []
-      while len(queue) > 0:
+      while len(queue):
         ss = queue.pop(0)
-        d.append(ss)
-        if queue[0] == ';':
-          queue.pop(0)
+        if ss == ';':
           break
+        d.append(ss)
       define(n, d)
     elif s == '[':
       o = nextOp()
       d = []
       dep = 1
-      while len(queue) > 0 and dep > 0:
+      while len(queue) and dep:
         ss = queue.pop(0)
         if ss == ']':
           dep -= 1
-        if ss == '[':
+        elif ss == '[':
           dep += 1
         if dep > 0:
           d.append(ss)
       defs[o] = d
       stack.append(o)
     elif s == "/*":
-      while len(queue) > 0:
+      while len(queue):
         if queue.pop(0) == '*/':
           break
     else:
-      if s in ops:
-        callOp(ops[s])
+      o = ops[s]
+      if o <= systemOps:
+        callSystem(o)
       else:
-        print('undefined', s)
-        exit()
+        callUser(o)
 
-lines = sys.stdin.readlines()
-code = ' '.join(lines)
+def main():
+  global queue
 
-queue = code.split()
-run()
+  try:
+    opts, _ = getopt.getopt(sys.argv[1:], "s", ["stats"])
+  except:
+    sys.exit(2)
+
+  lines = sys.stdin.readlines()
+  code = ' '.join(lines)
+
+  queue = code.split()
+
+  for opt, _ in opts:
+    if opt in ("-s", "--stats"):
+      import cProfile
+      cProfile.run('run()')
+      return
+
+  run()
+
+if __name__ == "__main__":
+    main()

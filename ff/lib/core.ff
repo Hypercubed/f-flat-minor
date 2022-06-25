@@ -21,7 +21,7 @@ dupd: q< dup q> ;
 over: dupd swap ;
 dup2: over over ;
 run: dup slip ;
-nip: [ drop ] dip ;
+nip: swap drop ;
 tuck: swap over ;
 sip: over slip ;       /* b [A*] -> b a* b    (aka keep) */
 sipd: q< sip q> ;      /* c b [A*] -> c a* c b */

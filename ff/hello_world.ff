@@ -1,0 +1,8 @@
+
+rot: swap q< swap q> swap ;
+choose: rot &swap ? drop ;
+branch: choose eval ;
+
+prints: dup [ putc prints ] &drop branch ;
+
+0 'Hello\sWorld!\n' prints
