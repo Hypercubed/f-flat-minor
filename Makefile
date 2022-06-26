@@ -2,6 +2,10 @@ include defs.mk
 
 .DEFAULT_GOAL := test
 
+./ff/lib/primes-encoded.ff: ./ff/encode-primes.ffp
+	@./deno/bin/ff run ./ff/encode-primes.ffp > ./ff/lib/primes-encoded.ff
+	@echo ""
+
 .PHONY: build
 build:
 	@$(MAKE) -s -C deno $@ --no-print-directory;
