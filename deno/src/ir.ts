@@ -5,6 +5,7 @@ interface Meta {
   name: string;
   inline: boolean;
   pointer: boolean;
+  unsafe: boolean;
   filename: string;
   line: number;
 }

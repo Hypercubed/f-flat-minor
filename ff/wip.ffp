@@ -1,0 +1,16 @@
+.load ./lib/core.ff
+
+r$: q> swap q< ; .unsafe
+->: q> -- r$ ; .unsafe
+~>: -> depth 1 > [ swap ] ? ;
+_swap: ( -> -> ) ;
+
+1 2 3 ( -> -> sum! ) . clr
+
+1 2 3 [ + ] ( -> -> swap -> swap 0 foldr! ) . clr
+
+1 2 3 [ - ] ( ~> ~> ~> 0 foldr! ) . clr
+
+1 2 3 [ 2 ^ ] ( ~> ~> ~> map! ) . clr
+
+1 2 3 4 _swap .

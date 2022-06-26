@@ -1,5 +1,5 @@
 #!/usr/bin/env deno
-import { blue, green, red, cyan } from "https://deno.land/std@0.139.0/fmt/colors.ts";
+import { blue, green, cyan } from "https://deno.land/std@0.139.0/fmt/colors.ts";
 
 import { IrInstruction, IROp } from "./ir.ts";
 import { OpCodes, systemWords } from "./opcodes.ts";
@@ -84,6 +84,10 @@ export class Compiler {
             ret[ret.length - 1].meta ||= {};
             ret[ret.length - 1].meta!.inline = true;
             break;
+          case ".unsafe":
+            ret[ret.length - 1].meta ||= {};
+            ret[ret.length - 1].meta!.unsafe = true;
+            break;
           case ".pointer":
             ret[ret.length - 1].meta ||= {};
             ret[ret.length - 1].meta!.pointer = true;
@@ -165,7 +169,9 @@ export class Compiler {
           }
         }
         const def = _ir.splice(j-1, ip-j+2);
-        issues.push(...this.validateDef(def));
+        if (!def.at(-1)?.meta?.unsafe) {
+          issues.push(...this.validateDef(def));
+        }
         ip = j-1;
       }
 
