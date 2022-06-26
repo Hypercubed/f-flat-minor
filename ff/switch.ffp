@@ -1,0 +1,60 @@
+.load ./lib/core.ff
+
+cond: q< over slip swap q> swap [ eval ] [ drop ] branch ;
+
+z:
+  [ 0 > ] [ 0 '\sis\spos' println ] cond
+  [ 0 < ] [ 0 '\sis\sneg' println ] cond
+  [ 0 = ] [ 0 '\sis\szero' println  ] cond
+  drop
+;
+
+keep: dupd eval ;
+
+case:
+  dig
+  [ drop drop 1 ]
+  [ [ keep ] dip swap [ swap drop 1 ] [ drop 0 ] branch ]
+  branch
+;
+
+case-default:
+  [ true ] swap
+  dig
+  [ drop drop 1 ]
+  [ swap drop 1 ]
+  branch
+;
+
+match: 0 swap eval drop ;
+switch: match eval ;
+
+zz:
+  [
+    [ 0 > ] [ 0 '\sis\spos'  ] case
+    [ 0 < ] [ 0 '\sis\sneg'  ] case
+            [ 0 '\sis\szero' ] case-default
+  ]
+  match
+;
+
+zzz:
+  [
+    [ 0 > ] [ 0 '\sis\spos'  ] case
+    [ 0 < ] [ 0 '\sis\sneg'  ] case
+            [ 0 '\sis\szero' ] case-default
+  ]
+  switch
+;
+
+-1 dup print z
+0 dup print z
+1 dup print z
+
+-1 dup print zz eval println
+0 dup print zz eval println
+1 dup print zz eval println
+
+-1 dup print zzz println
+0 dup print zzz println
+1 dup print zzz println
