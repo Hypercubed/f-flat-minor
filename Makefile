@@ -6,6 +6,10 @@ include defs.mk
 	@./deno/bin/ff run ./ff/encode-primes.ffp > ./ff/lib/primes-encoded.ff
 	@echo ""
 
+.PHONY : reset
+reset: ./ff/lib/primes-encoded.ff
+	$(MAKE) -s -C deno reset
+
 .PHONY: build
 build:
 	@$(MAKE) -s -C deno $@ --no-print-directory;

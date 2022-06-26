@@ -1,6 +1,67 @@
 .import ../lib/core.ff
 .import ../lib/primes.ffp
 
+/* Fermat primality test */
+
+fermat: dup -- rand ++ over -- ^ swap % 1 = ;
+
+/* Wilson primality test */
+
+wilson: [ 1 - ! 1 + ] [ divisor? ] bi ;
+
+/* Miller–Rabin primality test */
+
+_factor_by_2:
+  over 1 & 0 =
+  [ [ 1 >> ] dip ++ _factor_by_2 ]
+  ? ;
+
+factor_by_2: 0 _factor_by_2 ; /* n -> d s */
+
+nrand: over - rand + ;
+
+^mod: swap ^ over % ;  /* n d a -> n a^d%n */
+
+inner_witness_loop: /* s n x -> */
+  dup2 swap %  /* s n x x%n */
+  [ over ] dip swap /* s n x x%n n */
+  -- = /* s n x x%n=n-1 */
+  [ false ]
+  [               /* s n x */
+    dup *         /* s n x^2 */
+    inner_witness
+  ]
+  branch ;
+
+inner_witness: /* s n x -> */
+  rot -- dup  /* x n s-1 s-1 -> */
+  0 =         /* x n s-1 */
+  [ true ]
+  [ rot inner_witness_loop ]
+  branch
+;
+
+/* returns true if composite, false if maybe prime */
+witness_loop: /* n -> n */
+  pred dup factor_by_2 /* n n-1 d s */
+  dig 2 swap nrand /* n d s a */
+  [ bury ] dip /* s n d a */
+  ^mod /* s n a^d%n */
+  dup [ 1 = ] [ over -- = ] or_else
+    [ drop drop drop false ]
+    [ inner_witness_loop nip nip nip ]
+    branch ;
+
+witness_loop2: [ witness_loop ] dup or_else ;
+witness_loop4: [ witness_loop2 ] dup or_else ;
+witness_loop8: [ witness_loop4 ] dup or_else ;
+witness_loop16: [ witness_loop8 ] dup or_else ;
+
+maybe_prime?: dup 4 <
+  [ 1 > ]
+  [ [ simple-composite? ] &witness_loop2 or_else not ]
+  branch ;
+
 0 println
 0 'Primes:' println
 
@@ -58,6 +119,7 @@
 47 dup next-prime . clr /* 53 */
 89 dup next-prime . clr /* 97 */
 7727 dup next-prime . clr /* 7741 */
+104743 dup next-prime . clr /* 104759 */
 
 0 println
 0 'N-th\sPrimes:' println
@@ -66,8 +128,9 @@
 168 dup th-prime . clr /* 997 */
 169 dup th-prime . clr /* 1009 */
 
-/* work but too slow for automated tests */
+/* work but too slow for interpreters tests */
 /* 1000 dup th-prime . clr 7919 */
 /* 10001 dup th-prime . clr 104743 */
+/* 10002 dup th-prime . clr  104759 */
 
 
