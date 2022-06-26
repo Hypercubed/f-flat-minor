@@ -205,12 +205,27 @@ systemOps = op
 def unescape(text):
   return text.replace('\\n', '\n').replace('\\s', ' ')
 
+def number(text):
+  text = text.strip("_")
+  try:
+    if text.startswith("0x"):
+      return int(text, 16)
+    elif text.startswith("0b"):
+      return int(text, 2)
+    elif text.startswith("0o"):
+      return int(text, 8)
+    else:
+      return int(text)
+  except:
+    return None
+
 def run():
   while len(queue) > 0:
     s = queue.pop(0)
+    sn = number(s)
     
-    if s.lstrip("-").isnumeric():
-      stack.append(int(s))
+    if sn != None:
+      stack.append(sn)
     elif s.startswith('.') and len(s) > 1:
       continue
     elif s.startswith('&') and len(s) > 1:

@@ -1,25 +1,13 @@
 .import ../lib/core.ff
 .import ../lib/testing.ffp
 
-    3 dup 3 assert_eq 3 assert_eq
     3 5 dup2 5 assert_eq 3 assert_eq 5 assert_eq 3 assert_eq
 
     1 2 3 bury 2 assert_eq 1 assert_eq 3 assert_eq
     1 2 3 rot 1 assert_eq 2 assert_eq 3 assert_eq
 
     5 [ 2 * ] [ 2 + ] bi 7 assert_eq 10 assert_eq
-0 'Stack\sShuffling' OK
-
-    1 2 + 3 assert_eq
-    3 4 - -1 assert_eq
-    5 6 * 30 assert_eq
-    8 4 / 2 assert_eq
-    8 5 % 3 assert_eq
-    9 12 ^ 282429536481 assert_eq
-0 'Basic\sMath' OK
-
-    5 4 3 2 ^ ^ ^ 10 10 ^ % 8212890625 assert_eq
-0 'Large\sPowers' OK
+0 'Shuffling' OK
 
     12 ! 479001600 assert_eq
     5 sqr 25 assert_eq
@@ -41,11 +29,6 @@
     52656145834278593348959013841835216159447547700274555627155488768 lg 215 assert_eq
 0 'Large\slog2' OK
 
-    5 3 & 1 assert_eq
-    5 3 | 7 assert_eq
-    5 ~ -6 assert_eq
-0 'Bitwise' OK
-
     true true and assert
     true false and assert_false
     false true and assert_false
@@ -56,15 +39,6 @@
     false true or assert
     false false or assert_false
 0 'Logical' OK
-
-    1 2 < assert
-    2 2 < assert_false
-    4 3 < assert_false
-    5 6 > assert_false
-    6 6 > assert_false
-    8 7 > assert
-    9 10 = assert_false
-    11 11 assert_eq
 
     1 2 <= assert
     2 2 <= assert
@@ -86,20 +60,11 @@
     3 2 1 between? assert_false
 0 'Comparison' OK
 
-    'A' 65 assert_eq
-    'a' 97 assert_eq
-
     'a' ucase 'A' assert_eq
     'A' ucase 'A' assert_eq
     'Z' lcase 'z' assert_eq
     'z' lcase 'z' assert_eq
-
-    '\s' 32 assert_eq
-    '\n' 10 assert_eq
 0 'Strings' OK
-
-    5 true [ 3 + ] ? 8 assert_eq
-    5 false [ 3 + ] ? 5 assert_eq
 
     true 5 8 choose 5 assert_eq
     false 5 8 choose 8 assert_eq

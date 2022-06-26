@@ -1,0 +1,51 @@
+.import ../lib/core.ff
+.import ../lib/testing.ffp
+
+    0b1111 15 assert_eq
+    0xFFFF 65535 assert_eq
+    0o27 23 assert_eq
+    1_000_000 1000000 assert_eq
+    0b1110_0000_0000_0000 57344 assert_eq
+0 'Numeric' OK
+
+    'A' 65 assert_eq
+    'a' 97 assert_eq
+
+    '\s' 32 assert_eq
+    '\n' 10 assert_eq
+0 'Characters' OK
+
+  'abc' 'a' assert_eq 'b' assert_eq 'c' assert_eq
+0 'Strings' OK
+
+    3 dup 3 assert_eq 3 assert_eq
+0 'Shuffling' OK
+
+    1 2 + 3 assert_eq
+    3 4 - -1 assert_eq
+    5 6 * 30 assert_eq
+    8 4 / 2 assert_eq
+    8 5 % 3 assert_eq
+    9 12 ^ 282429536481 assert_eq
+0 'Basic\sMath' OK
+
+    5 4 3 2 ^ ^ ^ 10 10 ^ % 8212890625 assert_eq
+0 'Large\sPowers' OK
+
+    5 3 & 1 assert_eq
+    5 3 | 7 assert_eq
+    5 ~ -6 assert_eq
+0 'Bitwise' OK
+
+    1 2 < assert
+    2 2 < assert_false
+    4 3 < assert_false
+    5 6 > assert_false
+    6 6 > assert_false
+    8 7 > assert
+    9 10 = assert_false
+0 'Comparison' OK
+
+    5 true [ 3 + ] ? 8 assert_eq
+    5 false [ 3 + ] ? 5 assert_eq
+0 'Control\sFlow' OK

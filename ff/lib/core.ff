@@ -42,10 +42,6 @@ divisor?: % zero? ;
 even?: 2 divisor? ;
 odd?: even? not ;
 
-/* short circuit */
-
-or_else: q< over slip swap q> swap [ drop2 true ] [ eval ] branch ;
-and_also: q< over slip swap q> swap [ eval ] [ drop2 false ] branch ;
 
 /* comparison */
 <=: > not ;
@@ -67,6 +63,11 @@ and: * truthy? ;
 or: + truthy? ;
 nand: * zero? ;
 nor: + zero? ;
+
+/* short circuit */
+
+or_else: q< over slip swap q> swap [ drop2 true ] [ eval ] branch ;
+and_also: q< over slip swap q> swap [ eval ] [ drop2 false ] branch ;
 
 /* branching */
 

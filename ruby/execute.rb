@@ -53,12 +53,22 @@ def unescape (text)
   text.gsub("\\n", "\n").gsub("\\s", " ")
 end
 
+def parseInteger (str)
+  begin
+    str = str.gsub('_', '')
+    return Integer(str)
+  rescue ArgumentError
+    return nil
+  end
+end
+
 def run ()
   while $queue.length() > 0
     item = $queue.shift
+    n = parseInteger item
 
-    if is_integer?(item)
-      $stack.push item.to_i
+    if n != nil
+      $stack.push n
     elsif item[0] == "." && item.length() > 1
       # no-op
     elsif item[0] == "'"

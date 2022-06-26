@@ -64,7 +64,8 @@ export class Compiler {
       let maybeNumber: bigint | undefined;
 
       try {
-        maybeNumber = BigInt(ss);
+        const bs = ss.replaceAll('_', '');
+        maybeNumber = BigInt(bs);
       } catch (_e) {
         maybeNumber = undefined;
       }
