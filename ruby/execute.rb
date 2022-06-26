@@ -148,6 +148,10 @@ define('putc', lambda {||
   putc $stack.pop
 })
 
+define('print', lambda {||
+  print $stack.pop
+})
+
 # getc
 
 define('clock', lambda {||

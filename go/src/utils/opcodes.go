@@ -7,7 +7,7 @@ const (
 	OP_CALL  = 1
 	OP_PUTC  = 2
 	OP_GETC  = 3
-	OP_PUT   = 4
+	OP_PRINT = 4
 	OP_CLOCK = 5
 	OP_DROP  = 8
 	OP_PUSHR = 14

@@ -135,7 +135,10 @@ func Setup() {
 		push(NewInt(int64(ascii)))
 	}, OP_GETC)
 
-	// PUT
+	defSystem(func() {
+		s := pop().Text(10)
+		fmt.Print(s)
+	}, OP_PRINT)
 
 	defSystem(func() {
 		push(NewInt(int64(time.Now().Unix())))

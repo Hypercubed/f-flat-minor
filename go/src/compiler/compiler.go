@@ -109,7 +109,7 @@ func Setup() {
 	defSystem(SYM_CALL, OP_CALL)
 	defSystem(SYM_PUTC, OP_PUTC)
 	defSystem(SYM_GETC, OP_GETC)
-	// defSystem(SYM_PRINT, OP_PRINT)
+	defSystem(SYM_PRINT, OP_PRINT)
 	defSystem(SYM_CLOCK, OP_CLOCK)
 	defSystem(SYM_DROP, OP_DROP)
 	defSystem(SYM_PUSHR, OP_PUSHR)

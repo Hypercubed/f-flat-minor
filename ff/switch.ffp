@@ -1,6 +1,6 @@
 .load ./lib/core.ff
 
-cond: q< over slip swap q> swap [ eval ] [ drop ] branch ;
+cond: q< sip swap q> swap [ eval ] [ drop ] branch ;
 
 z:
   [ 0 > ] [ 0 '\sis\spos' println ] cond
@@ -9,20 +9,18 @@ z:
   drop
 ;
 
-keep: dupd eval ;
-
 case:
   dig
   [ drop drop 1 ]
-  [ [ keep ] dip swap [ swap drop 1 ] [ drop 0 ] branch ]
+  [ [ dupd eval ] dip swap [ swap drop 1 ] [ drop 0 ] branch ]
   branch
 ;
 
 case-default:
   [ true ] swap
   dig
-  [ drop drop 1 ]
-  [ swap drop 1 ]
+  [ drop2 1 ]
+  [ nip 1 ]
   branch
 ;
 

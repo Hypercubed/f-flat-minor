@@ -140,6 +140,9 @@ def dup():
 def putc():
   print(chr(stack.pop()), end='')
 
+def printNumber():
+  print(stack.pop(), end='')
+
 def drop():
   stack.pop()
 
@@ -168,6 +171,7 @@ define('nop', nop)
 define('eval', call)
 define('putc', putc)
 # getc
+define('print', printNumber)
 define('drop', lambda: stack.pop() )
 define('q<', pushq)
 define('q>', popq)

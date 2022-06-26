@@ -55,7 +55,7 @@ between?: [ sort2 ] dip swap dupd < bury < and ;
 
 /* binary operators */
 
-bxor: dup2 ~ & bury swap ~ & | ;
+bxor: dup2 ~ & rot ~ & | ;
 
 /* logical */
 
