@@ -214,6 +214,8 @@ def number(text):
       return int(text, 2)
     elif text.startswith("0o"):
       return int(text, 8)
+    elif "e" in text or "E" in text:
+      return int(float(text))
     else:
       return int(text)
   except:

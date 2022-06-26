@@ -56,6 +56,9 @@ end
 def parseInteger (str)
   begin
     str = str.gsub('_', '')
+    if str.include? "e" or str.include? "E"
+      return Integer(Float(str))
+    end
     return Integer(str)
   rescue ArgumentError
     return nil

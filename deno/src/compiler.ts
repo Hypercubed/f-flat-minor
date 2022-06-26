@@ -8,6 +8,18 @@ import { encode } from "./vlq.ts";
 const COMMENT_START = "/*";
 const COMMENT_END = "*/";
 
+function toNumber(str: string) {
+  try {
+    str = str.replaceAll('_', '');
+    if (str.includes('e') || str.includes('E')) {
+      return BigInt(+str);
+    }
+    return BigInt(str);
+  } catch (_e) {
+    return undefined;
+  }
+}
+
 export class Compiler {
   static tokenize(s: string) {
     return s.split(/\s+/).filter(Boolean);
@@ -61,14 +73,7 @@ export class Compiler {
     while (i < l) {
       ss = s[i++];
 
-      let maybeNumber: bigint | undefined;
-
-      try {
-        const bs = ss.replaceAll('_', '');
-        maybeNumber = BigInt(bs);
-      } catch (_e) {
-        maybeNumber = undefined;
-      }
+      const maybeNumber = toNumber(ss)
 
       if (maybeNumber !== undefined) {
         push(maybeNumber);
