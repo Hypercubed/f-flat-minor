@@ -22,7 +22,13 @@ function toNumber(str: string) {
 
 export class Compiler {
   static tokenize(s: string) {
-    return s.split(/\s+/).filter(Boolean);
+    return s.split(/\s+/).filter(Boolean).map(x => {
+      const n = toNumber(x);
+      if (n !== undefined) {
+        return n;
+      }
+      return x;
+    });
   }
 
   /**
@@ -65,18 +71,16 @@ export class Compiler {
     return code;
   }
 
-  compileToIR(s: string[], filename = ""): IrInstruction[] {
+  compileToIR(s: Array<string | bigint>, filename = ""): IrInstruction[] {
     let i = 0;
     const l = s.length;
-    let ss = "";
+    let ss: string | bigint = "";
     const ret: IrInstruction[] = [];
     while (i < l) {
       ss = s[i++];
 
-      const maybeNumber = toNumber(ss)
-
-      if (maybeNumber !== undefined) {
-        push(maybeNumber);
+      if (typeof ss === "bigint") {
+        push(ss);
       } else if (ss.length > 1 && ss.startsWith(".")) {
         const [cmd] = ss.split(" ");
         switch (cmd) {

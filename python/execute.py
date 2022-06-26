@@ -221,13 +221,23 @@ def number(text):
   except:
     return None
 
+def token(s):
+  sn = number(s)
+  if sn != None:
+    return sn
+  else:
+    return s
+
+def tokenize(text):
+  a = text.split()
+  return list(map(token, a))
+
 def run():
   while len(queue) > 0:
     s = queue.pop(0)
-    sn = number(s)
     
-    if sn != None:
-      stack.append(sn)
+    if type(s) == int:
+      stack.append(s)
     elif s.startswith('.') and len(s) > 1:
       continue
     elif s.startswith('&') and len(s) > 1:
@@ -283,7 +293,7 @@ def main():
   lines = sys.stdin.readlines()
   code = ' '.join(lines)
 
-  queue = code.split()
+  queue = tokenize(code)
 
   for opt, _ in opts:
     if opt in ("-s", "--stats"):

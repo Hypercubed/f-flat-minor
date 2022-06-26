@@ -144,6 +144,19 @@ func Setup() {
 	defSystem(SYM_NOT, OP_NOT)
 }
 
+func getInteger(s string) *Int {
+	if strings.Contains(s, "e") || strings.Contains(s, "E") {
+		if s, ok := new(Float).SetString(s); ok {
+			i, _ := s.Int(new(Int))
+			return i
+		}
+	}
+	if s, ok := new(Int).SetString(s, 0); ok {
+		return s
+	}
+	return nil
+}
+
 func CompileToIR(t []string, filename string) []IrInstruction {
 	ret := make([]IrInstruction, 0)
 
@@ -159,9 +172,10 @@ func CompileToIR(t []string, filename string) []IrInstruction {
 
 	for i := 0; i < len(t); i++ {
 		element := t[i]
+		number := getInteger(element)
 
-		if s, ok := new(Int).SetString(element, 0); ok {
-			push(s, element)
+		if number != nil {
+			push(number, element)
 		} else if strings.HasPrefix(element, ".") && (len(element) > 1) {
 			tokens := regexp.MustCompile("\\s").Split(element, 2)
 			if tokens[0] == ".load" {

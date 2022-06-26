@@ -68,10 +68,9 @@ end
 def run ()
   while $queue.length() > 0
     item = $queue.shift
-    n = parseInteger item
 
-    if n != nil
-      $stack.push n
+    if item.is_a?(Numeric)
+      $stack.push item
     elsif item[0] == "." && item.length() > 1
       # no-op
     elsif item[0] == "'"
@@ -126,8 +125,16 @@ def run ()
   end
 end
 
+def token (x)
+  n = parseInteger x
+  if n != nil
+    return n
+  end
+  return x
+end
+
 def tokenize (str)
-  str.gsub(/\s+/m, ' ').strip.split(" ")
+  return str.gsub(/\s+/m, ' ').strip.split(" ").map { |s| token(s) }
 end
 
 define('nop', lambda {||
