@@ -1,132 +1,123 @@
-.load ../lib/core.ff
+.import ../lib/core.ff
+.import ../lib/testing.ffp
 
-assert: falsey? [ 0 10 'Failed' println .inline 1 exit ] ? ;
-assert_eq: = assert .inline ;
-assert_false: not assert .inline ;
+    3 dup 3 assert_eq 3 assert_eq
+    3 5 dup2 5 assert_eq 3 assert_eq 5 assert_eq 3 assert_eq
 
-/* math */
-1 2 + 3 assert_eq
-3 4 - -1 assert_eq
-5 6 * 30 assert_eq
-8 4 / 2 assert_eq
-8 5 % 3 assert_eq
-9 12 ^ 282429536481 assert_eq
+    1 2 3 bury 2 assert_eq 1 assert_eq 3 assert_eq
+    1 2 3 rot 1 assert_eq 2 assert_eq 3 assert_eq
 
-5 4 3 2 ^ ^ ^ 10 10 ^ % 8212890625 assert_eq
+    5 [ 2 * ] [ 2 + ] bi 7 assert_eq 10 assert_eq
+0 'Stack\sShuffling' OK
 
-/* derived math */
-12 ! 479001600 assert_eq
-5 sqr 25 assert_eq
+    1 2 + 3 assert_eq
+    3 4 - -1 assert_eq
+    5 6 * 30 assert_eq
+    8 4 / 2 assert_eq
+    8 5 % 3 assert_eq
+    9 12 ^ 282429536481 assert_eq
+0 'Basic\sMath' OK
 
-0 sgn 0 assert_eq
-5 sgn 1 assert_eq
--5 sgn -1 assert_eq
+    5 4 3 2 ^ ^ ^ 10 10 ^ % 8212890625 assert_eq
+0 'Large\sPowers' OK
 
-0 abs 0 assert_eq
-5 abs 5 assert_eq
--5 abs 5 assert_eq
+    12 ! 479001600 assert_eq
+    5 sqr 25 assert_eq
 
-1 lg 0 assert_eq
-16 lg 4 assert_eq
-1024 lg 10 assert_eq
+    0 sgn 0 assert_eq
+    5 sgn 1 assert_eq
+    -5 sgn -1 assert_eq
 
-52656145834278593348959013841835216159447547700274555627155488768 lg 215 assert_eq
+    0 abs 0 assert_eq
+    5 abs 5 assert_eq
+    -5 abs 5 assert_eq
+0 'Derived\sMath' OK
 
-/* bitwise */
+    1 lg 0 assert_eq
+    16 lg 4 assert_eq
+    1024 lg 10 assert_eq
+0 'log2' OK
 
-5 3 & 1 assert_eq
-5 3 | 7 assert_eq
-5 ~ -6 assert_eq
+    52656145834278593348959013841835216159447547700274555627155488768 lg 215 assert_eq
+0 'Large\slog2' OK
 
-/* logical */
+    5 3 & 1 assert_eq
+    5 3 | 7 assert_eq
+    5 ~ -6 assert_eq
+0 'Bitwise' OK
 
-true true and assert
-true false and assert_false
-false true and assert_false
-false false and assert_false
+    true true and assert
+    true false and assert_false
+    false true and assert_false
+    false false and assert_false
 
-true true or assert
-true false or assert
-false true or assert
-false false or assert_false
+    true true or assert
+    true false or assert
+    false true or assert
+    false false or assert_false
+0 'Logical' OK
 
-/* comparison */
+    1 2 < assert
+    2 2 < assert_false
+    4 3 < assert_false
+    5 6 > assert_false
+    6 6 > assert_false
+    8 7 > assert
+    9 10 = assert_false
+    11 11 assert_eq
 
-1 2 < assert
-2 2 < assert_false
-4 3 < assert_false
-5 6 > assert_false
-6 6 > assert_false
-8 7 > assert
-9 10 = assert_false
-11 11 assert_eq
+    1 2 <= assert
+    2 2 <= assert
+    6 6 >= assert
+    8 7 >= assert
 
-1 2 <= assert
-2 2 <= assert
-6 6 >= assert
-8 7 >= assert
+    1 5 max 5 assert_eq
+    13 8 max 13 assert_eq
+    1 5 min 1 assert_eq
+    13 8 min 8 assert_eq
 
-1 5 max 5 assert_eq
-13 8 max 13 assert_eq
-1 5 min 1 assert_eq
-13 8 min 8 assert_eq
+    5 10 1 clamp 5 assert_eq
+    5 10 6 clamp 6 assert_eq
+    5 10 11 clamp 10 assert_eq
 
-5 10 1 clamp 5 assert_eq
-5 10 6 clamp 6 assert_eq
-5 10 11 clamp 10 assert_eq
+    1 3 2 between? assert
+    3 1 2 between? assert
+    1 2 3 between? assert_false
+    3 2 1 between? assert_false
+0 'Comparison' OK
 
-1 3 2 between? assert
-3 1 2 between? assert
-1 2 3 between? assert_false
-3 2 1 between? assert_false
+    'A' 65 assert_eq
+    'a' 97 assert_eq
 
-/* string */
+    'a' ucase 'A' assert_eq
+    'A' ucase 'A' assert_eq
+    'Z' lcase 'z' assert_eq
+    'z' lcase 'z' assert_eq
 
-'A' 65 assert_eq
-'a' 97 assert_eq
+    '\s' 32 assert_eq
+    '\n' 10 assert_eq
+0 'Strings' OK
 
-'a' ucase 'A' assert_eq
-'A' ucase 'A' assert_eq
-'Z' lcase 'z' assert_eq
-'z' lcase 'z' assert_eq
+    5 true [ 3 + ] ? 8 assert_eq
+    5 false [ 3 + ] ? 5 assert_eq
 
-'\s' 32 assert_eq
-'\n' 10 assert_eq
+    true 5 8 choose 5 assert_eq
+    false 5 8 choose 8 assert_eq
 
-/* control */
+    5 true [ 3 + ] [ 3 - ] branch 8 assert_eq
+    5 false [ 3 + ] [ 3 - ] branch 2 assert_eq
+0 'Control\sFlow' OK
 
-5 true [ 3 + ] ? 8 assert_eq
-5 false [ 3 + ] ? 5 assert_eq
+    1 2 3 sum! 6 assert_eq
 
+    5 8 12 product! 480 assert_eq
 
-true 5 8 choose 5 assert_eq
-false 5 8 choose 8 assert_eq
+    1 10 range [ - ] 0 foldr! 5 assert_eq
+    1 10 range [ - ] 0 foldl! -55 assert_eq
 
-5 true [ 3 + ] [ 3 - ] branch 8 assert_eq
-5 false [ 3 + ] [ 3 - ] branch 2 assert_eq
+    0 9 range [ 2 swap ^ ] map! [ + ] reduce! 1023 assert_eq
 
-0 [ succ ] 5 times sum! 15 assert_eq
-0 [ succ ++ ] 5 times sum! 30 assert_eq
+    0 [ succ ] 5 times sum! 15 assert_eq
+    0 [ succ ++ ] 5 times sum! 30 assert_eq
+0 'Folds' OK
 
-/* shuffing */
-
-3 dup 3 assert_eq 3 assert_eq
-3 5 dup2 5 assert_eq 3 assert_eq 5 assert_eq 3 assert_eq
-
-1 2 3 bury 2 assert_eq 1 assert_eq 3 assert_eq
-1 2 3 rot 1 assert_eq 2 assert_eq 3 assert_eq
-
-5 [ 2 * ] [ 2 + ] bi 7 assert_eq 10 assert_eq 
-
-/* aggregate */
-
-1 2 3 sum! 6 assert_eq
-
-5 8 12 product! 480 assert_eq
-
-1 10 range [ - ] 0 foldr! 5 assert_eq
-1 10 range [ - ] 0 foldl! -55 assert_eq
-
-0 9 range [ 2 swap ^ ] map! [ + ] reduce! 1023 assert_eq
-
-0 'OK' println

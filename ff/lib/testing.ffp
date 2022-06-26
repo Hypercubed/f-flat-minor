@@ -1,0 +1,7 @@
+.import core.ff
+
+assert: falsey? [ 0 10 'Failed' println .inline 1 exit ] ? ;
+assert_eq: = assert .inline ;
+assert_false: not assert .inline ;
+
+OK: prints 0 '\sOK' println ;
