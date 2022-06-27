@@ -17,16 +17,16 @@ F:  over 0 = [ nip 1 + ] [
   ] branch ;
 
 /* Recursive function for m > 5 */
-ackn: over [ dup
+_ackn: over [ dup
   [ [ dup -- swap ] dip -- ack ack ]
   [ drop -- 1 ack ] branch ] [ nip ++ ] branch ;
 
-/*  terms of Buck's function */
-ack: over 6 < [ 3 + F 3 - ] [ ackn ] branch ;
+/*  Ackermann Function */
+ack: over 6 < [ 3 + F 3 - ] [ _ackn ] branch ;
 
-0 0 . ackn . cr clr /* 1 */
-0 4 . ackn . cr clr /* 5 */
-1 0 . ackn . cr clr /* 2 */
+0 0 . ack . cr clr /* 1 */
+0 4 . ack . cr clr /* 5 */
+1 0 . ack . cr clr /* 2 */
 2 2 . ack . cr clr /* 7 */
 3 3 . ack . cr clr /* 61 */
 3 4 . ack . cr clr /* 125 */

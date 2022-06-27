@@ -2,7 +2,7 @@
 
 cond: q< sip swap q> swap [ eval ] [ drop ] branch ;
 
-z:
+cond-test:
   [ 0 > ] [ 0 '\sis\spos' println ] cond
   [ 0 < ] [ 0 '\sis\sneg' println ] cond
   [ 0 = ] [ 0 '\sis\szero' println  ] cond
@@ -27,7 +27,7 @@ case-default:
 match: 0 swap eval drop ;
 switch: match eval ;
 
-zz:
+match-test:
   [
     [ 0 > ] [ 0 '\sis\spos'  ] case
     [ 0 < ] [ 0 '\sis\sneg'  ] case
@@ -36,7 +36,7 @@ zz:
   match
 ;
 
-zzz:
+switch-test:
   [
     [ 0 > ] [ 0 '\sis\spos'  ] case
     [ 0 < ] [ 0 '\sis\sneg'  ] case
@@ -45,14 +45,14 @@ zzz:
   switch
 ;
 
--1 dup print z
-0 dup print z
-1 dup print z
+-1 dup print cond-test
+0 dup print cond-test
+1 dup print cond-test
 
--1 dup print zz eval println
-0 dup print zz eval println
-1 dup print zz eval println
+-1 dup print match-test eval println
+0 dup print match-test eval println
+1 dup print match-test eval println
 
--1 dup print zzz println
-0 dup print zzz println
-1 dup print zzz println
+-1 dup print switch-test println
+0 dup print switch-test println
+1 dup print switch-test println

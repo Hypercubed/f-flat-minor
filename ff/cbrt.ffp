@@ -1,10 +1,10 @@
 .load ./lib/core.ff
 
-icbrt-closer: dup2 2 ^ / over 2 * + 3 / ;
-icbrt-loop: icbrt-closer dup2 > [ nip icbrt-loop ] ? ;
-icbrtn: dup 3 / icbrt-loop drop nip ;
+_icbrt-closer: dup2 2 ^ / over 2 * + 3 / ;
+_icbrt-loop: _icbrt-closer dup2 > [ nip _icbrt-loop ] ? ;
+_icbrtn: dup 3 / _icbrt-loop drop nip ;
 
-icbrt: dup sgn swap over * dup 1 > [ icbrtn ] ? * ;
+icbrt: dup sgn swap over * dup 1 > [ _icbrtn ] ? * ;
 
 0 icbrt . clr
 1 icbrt . clr

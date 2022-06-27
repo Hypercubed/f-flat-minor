@@ -1,8 +1,10 @@
 .load ./lib/core.ff
 
-ps: print printsp ;
+/* Pascal's triangle */
 
-line: dup 0 swap [ dup2 ++ q< q< nck ps q> q> ] seq nck ps printcr ;
+ps: print sp ;
+
+line: dup 0 swap [ dup2 ++ q< q< nck ps q> q> ] seq nck ps cr ;
 
 0 [ dup line ++ ] 16 times
 

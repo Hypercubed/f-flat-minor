@@ -1,5 +1,7 @@
 .load ./lib/core.ff
 
+/* Fibonacci Sequence */
+
 fib:
   dup 0 = not
   [ dup 1 = not

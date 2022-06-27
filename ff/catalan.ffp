@@ -1,5 +1,7 @@
 .load ./lib/core.ff
 
+/* Catalan numbers */
+
 cat: dup dup 2 * swap nck swap 1 + / ;
 
 100 cat .  /* 896519947090131496687170070074100632420837521538745909320 */

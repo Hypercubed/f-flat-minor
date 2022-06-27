@@ -1,15 +1,15 @@
 .load ./lib/core.ff
 
-isqrt-closer: dup2 / over + 2 / ;
-isqrt-loop: isqrt-closer dup2 > [ nip isqrt-loop ] ? ;
+_isqrt-closer: dup2 / over + 2 / ;
+_isqrt-loop: _isqrt-closer dup2 > [ nip _isqrt-loop ] ? ;
 
-isqrtn: dup 2 / isqrt-loop drop nip ;
+_isqrtn: dup 2 / _isqrt-loop drop nip ;
 
 isqrt:
   dup 0 < [ 1 0 / ] [
     dup 0 = [ drop 0 ] [
       dup 4 < [ drop 1 ] [
-        isqrtn
+        _isqrtn
       ] branch
     ] branch
   ] branch ;

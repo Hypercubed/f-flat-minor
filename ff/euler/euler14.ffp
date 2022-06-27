@@ -1,0 +1,43 @@
+.load ../lib/core.ff
+
+/* http://projecteuler.net/index.php?section=problems&id=14 */
+
+_odd?: 1 & ;
+2/: 1 >> ;
+
+next-collatz: dup _odd? [ 3 * 1 + 2/ q< 2 + q> ] [ 2/ q< ++ q> ] branch ; .inline
+collatz: dup 1 > [ next-collatz collatz ] ? ;
+collatz-count: 0 swap collatz drop ; .inline
+
+collatz-count-recur:
+  1 - dup
+  [
+    dup _odd?
+    [ ++ 2/ collatz-count-recur ++ ]
+    [ 3 * 4 + 2/ collatz-count-recur 2 + ] .inline
+    branch
+  ]
+  ? ; .inline
+
+skip?: dup [ 3 % 2 = ] [ 6 % 4 = ] or_else ;
+
+runn:
+  skip? [ ++ ] ?  /* optional, skip some values */
+  dup collatz-count
+  [ over ] dip
+  dup [ < ] dip swap
+  [ q< q< drop2 q> q> . over ++ ]
+  [ drop ++ ]
+  branch
+; .inline
+
+step: dup 1_000_000 < [ runn step ] ? ;
+
+/* Generates [ A006877 ] */
+
+/* n count */
+1 1 /* (use 1 1 to get full sequence) */
+/* 77031 350 . (head start) */
+over ++
+step
+drop drop . /* 837799 */
