@@ -38,11 +38,10 @@ zero?: 0 = ;
 truthy?: zero? not ; .inline
 falsey?: zero? ; .inline
 !=: = not ; .inline
-nzero?: zero? not ; .inline
+nz?: zero? not ; .inline
 divisor?: % zero? ; .inline
 even?: 2 divisor? ; .inline
 odd?: even? not ; .inline
-
 
 /* comparison */
 <=: > not ; .inline

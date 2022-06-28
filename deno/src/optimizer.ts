@@ -9,20 +9,21 @@ const BRA = BigInt(OpCodes.BRA);
 const Call = (op: number | bigint) => {
   op = BigInt(op);
   return (inst: IrInstruction) => inst.op === IROp.call && inst.value === op;
-}
+};
 
 const Push = (value: number | bigint) => {
   value = BigInt(value);
   return (inst: IrInstruction) => inst.op === IROp.push && inst.value === value;
-}
+};
 
 const PushAny = (inst: IrInstruction) => inst.op === IROp.push;
-const PushNz = (inst: IrInstruction) => inst.op === IROp.push && inst.value !== 0n;
+const PushNz = (inst: IrInstruction) =>
+  inst.op === IROp.push && inst.value !== 0n;
 
 interface Rule {
   name?: string;
-  pattern: Array<(inst: IrInstruction) => boolean>,
-  replacement: ((...args: IrInstruction[]) => IrInstruction[])
+  pattern: Array<(inst: IrInstruction) => boolean>;
+  replacement: (...args: IrInstruction[]) => IrInstruction[];
 }
 
 const rules: Rule[] = [
@@ -70,8 +71,12 @@ const rules: Rule[] = [
     name: "Indirect calls - n EVAL",
     pattern: [PushAny, Call(OpCodes.CALL)],
     replacement: (a) => [
-      { op: IROp.call, value: a.value, meta: { name: a.meta?.name?.replace(/^&/, "") } },
-    ]
+      {
+        op: IROp.call,
+        value: a.value,
+        meta: { name: a.meta?.name?.replace(/^&/, "") },
+      },
+    ],
   },
   {
     name: "Null Sequence - n DROP",
@@ -81,45 +86,43 @@ const rules: Rule[] = [
   {
     name: "Algebraic Simplification - a b ADD",
     pattern: [PushAny, PushAny, Call(OpCodes.ADD)],
-    replacement: (a, b) => [
-      { op: IROp.push, value: a.value + b.value },
-    ],
+    replacement: (a, b) => [{ op: IROp.push, value: a.value + b.value }],
   },
   {
     name: "Algebraic Simplification - a b SUB",
     pattern: [PushAny, PushAny, Call(OpCodes.SUB)],
-    replacement: (a, b) => [
-      { op: IROp.push, value: a.value - b.value },
-    ],
+    replacement: (a, b) => [{ op: IROp.push, value: a.value - b.value }],
   },
   {
     name: "Algebraic Simplification - a b MUL",
     pattern: [PushAny, PushAny, Call(OpCodes.MUL)],
-    replacement: (a, b) => [
-      { op: IROp.push, value: a.value * b.value },
-    ],
+    replacement: (a, b) => [{ op: IROp.push, value: a.value * b.value }],
   },
   {
     name: "Algebraic Simplification - a b DIV",
     pattern: [PushAny, PushNz, Call(OpCodes.DIV)],
-    replacement: (a, b) => [
-      { op: IROp.push, value: a.value / b.value },
-    ],
+    replacement: (a, b) => [{ op: IROp.push, value: a.value / b.value }],
   },
   {
     name: "Constant propagation - a DUP",
     pattern: [PushAny, Call(OpCodes.DUP)],
-    replacement: (a) => [ a, a ],
+    replacement: (a) => [a, a],
   },
   {
     name: "Unreachable Code - 0 &b IF",
     pattern: [Push(0), PushAny, Call(OpCodes.IF)],
-    replacement: () => [ ],
+    replacement: () => [],
   },
   {
     name: "Flows-Of-Control Optimizations - !0 &b IF",
     pattern: [PushNz, PushAny, Call(OpCodes.IF)],
-    replacement: (_a, b, _c) => [  { op: IROp.call, value: b.value, meta: { name: b.meta?.name?.replace(/^&/, "") } } ],
+    replacement: (_a, b, _c) => [
+      {
+        op: IROp.call,
+        value: b.value,
+        meta: { name: b.meta?.name?.replace(/^&/, "") },
+      },
+    ],
   },
   // ∗ 2^n -> n <<
   // / 2^n -> n >>
@@ -134,18 +137,18 @@ export class Optimizer {
     post_optimization_user_defs: 0,
     inlined_calls: 0,
     peephole_optimizations: 0,
-  }
+  };
 
   private defs = new Map<BigInt, IrInstruction[]>();
   private calledWords = new Set<BigInt>();
 
   private optimized: Array<IrInstruction> = [];
 
-/**
- * It takes an array of IR instructions, and returns an array of optimized IR instructions
- * @param ir - The IR to optimize.
- * @returns The optimized ir.
- */
+  /**
+   * It takes an array of IR instructions, and returns an array of optimized IR instructions
+   * @param ir - The IR to optimize.
+   * @returns The optimized ir.
+   */
   optimize(ir: Array<IrInstruction>) {
     this.reset();
 
@@ -153,27 +156,12 @@ export class Optimizer {
 
     this.optimized = ir;
 
-    this.optimized = this.inlineWords(this.optimized, 1);
+    this.optimized = this.peepholeOptimization(this.optimized);
+    this.optimized = this.getDefs(this.optimized);
+    this.optimized = this.inlineWords(this.optimized, 4);
     this.optimized = this.peepholeOptimization(this.optimized);
     this.optimized = this.pullDefs(this.optimized);
-    // TODO: dedup definitions
-
-    this.optimized = this.peepholeOptimization(this.optimized);
-    this.optimized = this.inlineWords(this.optimized, 1);
-    this.optimized = this.peepholeOptimization(this.optimized);
-
-    this.defs.forEach((def, key) => {
-      def = this.peepholeOptimization(def);
-      this.defs.set(key, def);
-    });
-
-    // this.defs.forEach((def, key) => {
-    //   def = this.inlineWords(def, 1);
-    //   this.defs.set(key, def);
-    // });
-
-    this.addReferencedWords(this.optimized);
-    this.optimized = this.peepholeOptimization(this.optimized);
+    this.optimized = this.addReferencedWords(this.optimized);
 
     this.stats.post_optimization_ir_size = this.optimized.length;
     return this.optimized;
@@ -195,8 +183,71 @@ export class Optimizer {
     };
   }
 
+  private getDefs(ir: Array<IrInstruction>) {
+    let ip = 0;
+    while (ip < ir.length) {
+      const i = ir[ip];
+      if (i.op === IROp.call) {
+        if (i.value === KET) {
+          // anon defs
+          this.stats.user_defined_anon_defs++;
+
+          let pi = ip;
+          while (pi-- > 0) {
+            const j = ir[pi];
+            if (j.op === IROp.call && j.value === BRA) break;
+          }
+          const n = ir[pi - 1];
+          n.meta ||= {};
+          n.meta.pointer = true;
+
+          const def = ir.slice(pi, ip + 1);
+
+          // Convert anon def to named def
+          def[0] = {
+            ...def[0],
+            value: MARK,
+            meta: {
+              ...def[0].meta,
+              name: ":",
+            },
+          };
+          def.unshift(n);
+          def[def.length - 1] = {
+            ...def[def.length - 1],
+            value: DEF,
+            meta: {
+              ...def[def.length - 1].meta,
+              name: ";",
+            },
+          };
+
+          this.defs.set(n.value, def);
+        } else if (i.value === DEF) {
+          // named defs
+          this.stats.user_defined_named_defs++;
+
+          let pi = ip;
+          while (pi-- > 0) {
+            const j = ir[pi];
+            if (j.op === IROp.call && j.value === MARK) break;
+          }
+          const n = ir[pi - 1];
+          n.meta ||= {};
+          n.meta.pointer = true;
+
+          const def = ir.slice(pi - 1, ip + 1);
+          this.defs.set(n.value, def);
+        }
+      }
+      ip++;
+    }
+
+    return ir;
+  }
+
   /**
-   * It removes all user defined functions from the IR and stores them in a map
+   * Removes all user defined functions from the IR and stores them in a map
    * @param ir - Array<IrInstruction>
    * @returns The IR with all the defs pulled out.
    */
@@ -208,15 +259,12 @@ export class Optimizer {
       const i = _ir[ip];
 
       if (i.op === IROp.call) {
-        if (i.value === KET) { // anon defs
-          this.stats.user_defined_anon_defs++;
-
+        if (i.value === KET) {
+          // anon defs
           const end = ip;
           while (ip-- > 0) {
             const j = _ir[ip];
-            if (j.op === IROp.call && j.value === BRA) {
-              break;
-            }
+            if (j.op === IROp.call && j.value === BRA) break;
           }
           const n = _ir[ip - 1];
           n.meta ||= {};
@@ -225,25 +273,36 @@ export class Optimizer {
           const def = _ir.splice(ip, end - ip + 1);
 
           // Convert anon def to named def
-          def[0].value = MARK;
-          def[0].meta ??= {};
-          def[0].meta.name = ":";
+          def[0] = {
+            ...def[0],
+            value: MARK,
+            meta: {
+              ...def[0].meta,
+              name: ":",
+            },
+          };
           def.unshift(n);
-          def[def.length - 1].value = DEF;
-          def[def.length - 1].meta ??= {};
-          def[def.length - 1].meta!.name = ";";
+          def[def.length - 1] = {
+            ...def[def.length - 1],
+            value: DEF,
+            meta: {
+              ...def[def.length - 1].meta,
+              name: ";",
+            },
+          };
 
           this.defs.set(n.value, def);
-        } else if (i.value === DEF) { // named defs
-          this.stats.user_defined_named_defs++;
-
+        } else if (i.value === DEF) {
+          // named defs
           const end = ip;
           while (ip-- > 0) {
             const j = _ir[ip];
-            if (j.op === IROp.call && j.value === MARK) {
-              break;
-            }
+            if (j.op === IROp.call && j.value === MARK) break;
           }
+          const n = _ir[ip - 1];
+          n.meta ||= {};
+          n.meta.pointer = true;
+
           const def = _ir.splice(ip - 1, end - ip + 2);
           ip = ip - 2;
 
@@ -300,27 +359,26 @@ export class Optimizer {
   private inlineWords(ir: Array<IrInstruction>, len = 1) {
     let ret = ir;
     // do {
-      ret = ret.flatMap(i => {
-        if (i.op === IROp.call && this.defs.has(i.value)) {
-          const def = this.defs.get(i.value);
-          if (def) {
-            if (def[def.length - 1].meta?.inline) {
-              this.stats.inlined_calls++;
-              return this.inlineWords(def.slice(2, -1), Infinity);
-            }
-            if (i.meta?.inline) {
-              this.stats.inlined_calls++;
-              return this.inlineWords(def.slice(2, -1), Infinity);
-            }
-            if (def.length <= (len + 3)) {
-              this.stats.inlined_calls++;
-              return def.slice(2, -1);
-            }
+    ret = ret.flatMap((i) => {
+      if (i.op === IROp.call && this.defs.has(i.value)) {
+        const def = this.defs.get(i.value);
+        if (def) {
+          if (def[def.length - 1].meta?.inline) {
+            this.stats.inlined_calls++;
+            return this.inlineWords(def.slice(2, -1), Infinity);
           }
-
+          if (i.meta?.inline) {
+            this.stats.inlined_calls++;
+            return this.inlineWords(def.slice(2, -1), Infinity);
+          }
+          if (def.length <= len + 3 && !i.meta?.unsafe) {
+            this.stats.inlined_calls++;
+            return def.slice(2, -1);
+          }
         }
-        return i;
-      });
+      }
+      return i;
+    });
     // } while(ret.length !== ir.length);  // todo: catch run away loop
     return ret;
   }
@@ -331,13 +389,14 @@ export class Optimizer {
    * @param ir - Array<IrInstruction>
    */
   private addReferencedWords(ir: Array<IrInstruction>) {
-    ir.slice().forEach(i => {
+    ir.slice().forEach((i) => {
       if (i.op === IROp.push && i.meta?.pointer) {
         this.addDef(i.value);
       } else if (i.op === IROp.call) {
         this.addDef(i.value);
       }
     });
+    return ir;
   }
 
   /**
