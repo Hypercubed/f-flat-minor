@@ -54,6 +54,34 @@ export function printHighLevelIr(ir: Array<IrInstruction>) {
   });
 }
 
+export function disassembleIr(ir: Array<IrInstruction>) {
+  ir.forEach((i) => {
+    const c = i.meta?.comment?.trim() ? `/* ${i.meta?.comment} */` : "";
+    const n = ("" + i.meta?.name).padEnd(VALUE_WIDTH, " ");
+    const v = ("" + i.value).padEnd(VALUE_WIDTH, " ");
+    // const o = i.op.toUpperCase();
+
+    // let m = '';
+    // m = i.meta?.inline ? ".inline" : "";
+    // m = i.meta?.pointer ? ".pointer" : m;
+    // m = m.trim();
+
+    if (i.op === IROp.push) {
+      console.log(v, c);
+      return;
+    } else if (i.op === IROp.call && i.value === 0n) {
+      console.log("    ", c);
+      return;
+    } else if (i.op === IROp.call && i.value >= 0n) {
+      console.log(n, c);
+      return;
+    } else if (i.op === IROp.call) {
+      console.log(v, 'eval', c);
+      return;
+    }
+  });
+}
+
 export function printLowLevelIr(ir: Array<IrInstruction>) {
   ir.forEach((i) => {
     const o = i.op.toUpperCase().padEnd(OP_WIDTH, " ");

@@ -201,6 +201,8 @@ export class Compiler {
     let braket = 0;
     let q = 0;
 
+    if (!ir[0]) return [];
+
     name = green(name || ir[0].meta?.name?.replace(/^&/, '') || "main");
     const filename = blue(ir[0].meta?.filename! || "-");
 

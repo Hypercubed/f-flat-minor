@@ -89,7 +89,7 @@ export class Engine {
     const n = BigInt(code);
     const name = this.getName(n);
     if (this.defs.has(n)) {
-      throw new Error(`cannot redefine system word ${name}`);
+      throw new Error(`Define: cannot redefine system word "${name}"`);
     }
     this.defs.set(n, fn);
   }
@@ -97,13 +97,13 @@ export class Engine {
   private defineUser(s: bigint[], n: bigint) {
     const name = this.getName(n);
     if (n > -1) {
-      throw new Error(`cannot define system op ${name}`);
+      throw new Error(`Define: cannot define system op "${name}"`);
     }
     if (this.defs.has(n)) {
       if (n > -1) {
-        throw new Error(`cannot redefine system op ${name}`);
+        throw new Error(`Define: cannot redefine system op "${name}"`);
       }
-      throw new Error(`cannot redefine user op ${name}`);
+      throw new Error(`Define: cannot redefine user op "${name}"`);
     }
     this.defs.set(n, s);
   }
@@ -125,8 +125,8 @@ export class Engine {
       }
       return r();
     }
-    const name = this.getName(code);
-    throw new Error(`undefined system op call ${name}`);
+    const name = this.getName(code) || code;
+    throw new Error(`Call: undefined system op "${name}"`);
   }
 
   private callUser(code: bigint) {
@@ -141,8 +141,8 @@ export class Engine {
       }
       return;
     }
-    const name = this.getName(code);
-    throw new Error(`undefined user op call ${name}`);
+    const name = this.getName(code) || code;
+    throw new Error(`Call: undefined user op "${name}"`);
   }
 
   private callOp(code: bigint): void {
@@ -184,9 +184,8 @@ export class Engine {
     while (queue.length > 0) {
       const op = queue.shift() || 0n;
 
-      this.traceOn && this.trace(op);
-
       const immediate = !this.depth || IMMEDIATE_WORDS.includes(op);
+      this.traceOn && this.trace(op, immediate);
 
       if (op === 0n) {
         if (!immediate) this.push(op);
@@ -204,8 +203,11 @@ export class Engine {
     return this.stack;
   }
 
-  trace(op: bigint) {
-    const name = this.getName(op);
+  trace(op: bigint, immediate: boolean) {
+    let name = this.getName(op);
+    if (immediate) {
+      name = `*${name}*`;
+    }
     const s = this.stack.map(String).join(" ");
     const q = this.queue.map(String).join(" ");
     console.log(`[ ${s} ] ${name} [ ${q.slice(0 , 10)}...`);

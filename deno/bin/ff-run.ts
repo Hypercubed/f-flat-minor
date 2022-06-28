@@ -7,7 +7,7 @@ import { Compiler } from "../src/compiler.ts";
 import { Engine } from "../src/engine.ts";
 import { Preprocessor } from "../src/preprocess.ts";
 import { readStdin } from "../src/read.ts";
-import { printHighLevelIr, printLowLevelIr } from "../src/ir.ts";
+import { disassembleIr, printHighLevelIr, printLowLevelIr } from "../src/ir.ts";
 import { Optimizer } from "../src/optimizer.ts";
 import { HEADER } from "../src/constants.ts";
 
@@ -71,6 +71,11 @@ export function run(argv: Arguments) {
   
   if (argv.hlir || argv.ir) {
     printLowLevelIr(ir);
+    Deno.exit();
+  }
+
+  if (argv.diss) {
+    disassembleIr(ir);
     Deno.exit();
   }
 
