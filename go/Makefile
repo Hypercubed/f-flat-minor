@@ -18,7 +18,7 @@ test:	ff compile execute interpret
 compile: build/compile
 	@printf "** Go Compiler **"
 	@time ./build/compile -in ../ff/example.ff \
-		| cmp -s -- "./artifacts/example.ffb" "../fixtures/example.ffb" && $(CHECK)
+		| cmp -s -- "../fixtures/example.ffb" && $(CHECK)
 	@echo ""
 	@echo ""
 
@@ -27,7 +27,7 @@ execute: build/execute
 	@printf "** Go Executer **"
 	@time cat ../fixtures/example.ffb \
 		| ./build/execute \
-		| cmp -s -- "./artifacts/example.txt" "../ff/example.out" && $(CHECK)
+		| cmp -s -- "../ff/example.out" && $(CHECK)
 	@echo ""
 	@echo ""
 
@@ -35,7 +35,7 @@ execute: build/execute
 interpret: build/run
 	@printf "** Go Interpreter **"
 	@time ./build/run -in ../ff/example.ff \
-		| cmp -s -- "./artifacts/example.txt" "../ff/example.out" && $(CHECK)
+		| cmp -s -- "../ff/example.out" && $(CHECK)
 	@echo ""
 	@echo ""
 

@@ -1,0 +1,33 @@
+.import ../lib/core.ff
+.import ../lib/primes.ffp
+
+check: /* n i */
+  dup * 2 * -
+  dup 0 >
+  [
+    prime?
+    [ true ]
+    [ next ]
+    branch
+  ]
+  [ drop false ]
+  branch
+;
+
+next:
+  ++
+  dup2
+  check
+;
+
+goldbach-test: 0 next nip nip ;
+
+1000 3000 range
+[ 2 * 1 + ] map!
+[
+  [ prime? not ]
+  [ goldbach-test not ]
+  and_also
+] filter!
+
+head! . /* 5777 */

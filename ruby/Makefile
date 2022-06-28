@@ -8,7 +8,7 @@ interpret:
 	@printf "** Ruby Interpreter **"
 	@time cat ../ff/example.ff \
 		| ./execute.rb \
-		| cmp -s - "./artifacts/example.txt" && $(CHECK);
+		| cmp -s -- "../fixtures/example.txt" && $(CHECK);
 	@echo ""
 	@echo ""
 

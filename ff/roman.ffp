@@ -1,0 +1,48 @@
+.import ./lib/core.ff
+
+I: 1 'I' putc ;
+V: 5 'V' putc ;
+X: 10 'X' putc ;
+L: 50 'L' putc ;
+C: 100 'C' putc ;
+D: 500 'D' putc ;
+M: 1000 'M' putc ;
+
+roman!: [ dup2 < [ [ -1 * ] dip ] ? ] 1000 foldl! sum! 1000 - 0 '\t' prints print cr ;
+
+I roman!
+I I roman!
+I I I roman!
+I V roman!
+V roman!
+V I roman!
+V I I roman!
+V I I I roman!
+I X roman!
+X roman!
+
+X I roman!
+X I I roman!
+X I I I roman!
+X I V roman!
+X V roman!
+X V I roman!
+X V I I roman!
+X V I I I roman!
+X I X roman!
+X X roman!
+
+D X roman!
+D X X roman!
+D X X X roman!
+D X L roman!
+D L roman!
+D L X roman!
+D L X X roman!
+D L X X X roman!
+D X C roman!
+
+M C M X C roman! /* 1900 */
+M D C L X V I roman! /* 1666 */
+M M V I I I roman! /* 2008 */
+M M X X I I roman!  /* 2020 */

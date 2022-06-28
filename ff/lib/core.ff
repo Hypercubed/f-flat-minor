@@ -95,7 +95,7 @@ count: 0 swap ++ [ succ ] seq drop ;
 
 /* stack reduction */
 tail!: q< clr q> ;
-head!: [ drop ] reduce ;
+head!: [ drop ] reduce! ;
 
 _reduce_r: depth 3 > [ dup slip _reduce_r ] ? ;
 reduce_r!: _reduce_r eval ;

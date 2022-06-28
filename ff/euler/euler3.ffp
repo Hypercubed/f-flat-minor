@@ -1,0 +1,18 @@
+.import ../lib/core.ff
+.import ../lib/primes.ffp
+
+_factor_trial_loop: % 0 > [ next-prime _factor_trial_loop ] ? ;
+_factor_trial_by_division: 2 _trial_loop nip ;
+
+factors:
+  dup 3 > [
+    dup prime? not
+    [
+      dup _factor_trial_by_division swap over / factors
+    ]
+    ?
+  ]
+  ?
+;
+
+600851475143 factors tail! . /* 6857 */

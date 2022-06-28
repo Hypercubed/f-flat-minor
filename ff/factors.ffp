@@ -1,0 +1,33 @@
+.import ./lib/core.ff
+.import ./lib/primes.ffp
+
+_factor_trial_loop: % 0 > [ next-prime _factor_trial_loop ] ? ;
+_factor_trial_by_division: 2 _trial_loop nip ;
+
+factors:
+  dup 3 > [
+    dup prime? not
+    [
+      dup _factor_trial_by_division swap over / factors
+    ]
+    ?
+  ]
+  ?
+;
+
+1 dup factors . clr
+5 dup factors . clr
+7 dup factors . clr
+8 dup factors . clr
+12 dup factors . clr
+16 dup factors . clr
+36 dup factors . clr
+999 dup factors . clr
+
+13195 dup factors . clr
+
+6700417 dup factors . clr
+6700418 dup factors . clr
+6700419 dup factors . clr
+
+600851475143 dup factors . clr /* 6857 */
