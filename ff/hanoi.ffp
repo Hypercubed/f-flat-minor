@@ -1,0 +1,30 @@
+.load ./lib/core.ff
+
+over2: [ over ] dip swap ;
+over3: [ over2 ] dip swap ;
+
+dup4: over3 over3 over3 over3 ;
+drop4: drop drop drop drop ;
+
+print-move: 0 'from\s' prints over2 putc 0 '\sto\s' prints over putc cr ;
+
+dec-n: [ rot -- rot ] dip ;
+
+move:  /* n a b c */
+  dup4 over3 [
+    dec-n swap move
+    print-move
+    bury move
+  ]
+  ?
+  drop4
+;
+
+/* n = number of disks */
+
+3 'A' 'B' 'C' move
+
+drop drop drop
+2 swap ^ --
+cr print
+0 '\smoves' println

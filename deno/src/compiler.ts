@@ -3,6 +3,7 @@ import { blue, green, cyan } from "https://deno.land/std@0.139.0/fmt/colors.ts";
 
 import { IrInstruction, IROp } from "./ir.ts";
 import { OpCodes, systemWords } from "./opcodes.ts";
+import { unescapeString } from "./strings.ts";
 import { encode } from "./vlq.ts";
 
 const COMMENT_START = "/*";
@@ -117,7 +118,7 @@ export class Compiler {
           }
         }
       } else if (ss[0] === "'") { // String
-        convertEsc2Char(ss)
+        unescapeString(ss)
           .replace(/^'/, "") // TODO: use backtick?
           .replace(/'$/, "")
           .split("")
@@ -237,17 +238,4 @@ export class Compiler {
   }
 }
 
-function convertEsc2Char(str: string): string {
-  return str
-    .replace(/\\0/g, "\0")
-    .replace(/\\b/g, "\b")
-    .replace(/\\t/g, "\t")
-    .replace(/\\n/g, "\n")
-    .replace(/\\v/g, "\v")
-    .replace(/\\f/g, "\f")
-    .replace(/\\r/g, "\r")
-    .replace(/\\'/g, `'`)
-    .replace(/\\"/g, '"')
-    .replace(/\\s/g, " ")
-    .replace(/\\\\/g, "\\");
-}
+

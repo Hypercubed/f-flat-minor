@@ -27,6 +27,7 @@ OK
     1 lg 0 assert_eq
     16 lg 4 assert_eq
     1024 lg 10 assert_eq
+    65536 lg 16 assert_eq
 OK
 
 0 'Large\slog2' prints
@@ -49,6 +50,7 @@ OK
     2 2 <= assert
     6 6 >= assert
     8 7 >= assert
+    8 7 != assert
 
     1 5 max 5 assert_eq
     13 8 max 13 assert_eq

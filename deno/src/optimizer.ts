@@ -137,7 +137,11 @@ export class Optimizer {
     post_optimization_user_defs: 0,
     inlined_calls: 0,
     peephole_optimizations: 0,
+    optimization_passes: 0
   };
+
+  minOptPasses = 2;
+  maxOptPasses = 20;
 
   private defs = new Map<BigInt, IrInstruction[]>();
   private calledWords = new Set<BigInt>();
@@ -156,15 +160,25 @@ export class Optimizer {
 
     this.optimized = ir;
 
-    this.optimized = this.peepholeOptimization(this.optimized);
-    this.optimized = this.getDefs(this.optimized);
-    this.optimized = this.inlineWords(this.optimized, 4);
-    this.optimized = this.peepholeOptimization(this.optimized);
+    let len;
+
+    do {
+      len = this.optimized.length;
+      this.optLoop();
+    } while((this.optimized.length < len || this.stats.optimization_passes < this.minOptPasses) && this.stats.optimization_passes < this.maxOptPasses);
+
     this.optimized = this.pullDefs(this.optimized);
     this.optimized = this.addReferencedWords(this.optimized);
 
     this.stats.post_optimization_ir_size = this.optimized.length;
     return this.optimized;
+  }
+
+  private optLoop() {
+    this.optimized = this.peepholeOptimization(this.optimized);
+    this.optimized = this.getDefs(this.optimized);
+    this.optimized = this.inlineWords(this.optimized, 4);
+    this.stats.optimization_passes++;
   }
 
   private reset() {
@@ -180,17 +194,21 @@ export class Optimizer {
       post_optimization_user_defs: 0,
       inlined_calls: 0,
       peephole_optimizations: 0,
+      optimization_passes: 0
     };
   }
 
   private getDefs(ir: Array<IrInstruction>) {
     let ip = 0;
+
     while (ip < ir.length) {
       const i = ir[ip];
       if (i.op === IROp.call) {
         if (i.value === KET) {
           // anon defs
-          this.stats.user_defined_anon_defs++;
+          if (this.stats.optimization_passes === 0) {
+            this.stats.user_defined_anon_defs++;
+          }
 
           let pi = ip;
           while (pi-- > 0) {
@@ -225,7 +243,9 @@ export class Optimizer {
           this.defs.set(n.value, def);
         } else if (i.value === DEF) {
           // named defs
-          this.stats.user_defined_named_defs++;
+          if (this.stats.optimization_passes === 0) {
+            this.stats.user_defined_named_defs++;
+          }
 
           let pi = ip;
           while (pi-- > 0) {

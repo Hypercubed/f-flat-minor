@@ -38,7 +38,7 @@ export function decode(base64Vlqs: string): bigint[] {
  *   2 becomes 4 (100 binary), -2 becomes 5 (101 binary)
  */
 function toVLQSigned(x: bigint): bigint {
-  return x < 0n ? ((-x) << 1n) + 1n : (x << 1n) + 0n;
+  return (x >= 0n) ? (x << 1n) : (-x << 1n) + 1n;
 }
 
 /**
@@ -48,9 +48,7 @@ function toVLQSigned(x: bigint): bigint {
  *   4 (100 binary) becomes 2, 5 (101 binary) becomes -2
  */
 function fromVLQSigned(aValue: bigint): bigint {
-  const isNegative = (aValue & 1n) === 1n;
-  const shifted = aValue >> 1n;
-  return isNegative ? -shifted : shifted;
+  return (aValue & 1n) ? -(aValue >> 1n) : aValue >> 1n;
 }
 
 /**

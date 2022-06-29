@@ -53,6 +53,7 @@ OK
     6 6 > assert_false
     8 7 > assert
     9 10 = assert_false
+    10 10 = assert
 OK
 
 0 'Control\sFlow' prints 
