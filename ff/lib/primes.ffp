@@ -9,7 +9,7 @@ _trial_by_division: 5 _trial_loop dup * < ;
 /* First 10000 primes encoded as bits (/2) */
 N: 
 .load ./primes-encoded.ff
-;
+; .unsafe
 
 M: 104729 ;  /* Largest prime encoded in primes-encoded.ff */
 

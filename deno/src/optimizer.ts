@@ -344,6 +344,7 @@ export class Optimizer {
     const _ir = ir.slice();
 
     while (true) {
+      const startCount = this.stats.peephole_optimizations;
       const len = _ir.length;
       let ip = 0;
       while (ip < _ir.length) {
@@ -363,7 +364,7 @@ export class Optimizer {
         ip++;
       }
 
-      if (_ir.length >= len) {
+      if (this.stats.peephole_optimizations >= startCount) {
         break;
       }
     }
@@ -382,7 +383,7 @@ export class Optimizer {
     ret = ret.flatMap((i) => {
       if (i.op === IROp.call && this.defs.has(i.value)) {
         const def = this.defs.get(i.value);
-        if (def) {
+        if (def && !def[def.length - 1].meta?.unsafe) {
           if (def[def.length - 1].meta?.inline) {
             this.stats.inlined_calls++;
             return this.inlineWords(def.slice(2, -1), Infinity);
