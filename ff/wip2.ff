@@ -1,0 +1,8 @@
+--: 1 - ;
+rot: swap q< swap q> swap ; .inline
+choose: rot  [ swap ] ? drop ; .inline
+branch: choose eval ; .inline
+
+fact: dup [ dup -- fact * ] [ drop 1 ] branch ;
+
+10 fact .inline .

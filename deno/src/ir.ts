@@ -1,4 +1,5 @@
 import { blue, green, red, cyan } from "https://deno.land/std@0.139.0/fmt/colors.ts";
+import { OpCodes } from "./opcodes.ts";
 
 interface Meta {
   comment: string;
@@ -23,6 +24,8 @@ export enum IROp {
 
 const OP_WIDTH = 6;
 const VALUE_WIDTH = 10;
+
+const encoder = new TextEncoder()
 
 export function printHighLevelIr(ir: Array<IrInstruction>) {
   ir.forEach((i) => {
@@ -54,32 +57,63 @@ export function printHighLevelIr(ir: Array<IrInstruction>) {
   });
 }
 
+function print(...args: string[]) {
+  Deno.stdout.writeSync(encoder.encode(args.join(' ')));
+}
+
+function printCall(i: IrInstruction) {
+  const n = i.meta?.name || `$_${i.value}:`;
+  print(`${n} `);
+  if (i.meta?.comment?.trim()) {
+    print(`/* ${i.meta?.comment} */`, "\n");
+  }
+}
+
+function printPush(i: IrInstruction) {
+  const v = String(i.value);
+  print(`${v} `);
+  if (i.meta?.comment?.trim()) {
+    print(`/* ${i.meta?.comment} */`, "\n");
+  }
+}
+
+function printPointer(i: IrInstruction) {
+  const n = i.meta?.name || `$_${i.value}`;
+  print(`&${n} `);
+  if (i.meta?.comment?.trim()) {
+    print(`/* ${i.meta?.comment} */`, "\n");
+  }
+}
+
+function defWord(i: IrInstruction) {
+  const n = i.meta?.name || `$_${i.value}`;
+  print(`${n}: `);
+  if (i.meta?.comment?.trim()) {
+    print(`/* ${i.meta?.comment} */`, "\n");
+  }
+}
+
 export function disassembleIr(ir: Array<IrInstruction>) {
-  ir.forEach((i) => {
-    const c = i.meta?.comment?.trim() ? `/* ${i.meta?.comment} */` : "";
-    const n = ("" + i.meta?.name).padEnd(VALUE_WIDTH, " ");
-    const v = ("" + i.value).padEnd(VALUE_WIDTH, " ");
-    // const o = i.op.toUpperCase();
+  for (let ip = 0; ip < ir.length; ip++) {
+    const i = ir[ip];
 
-    // let m = '';
-    // m = i.meta?.inline ? ".inline" : "";
-    // m = i.meta?.pointer ? ".pointer" : m;
-    // m = m.trim();
-
-    if (i.op === IROp.push) {
-      console.log(v, c);
-      return;
-    } else if (i.op === IROp.call && i.value === 0n) {
-      console.log("    ", c);
-      return;
-    } else if (i.op === IROp.call && i.value >= 0n) {
-      console.log(n, c);
-      return;
+    if (i.op === IROp.push && i.meta?.pointer) {
+      if (ir[ip + 1].op === IROp.call && ir[ip + 1].value === BigInt(OpCodes.MARK)) {
+        defWord(i);
+        ip++;
+      } else {
+        printPointer(i);
+      }
+    } else if (i.op === IROp.push) {
+      if (ir[ip + 1].op === IROp.call && ir[ip + 1].value === BigInt(OpCodes.BRA)) {
+        continue;
+      } else {
+        printPush(i);
+      }
     } else if (i.op === IROp.call) {
-      console.log(v, 'eval', c);
-      return;
-    }
-  });
+      printCall(i);
+    }    
+  }
 }
 
 export function printLowLevelIr(ir: Array<IrInstruction>) {

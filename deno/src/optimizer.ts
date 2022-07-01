@@ -345,7 +345,6 @@ export class Optimizer {
 
     while (true) {
       const startCount = this.stats.peephole_optimizations;
-      const len = _ir.length;
       let ip = 0;
       while (ip < _ir.length) {
         for (const rule of rules) {
@@ -377,31 +376,30 @@ export class Optimizer {
    * @param ir - Array<IrInstruction>
    * @returns The inlined words.
    */
-  private inlineWords(ir: Array<IrInstruction>, len = 1) {
-    let ret = ir;
-    // do {
-    ret = ret.flatMap((i) => {
+  private inlineWords(ir: Array<IrInstruction>, len = 1, seen: BigInt[] = []): Array<IrInstruction> {
+    return ir.flatMap((i) => {
+      if (i.meta?.unsafe) return i;
+
       if (i.op === IROp.call && this.defs.has(i.value)) {
+        if (seen.includes(i.value)) return i;
+        
         const def = this.defs.get(i.value);
-        if (def && !def[def.length - 1].meta?.unsafe) {
-          if (def[def.length - 1].meta?.inline) {
-            this.stats.inlined_calls++;
-            return this.inlineWords(def.slice(2, -1), Infinity);
-          }
-          if (i.meta?.inline) {
-            this.stats.inlined_calls++;
-            return this.inlineWords(def.slice(2, -1), Infinity);
-          }
-          if (def.length <= len + 3 && !i.meta?.unsafe) {
-            this.stats.inlined_calls++;
-            return def.slice(2, -1);
-          }
+        if (!def) return i;
+
+        const last = def[def.length - 1];
+        if (last.meta?.unsafe) return i;
+
+        if (last.meta?.inline || i.meta?.inline) {
+          this.stats.inlined_calls++;
+          return this.inlineWords(def.slice(2, -1), Infinity, seen.concat(i.value));
+        }
+        if (def.length <= len + 3) {
+          this.stats.inlined_calls++;
+          return this.inlineWords(def.slice(2, -1), len, seen.concat(i.value));
         }
       }
       return i;
     });
-    // } while(ret.length !== ir.length);  // todo: catch run away loop
-    return ret;
   }
 
   /**

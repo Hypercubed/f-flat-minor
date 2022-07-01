@@ -49,6 +49,7 @@ ff: build/run
 			if [ -f "$${out}" ]; then \
 				printf "cmp $${f} $${out} "; \
 				./go/build/run -in $${f} 2>/dev/null | cmp - $${out} -s && $(CHECK); \
+				./deno/build/compile $${f} --opt | ./go/build/execute 2>/dev/null | cmp - $${out} -s && $(CHECK); \
 				echo ""; \
 			fi \
 		done

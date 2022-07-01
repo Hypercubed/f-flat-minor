@@ -82,7 +82,7 @@ def run ()
       if o = $syms[item[1..-1]]
         $stack.push o
       end
-    elsif item[-1] == ":"
+    elsif item[-1] == ":" && item.length() > 1
       d = Array.new
       while $queue.length() > 0
         s = $queue.shift

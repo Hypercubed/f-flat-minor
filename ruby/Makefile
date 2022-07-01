@@ -28,6 +28,7 @@ ff:
 				else \
 					cat $${f} | ./ruby/execute.rb 2>/dev/null | cmp - $${out} -s && $(CHECK); \
 				fi; \
+				./deno/build/compile $${f} --opt --disassemble | ./ruby/execute.rb 2>/dev/null | cmp - $${out} -s && $(CHECK); \
 				echo ""; \
 			fi \
 		done

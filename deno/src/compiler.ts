@@ -129,7 +129,7 @@ export class Compiler {
       } else if (ss.endsWith(":")) { // Definition
         if (ss.length > 1) {
           const name = ss.replace(/:$/, "");
-          push(this.getSymbol(name), { name: `&${name}`, pointer: true });
+          push(this.getSymbol(name), { name: `${name}`, pointer: true });
         }
         call(OpCodes.MARK, { name: ":" });
       } else if (ss === COMMENT_START) { // Comment

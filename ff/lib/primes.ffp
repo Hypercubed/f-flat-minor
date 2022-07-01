@@ -14,7 +14,7 @@ N:
 M: 104729 ;  /* Largest prime encoded in primes-encoded.ff */
 
 /* Lookup prime in encoded list */
-_prime-lookup: N swap 2 / >> 1 & ;
+_prime-lookup: N swap 2 / >> 1 & ; .unsafe
 
 /* invoke lookup or trial division test */
 prime?: 
