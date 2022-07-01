@@ -6,6 +6,8 @@ const KET = BigInt(OpCodes.KET);
 const MARK = BigInt(OpCodes.MARK);
 const BRA = BigInt(OpCodes.BRA);
 
+// const Any = (inst: IrInstruction) => true;
+
 const Call = (op: number | bigint) => {
   op = BigInt(op);
   return (inst: IrInstruction) => inst.op === IROp.call && inst.value === op;
@@ -63,7 +65,7 @@ const rules: Rule[] = [
     replacement: () => [],
   },
   {
-    name: "Algebraic Simplification - NOT NOT",
+    name: "Null Sequence - NOT NOT",
     pattern: [Call(OpCodes.NOT), Call(OpCodes.NOT)],
     replacement: () => [],
   },
@@ -84,24 +86,54 @@ const rules: Rule[] = [
     replacement: () => [],
   },
   {
-    name: "Algebraic Simplification - a b ADD",
+    name: "Constant Folding - a b ADD",
     pattern: [PushAny, PushAny, Call(OpCodes.ADD)],
     replacement: (a, b) => [{ op: IROp.push, value: a.value + b.value }],
   },
   {
-    name: "Algebraic Simplification - a b SUB",
+    name: "Algebraic Simplification - 0 ADD",
+    pattern: [Push(0), Call(OpCodes.ADD)],
+    replacement: () => [],
+  },
+  {
+    name: "Algebraic Simplification - swap ADD",
+    pattern: [Call(OpCodes.SWAP), Call(OpCodes.ADD)],
+    replacement: (_, b) => [b],
+  },
+  {
+    name: "Constant Folding - a b SUB",
     pattern: [PushAny, PushAny, Call(OpCodes.SUB)],
     replacement: (a, b) => [{ op: IROp.push, value: a.value - b.value }],
   },
   {
-    name: "Algebraic Simplification - a b MUL",
+    name: "Algebraic Simplification - 0 SUB",
+    pattern: [Push(0), Call(OpCodes.SUB)],
+    replacement: () => [],
+  },
+  {
+    name: "Constant Folding - a b MUL",
     pattern: [PushAny, PushAny, Call(OpCodes.MUL)],
     replacement: (a, b) => [{ op: IROp.push, value: a.value * b.value }],
   },
   {
-    name: "Algebraic Simplification - a b DIV",
+    name: "Algebraic Simplification - 1 MUL",
+    pattern: [Push(1), Call(OpCodes.MUL)],
+    replacement: () => [],
+  },
+  {
+    name: "Algebraic Simplification - swap MUL",
+    pattern: [Call(OpCodes.SWAP), Call(OpCodes.MUL)],
+    replacement: (_, b) => [b],
+  },
+  {
+    name: "Constant Folding - a b DIV",
     pattern: [PushAny, PushNz, Call(OpCodes.DIV)],
     replacement: (a, b) => [{ op: IROp.push, value: a.value / b.value }],
+  },
+  {
+    name: "Algebraic Simplification - 1 DIV",
+    pattern: [Push(1), Call(OpCodes.DIV)],
+    replacement: () => [],
   },
   {
     name: "Constant propagation - a DUP",
@@ -124,9 +156,35 @@ const rules: Rule[] = [
       },
     ],
   },
-  // ∗ 2^n -> n <<
-  // / 2^n -> n >>
+  {
+    name: "Null Sequence - 0 eval",
+    pattern: [Push(0), Call(OpCodes.CALL)],
+    replacement: () => [],
+  },
+  {
+    name: "Flows-Of-Control Optimizations - n [ ]",
+    pattern: [PushAny, Call(OpCodes.BRA), Call(OpCodes.KET)],
+    replacement: () => [
+      {
+        op: IROp.push,
+        value: 0n,
+        meta: { pointer: true, name: "0" },
+      },
+    ],
+  },
+  {
+    name: "a q< b a> - b a",
+    pattern: [PushAny, Call(OpCodes.PUSHR), PushAny, Call(OpCodes.PULLR)],
+    replacement: (a, _, b) => [ b, a ],
+  },
+  // Strength reduction
+  // 2 * -> 1 <<
+  // 2 / -> 1 >>
+  // 2^n * -> n << ??
+  // 2^n / -> n >> ??
 ];
+
+// TODO: replace empty defs with &NOP
 
 export class Optimizer {
   stats = {
@@ -161,6 +219,10 @@ export class Optimizer {
     this.optimized = ir;
 
     let len;
+
+    // TODO: hoist anon defs first
+    // this.optimized = this.pullDefs(this.optimized, true);
+    // this.optimized = this.addReferencedWords(this.optimized);
 
     do {
       len = this.optimized.length;
@@ -271,7 +333,7 @@ export class Optimizer {
    * @param ir - Array<IrInstruction>
    * @returns The IR with all the defs pulled out.
    */
-  private pullDefs(ir: Array<IrInstruction>) {
+  private pullDefs(ir: Array<IrInstruction>, onlyAnon = false) {
     const _ir = ir.slice();
 
     let ip = 0;
@@ -312,7 +374,7 @@ export class Optimizer {
           };
 
           this.defs.set(n.value, def);
-        } else if (i.value === DEF) {
+        } else if (i.value === DEF && !onlyAnon) {
           // named defs
           const end = ip;
           while (ip-- > 0) {
@@ -348,14 +410,13 @@ export class Optimizer {
       let ip = 0;
       while (ip < _ir.length) {
         for (const rule of rules) {
-          const pattern = rule.pattern;
-          const replacement = rule.replacement;
+          const {pattern, replacement} = rule;
           const match = pattern.every((fn, i) => fn(_ir[ip + i]));
           if (match) {
             this.stats.peephole_optimizations++;
             const args = _ir.slice(ip, ip + pattern.length);
             _ir.splice(ip, pattern.length, ...replacement(...args));
-            ip = Math.max(0, ip - 4);
+            ip = Math.max(0, ip - pattern.length - 1);
             break;
           }
         }
