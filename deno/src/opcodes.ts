@@ -78,6 +78,5 @@ export const systemWords = {
   "~": OpCodes.NOT,
 };
 
-// CMP?
-// EXIT/HALT
-// INLINE?
+export const MAX_SYSTEM_OP_CODE = 0xFF;
+

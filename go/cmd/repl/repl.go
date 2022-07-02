@@ -13,7 +13,7 @@ func executor(code string) {
 	tokens := compiler.Tokenize(code)
 	ir := compiler.CompileToIR(tokens, filepath)
 	bigInt := compiler.CompileToBigIntArray(ir)
-	engine.ExecuteBigIntCode(bigInt)
+	engine.Run(bigInt)
 	engine.Print()
 }
 

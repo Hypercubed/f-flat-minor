@@ -193,7 +193,7 @@ func CompileToIR(t []string, filename string) []IrInstruction {
 			} else if tokens[0] == ".m" {
 				ir := CompileToIR(Tokenize(tokens[1]), filename)
 				bigCode := CompileToBigIntArray(ir)
-				engine.ExecuteBigIntCode(bigCode)
+				engine.Run(bigCode)
 				for i, item := range engine.GetStack() {
 					if i == 0 {
 						push(item, "")
@@ -208,8 +208,8 @@ func CompileToIR(t []string, filename string) []IrInstruction {
 				bigCode := CompileToBigIntArray(ret)
 				printBigIntArray(bigCode)
 			}
-		} else if strings.HasPrefix(element, "&") && len(element) > 1 {
-			push(getSymbol(element[1:]), element)
+		} else if strings.HasPrefix(element, "[") && strings.HasSuffix(element, "]") {
+			push(getSymbol(element[1:len(element)-1]), element)
 		} else if strings.HasPrefix(element, "'") {
 			l := 0
 			if strings.HasSuffix(element, "'") {
@@ -241,9 +241,6 @@ func CompileToIR(t []string, filename string) []IrInstruction {
 				}
 			}
 			call(NewInt(0), comment)
-		} else if element == SYM_BRA {
-			push(NewInt(nextCode()), element)
-			call(NewInt(OP_BRA), element)
 		} else {
 			call(getSymbol(element), element)
 		}
@@ -292,8 +289,6 @@ func convertEsc2Char(str string) string {
 func getFilepath(filename string, source string) string {
 	if filename != "" && !path.IsAbs(filename) {
 		relative := path.Join(filepath.Dir(source), filename)
-		println(source)
-		println(relative)
 		if _, err := os.Stat(relative); err == nil {
 			return relative
 		}

@@ -78,8 +78,8 @@ def run ()
       unescape(e).reverse!.each_byte do |c|
         $stack.push c
       end
-    elsif item[0] == "&" && item.length() > 1
-      if o = $syms[item[1..-1]]
+    elsif item[0] == "[" && item[-1] == "]"
+      if o = $syms[item[1..-2]]
         $stack.push o
       end
     elsif item[-1] == ":" && item.length() > 1

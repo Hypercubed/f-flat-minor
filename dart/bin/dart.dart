@@ -155,8 +155,8 @@ void ev(List<String> tokens) {
     } else if (symbols[token] != null) {
       var code = getSymbol(token);
       callOp(code);
-    } else if (token.startsWith('&')) {
-      var name = token.substring(1);
+    } else if (token.startsWith('[') && token.endsWith(']')) {
+      var name = token.substring(1, token.length - 1);
       stack.add(getSymbol(name));
     } else if (token.endsWith(':')) {
       var name = token.substring(0, token.length - 1);

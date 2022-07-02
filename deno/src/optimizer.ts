@@ -1,12 +1,10 @@
 import { IrInstruction, IROp } from "./ir.ts";
-import { OpCodes } from "./opcodes.ts";
+import { MAX_SYSTEM_OP_CODE, OpCodes } from "./opcodes.ts";
 
 const DEF = BigInt(OpCodes.DEF);
 const KET = BigInt(OpCodes.KET);
 const MARK = BigInt(OpCodes.MARK);
 const BRA = BigInt(OpCodes.BRA);
-
-// const Any = (inst: IrInstruction) => true;
 
 const Call = (op: number | bigint) => {
   op = BigInt(op);
@@ -208,6 +206,7 @@ export class Optimizer {
   private calledWords = new Set<BigInt>();
 
   private optimized: Array<IrInstruction> = [];
+  private nextAnonOp = MAX_SYSTEM_OP_CODE + 1;
 
   /**
    * It takes an array of IR instructions, and returns an array of optimized IR instructions
@@ -275,27 +274,28 @@ export class Optimizer {
             this.stats.user_defined_anon_defs++;
           }
 
+          i.meta ??= {};
+          i.meta.uid ??= this.nextAnonOp++;
+
           let pi = ip;
           while (pi-- > 0) {
             const j = ir[pi];
             if (j.op === IROp.call && j.value === BRA) break;
           }
-          const n = ir[pi - 1];
-          n.meta ||= {};
-          n.meta.pointer = true;
-
+          const op = BigInt(i.meta.uid);
+          const inst = { op: IROp.push, value: op, meta: { pointer: true } };
           const def = ir.slice(pi, ip + 1);
 
           // Convert anon def to named def
-          def[0] = {
-            ...def[0],
+          def.unshift(inst);
+          def[1] = {
+            ...def[1],
             value: MARK,
             meta: {
-              ...def[0].meta,
+              ...def[1].meta,
               name: ":",
             },
           };
-          def.unshift(n);
           def[def.length - 1] = {
             ...def[def.length - 1],
             value: DEF,
@@ -305,7 +305,7 @@ export class Optimizer {
             },
           };
 
-          this.defs.set(n.value, def);
+          this.defs.set(op, def);
         } else if (i.value === DEF) {
           // named defs
           if (this.stats.optimization_passes === 0) {
@@ -345,28 +345,30 @@ export class Optimizer {
 
       if (i.op === IROp.call) {
         if (i.value === KET) {
+
+          i.meta ??= {};
+          i.meta.uid ??= this.nextAnonOp++;      
+
           // anon defs
           const end = ip;
           while (ip-- > 0) {
             const j = _ir[ip];
             if (j.op === IROp.call && j.value === BRA) break;
           }
-          const n = _ir[ip - 1];
-          n.meta ||= {};
-          n.meta.pointer = true;
-
-          const def = _ir.splice(ip, end - ip + 1);
+          const op = BigInt(i.meta.uid);
+          const inst = { op: IROp.push, value: op, meta: { pointer: true } };
+          const def = _ir.splice(ip, end - ip + 1, inst);
 
           // Convert anon def to named def
-          def[0] = {
-            ...def[0],
+          def.unshift(inst);
+          def[1] = {
+            ...def[1],
             value: MARK,
             meta: {
-              ...def[0].meta,
+              ...def[1].meta,
               name: ":",
             },
           };
-          def.unshift(n);
           def[def.length - 1] = {
             ...def[def.length - 1],
             value: DEF,
@@ -376,7 +378,7 @@ export class Optimizer {
             },
           };
 
-          this.defs.set(n.value, def);
+          this.defs.set(op, def);
         } else if (i.value === DEF && !onlyAnon) {
           // named defs
           const end = ip;

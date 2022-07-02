@@ -2,19 +2,19 @@
 
 --: 1 - ;
 rot: swap q< swap q> swap ;
-choose: rot &swap ? drop ;
+choose: rot [swap] ? drop ;
 branch: choose eval ;
 
 /* factorial */
 
 fact_t: dup -- fact * ;
 fact_f: drop 1 ;
-fact: dup &fact_t &fact_f branch ;
+fact: dup [fact_t] [fact_f] branch ;
 
 /* string printing */
 
 print_t: putc prints ;
-prints: dup &print_t &drop branch ;
+prints: dup [print_t] [drop] branch ;
 println: prints 10 putc ;
 
 0 32 'Factorial prints

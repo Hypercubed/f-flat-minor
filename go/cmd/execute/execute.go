@@ -33,5 +33,5 @@ func main() {
 
 	base64 := string(buf)
 	bigint := engine.FromBase64(base64)
-	engine.ExecuteBigIntCode(bigint)
+	engine.Run(bigint)
 }

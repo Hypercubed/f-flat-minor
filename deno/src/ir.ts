@@ -9,6 +9,7 @@ interface Meta {
   unsafe: boolean;
   filename: string;
   line: number;
+  uid: number;
 }
 
 export interface IrInstruction {
@@ -62,8 +63,10 @@ function print(...args: string[]) {
 }
 
 function printCall(i: IrInstruction) {
-  const n = i.meta?.name || `$_${i.value}:`;
-  print(`${n} `);
+  const n = i.meta?.name || `$_${i.value}`;
+  if (i.value !== 0n) {
+    print(`${n} `);
+  }
   if (i.meta?.comment?.trim()) {
     print(`/* ${i.meta?.comment} */`, "\n");
   }
@@ -79,7 +82,7 @@ function printPush(i: IrInstruction) {
 
 function printPointer(i: IrInstruction) {
   const n = i.meta?.name || `$_${i.value}`;
-  print(`&${n} `);
+  print(`[${n}] `);
   if (i.meta?.comment?.trim()) {
     print(`/* ${i.meta?.comment} */`, "\n");
   }
