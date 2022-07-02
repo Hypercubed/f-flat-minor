@@ -182,6 +182,9 @@ const rules: Rule[] = [
   // 2 / -> 1 >>
   // 2^n * -> n << ??
   // 2^n / -> n >> ??
+  // a b <
+  // a b >
+  // a b =
 ];
 
 // TODO: replace empty defs with &NOP
