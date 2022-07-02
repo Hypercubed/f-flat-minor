@@ -12,6 +12,7 @@ reset: ./ff/lib/primes-encoded.ff
 
 .PHONY: build
 build:
+	@$(MAKE) -s -C cpp $@ --no-print-directory;
 	@$(MAKE) -s -C deno $@ --no-print-directory;
 	@$(MAKE) -s -C go $@ --no-print-directory;
 	@$(MAKE) -s -C dart $@ --no-print-directory;

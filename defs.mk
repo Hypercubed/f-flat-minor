@@ -4,7 +4,7 @@ NC=\033[0m
 GRN=\033[0;32m
 BLUE=\033[0;34m
 
-SUBDIRS := deno go python ruby dart
+SUBDIRS := deno go python ruby dart cpp
 FF = ./ff{,/*}/*.{ff,ffp}
 
 define FOREACH
