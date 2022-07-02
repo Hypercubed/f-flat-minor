@@ -12,7 +12,25 @@ f-flat-minor is a tiny toy language and baby brother to [f-flat](https://github.
 
 ## The Target
 
-Each implementation should compile and execute the following code:
+### v0
+
+The most basic implementations of f-flat-minor has a limited vocabulary necessary to calculate the factorial of 100.
+
+```forth
+[rot] : swap q< swap q> swap ;
+[choose] : rot [swap] ? drop ;
+[branch] : choose eval ;
+
+[fact_t] : dup 1 - fact * ;
+[fact_f] : drop 1 ;
+[fact] : dup [fact_t] [fact_f] branch ;
+
+100 fact .
+```
+
+### v1
+
+v1 add compiler sugar for comments, strings, and quotes as well as addition words (shown in the table below).
 
 ```forth
 /* common definitions */
@@ -43,37 +61,6 @@ with the following output:
 Factorial 100:
 [ 93326215443944152681699238856266700490715968264381621468592963895217599993229915608941463976156518286253697920827223758251185210916864000000000000000000000000 ]
 ```
-
-<details>
-  <summary>For an initial POC an interpreter can implement v0 (neglecting quotes) generating the same output</summary>
-  
-```forth
-/* common definitions */
-
---: 1 - ;
-rot: swap q< swap q> swap ;
-choose: rot [swap] ? drop ;
-branch: choose eval ;
-
-/* factorial */
-
-fact_t: dup -- fact * ;
-fact_f: drop 1 ;
-fact: dup [fact_t] [fact_f] branch ;
-
-/* string printing */
-
-print_t: putc prints ;
-prints: dup [print_t] [drop] branch ;
-println: prints 10 putc ;
-
-0 32 'Factorial prints
-0 '100: println
-
-100 fact .
-```
-
-</details>
 
 ## The Approach
 
@@ -124,6 +111,8 @@ I won't cover the basics of stack based contaminative programming here.  The sys
 
 A few peculiarities are:
 
+### v0
+
 *Values* - When a token is encountered that can be parsed as a integer, that value is pushed to the stack.  All other tokens are considered to be words.
 
 *Booleans* - There is not a boolean type in f-flat-minor.  Instead, `0` is interpreted as false and all other values are truthy.
@@ -132,11 +121,13 @@ A few peculiarities are:
 
 *Pointers* - When a word is encountered that starts with an `[` symbol the operation is not called but instead the numeric value of the operation is pushed to the stack.  For example `[+] eval` is the same `43 eval` which is the same as as calling `+` directly.  If a token is encountered that is not a known word or a definition a new *pointer* is pushed to the stack.  If the executer attempts to evaluate a pointer that is not a valid operation the executer will throw an error.
 
-*Definitions* - The words `:` and `;` indicate a definition.  When a word is encountered that ends with a `:` symbol the operation is not called but instead starts a new definition.  The definition is terminated by `;` and the definition is removed from the stack (or queue depending on specific implementation).  The starting word (text before `:`) is the key for the new definition.  Definitions can be recursive but cannot be nested.  Definitions cannot be mutated or overridden.
+*Definitions* - The words `:` and `;` indicate a definition.  A definition is started with `:` and terminated by `;`.  The definition is removed from the stack (or queue depending on specific implementation) and assigned to the last symbol on the stack (before `:`).  Definitions cannot be mutated or overridden.
 
-> Note: `word: a b c ;` is sugar for `[word] : a b c ;`
+### v1
 
-*Quotes* - The words `[` and `]` indicate a quote.  When the word `[` is encountered, words between the brackets are not executed but instead pushed to the stack.  When the word `]` is encountered the words between the brackets are popped off the stack and stored as an unnamed word and it's pointer is pushed to the stack.  This is very similar to a definition expect a pointer is left on the stack.  Unlike a definition, a quote can be nested.  Notice that white space inside the quotes are required.
+*Definition Shorthand* - Words ending with a colon (`:`) push a symbol to the stack and the word `:` to the queue.  As such `word: a b c ;` is sugar for `[word] : a b c ;`
+
+*Quotes* - The words `[` and `]` indicate a quote.  When the word `[` is encountered, words between the brackets are not executed.  When the word `]` is encountered the words between the brackets are popped off the stack (or queue depending on specific implementation) and stored as an unnamed word and it's pointer is pushed to the stack.  This is very similar to a definition expect a pointer is left on the stack.  Unlike a definition, a quote can be nested.  Notice that white space inside the quotes are required.
 
 > Note: `[ word ]` and `[word]` behave similarly.  However, `[ word ]` is a quote and `[word]` is a pointer.  `[ word ]` adds an extra user definition.  An optimized compiler can convert `[ word ]` to `[word]`.
 
@@ -144,7 +135,7 @@ A few peculiarities are:
 
 *Comments* - All text between a `/*` and `*/` is ignored.  Comments cannot be nested.
 
-Let's show a "Hello World" example:
+Let's show a "Hello World" example in f-flat-minor v1:
 
 ```forth
 rot: swap q< swap q> swap ;
@@ -171,8 +162,8 @@ The first three lines define words that help manage the stack.  The fifth line d
 | Mnemonic | Syntax |  Op (Ascii)   | Version |
 | -------- | :----: | :-----------: | :-----: |
 | NOP      |  nop   |   0 (null)    |   v0    |
-| CALL     |  eval  |       1       |   v0    |
-| PUTC     |  putc  |       2       |   v0    |
+| EVAL     |  eval  |       1       |   v0    |
+| PUTC     |  putc  |       2       |   v1    |
 | GETC     |  getc  |       3       |   v1    |
 | PRINT    |  print  |       5       |   v1    |
 | CLOCK    | clock  |       6       |   v1    |
@@ -194,12 +185,12 @@ The first three lines define words that help manage the stack.  The fifth line d
 | MUL      |   \*   |    42 (\*)    |   v0    |
 | ADD      |   +    |    43 (+)     |   v0    |
 | SUB      |   -    |    45 (-)     |   v0    |
-| PRN      |   .    |    46 (.)     |   v0    |
+| DUMP     |   .    |    46 (.)     |   v0    |
 | DIV      |   /    |    47 (/)     |   v0    |
 | MARK     |   :    |    58 (:)     |   v0    |
 | DEF      |   ;    |    59 (;)     |   v0    |
 | LT       |   <    |    60 (<)     |   v1    |
-| EQ       |   =    |    61 (=)     |   v0    |
+| EQ       |   =    |    61 (=)     |   v1    |
 | GT       |   >    |    62 (>)     |   v1    |
 | WHEN     |   ?    |    63 (?)     |   v0    |
 | BRA      |   [    |    91 ([)     |   v1    |

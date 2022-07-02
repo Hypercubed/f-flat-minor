@@ -11,8 +11,8 @@ test:	interpret
 .PHONY : interpret
 interpret: build/run
 	@printf "** C++ Interpreter **"
-	@time cat ../ff/example_v00.ff \
+	@time cat ../ff/example_v0.ff \
 		| ./build/run \
-		| cmp -s -- "../ff/example_v00.out" && $(CHECK);
+		| cmp -s -- "../ff/example_v0.out" && $(CHECK);
 	@echo ""
 	@echo ""

@@ -1,23 +1,9 @@
-/* common definitions */
+[rot] : swap q< swap q> swap ;
+[choose] : rot [swap] ? drop ;
+[branch] : choose eval ;
 
---: 1 - ;
-rot: swap q< swap q> swap ;
-choose: rot [swap] ? drop ;
-branch: choose eval ;
-
-/* factorial */
-
-fact_t: dup -- fact * ;
-fact_f: drop 1 ;
-fact: dup [fact_t] [fact_f] branch ;
-
-/* string printing */
-
-print_t: putc prints ;
-prints: dup [print_t] [drop] branch ;
-println: prints 10 putc ;
-
-0 32 'Factorial prints
-0 '100: println
+[fact_t] : dup 1 - fact * ;
+[fact_f] : drop 1 ;
+[fact] : dup [fact_t] [fact_f] branch ;
 
 100 fact .

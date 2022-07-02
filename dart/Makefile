@@ -1,5 +1,7 @@
 include ../defs.mk
 
+.DEFAULT_GOAL := bin/dart.exe
+
 .PHONY : test
 test:	interpret
 
@@ -13,7 +15,7 @@ interpret: bin/dart.exe
 	@printf "** Dart Interpreter **"
 	@time cat ../ff/example_v0.ff \
 		| ./bin/dart.exe \
-		| cmp -s - "../ff/example.out" && $(CHECK)
+		| cmp -s - "../ff/example_v0.out" && $(CHECK)
 	@echo ""
 	@echo ""
 

@@ -2,7 +2,9 @@ import 'dart:io';
 import 'dart:convert';
 
 final List<BigInt> stack = [];
-final List<BigInt> queue = [];
+final List<BigInt> rstack = [];
+
+final List<String> queue = [];
 
 final symbols = Map<String, BigInt>();
 final defs = Map<BigInt, dynamic>();
@@ -62,11 +64,11 @@ void setup() {
 
   define('q<', () {
     var a = stack.removeLast();
-    queue.add(a);
+    rstack.add(a);
   });
 
   define('q>', () {
-    var a = queue.removeLast();
+    var a = rstack.removeLast();
     stack.add(a);
   });
 
@@ -115,11 +117,15 @@ void setup() {
     }
   });
 
-  define('dip', () {
-    var a = stack.removeLast();
-    var b = stack.removeLast();
-    callOp(a);
-    stack.add(b);
+  define(':', () {
+    var code = stack.removeLast();
+    var token = queue.removeAt(0);
+    List<String> def = [];
+    while (token != ';' && queue.length > 0) {
+      def.add(token);
+      token = queue.removeAt(0);
+    }
+    defs[code] = def;
   });
 }
 
@@ -128,7 +134,8 @@ void callOp(BigInt code) {
   if (r is Function) {
     r();
   } else {
-    ev(r);
+    queue.insertAll(0,r); 
+    ev();
   }
 }
 
@@ -138,12 +145,10 @@ List<String> tokenize(String s) {
     .toList();
 }
 
-void ev(List<String> tokens) {
-  var l = tokens.length;
-  var i = 0;
+void ev() {
   var token = '';
-  while (i < l) {
-    token = tokens[i++];
+  while (queue.length > 0) {
+    token = queue.removeAt(0);
 
     var number = BigInt.tryParse(token);
     if (number != null) {
@@ -158,19 +163,14 @@ void ev(List<String> tokens) {
     } else if (token.startsWith('[') && token.endsWith(']')) {
       var name = token.substring(1, token.length - 1);
       stack.add(getSymbol(name));
-    } else if (token.endsWith(':')) {
+    } else if (token.endsWith(':') && token.length > 1) {
       var name = token.substring(0, token.length - 1);
       var code = getSymbol(name);
-      token = tokens[i++];
-      List<String> def = [];
-      while (token != ';' && i < l) {
-        def.add(token);
-        token = tokens[i++];
-      }
-      defs[code] = def;
+      stack.add(code);
+      queue.insert(0, ":");
     } else if (token == '/*') {
-      while (token != '*/' && i < l) {
-        token = tokens[i++];
+      while (token != '*/' && queue.length > 0) {
+        token = queue.removeAt(0);
       }
     } else {
       throw Exception('Undefined word: ' + token);
@@ -186,6 +186,7 @@ void main() {
     if (line == null) {
       break;
     }
-    ev(tokenize(line));
+    queue.addAll(tokenize(line));
+    ev();
   }
 }
