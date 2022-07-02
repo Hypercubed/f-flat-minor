@@ -19,7 +19,7 @@ Each implementation should compile and execute the following code:
 
 --: 1 - ;
 rot: swap q< swap q> swap ;
-choose: rot  [ swap ] ? drop ;
+choose: rot [ swap ] ? drop ;
 branch: choose eval ;
 
 /* factorial */
@@ -45,26 +45,26 @@ Factorial 100:
 ```
 
 <details>
-  <summary>For an initial POC an interpreter can implement v0 generating the same output</summary>
+  <summary>For an initial POC an interpreter can implement v0 (neglecting quotes) generating the same output</summary>
   
 ```forth
 /* common definitions */
 
 --: 1 - ;
 rot: swap q< swap q> swap ;
-choose: rot &swap ? drop ;
+choose: rot [swap] ? drop ;
 branch: choose eval ;
 
 /* factorial */
 
 fact_t: dup -- fact * ;
 fact_f: drop 1 ;
-fact: dup &fact_t &fact_f branch ;
+fact: dup [fact_t] [fact_f] branch ;
 
 /* string printing */
 
 print_t: putc prints ;
-prints: dup &print_t &drop branch ;
+prints: dup [print_t] [drop] branch ;
 println: prints 10 putc ;
 
 0 32 'Factorial prints
@@ -103,19 +103,18 @@ For each target language first implement a proof-of-concept interpreter either i
 | Forth/Factor/Cat      |
 | F-flat                |
 
-
 ## The Language
 
 `f-flat-minor` is a minimal implementation of [f-flat](https://github.com/Hypercubed/f-flat_node#readme).
 
 Key features:
 
-* Only one type (big integer)
-* Only one data stack
-* One return stack (many implementations use the queue as a return stack)
-* Minimal set of system instructions
-* "Infinite" stack and user vocabulary
-* Compiles to "bytecode" (actually base64 VLQ encoded big integers)
+- Only one type (big integer)
+- Only one data stack
+- One return stack (many implementations use the queue as a return stack)
+- Minimal set of system instructions
+- "Infinite" stack and user vocabulary
+- Compiles to "bytecode" (actually base64 VLQ encoded big integers)
 
 Since the data stack consists of only big integers, each value can be both a number or a pointer to an operation (either system or user defined).  "strings" are a sequence of characters (ascii value) on the stack in reverse order for easy printing.  Programming in f-flat-minor is done by pushing values onto the data stack and then calling an operation.  These includes operations that extends the vocabulary of the language.  The built-in operations and core vocabulary are similar to it's older brother [f-flat](https://github.com/Hypercubed/f-flat_node#readme) inspired by HP RPL, Forth, Joy, Factor, XY and others.
 
@@ -129,13 +128,17 @@ A few peculiarities are:
 
 *Booleans* - There is not a boolean type in f-flat-minor.  Instead, `0` is interpreted as false and all other values are truthy.
 
-*Words* - When a token is encountered that is not a number, the operation is called with the stack as its arguments.  Words can use any non-whitespace character but note the special definitions for words starting with `'`, `&`, or `.` and ending with `:` below.
+*Words* - When a token is encountered that is not a number, the operation is called with the stack as its arguments.  Words can use any non-whitespace character but note the special definitions for words starting with `'`, `[`, or `.` and ending with `:` below.
 
-*Pointers* - When a word is encountered that starts with an `&` symbol the operation is not called but instead the numeric value of the operation is pushed to the stack.  For example `&+ eval` is the same `43 eval` which is the same as as calling `+` directly.  If a token is encountered that is not a known word or a definition a new *pointer* is pushed to the stack.  If the executer attempts to evaluate a pointer that is not a valid operation the executer will throw an error.
+*Pointers* - When a word is encountered that starts with an `[` symbol the operation is not called but instead the numeric value of the operation is pushed to the stack.  For example `[+] eval` is the same `43 eval` which is the same as as calling `+` directly.  If a token is encountered that is not a known word or a definition a new *pointer* is pushed to the stack.  If the executer attempts to evaluate a pointer that is not a valid operation the executer will throw an error.
 
 *Definitions* - The words `:` and `;` indicate a definition.  When a word is encountered that ends with a `:` symbol the operation is not called but instead starts a new definition.  The definition is terminated by `;` and the definition is removed from the stack (or queue depending on specific implementation).  The starting word (text before `:`) is the key for the new definition.  Definitions can be recursive but cannot be nested.  Definitions cannot be mutated or overridden.
 
-*Quotes* - The words `[` and `]` indicate a quote.  When the word `[` is encountered words between the brackets are not executed but instead pushed to the stack.  When the word `]` is encountered the words between the brackets are popped off the stack and stored as an unnamed word and it's pointer is pushed to the stack.  This is very similar to a definition expect a pointer is left on the stack.  Unlike a definition, a quote can be nested.  Notice that white space inside the quotes are required.
+> Note: `word: a b c ;` is sugar for `[word] : a b c ;`
+
+*Quotes* - The words `[` and `]` indicate a quote.  When the word `[` is encountered, words between the brackets are not executed but instead pushed to the stack.  When the word `]` is encountered the words between the brackets are popped off the stack and stored as an unnamed word and it's pointer is pushed to the stack.  This is very similar to a definition expect a pointer is left on the stack.  Unlike a definition, a quote can be nested.  Notice that white space inside the quotes are required.
+
+> Note: `[ word ]` and `[word]` behave similarly.  However, `[ word ]` is a quote and `[word]` is a pointer.  `[ word ]` adds an extra user definition.  An optimized compiler can convert `[ word ]` to `[word]`.
 
 *Strings* - When the compiler/interpreter encounters a string (a sequence of non-white space characters starting with single quote `'`) it will push the string's characters onto the data stack (trailing quote, if present is ignored).  The characters are pushed in reverse order.  This is because the string is printed in order from the bottom of the stack.  Since the parsing of f-flat-minor is done by splitting on all whitespace, the string cannot have whitespace but can include escape sequences such as `\s`, `\n` for space and newline respectively.
 
@@ -145,23 +148,23 @@ Let's show a "Hello World" example:
 
 ```forth
 rot: swap q< swap q> swap ;
-choose: rot &swap ? drop ;
+choose: rot [swap] ? drop ;
 branch: choose eval ;
 
-say: dup [ putc say ] &drop branch ;
+say: dup [ putc say ] [drop] branch ;
 
 0 'Hello\sWorld!\n' say
 ```
 
 The first three lines define words that help manage the stack.  The fifth line defines a word `say` that recursively prints characters from the stack until a zero is encountered.  The last line pushes a zero onto the stack, then the ascii characters of `Hello World!\n` (in reverse order) and then the `say` word is called to print the string.  A few explanations of the words used here:
 
-  * `drop` - Pops an element off the stack.
-  * `swap` - Swaps last two elements on the stack.
-  * `q<` - Pops an element off the stack and pushes it to the end of the queue.
-  * `q>` - Pops an element off the end of the queue and pushes it onto the stack.
-  * `?` - Pops a *pointer* off the stack and then a *value*.  If the value is truthy (not zero) the pointer is executed.  If the value is false (zero) the pointer is ignored.
-  * `eval` - Pops an *pointer* off the stack and executes it.
-  * `putc` - Pops a *character* off the stack and prints it.
+- `drop` - Pops an element off the stack.
+- `swap` - Swaps last two elements on the stack.
+- `q<` - Pops an element off the stack and pushes it to the end of the queue.
+- `q>` - Pops an element off the end of the queue and pushes it onto the stack.
+- `?` - Pops a *pointer* off the stack and then a *value*.  If the value is truthy (not zero) the pointer is executed.  If the value is false (zero) the pointer is ignored.
+- `eval` - Pops an *pointer* off the stack and executes it.
+- `putc` - Pops a *character* off the stack and prints it.
 
 ### Vocabulary
 
@@ -171,8 +174,8 @@ The first three lines define words that help manage the stack.  The fifth line d
 | CALL     |  eval  |       1       |   v0    |
 | PUTC     |  putc  |       2       |   v0    |
 | GETC     |  getc  |       3       |   v1    |
-| PRINT    |  print  |       4       |   v1    |
-| CLOCK    | clock  |       5       |   v1    |
+| PRINT    |  print  |       5       |   v1    |
+| CLOCK    | clock  |       6       |   v1    |
 | DROP     |  drop  | 8 (backspace) |   v0    |
 | PUSHR    |   q<   |      14       |   v0    |
 | PULLR    |   q>   |      15       |   v0    |

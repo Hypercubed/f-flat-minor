@@ -7,14 +7,14 @@ const (
 	OP_CALL  = 1
 	OP_PUTC  = 2
 	OP_GETC  = 3
-	OP_PRINT = 4
-	OP_CLOCK = 5
+	OP_PRINT = 5
+	OP_CLOCK = 6
 	OP_DROP  = 8
 	OP_PUSHR = 14
 	OP_PULLR = 15
 	OP_SHL   = 16
 	OP_SHR   = 17
-	OP_CLR   = 25
+	OP_CLR   = 24
 	OP_RAND  = 26
 	OP_EXIT  = 27
 	OP_DUP   = '!'
@@ -81,3 +81,5 @@ const (
 	SYM_OR    = "|"
 	SYM_NOT   = "~"
 )
+
+var MAX_SYSTEM_OP_CODE = 0xFF

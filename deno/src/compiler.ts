@@ -117,7 +117,7 @@ export class Compiler {
             break;            
           }
         }
-      } else if (ss[0] === "'") { // String
+      } else if (ss[0] === "'" && ss.length > 1) { // String
         unescapeString(ss)
           .replace(/^'/, "") // TODO: use backtick?
           .replace(/'$/, "")
@@ -126,7 +126,7 @@ export class Compiler {
           .forEach((c, i) => {
             push(c.charCodeAt(0), i === 0 ? { comment: ss } : {});
           });
-      } else if (ss.endsWith(":")) { // Definition
+      } else if (ss.endsWith(":") && ss.length > 1) { // Definition
         if (ss.length > 1) {
           const name = ss.replace(/:$/, "");
           push(this.getSymbol(name), { name: `${name}`, pointer: true });
@@ -142,12 +142,9 @@ export class Compiler {
           comment.push(ss);
         }
         call(0n, { comment: comment.join(" ") });
-      } else if (ss === "[") {
-        const code = this.nextCode();
-        push(code, { name: `$_${code}` });
-        call(OpCodes.BRA, { name: ss });
-      } else if (ss[0] === "&" && ss.length > 1) { // Symbol
-        push(this.getSymbol(ss.replace(/^&/, "")), { name: ss, pointer: true });
+      } else if (ss.startsWith("[") && ss.endsWith("]")) { // Symbol
+        const name = ss.replace(/^\[/, "").replace(/\]$/, "");
+        push(this.getSymbol(name), { name, pointer: true });
       } else {
         call(this.getSymbol(ss), { name: ss });
       }

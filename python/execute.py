@@ -244,8 +244,8 @@ def run():
       stack.append(s)
     elif s.startswith('.') and len(s) > 1:
       continue
-    elif s.startswith('&') and len(s) > 1:
-      n = s[1:]
+    elif s.startswith('[') and s.endswith(']'):
+      n = s[1:-1]
       if n in ops:
         stack.append(ops[n])
     elif s.startswith('\''):

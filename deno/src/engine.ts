@@ -1,4 +1,4 @@
-import { OpCodes, systemWords } from "../src/opcodes.ts";
+import { MAX_SYSTEM_OP_CODE, OpCodes, systemWords } from "../src/opcodes.ts";
 import { IrInstruction, IROp } from "./ir.ts";
 import { SourceMap } from "./source-maps.ts";
 import { decode } from "./vlq.ts";
@@ -31,6 +31,7 @@ export class Engine {
   private symbols = new Map<bigint, string>();
 
   private depth = 0;
+  private nextAnonOp = MAX_SYSTEM_OP_CODE + 1;
 
   traceOn = false;
   base = 10;
@@ -96,7 +97,7 @@ export class Engine {
 
   private defineUser(s: bigint[], n: bigint) {
     const name = this.getName(n);
-    if (n > -1) {
+    if (n > -1 && n < MAX_SYSTEM_OP_CODE) {
       throw new Error(`Define: cannot define system op "${name}"`);
     }
     if (this.defs.has(n)) {
@@ -146,7 +147,7 @@ export class Engine {
   }
 
   private callOp(code: bigint): void {
-    if (code > -1n) {
+    if (code > -1n && code < MAX_SYSTEM_OP_CODE) {
       return this.callSystem(code);
     }
     return this.callUser(code);
@@ -180,11 +181,12 @@ export class Engine {
 
   run() {
     const queue = this.queue;
+    let immediate = false;
 
     while (queue.length > 0) {
       const op = queue.shift() || 0n;
 
-      const immediate = !this.depth || IMMEDIATE_WORDS.includes(op);
+      immediate = !this.depth || IMMEDIATE_WORDS.includes(op);
       this.traceOn && this.trace(op, immediate);
 
       if (op === 0n) {
@@ -258,7 +260,12 @@ export class Engine {
       this.depth--;
       const m = this.queue.pop();
       const s: bigint[] = this.stack.splice(Number(m || 0)) || [];
-      this.defineUser(s, this.peek());
+      const op = BigInt(this.nextAnonOp++);
+      this.defineUser(s, op);
+      if (this.depth > 0) {
+        this.push(0n);
+      }
+      this.push(op);
     }, OpCodes.KET);
 
     this.defineSystem(() => {

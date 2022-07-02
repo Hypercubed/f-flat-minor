@@ -9,10 +9,11 @@ import (
 	"time"
 )
 
+var nextAnonOp = MAX_SYSTEM_OP_CODE + 1
+
 var stack = []*Int(nil)
 var queue = []*Int(nil)
 
-var symbolMap = make(map[string]int64)
 var systemDict = make(map[byte]func())
 var userDict = make(map[int64][]*Int)
 
@@ -66,14 +67,6 @@ func push(a *Int) {
 	stack = append(stack, a)
 }
 
-// func queuePeek() *Int {
-// 	l := len(queue)
-// 	if l > 0 {
-// 		return &queue[l-1]
-// 	}
-// 	panic("Queue is empty")
-// }
-
 // If the queue is not empty, remove the last element from the queue and return it.
 func queuePop() *Int {
 	l := len(queue)
@@ -97,9 +90,10 @@ func defSystem(fn func(), code int) {
 }
 
 func call(c *Int) {
-	if c.Sign() == -1 {
+	if c.Sign() == -1 || c.Cmp(NewInt(int64(MAX_SYSTEM_OP_CODE))) == 1 {
 		if d, ok := userDict[c.Int64()]; ok {
-			defer ExecuteBigIntCode(d)
+			queue = append(d, queue...)
+			return
 		} else {
 			panic(fmt.Sprintf("Unknown user opcode %d", c))
 		}
@@ -302,7 +296,13 @@ func Setup() {
 		mm := int(queuePop().Int64())
 		def := append([]*Int(nil), stack[mm:]...)
 		stack = stack[:mm]
-		userDict[peek().Int64()] = def
+		nextAnonOp++
+		op := int64(nextAnonOp)
+		userDict[op] = def
+		if depth > 0 {
+			push(NewInt(0))
+		}
+		push(NewInt(op))
 	}, OP_KET)
 
 	defSystem(func() {
@@ -327,36 +327,19 @@ func check(e error) {
 	}
 }
 
-func lpad(s string, pad string, plength int) string {
-	for i := len(s); i < plength; i++ {
-		s = pad + s
-	}
-	return s
-}
-
-func printBigIntArray(a []Int) {
-	for i, element := range a {
-		fmt.Printf(lpad(element.Text(16), "0", 2))
-		fmt.Printf(" ")
-		if i%16 == 15 {
-			fmt.Printf("\n")
-		}
-	}
-	fmt.Printf("\n")
-	fmt.Printf("%s %d", "BigInts", len(a))
-}
-
 var MARK = NewInt(OP_MARK)
 var DEF = NewInt(OP_DEF)
 
 var BRA = NewInt(OP_BRA)
 var KET = NewInt(OP_KET)
+var depth = 0
 
-func ExecuteBigIntCode(bc []*Int) {
-	depth := 0
+func Run(bc []*Int) {
+	queue = bc
 
-	for i := 0; i < len(bc); i++ {
-		op := bc[i]
+	for len(queue) > 0 {
+		op := queue[0]
+		queue = queue[1:]
 
 		if op.Cmp(DEF) == 0 || op.Cmp(KET) == 0 {
 			depth--
@@ -367,8 +350,8 @@ func ExecuteBigIntCode(bc []*Int) {
 		}
 
 		if op.Cmp(NewInt(0)) == 0 {
-			i++
-			push(clone(bc[i]))
+			push(clone(queue[0]))
+			queue = queue[1:]
 		} else if depth < 1 {
 			call(op)
 		}

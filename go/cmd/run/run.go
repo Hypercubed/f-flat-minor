@@ -39,5 +39,5 @@ func main() {
 
 	bigInt := compiler.CompileToBigIntArray(ir)
 
-	engine.ExecuteBigIntCode(bigInt)
+	engine.Run(bigInt)
 }

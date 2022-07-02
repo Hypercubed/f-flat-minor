@@ -59,7 +59,7 @@ witness_loop16: [ witness_loop8 ] dup or_else ;
 
 maybe_prime?: dup 4 <
   [ 1 > ]
-  [ [ simple-composite? ] &witness_loop2 or_else not ]
+  [ [ simple-composite? ] [ witness_loop2 ] or_else not ]
   branch ;
 
 0 println
