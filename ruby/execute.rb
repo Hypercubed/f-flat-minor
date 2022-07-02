@@ -13,9 +13,17 @@ $defs = Hash.new
 
 $systemOps = 0
 
-def define (str, d)
-  $op = $op + 1
-  $syms[str] = $op
+def getSym(name)
+  if !$syms.has_key?(name)
+    $op = $op + 1
+    $syms[name] = $op
+  end
+  return $syms[name]
+end
+
+def define (name, d)
+  $op = getSym(name)
+  $syms[name] = $op
   $defs[$op] = d
 end
 
@@ -79,19 +87,11 @@ def run ()
         $stack.push c
       end
     elsif item[0] == "[" && item[-1] == "]"
-      if o = $syms[item[1..-2]]
-        $stack.push o
-      end
+      $stack.push getSym(item[1..-2])
     elsif item[-1] == ":" && item.length() > 1
-      d = Array.new
-      while $queue.length() > 0
-        s = $queue.shift
-        if s == ';'
-          break
-        end
-        d.push s
-      end
-      define(item[0..-2], d)
+      n = item[0..-2]
+      $stack.push getSym(n)
+      $queue.unshift ':'
     elsif item[-1] == "["
       d = Array.new
       o = $op = $op + 1
@@ -240,8 +240,18 @@ define('<<', lambda {||
   $stack[-1] <<= a
 })
 
-# mark
-# def
+define(':', lambda {||
+  o = $stack.pop
+  d = Array.new
+  while $queue.length() > 0
+    s = $queue.shift
+    if s == ';'
+      break
+    end
+    d.push s
+  end
+  $defs[o] = d
+});
 
 define('<', lambda {||
   a = $stack.pop

@@ -20,8 +20,13 @@ def nextOp():
   op = op + 1
   return op
 
+def getSym(n):
+  if n not in ops:
+    ops[n] = nextOp()
+  return ops[n]
+  
 def define(name, item):
-  o = nextOp()
+  o = getSym(name)
   ops[name] = o
   defs[o] = item
 
@@ -167,6 +172,17 @@ def fetch():
   stack = queue[-l:] + stack
   del queue[-l:]
 
+def mark():
+  global stack
+  o = stack.pop()
+  d = []
+  while len(queue):
+    ss = queue.pop(0)
+    if ss == ';':
+      break
+    d.append(ss)
+  defs[o] = d
+
 define('nop', nop)
 define('eval', call)
 define('putc', putc)
@@ -189,7 +205,7 @@ define('+', add)
 define('-', sub)
 define('.', printStack)
 define('/', div)
-# mark
+define(':', mark)
 # def
 define('<<', lsh)
 define('>>', rsh)
@@ -237,6 +253,8 @@ def tokenize(text):
   return list(map(token, a))
 
 def run():
+  global queue
+  
   while len(queue) > 0:
     s = queue.pop(0)
     
@@ -246,21 +264,15 @@ def run():
       continue
     elif s.startswith('[') and s.endswith(']'):
       n = s[1:-1]
-      if n in ops:
-        stack.append(ops[n])
+      stack.append(getSym(n))
     elif s.startswith('\''):
       n = s[1:-1] if s.endswith('\'') else s[1:]
       n = unescape(n)
       stack.extend([ord(c) for c in n[::-1]])
     elif s.endswith(':') and len(s) > 1:
       n = s[:-1]
-      d = []
-      while len(queue):
-        ss = queue.pop(0)
-        if ss == ';':
-          break
-        d.append(ss)
-      define(n, d)
+      stack.append(getSym(n))
+      queue = [':'] + queue
     elif s == '[':
       o = nextOp()
       d = []
