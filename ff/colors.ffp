@@ -1,0 +1,43 @@
+.load lib/core.ff
+
+start: '\u001b[' ;
+end: 'm' ;
+bold: ';1' ;
+extended: '38;5;' ;
+
+underline: start '4' end ;
+red: start '31' end ;
+reset: start '0' end ;
+
+reset!: 0 cr reset prints ;
+tab!: '\t' putc ;
+
+0 newline underline '16\sColors' prints
+reset!
+
+30 37 range depth
+[ 0 start prints dup print 0 end prints print tab! ] swap times
+reset!
+
+30 37 range depth
+[ 0 start prints dup print 0 bold end prints print tab! ] swap times
+reset!
+
+0 newline underline  '256\sColors' prints
+reset!
+
+256 count depth
+[ 0 start extended prints dup print 0 end prints print tab! ] swap times
+reset!
+
+0 newline underline 'Background\sColors' prints
+reset!
+
+0
+'\u001b[40m\sA\s\u001b[41m\sB\s\u001b[42m\sC\s\u001b[43m\sD\s\u001b[0m' newline
+'\u001b[44m\sA\s\u001b[45m\sB\s\u001b[46m\sC\s\u001b[47m\sD\s\u001b[0m' newline
+'\u001b[40;1m\sA\s\u001b[41;1m\sB\s\u001b[42;1m\sC\s\u001b[43;1m\sD\s\u001b[0m' newline
+'\u001b[44;1m\sA\s\u001b[45;1m\sB\s\u001b[46;1m\sC\s\u001b[47;1m\sD\s\u001b[0m' newline
+prints
+
+reset!

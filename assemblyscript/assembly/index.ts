@@ -136,7 +136,6 @@ function ev(tokens: string[]): void {
     } else if (token.startsWith('\'')) { // String
       token.replace('\'', '')
         .split('')
-        .reverse()
         .forEach(c => stack.push(c.charCodeAt(0)));
     } else if (token.startsWith('&')) { // Symbol
       const name = token.replace('&', '');

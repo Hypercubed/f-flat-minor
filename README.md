@@ -116,11 +116,10 @@ _Definitions_ - The words `:` and `;` indicate a definition. A definition is sta
 Let's show a "Hello World" example in F♭m<sup>o<sup>:
 
 ```forth
-[prints_loop] : putc prints_while ;
-[prints_while] : dup [prints_loop] ? ;
-[prints] : prints_while drop ;
+[prints_loop] : q< prints q> putc ;
+[prints] : dup [prints_loop] ? ;
 
-0 'Hello\sWorld!\n' prints
+0 'Hello\sWorld!\n' prints drop
 ```
 
 - `drop` - Pops an element off the stack.
@@ -135,60 +134,59 @@ _Quotes_ - The words `[` and `]` indicate a quote. When the word `[` is encounte
 
 > Note: `[ word ]` and `[word]` behave similarly. However, `[ word ]` is a quote and `[word]` is a pointer. `[ word ]` adds an extra user definition. An optimized compiler can convert `[ word ]` to `[word]`.
 
-_Strings_ - When the compiler/interpreter encounters a string (a sequence of non-white space characters starting with single quote `'`) it will push the string's characters onto the data stack (trailing quote, if present is ignored). The characters are pushed in reverse order. This is because the string is printed in order from the bottom of the stack. Since the parsing of f-flat-minor is done by splitting on all whitespace, the string cannot have whitespace but can include escape sequences such as `\s`, `\n` for space and newline respectively.
+_Strings_ - When the compiler/interpreter encounters a string (a sequence of non-white space characters starting with single quote `'`) it will push the string's characters onto the data stack (trailing quote, if present is ignored). Since the parsing of f-flat-minor is done by splitting on all whitespace, the string cannot have whitespace but can include escape sequences such as `\s`, `\n` for space and newline respectively.
 
 _Comments_ - All text between a `/*` and `*/` is ignored. Comments cannot be nested.
 
-Let's show a "Hello World" example in f-flat-minor v1:
+Let's show a "Hello World" example in F♭m:
 
 ```forth
-(prints): dup [ putc (prints) ] ? ;
-prints: (prints) drop ;
+prints: dup [ q< prints q> putc ] ? ;
 
-0 'Hello\sWorld!\n' prints
+0 'Hello\sWorld!\n' prints drop
 ```
 
 ### Vocabulary
 
 | Mnemonic | Syntax |  Op (Ascii)   | Version |
 | -------- | :----: | :-----------: | :-----: |
-| NOP      |  nop   |   0 (null)    |   v0    |
-| EVAL     |  eval  |       1       |   v0    |
-| PUTC     |  putc  |       2       |   v1    |
-| GETC     |  getc  |       3       |   v1    |
-| PRINT    | print  |       5       |   v1    |
-| CLOCK    | clock  |       6       |   v1    |
-| DROP     |  drop  | 8 (backspace) |   v0    |
-| PUSHR    |   q<   |      14       |   v0    |
-| PULLR    |   q>   |      15       |   v0    |
-| SHIFTL   |   <<   |      16       |   v1    |
-| SHIFTR   |   >>   |      17       |   v1    |
-| CLR      |  clr   |      24       |   v1    |
-| RAND     |  rand  |      26       |   v1    |
-| EXIT     |  exit  |   27 (ESC)    |   v1    |
-| DUP      |  dup   |    33 (!)     |   v0    |
-| DEPTH    | depth  |    35 (#)     |   v1    |
-| SWAP     |  swap  |    36 ($)     |   v0    |
-| MOD      |   %    |    37 (%)     |   v1    |
-| AND      |   &    |    38 (&)     |   v1    |
-| STASH    |   (    |    40 (()     |   v1    |
-| FETCH    |   )    |    41 ())     |   v1    |
-| MUL      |   \*   |    42 (\*)    |   v0    |
-| ADD      |   +    |    43 (+)     |   v0    |
-| SUB      |   -    |    45 (-)     |   v0    |
-| DUMP     |   .    |    46 (.)     |   v0    |
-| DIV      |   /    |    47 (/)     |   v0    |
-| MARK     |   :    |    58 (:)     |   v0    |
-| DEF      |   ;    |    59 (;)     |   v0    |
-| LT       |   <    |    60 (<)     |   v1    |
-| EQ       |   =    |    61 (=)     |   v1    |
-| GT       |   >    |    62 (>)     |   v1    |
-| WHEN     |   ?    |    63 (?)     |   v0    |
-| BRA      |   [    |    91 ([)     |   v1    |
-| KET      |   ]    |    93 (])     |   v1    |
-| POW      |   ^    |    94 (^)     |   v1    |
-| OR       |   \|   |   124 (\|)    |   v1    |
-| NOT      |   ~    |    126 (~)    |   v1    |
+| NOP      |  nop   |   0 (null)    |   F♭m<sup>o<sup>    |
+| EVAL     |  eval  |       1       |   F♭m<sup>o<sup>    |
+| PUTC     |  putc  |       2       |   F♭m    |
+| GETC     |  getc  |       3       |   F♭m    |
+| PRINT    | print  |       5       |   F♭m    |
+| CLOCK    | clock  |       6       |   F♭m    |
+| DROP     |  drop  | 8 (backspace) |   F♭m<sup>o<sup>    |
+| PUSHR    |   q<   |      14       |   F♭m<sup>o<sup>    |
+| PULLR    |   q>   |      15       |   F♭m<sup>o<sup>    |
+| SHIFTL   |   <<   |      16       |   F♭m    |
+| SHIFTR   |   >>   |      17       |   F♭m    |
+| CLR      |  clr   |      24       |   F♭m    |
+| RAND     |  rand  |      26       |   F♭m    |
+| EXIT     |  exit  |   27 (ESC)    |   F♭m    |
+| DUP      |  dup   |    33 (!)     |   F♭m<sup>o<sup>    |
+| DEPTH    | depth  |    35 (#)     |   F♭m    |
+| SWAP     |  swap  |    36 ($)     |   F♭m<sup>o<sup>    |
+| MOD      |   %    |    37 (%)     |   F♭m    |
+| AND      |   &    |    38 (&)     |   F♭m    |
+| STASH    |   (    |    40 (()     |   F♭m    |
+| FETCH    |   )    |    41 ())     |   F♭m    |
+| MUL      |   \*   |    42 (\*)    |   F♭m<sup>o<sup>    |
+| ADD      |   +    |    43 (+)     |   F♭m<sup>o<sup>    |
+| SUB      |   -    |    45 (-)     |   F♭m<sup>o<sup>    |
+| DUMP     |   .    |    46 (.)     |   F♭m<sup>o<sup>    |
+| DIV      |   /    |    47 (/)     |   F♭m<sup>o<sup>    |
+| MARK     |   :    |    58 (:)     |   F♭m<sup>o<sup>    |
+| DEF      |   ;    |    59 (;)     |   F♭m<sup>o<sup>    |
+| LT       |   <    |    60 (<)     |   F♭m    |
+| EQ       |   =    |    61 (=)     |   F♭m    |
+| GT       |   >    |    62 (>)     |   F♭m    |
+| WHEN     |   ?    |    63 (?)     |   F♭m<sup>o<sup>    |
+| BRA      |   [    |    91 ([)     |   F♭m    |
+| KET      |   ]    |    93 (])     |   F♭m    |
+| POW      |   ^    |    94 (^)     |   F♭m    |
+| OR       |   \|   |   124 (\|)    |   F♭m    |
+| NOT      |   ~    |    126 (~)    |   F♭m    |
 
 ### Compiler/Preprocessor commands
 
