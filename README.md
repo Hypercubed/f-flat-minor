@@ -12,7 +12,7 @@ f-flat-minor is a tiny toy language and baby brother to [f-flat](https://github.
 
 ## The Target
 
-### F♭<sup>o<sup>
+### F♭<sup>o</sup>
 
 The most basic implementations of f-flat-minor (dubbed F♭<sup>o<sup>)has a limited vocabulary necessary to calculate the factorial of 100.
 
@@ -101,7 +101,7 @@ I won't cover the basics of stack based contaminative programming here. The syst
 
 A few peculiarities are:
 
-### F♭m<sup>o<sup>
+### F♭m<sup>o</sup>
 
 _Values_ - When a token is encountered that can be parsed as a integer, that value is pushed to the stack. All other tokens are considered to be words.
 
@@ -113,7 +113,7 @@ _Pointers_ - When a word is encountered that starts with an `[` symbol the opera
 
 _Definitions_ - The words `:` and `;` indicate a definition. A definition is started with `:` and terminated by `;`. The definition is removed from the stack (or queue depending on specific implementation) and assigned to the last symbol on the stack (before `:`). Definitions cannot be mutated or overridden.
 
-Let's show a "Hello World" example in F♭m<sup>o<sup>:
+Let's show a "Hello World" example in F♭m<sup>o</sup>:
 
 ```forth
 [prints_loop] : q< prints q> putc ;
@@ -150,38 +150,38 @@ prints: dup [ q< prints q> putc ] ? ;
 
 | Mnemonic | Syntax |  Op (Ascii)   | Version |
 | -------- | :----: | :-----------: | :-----: |
-| NOP      |  nop   |   0 (null)    |   F♭m<sup>o<sup>    |
-| EVAL     |  eval  |       1       |   F♭m<sup>o<sup>    |
+| NOP      |  nop   |   0 (null)    |   F♭m<sup>o</sup>    |
+| EVAL     |  eval  |       1       |   F♭m<sup>o</sup>    |
 | PUTC     |  putc  |       2       |   F♭m    |
 | GETC     |  getc  |       3       |   F♭m    |
 | PRINT    | print  |       5       |   F♭m    |
 | CLOCK    | clock  |       6       |   F♭m    |
-| DROP     |  drop  | 8 (backspace) |   F♭m<sup>o<sup>    |
-| PUSHR    |   q<   |      14       |   F♭m<sup>o<sup>    |
-| PULLR    |   q>   |      15       |   F♭m<sup>o<sup>    |
+| DROP     |  drop  | 8 (backspace) |   F♭m<sup>o</sup>    |
+| PUSHR    |   q<   |      14       |   F♭m<sup>o</sup>    |
+| PULLR    |   q>   |      15       |   F♭m<sup>o</sup>    |
 | SHIFTL   |   <<   |      16       |   F♭m    |
 | SHIFTR   |   >>   |      17       |   F♭m    |
 | CLR      |  clr   |      24       |   F♭m    |
 | RAND     |  rand  |      26       |   F♭m    |
 | EXIT     |  exit  |   27 (ESC)    |   F♭m    |
-| DUP      |  dup   |    33 (!)     |   F♭m<sup>o<sup>    |
+| DUP      |  dup   |    33 (!)     |   F♭m<sup>o</sup>    |
 | DEPTH    | depth  |    35 (#)     |   F♭m    |
-| SWAP     |  swap  |    36 ($)     |   F♭m<sup>o<sup>    |
+| SWAP     |  swap  |    36 ($)     |   F♭m<sup>o</sup>    |
 | MOD      |   %    |    37 (%)     |   F♭m    |
 | AND      |   &    |    38 (&)     |   F♭m    |
 | STASH    |   (    |    40 (()     |   F♭m    |
 | FETCH    |   )    |    41 ())     |   F♭m    |
-| MUL      |   \*   |    42 (\*)    |   F♭m<sup>o<sup>    |
-| ADD      |   +    |    43 (+)     |   F♭m<sup>o<sup>    |
-| SUB      |   -    |    45 (-)     |   F♭m<sup>o<sup>    |
-| DUMP     |   .    |    46 (.)     |   F♭m<sup>o<sup>    |
-| DIV      |   /    |    47 (/)     |   F♭m<sup>o<sup>    |
-| MARK     |   :    |    58 (:)     |   F♭m<sup>o<sup>    |
-| DEF      |   ;    |    59 (;)     |   F♭m<sup>o<sup>    |
+| MUL      |   \*   |    42 (\*)    |   F♭m<sup>o</sup>    |
+| ADD      |   +    |    43 (+)     |   F♭m<sup>o</sup>    |
+| SUB      |   -    |    45 (-)     |   F♭m<sup>o</sup>    |
+| DUMP     |   .    |    46 (.)     |   F♭m<sup>o</sup>    |
+| DIV      |   /    |    47 (/)     |   F♭m<sup>o</sup>    |
+| MARK     |   :    |    58 (:)     |   F♭m<sup>o</sup>    |
+| DEF      |   ;    |    59 (;)     |   F♭m<sup>o</sup>    |
 | LT       |   <    |    60 (<)     |   F♭m    |
 | EQ       |   =    |    61 (=)     |   F♭m    |
 | GT       |   >    |    62 (>)     |   F♭m    |
-| WHEN     |   ?    |    63 (?)     |   F♭m<sup>o<sup>    |
+| WHEN     |   ?    |    63 (?)     |   F♭m<sup>o</sup>    |
 | BRA      |   [    |    91 ([)     |   F♭m    |
 | KET      |   ]    |    93 (])     |   F♭m    |
 | POW      |   ^    |    94 (^)     |   F♭m    |
