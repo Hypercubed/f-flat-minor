@@ -14,7 +14,7 @@ f-flat-minor is a tiny toy language and baby brother to [f-flat](https://github.
 
 ### F♭<sup>o</sup>
 
-The most basic implementations of f-flat-minor (dubbed F♭<sup>o<sup>)has a limited vocabulary necessary to calculate the factorial of 100.
+The most basic implementations of f-flat-minor (dubbed F♭<sup>o</sup>)has a limited vocabulary necessary to calculate the factorial of 100.
 
 ```forth
 [(fact)] : dup 1 - fact * ;
