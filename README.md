@@ -12,9 +12,9 @@ f-flat-minor is a tiny toy language and baby brother to [f-flat](https://github.
 
 ## The Target
 
-### F♭<sup>o</sup>
+### F♭m<sup>o</sup>
 
-The most basic implementations of f-flat-minor (dubbed F♭<sup>o</sup>)has a limited vocabulary necessary to calculate the factorial of 100.
+The most basic implementations of f-flat-minor (dubbed F♭m<sup>o</sup>) has a limited vocabulary necessary to calculate the factorial of 100.
 
 ```forth
 [(fact)] : dup 1 - fact * ;
@@ -23,9 +23,9 @@ The most basic implementations of f-flat-minor (dubbed F♭<sup>o</sup>)has a li
 100 fact .
 ```
 
-### F♭
+### F♭m
 
-F♭ adds compiler sugar for comments, strings, and quotes as well as additional words (shown in the table below).
+F♭m adds compiler sugar for comments, strings, and quotes as well as additional words (shown in the table below).
 
 ```forth
 /* factorial */
@@ -57,17 +57,17 @@ For each target language first implement a proof-of-concept interpreter either i
 
 ## Progress
 
-| Language              | POC                                                        | Interpreter | Compiler/Executer | REPL |
-| --------------------- | ---------------------------------------------------------- | ----------- | ----------------- | ---- |
-| Typescript/Deno       | [ 😀 ](https://replit.com/@Hypercubed/f-flat-minor-TS)     | ✓           | ✓                 | ✓    |
-| Go                    | [ 😀 ](https://replit.com/@Hypercubed/f-flat-minor-Go)     | ✓           | ✓                 | ✓    |
-| Python                | [ 😀 ](https://replit.com/@Hypercubed/f-flat-minor-Python) | ✓           |
-| Ruby                  | [ 😀 ](https://replit.com/@Hypercubed/f-flat-minor-Ruby)   | ✓           |
-| Dart                  | [ 😀 ](https://replit.com/@Hypercubed/f-flat-minor-Dart)   | ✓           |
-| AssemblyScript        | [ 😐 ](https://tinyurl.com/yc3wn325)                       | ✓           |
-| C++                   |                                                            | ✓           |
-| Rust                  | [ 😔 ](https://replit.com/@Hypercubed/f-flat-minor-Rust)   |
-| Swift                 | [ 😐 ](https://replit.com/@Hypercubed/f-flat-minor-Swift)  |
+| Language              | Version                                                       | Interpreter | Compiler/Executer | REPL |
+| --------------------- | ------------------------------------------------------------- | ----------- | ----------------- | ---- |
+| Typescript/Deno       | F♭m                                                           | ✓           | ✓                 | ✓    |
+| Go                    | F♭m                                                           | ✓           | ✓                 | ✓    |
+| Python                | F♭m                                                           | ✓           |
+| Ruby                  | F♭m                                                           | ✓           |
+| Dart                  | F♭m                                                           | ✓           |
+| AssemblyScript        | F♭m<sup>o</sup>                                               | ✓           |
+| C++                   | F♭m<sup>o</sup>                                               | ✓           |
+| Rust                  | [ POC 😔 ](https://replit.com/@Hypercubed/f-flat-minor-Rust)  |
+| Swift                 | [ POC 😐 ](https://replit.com/@Hypercubed/f-flat-minor-Swift) |
 | LLVM                  |
 | F#                    |
 | Lisp/Clojure/Racket   |
@@ -148,45 +148,45 @@ prints: dup [ q< prints q> putc ] ? ;
 
 ### Vocabulary
 
-| Mnemonic | Syntax |  Op (Ascii)   | Version |
-| -------- | :----: | :-----------: | :-----: |
-| NOP      |  nop   |   0 (null)    |   F♭m<sup>o</sup>    |
-| EVAL     |  eval  |       1       |   F♭m<sup>o</sup>    |
-| PUTC     |  putc  |       2       |   F♭m    |
-| GETC     |  getc  |       3       |   F♭m    |
-| PRINT    | print  |       5       |   F♭m    |
-| CLOCK    | clock  |       6       |   F♭m    |
-| DROP     |  drop  | 8 (backspace) |   F♭m<sup>o</sup>    |
-| PUSHR    |   q<   |      14       |   F♭m<sup>o</sup>    |
-| PULLR    |   q>   |      15       |   F♭m<sup>o</sup>    |
-| SHIFTL   |   <<   |      16       |   F♭m    |
-| SHIFTR   |   >>   |      17       |   F♭m    |
-| CLR      |  clr   |      24       |   F♭m    |
-| RAND     |  rand  |      26       |   F♭m    |
-| EXIT     |  exit  |   27 (ESC)    |   F♭m    |
-| DUP      |  dup   |    33 (!)     |   F♭m<sup>o</sup>    |
-| DEPTH    | depth  |    35 (#)     |   F♭m    |
-| SWAP     |  swap  |    36 ($)     |   F♭m<sup>o</sup>    |
-| MOD      |   %    |    37 (%)     |   F♭m    |
-| AND      |   &    |    38 (&)     |   F♭m    |
-| STASH    |   (    |    40 (()     |   F♭m    |
-| FETCH    |   )    |    41 ())     |   F♭m    |
-| MUL      |   \*   |    42 (\*)    |   F♭m<sup>o</sup>    |
-| ADD      |   +    |    43 (+)     |   F♭m<sup>o</sup>    |
-| SUB      |   -    |    45 (-)     |   F♭m<sup>o</sup>    |
-| DUMP     |   .    |    46 (.)     |   F♭m<sup>o</sup>    |
-| DIV      |   /    |    47 (/)     |   F♭m<sup>o</sup>    |
-| MARK     |   :    |    58 (:)     |   F♭m<sup>o</sup>    |
-| DEF      |   ;    |    59 (;)     |   F♭m<sup>o</sup>    |
-| LT       |   <    |    60 (<)     |   F♭m    |
-| EQ       |   =    |    61 (=)     |   F♭m    |
-| GT       |   >    |    62 (>)     |   F♭m    |
-| WHEN     |   ?    |    63 (?)     |   F♭m<sup>o</sup>    |
-| BRA      |   [    |    91 ([)     |   F♭m    |
-| KET      |   ]    |    93 (])     |   F♭m    |
-| POW      |   ^    |    94 (^)     |   F♭m    |
-| OR       |   \|   |   124 (\|)    |   F♭m    |
-| NOT      |   ~    |    126 (~)    |   F♭m    |
+| Mnemonic | Syntax |  Op (Ascii)   |     Version     |
+| -------- | :----: | :-----------: | :-------------: |
+| NOP      |  nop   |   0 (null)    | F♭m<sup>o</sup> |
+| EVAL     |  eval  |       1       | F♭m<sup>o</sup> |
+| PUTC     |  putc  |       2       |       F♭m       |
+| GETC     |  getc  |       3       |       F♭m       |
+| PRINT    | print  |       5       |       F♭m       |
+| CLOCK    | clock  |       6       |       F♭m       |
+| DROP     |  drop  | 8 (backspace) | F♭m<sup>o</sup> |
+| PUSHR    |   q<   |      14       | F♭m<sup>o</sup> |
+| PULLR    |   q>   |      15       | F♭m<sup>o</sup> |
+| SHIFTL   |   <<   |      16       |       F♭m       |
+| SHIFTR   |   >>   |      17       |       F♭m       |
+| CLR      |  clr   |      24       |       F♭m       |
+| RAND     |  rand  |      26       |       F♭m       |
+| EXIT     |  exit  |   27 (ESC)    |       F♭m       |
+| DUP      |  dup   |    33 (!)     | F♭m<sup>o</sup> |
+| DEPTH    | depth  |    35 (#)     |       F♭m       |
+| SWAP     |  swap  |    36 ($)     | F♭m<sup>o</sup> |
+| MOD      |   %    |    37 (%)     |       F♭m       |
+| AND      |   &    |    38 (&)     |       F♭m       |
+| STASH    |   (    |    40 (()     |       F♭m       |
+| FETCH    |   )    |    41 ())     |       F♭m       |
+| MUL      |   \*   |    42 (\*)    | F♭m<sup>o</sup> |
+| ADD      |   +    |    43 (+)     | F♭m<sup>o</sup> |
+| SUB      |   -    |    45 (-)     | F♭m<sup>o</sup> |
+| DUMP     |   .    |    46 (.)     | F♭m<sup>o</sup> |
+| DIV      |   /    |    47 (/)     | F♭m<sup>o</sup> |
+| MARK     |   :    |    58 (:)     | F♭m<sup>o</sup> |
+| DEF      |   ;    |    59 (;)     | F♭m<sup>o</sup> |
+| LT       |   <    |    60 (<)     |       F♭m       |
+| EQ       |   =    |    61 (=)     |       F♭m       |
+| GT       |   >    |    62 (>)     |       F♭m       |
+| WHEN     |   ?    |    63 (?)     | F♭m<sup>o</sup> |
+| BRA      |   [    |    91 ([)     |       F♭m       |
+| KET      |   ]    |    93 (])     |       F♭m       |
+| POW      |   ^    |    94 (^)     |       F♭m       |
+| OR       |   \|   |   124 (\|)    |       F♭m       |
+| NOT      |   ~    |    126 (~)    |       F♭m       |
 
 ### Compiler/Preprocessor commands
 
