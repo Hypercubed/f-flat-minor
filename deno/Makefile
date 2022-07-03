@@ -21,14 +21,14 @@ build/%: ./**/*.ts
 compile: build/compile
 	@printf "** Deno Compiler **"
 	@time ./build/compile ../ff/example.ff \
-		| cmp --s - "../fixtures/example.ffb" && $(CHECK)
+		| cmp --s - "../ff/example.ffb" && $(CHECK)
 	@echo ""
 	@echo ""
 
 .PHONY : execute
 execute: build/execute 
 	@printf "** Deno Executer **"
-	@time ./build/execute ../fixtures/example.ffb \
+	@time ./build/execute ../ff/example.ffb \
 		| cmp -s - "../ff/example.out" && $(CHECK)
 	@echo ""
 	@echo ""
@@ -58,7 +58,7 @@ ff: build/run
 	@echo ""
 
 .PHONY : reset
-reset: build/run
+reset: build/run build/compile
 	@cd ..; \
 		for f in ${FF}; do \
 			out=$${f%.*}.out; \
@@ -68,4 +68,6 @@ reset: build/run
 				echo ""; \
 			fi \
 		done
+	@echo "Reseting ../ff/example.ff ../ff/example.ffb";
+	@./build/compile ../ff/example.ff > ../ff/example.ffb
 

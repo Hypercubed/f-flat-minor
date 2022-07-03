@@ -95,15 +95,15 @@ export function run(argv: Arguments) {
 
   interpreter.loadIR(ir);
 
-  start = Date.now();
+  start = performance.now();
   interpreter.run();
-  end = Date.now();
+  end = performance.now();
 
   if (argv.stats) {
     const ops = interpreter.stats.system_instructions_called + interpreter.stats.user_instructions_called;
     interpreter.printStats();
     console.log();
-    console.log(`Executed in ${end - start}ms, `, Math.round(ops / (end - start)) + " ops/ms");
+    console.log(`Executed in ${(end - start).toFixed(4)}ms, `, Math.round(ops / (end - start)) + " ops/ms");
     console.log();
   }
 

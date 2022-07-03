@@ -18,14 +18,14 @@ test:	ff compile execute interpret
 compile: build/compile
 	@printf "** Go Compiler **"
 	@time ./build/compile -in ../ff/example.ff \
-		| cmp -s -- "../fixtures/example.ffb" && $(CHECK)
+		| cmp -s -- "../ff/example.ffb" && $(CHECK)
 	@echo ""
 	@echo ""
 
 .PHONY : execute
 execute: build/execute
 	@printf "** Go Executer **"
-	@time cat ../fixtures/example.ffb \
+	@time cat ../ff/example.ffb \
 		| ./build/execute \
 		| cmp -s -- "../ff/example.out" && $(CHECK)
 	@echo ""

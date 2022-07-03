@@ -1,9 +1,4 @@
-[rot] : swap q< swap q> swap ;
-[choose] : rot [swap] ? drop ;
-[branch] : choose eval ;
-
-[fact_t] : dup 1 - fact * ;
-[fact_f] : drop 1 ;
-[fact] : dup [fact_t] [fact_f] branch ;
+[(fact)] : dup 1 - fact * ;
+[fact] : dup 1 - [(fact)] ? ;
 
 100 fact .
