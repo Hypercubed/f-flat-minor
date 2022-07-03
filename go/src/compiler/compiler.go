@@ -216,7 +216,7 @@ func CompileToIR(t []string, filename string) []IrInstruction {
 				l++
 			}
 			s := convertEsc2Char(element[1 : len(element)-l])
-			for i := len(s) - 1; i >= 0; i-- {
+			for i := 0; i < len(s); i++ {
 				v := NewInt(int64(s[i]))
 				if i == 0 {
 					push(v, s)

@@ -156,7 +156,7 @@ void ev() {
     } else if (token.startsWith('\'')) {
       var chars = token.substring(1).split('');
       var asc = chars.map((c) => BigInt.from(c.codeUnitAt(0))).toList();
-      stack.addAll(asc.reversed);
+      stack.addAll(asc);
     } else if (symbols[token] != null) {
       var code = getSymbol(token);
       callOp(code);

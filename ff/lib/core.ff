@@ -135,7 +135,7 @@ newline: 10 ;
 sp: space putc ;
 cr: newline putc ;
 
-_prints: dup [ putc _prints ] ? ;
+_prints: dup [ q< _prints q> putc ] ? ;
 prints: _prints drop ;
 println: prints cr ;
 

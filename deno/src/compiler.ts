@@ -119,10 +119,9 @@ export class Compiler {
         }
       } else if (ss[0] === "'" && ss.length > 1) { // String
         unescapeString(ss)
-          .replace(/^'/, "") // TODO: use backtick?
+          .replace(/^'/, "")
           .replace(/'$/, "")
           .split("")
-          .reverse()
           .forEach((c, i) => {
             push(c.charCodeAt(0), i === 0 ? { comment: ss } : {});
           });

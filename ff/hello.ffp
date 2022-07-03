@@ -2,9 +2,9 @@
 
 0 'Hello\sWorld!\n' prints
 
-0 10 'World!' 32 'Hello prints
+0 'Hello' 32 'World!' 10 prints
 
-0 10 '! 'd 'l 'r 'o 'W 32 'o 'l dup 'e 'H prints
+0 'H' 'e' 'l' dup 'o' 32 'W' 'o' 'r' 'l' 'd' '!' 10 prints
 
 'H' putc
 'e' putc

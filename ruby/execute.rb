@@ -83,7 +83,7 @@ def run ()
       # no-op
     elsif item[0] == "'"
       e = item[-1] == "'" ? item[1..-2] : item[1..-1]
-      unescape(e).reverse!.each_byte do |c|
+      unescape(e).each_byte do |c|
         $stack.push c
       end
     elsif item[0] == "[" && item[-1] == "]"

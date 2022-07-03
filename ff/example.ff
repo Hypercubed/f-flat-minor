@@ -4,11 +4,9 @@ fact: dup 1 > [ dup 1 - fact * ] ? ;
 
 /* string printing */
 
-(prints): dup [ putc (prints) ] ? ;
+(prints): dup [ q< (prints) q> putc ] ? ;
 prints: (prints) drop ;
-println: prints 10 putc ;
 
-0 32 'Factorial' prints
-0 '100:' println
+0 'Factorial' 32 '100:' 10 prints
 
 100 fact .

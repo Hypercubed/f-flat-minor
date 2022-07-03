@@ -268,7 +268,7 @@ def run():
     elif s.startswith('\''):
       n = s[1:-1] if s.endswith('\'') else s[1:]
       n = unescape(n)
-      stack.extend([ord(c) for c in n[::-1]])
+      stack.extend([ord(c) for c in n])
     elif s.endswith(':') and len(s) > 1:
       n = s[:-1]
       stack.append(getSym(n))

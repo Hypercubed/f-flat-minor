@@ -19,7 +19,7 @@ OK
 OK
 
 0 'Strings' prints 
-  'abc' 'a' assert_eq 'b' assert_eq 'c' assert_eq
+  'abc' rot 'a' assert_eq 'b' assert_eq 'c' assert_eq
 OK
 
 0 'Shuffling' prints 
