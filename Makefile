@@ -1,6 +1,6 @@
 include defs.mk
 
-.DEFAULT_GOAL := test
+.DEFAULT_GOAL := build
 
 ./ff/lib/primes-encoded.ff: ./ff/encode-primes.ffp
 	@./deno/bin/ff run ./ff/encode-primes.ffp > ./ff/lib/primes-encoded.ff

@@ -10,43 +10,74 @@
 #include <boost/multiprecision/gmp.hpp>
 #include <boost/random.hpp>
 
-namespace mp = boost::multiprecision;
+using namespace boost::multiprecision;
 
-using BigInt = mp::mpz_int;
-using String = std::string;
-using Stack = std::stack<BigInt>;
-using Queue = std::deque<String>;
-using Definition = std::stack<String>;
+using Stack = std::stack<mpz_int>;
+using Queue = std::deque<std::string>;
+using Definition = std::stack<std::string>;
 
-const auto TWO = BigInt(2);
+const auto TWO = mpz_int(2);
 boost::random::mt19937 mt;
 
 #define POP()  \
   stack.top(); \
   stack.pop();
 
-std::deque<String> queue;
+Queue queue;
 Stack stack;
 Stack rstack;
 
-std::map<String, int> symbols;
+std::map<std::string, int> symbols;
 std::map<int, Definition> defs;
 
 int nextOp = 255;
 
 void callOp(int op);
-void callOp(BigInt op);
+void callOp(mpz_int op);
 
-std::queue<String> tokenize(const String &str)
+mpz_int parseNumber(const std::string &s)
 {
-  std::queue<String> result;
+  std::string res;
+  std::string::const_iterator it = s.begin();
+  while (it != s.end())
+  {
+    char c = *it++;
+    if (it != s.end())
+    {
+      switch (c)
+      {
+      case '_':
+        continue;
+      }
+    }
+    res += c;
+  }
+
+  return mpz_int(res);
+}
+
+std::queue<std::string> tokenize(const std::string &str)
+{
+  std::queue<std::string> result;
   std::istringstream iss(str);
-  for (String s; iss >> s;)
-    result.push(s);
+  for (std::string s; iss >> s;)
+  {
+    try
+    {
+      auto n = parseNumber(s);
+
+      // For now storing as a string
+      result.push(n.convert_to<std::string>());
+    }
+    catch (...)
+    {
+      result.push(s);
+    }
+  }
   return result;
 }
 
-int getSymbol(const String &str)
+int getSymbol(const std::string &str)
 {
   if (symbols.find(str) != symbols.end())
     return symbols[str];
@@ -147,7 +178,7 @@ void printStack(Stack st)
   std::cout << t << ' ';
 }
 
-BigInt ipow_internal(const BigInt &base, const BigInt &exp)
+mpz_int ipow_internal(const mpz_int &base, const mpz_int &exp)
 {
   if (exp == 0)
     return 1;
@@ -159,7 +190,7 @@ BigInt ipow_internal(const BigInt &base, const BigInt &exp)
   return (exp % TWO == 0) ? pow : pow * base;
 }
 
-BigInt ipow(const BigInt &base, const BigInt &exp)
+mpz_int ipow(const mpz_int &base, const mpz_int &exp)
 {
   if (exp < 0)
   {
@@ -177,8 +208,10 @@ BigInt ipow(const BigInt &base, const BigInt &exp)
   return ipow_internal(base, exp);
 }
 
-void defineUser(const int &op, const Definition def) {
-  if (defs.count(op)) {
+void defineUser(const int &op, const Definition def)
+{
+  if (defs.count(op))
+  {
     throw std::logic_error("User word already defined");
   }
   defs[op] = def;
@@ -210,7 +243,7 @@ void callSystem(int op)
   }
   case op_clock:
   {
-    stack.push(BigInt(static_cast<unsigned int>(std::time(0))));
+    stack.push(mpz_int(static_cast<unsigned int>(std::time(0))));
     break;
   }
   case op_drop:
@@ -239,7 +272,7 @@ void callSystem(int op)
   case op_rand:
   {
     auto a = POP();
-    boost::random::uniform_int_distribution<BigInt> ui(0, a);
+    boost::random::uniform_int_distribution<mpz_int> ui(0, a);
     stack.push(ui(mt));
     break;
   }
@@ -251,7 +284,7 @@ void callSystem(int op)
   }
   case op_depth:
   {
-    stack.push(BigInt(stack.size()));
+    stack.push(mpz_int(stack.size()));
     break;
   }
   case op_swap:
@@ -281,7 +314,7 @@ void callSystem(int op)
     Definition def;
     while (!queue.empty() && depth > 0) /* TODO: Handle nested brackets */
     {
-      String str = queue.front();
+      std::string str = queue.front();
       queue.pop_front();
 
       if (str == "[")
@@ -293,7 +326,7 @@ void callSystem(int op)
     }
     auto n = getSymbol();
     defineUser(n, def);
-    stack.push(BigInt(n));
+    stack.push(mpz_int(n));
     break;
   }
   case op_mod:
@@ -322,15 +355,13 @@ void callSystem(int op)
   case op_shiftl:
   {
     auto a = POP();
-    auto b = stack.top();
-    stack.top() = b * ipow(TWO, a);
+    stack.top() = stack.top() << a.convert_to<long long>();
     break;
   }
   case op_shiftr:
   {
     auto a = POP();
-    auto b = stack.top();
-    stack.top() = b / ipow(TWO, a);
+    stack.top() = stack.top() >> a.convert_to<long long>();
     break;
   }
   case op_add:
@@ -360,22 +391,19 @@ void callSystem(int op)
   case op_lt:
   {
     auto a = POP();
-    auto b = stack.top();
-    stack.top() = (b < a);
+    stack.top() = (stack.top() < a);
     break;
   }
   case op_gt:
   {
     auto a = POP();
-    auto b = stack.top();
-    stack.top() = (b > a);
+    stack.top() = (stack.top() > a);
     break;
   }
   case op_eq:
   {
     auto a = POP();
-    auto b = stack.top();
-    stack.top() = (b == a);
+    stack.top() = (stack.top() == a);
     break;
   }
   case op_dump:
@@ -396,8 +424,7 @@ void callSystem(int op)
   case op_pow:
   {
     auto a = POP();
-    auto b = stack.top();
-    stack.top() = ipow(b, a);
+    stack.top() = ipow(stack.top(), a);
     break;
   }
   }
@@ -412,7 +439,7 @@ void enqueue_front(Definition q)
   }
 }
 
-void enqueue_back(std::queue<String> q)
+void enqueue_back(std::queue<std::string> q)
 {
   while (!q.empty())
   {
@@ -431,27 +458,36 @@ void callOp(int op)
   enqueue_front(defs[op]);
 }
 
-void callOp(BigInt op)
+void callOp(mpz_int op)
 {
   callOp(op.convert_to<int>());
 }
 
-String unescape(const String &s)
+std::string unescape(const std::string &s)
 {
-  String res;
-  String::const_iterator it = s.begin();
+  std::string res;
+  std::string::const_iterator it = s.begin();
   while (it != s.end())
   {
     char c = *it++;
     if (c == '\\' && it != s.end())
     {
-      switch (*it++) {
-      case '\\': c = '\\'; break;
-      case 'n': c = '\n'; break;
-      case 't': c = '\t'; break;
-      case 's': c = ' '; break;
+      switch (*it++)
+      {
+      case '\\':
+        c = '\\';
+        break;
+      case 'n':
+        c = '\n';
+        break;
+      case 't':
+        c = '\t';
+        break;
+      case 's':
+        c = ' ';
+        break;
       // all other escapes
-      default: 
+      default:
         // invalid escape sequence - skip it. alternatively you can copy it as is, throw an exception...
         continue;
       }
@@ -468,7 +504,7 @@ int main()
 
   setup();
 
-  for (String line; std::getline(std::cin, line);)
+  for (std::string line; std::getline(std::cin, line);)
   {
     enqueue_back(tokenize(line));
   }
@@ -480,7 +516,7 @@ int main()
 
     try
     {
-      auto i = BigInt(str);
+      auto i = mpz_int(str);
       stack.push(i);
     }
     catch (...)
@@ -496,7 +532,8 @@ int main()
       else if (str[0] == '\'' && str.back() == '\'')
       {
         str = unescape(str.substr(1, str.size() - 2));
-        for(char& c : str) {
+        for (char &c : str)
+        {
           stack.push(c);
         }
       }
