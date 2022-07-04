@@ -1,5 +1,5 @@
 import { blue, green, red, cyan } from "https://deno.land/std@0.139.0/fmt/colors.ts";
-import { OpCodes } from "./opcodes.ts";
+import { OpCodes, systemWords } from "./opcodes.ts";
 
 interface Meta {
   comment: string;
@@ -26,24 +26,40 @@ export enum IROp {
 const OP_WIDTH = 6;
 const VALUE_WIDTH = 10;
 
-const encoder = new TextEncoder()
+const encoder = new TextEncoder();
+
+function getMetaComment(i: IrInstruction) {
+  let m = '';
+  if (i.meta?.inline) m += ".inline "
+  if (i.meta?.pointer) m += ".pointer ";
+  if (i.meta?.unsafe) m += ".unsafe ";
+  return m.trim();
+}
+
+function formatOp(i: IrInstruction) {
+  return i.op.toUpperCase().padEnd(OP_WIDTH, " ");
+}
+
+function formatValue(i: IrInstruction) {
+  return ("" + i.value).padEnd(VALUE_WIDTH, " ");
+}
+
+function formatComment(i: IrInstruction) {
+  return i.meta?.comment?.trim() ? `; ${i.meta?.comment}` : "";
+}
 
 export function printHighLevelIr(ir: Array<IrInstruction>) {
   ir.forEach((i) => {
-    const c = i.meta?.comment?.trim() ? `; ${i.meta?.comment}` : "";
-    const n = ("" + i.meta?.name?.toUpperCase()).padEnd(VALUE_WIDTH, " ");
-    const v = ("" + i.value).padEnd(VALUE_WIDTH, " ");
-    const o = i.op.toUpperCase();
+    const c = formatComment(i);
+    const n = getName(i)?.toUpperCase().padEnd(VALUE_WIDTH, " ") || "";
+    const v = formatValue(i);
+    const o = formatOp(i);
+    const m = getMetaComment(i);
 
-    let m = '';
-    m = i.meta?.inline ? ".inline" : "";
-    m = i.meta?.pointer ? ".pointer" : m;
-    m = m.trim();
-
-    if (i.op === IROp.call && i.meta?.name) {
+    if (i.op === IROp.call && n) {
       console.log(blue(o), green(n), red(m), c);
       return;
-    } else if (i.op === IROp.push && i.meta?.pointer) {
+    } else if (i.op === IROp.push && n && i.meta?.pointer) {
       console.log(blue(o), green(n), red(m), c);
       return;
     } else if (i.op === IROp.push) {
@@ -62,6 +78,21 @@ function print(...args: string[]) {
   Deno.stdout.writeSync(encoder.encode(args.join(' ')));
 }
 
+function findSystemWord(v: number): string {
+  for (const k in systemWords) {
+    if (systemWords[k] === v) {
+      return k;
+    }
+  }
+  return "";
+}
+
+function getName(i: IrInstruction) {
+  if (i.op === IROp.call || (i.op === IROp.push && i.meta?.pointer)) {
+    return i.meta?.name || findSystemWord(Number(i.value)) || "";
+  }
+}
+
 export function disassembleIr(ir: Array<IrInstruction>) {
   for (let ip = 0; ip < ir.length; ip++) {
     const i = ir[ip];
@@ -74,7 +105,7 @@ export function disassembleIr(ir: Array<IrInstruction>) {
       print(`${v} `);
     } else if (i.op === IROp.call) {
       if (i.value !== 0n) {
-        const n = i.meta?.name || `$_${i.value}`;
+        const n = getName(i) || `$_${i.value}`;
         print(`${n} `);
       }
     }    
@@ -83,9 +114,9 @@ export function disassembleIr(ir: Array<IrInstruction>) {
 
 export function printLowLevelIr(ir: Array<IrInstruction>) {
   ir.forEach((i) => {
-    const o = i.op.toUpperCase().padEnd(OP_WIDTH, " ");
-    const n = i.meta?.name?.toUpperCase() || "";
-    const v = ("" + i.value).padEnd(VALUE_WIDTH, " ");
+    const o = formatOp(i);
+    const n = getName(i)?.toUpperCase() || "";
+    const v = formatValue(i);
     const c = [n, i.meta?.comment || ""].join(" ").trim();
     console.log(blue(o), cyan(v), c ? `; ${c}` : "");
   });

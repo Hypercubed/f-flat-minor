@@ -16,15 +16,15 @@ For each target language first implement a proof-of-concept interpreter either i
 
 ## Progress
 
-| Language              | Interpreter                                                   | Compiler/Executer | REPL |
-| --------------------- | ------------------------------------------------------------- | ----------------- | ---- |
-| Typescript/Deno       | F♭m<sup>+</sup>                                               | ✓                 | ✓    |
-| Go                    | F♭m                                                           | ✓                 | ✓    |
-| Python                | F♭m                                                           |
-| Ruby                  | F♭m                                                           |
-| Dart                  | F♭m                                                           |
-| AssemblyScript        | F♭m<sup>o</sup>                                               |
-| C++                   | F♭m<sup>o</sup>                                               |
+| Language              | Interpreter                                                            | Compiler/Executer | REPL |
+| --------------------- | ---------------------------------------------------------------------- | ----------------- | ---- |
+| Typescript/Deno       | F♭m<sup>+</sup>                                                        | ✓                 | ✓    |
+| Go                    | F♭m                                                                    | ✓                 | ✓    |
+| Python                | F♭m                                                                    |
+| Ruby                  | F♭m                                                                    |
+| Dart                  | F♭m                                                                    |
+| AssemblyScript        | F♭m<sup>o</sup>                                                        |
+| C++                   | F♭m<sup>o</sup>                                                        |
 | Rust                  | [ F♭m<sup>-</sup> ](https://replit.com/@Hypercubed/f-flat-minor-Rust)  |
 | Swift                 | [ F♭m<sup>-</sup> ](https://replit.com/@Hypercubed/f-flat-minor-Swift) |
 | LLVM                  |
@@ -143,15 +143,15 @@ _F♭m<sup>+</sup>_ adds a preprocessor and compiler commands. A word starting w
 
 | Mnemonic | Syntax |  Op (Ascii)   |     Version     |
 | -------- | :----: | :-----------: | :-------------: |
-| NOP      |  nop   |   0 (null)    | F♭m<sup>o</sup> |
-| EVAL     |  eval  |       1       | F♭m<sup>o</sup> |
+| NOP      |  nop   |   0 (null)    |       F♭m       |
+| EVAL     |  eval  |       1       |       F♭m       |
 | PUTC     |  putc  |       2       |       F♭m       |
 | GETC     |  getc  |       3       |       F♭m       |
 | PRINT    | print  |       5       |       F♭m       |
 | CLOCK    | clock  |       6       |       F♭m       |
-| DROP     |  drop  | 8 (backspace) | F♭m<sup>o</sup> |
-| PUSHR    |   q<   |      14       | F♭m<sup>o</sup> |
-| PULLR    |   q>   |      15       | F♭m<sup>o</sup> |
+| DROP     |  drop  | 8 (backspace) |       F♭m       |
+| PUSHR    |   q<   |      14       |       F♭m       |
+| PULLR    |   q>   |      15       |       F♭m       |
 | SHIFTL   |   <<   |      16       |       F♭m       |
 | SHIFTR   |   >>   |      17       |       F♭m       |
 | CLR      |  clr   |      24       |       F♭m       |
@@ -159,7 +159,7 @@ _F♭m<sup>+</sup>_ adds a preprocessor and compiler commands. A word starting w
 | EXIT     |  exit  |   27 (ESC)    |       F♭m       |
 | DUP      |  dup   |    33 (!)     | F♭m<sup>o</sup> |
 | DEPTH    | depth  |    35 (#)     |       F♭m       |
-| SWAP     |  swap  |    36 ($)     | F♭m<sup>o</sup> |
+| SWAP     |  swap  |    36 ($)     |       F♭m       |
 | MOD      |   %    |    37 (%)     |       F♭m       |
 | AND      |   &    |    38 (&)     |       F♭m       |
 | STASH    |   (    |    40 (()     |       F♭m       |

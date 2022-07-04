@@ -38,7 +38,7 @@ export enum OpCodes {
   NOT = "~".charCodeAt(0),
 }
 
-export const systemWords = {
+export const systemWords: Record<string, number> = {
   "nop": OpCodes.NOP,
   "eval": OpCodes.CALL,
   ";": OpCodes.DEF,

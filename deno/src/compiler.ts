@@ -122,8 +122,8 @@ export class Compiler {
           .replace(/^'/, "")
           .replace(/'$/, "")
           .split("")
-          .forEach((c, i) => {
-            push(c.charCodeAt(0), i === 0 ? { comment: ss } : {});
+          .forEach(c => {
+            push(c.charCodeAt(0), { comment: c });
           });
       } else if (ss.endsWith(":") && ss.length > 1) { // Definition
         const name = ss.replace(/:$/, "");

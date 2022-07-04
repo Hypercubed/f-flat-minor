@@ -77,7 +77,7 @@ export function run(argv: Arguments) {
     Deno.exit();
   }
 
-  if (argv.disassemble) {
+  if (argv.d || argv.disassemble) {
     disassembleIr(ir);
     Deno.exit();
   }

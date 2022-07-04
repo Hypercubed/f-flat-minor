@@ -7,7 +7,7 @@ import { assertEquals } from "https://deno.land/std@0.92.0/testing/asserts.ts";
 import { HEADER } from "../src/constants.ts";
 import { base64ToArrayBuffer, dumpByteArray } from "../src/dump.ts";
 import { Engine } from "../src/engine.ts";
-import { bigCodeToIr, printBigCodeIr } from "../src/ir.ts";
+import { bigCodeToIr, disassembleIr, printBigCodeIr, printHighLevelIr } from "../src/ir.ts";
 import { readStdin } from "../src/read.ts";
 
 export function run(args: Arguments) {
@@ -35,8 +35,20 @@ export function run(args: Arguments) {
 
   const bigCode = Engine.fromBase64(base64);
 
+  if (args.hlir) {
+    const ir = bigCodeToIr(bigCode);
+    printHighLevelIr(ir);
+    Deno.exit();
+  }
+
   if (args.ir) {
     printBigCodeIr(bigCode);
+    Deno.exit();
+  }
+
+  if (args.d || args.disassemble) {
+    const ir = bigCodeToIr(bigCode);
+    disassembleIr(ir);
     Deno.exit();
   }
 
@@ -45,19 +57,6 @@ export function run(args: Arguments) {
   interpreter.base = args.base || 10;
   interpreter.statsOn = args.stats || false;
   interpreter.profileOn = args.profile || false;
-
-  if (args.d) {
-    const ir = bigCodeToIr(bigCode);
-    const s = ir.map(i => {
-      if (i.op == "call") {
-        return interpreter.getName(i.value, `$_${i.value}`);
-      } else {
-        return i.value;
-      }
-    }).join(" ");
-    console.log(s);
-    Deno.exit();
-  }
 
   const start = Date.now();
   interpreter.run();
