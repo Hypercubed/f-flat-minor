@@ -17,6 +17,8 @@ using Stack = std::stack<BigInt>;
 using Queue = std::deque<String>;
 using Definition = std::stack<String>;
 
+const auto TWO = BigInt(2);
+
 #define POP()  \
   stack.top(); \
   stack.pop();
@@ -53,21 +55,29 @@ int getSymbol(const String &str)
 enum op_code
 {
   op_nop = 0,
-  op_call = 1,
+  op_eval = 1,
   op_putc = 2,
+  // print
+  // clock
   op_drop = 8,
   op_pushr = 14,
   op_pullr = 15,
   op_shiftl = 16,
   op_shiftr = 17,
   op_clr = 24,
+  // rand
+  // exit
   op_dup = 33,
+  op_depth = 35,
   op_swap = 36,
   op_mod = 37,
+  op_and = 38,
+  // stash
+  // fetch
+  op_mul = 42,
   op_add = 43,
   op_sub = 45,
-  op_prn = 46,
-  op_mul = 42,
+  op_dump = 46,
   op_div = 47,
   op_mark = 58,
   op_def = 59,
@@ -75,27 +85,33 @@ enum op_code
   op_eq = 61,
   op_gt = 62,
   op_when = 63,
-  op_pow = 94
+  // bra
+  // ket
+  op_pow = 94,
+  op_or = 124,
+  op_not = 126
 };
 
 void setup()
 {
   symbols["nop"] = op_nop;
-  symbols["eval"] = op_call;
+  symbols["eval"] = op_eval;
   symbols["putc"] = op_putc;
   symbols["drop"] = op_drop;
   symbols["<<"] = op_shiftl;
   symbols[">>"] = op_shiftr;
   symbols["clr"] = op_clr;
   symbols["%"] = op_mod;
+  symbols["&"] = op_and;
   symbols["+"] = op_add;
   symbols["-"] = op_sub;
   symbols["*"] = op_mul;
   symbols["/"] = op_div;
-  symbols["."] = op_prn;
+  symbols["."] = op_dump;
   symbols["^"] = op_pow;
   symbols[":"] = op_mark;
   symbols[";"] = op_def;
+  symbols["depth"] = op_depth;
   symbols["swap"] = op_swap;
   symbols["q<"] = op_pushr;
   symbols["q>"] = op_pullr;
@@ -104,6 +120,8 @@ void setup()
   symbols["="] = op_eq;
   symbols[">"] = op_gt;
   symbols["?"] = op_when;
+  symbols["|"] = op_or;
+  symbols["~"] = op_not;
 }
 
 void printStack(Stack st)
@@ -111,7 +129,7 @@ void printStack(Stack st)
   if (st.empty())
     return;
 
-  BigInt t = st.top();
+  auto t = st.top();
   st.pop();
   printStack(st);
 
@@ -125,9 +143,9 @@ BigInt ipow_internal(const BigInt &base, const BigInt &exp)
   if (exp == 1)
     return base;
 
-  BigInt pow = ipow_internal(base, exp / 2);
+  auto pow = ipow_internal(base, exp / TWO);
   pow = pow * pow;
-  return (exp % 2 == 0) ? pow : pow * base;
+  return (exp % TWO == 0) ? pow : pow * base;
 }
 
 BigInt ipow(const BigInt &base, const BigInt &exp)
@@ -154,16 +172,16 @@ void callSystem(int op)
   {
   case op_nop:
     break;
-  case op_call:
+  case op_eval:
   {
-    BigInt a = POP();
+    auto a = POP();
     callOp(a);
     break;
   }
   case op_putc:
   {
-    BigInt a = POP();
-    std::cout << (char)a.convert_to<int>();
+    auto a = POP();
+    std::cout << a.convert_to<char>();
     break;
   }
   case op_drop:
@@ -173,7 +191,7 @@ void callSystem(int op)
   }
   case op_pushr:
   {
-    BigInt a = POP();
+    auto a = POP();
     rstack.push(a);
     break;
   }
@@ -191,14 +209,19 @@ void callSystem(int op)
   }
   case op_dup:
   {
-    BigInt a = stack.top();
+    auto a = stack.top();
     stack.push(a);
+    break;
+  }
+  case op_depth:
+  {
+    stack.push(BigInt(stack.size()));
     break;
   }
   case op_swap:
   {
-    BigInt a = POP();
-    BigInt b = stack.top();
+    auto a = POP();
+    auto b = stack.top();
     stack.top() = a;
     stack.push(b);
     break;
@@ -212,85 +235,101 @@ void callSystem(int op)
       queue.pop_front();
     }
     queue.pop_front();
-    BigInt n = POP();
+    auto n = POP();
     defs[n.convert_to<int>()] = def;
     break;
   }
   case op_mod:
   {
-    BigInt a = POP();
+    auto a = POP();
     stack.top() %= a;
+    break;
+  }
+  case op_and:
+  {
+    auto a = POP();
+    stack.top() &= a;
+    break;
+  }
+  case op_or:
+  {
+    auto a = POP();
+    stack.top() |= a;
+    break;
+  }
+  case op_not:
+  {
+    stack.top() = ~stack.top();
     break;
   }
   case op_shiftl:
   {
-    BigInt a = POP();
-    BigInt b = stack.top();
-    stack.top() = b * ipow(2, a);
+    auto a = POP();
+    auto b = stack.top();
+    stack.top() = b * ipow(TWO, a);
     break;
   }
   case op_shiftr:
   {
-    BigInt a = POP();
-    BigInt b = stack.top();
-    stack.top() = b / ipow(2, a);
+    auto a = POP();
+    auto b = stack.top();
+    stack.top() = b / ipow(TWO, a);
     break;
   }
   case op_add:
   {
-    BigInt a = POP();
+    auto a = POP();
     stack.top() += a;
     break;
   }
   case op_sub:
   {
-    BigInt t = POP();
+    auto t = POP();
     stack.top() -= t;
     break;
   }
   case op_mul:
   {
-    BigInt a = POP();
-    BigInt b = POP();
-    stack.push(a * b);
+    auto a = POP();
+    stack.top() *= a;
     break;
   }
   case op_div:
   {
-    BigInt t = POP();
+    auto t = POP();
     stack.top() /= t;
     break;
   }
   case op_lt:
   {
-    BigInt a = POP();
-    BigInt b = stack.top();
+    auto a = POP();
+    auto b = stack.top();
     stack.top() = (b < a);
     break;
   }
   case op_gt:
   {
-    BigInt a = POP();
-    BigInt b = stack.top();
+    auto a = POP();
+    auto b = stack.top();
     stack.top() = (b > a);
     break;
   }
   case op_eq:
   {
-    BigInt a = POP();
-    BigInt b = stack.top();
+    auto a = POP();
+    auto b = stack.top();
     stack.top() = (b == a);
     break;
   }
-  case op_prn:
+  case op_dump:
     std::cout << "[ ";
     printStack(stack);
     std::cout << "]\n";
     break;
   case op_when:
   {
-    BigInt o = POP();
-    BigInt b = POP();
+    auto o = POP();
+    auto b = POP();
     if (b != 0)
     {
       callOp(o);
@@ -299,8 +338,8 @@ void callSystem(int op)
   }
   case op_pow:
   {
-    BigInt a = POP();
-    BigInt b = stack.top();
+    auto a = POP();
+    auto b = stack.top();
     stack.top() = ipow(b, a);
     break;
   }
@@ -346,18 +385,17 @@ int main()
 
   for (String line; std::getline(std::cin, line);)
   {
-    std::queue<String> q = tokenize(line);
     enqueue_back(tokenize(line));
   }
 
   while (!queue.empty())
   {
-    String str = queue.front();
+    auto str = queue.front();
     queue.pop_front();
 
     try
     {
-      BigInt i = std::stol(str);
+      auto i = BigInt(str);
       stack.push(i);
     }
     catch (...)
