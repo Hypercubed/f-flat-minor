@@ -62,59 +62,21 @@ function print(...args: string[]) {
   Deno.stdout.writeSync(encoder.encode(args.join(' ')));
 }
 
-function printCall(i: IrInstruction) {
-  const n = i.meta?.name || `$_${i.value}`;
-  if (i.value !== 0n) {
-    print(`${n} `);
-  }
-  if (i.meta?.comment?.trim()) {
-    print(`/* ${i.meta?.comment} */`, "\n");
-  }
-}
-
-function printPush(i: IrInstruction) {
-  const v = String(i.value);
-  print(`${v} `);
-  if (i.meta?.comment?.trim()) {
-    print(`/* ${i.meta?.comment} */`, "\n");
-  }
-}
-
-function printPointer(i: IrInstruction) {
-  const n = i.meta?.name || `$_${i.value}`;
-  print(`[${n}] `);
-  if (i.meta?.comment?.trim()) {
-    print(`/* ${i.meta?.comment} */`, "\n");
-  }
-}
-
-function defWord(i: IrInstruction) {
-  const n = i.meta?.name || `$_${i.value}`;
-  print(`${n}: `);
-  if (i.meta?.comment?.trim()) {
-    print(`/* ${i.meta?.comment} */`, "\n");
-  }
-}
-
 export function disassembleIr(ir: Array<IrInstruction>) {
   for (let ip = 0; ip < ir.length; ip++) {
     const i = ir[ip];
 
     if (i.op === IROp.push && i.meta?.pointer) {
-      if (ir[ip + 1].op === IROp.call && ir[ip + 1].value === BigInt(OpCodes.MARK)) {
-        defWord(i);
-        ip++;
-      } else {
-        printPointer(i);
-      }
+      const n = i.meta?.name || `$_${i.value}`;
+      print(`[${n}] `);
     } else if (i.op === IROp.push) {
-      if (ir[ip + 1].op === IROp.call && ir[ip + 1].value === BigInt(OpCodes.BRA)) {
-        continue;
-      } else {
-        printPush(i);
-      }
+      const v = String(i.value);
+      print(`${v} `);
     } else if (i.op === IROp.call) {
-      printCall(i);
+      if (i.value !== 0n) {
+        const n = i.meta?.name || `$_${i.value}`;
+        print(`${n} `);
+      }
     }    
   }
 }

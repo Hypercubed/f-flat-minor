@@ -35,7 +35,7 @@ OK
     9 12 ^ 282429536481 assert_eq
 OK
 
-0 'Large\sPowers' prints 
+0 'Large\sPowers' prints
     5 4 3 2 ^ ^ ^ 10 10 ^ % 8212890625 assert_eq
 OK
 

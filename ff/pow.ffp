@@ -1,0 +1,57 @@
+.load ./lib/core.ff
+
+M:
+.m 10 10 ^
+; .inline
+
+powm: q< ^ q> % ; .inline
+
+powm_recur_loop: /* r x y */
+  dup /* r x y y */
+  [ 
+    dup 2 % 1 = /* r x y y&1 */
+    [
+      q< dup q< * q> q> /* r*x x y */
+    ]
+    ?
+    1 >> q< dup * q> /* r x*x y>>1 */
+    powm_recur_loop
+  ] 
+  ? /* r x y */
+;
+
+powm_recur: /* x y p */
+  q< 
+    q< q< 1 q> q> /* r x y */
+    powm_recur_loop
+  q>
+  nip nip %
+;
+
+N: 500 ; .inline
+
+time: 
+  clock */
+  swap N times
+  [ drop ] N -- times
+  swap clock swap -
+;
+
+2 5 13 powm . clr
+2 5 13 powm_recur . clr
+
+5 4 3 2 ^ ^ ^ M % . clr
+5 4 3 2 M powm M powm M powm M % . clr
+5 4 3 2 M powm_recur M powm_recur M powm_recur M % . clr
+
+/* [ 5 4 3 2 ^ ^ ^ M % ]
+time
+. clr
+
+[ 5 4 3 2 M powm M powm M powm M % ]
+time
+. clr
+
+[ 5 4 3 2 M powm_recur M powm_recur M powm_recur M % ]
+time
+. clr */

@@ -1,9 +1,23 @@
 .load ../lib/core.ff
 
-/* http://projecteuler.net/index.php?section=problems&id=48 */
+/* http://projecteuler.net/index.php?section=problems&id=48 
 
-1 1000 range [ dup ^ ] map! sum!
-10 10 ^ % /* last 10 digits */
+The series, 1^1 + 2^2 + 3^3 + ... + 10^10 = 10405071317.
+
+Find the last ten digits of the series, 1^1 + 2^2 + 3^3 + ... + 1000^1000.
+
+*/
+
+M:
+.m 10 10 ^
+; .inline
+
+powm: [ ^ ] dip % ; .inline
+
+/* (a+b) % c = ((a % c) + (b % c))% c */
+
+0 1000 range [ dup M powm + ] reduce_l!
+M %
 .
 
 /* 9110846700 */
