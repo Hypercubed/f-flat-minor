@@ -3,10 +3,10 @@ include ../defs.mk
 .DEFAULT_GOAL := build/run
 
 build/run: run.cpp
-	g++ run.cpp -o build/run -O -lgmp
+	g++ run.cpp -o build/run -O2 -lgmp
 
 .PHONY : test
-test:	interpret
+test:	interpret ff
 
 .PHONY : interpret
 interpret: build/run
@@ -27,12 +27,12 @@ ff: build/run
 			if [ -f "$${out}" ]; \
 			then \
 				printf "cmp $${f} $${out} "; \
-				if [ "$${f: -4}" == ".ffp" ]; \
-				then \
-					./deno/build/preprocess $${f} | ./cpp/build/run 2>/dev/null | cmp - $${out} -s && $(CHECK); \
-				else \
-					cat $${f} | ./cpp/build/run 2>/dev/null | cmp - $${out} -s && $(CHECK); \
-				fi; \
+				# if [ "$${f: -4}" == ".ffp" ]; \
+				# then \
+				# 	./deno/build/preprocess $${f} | ./cpp/build/run 2>/dev/null | cmp - $${out} -s && $(CHECK); \
+				# else \
+				# 	cat $${f} | ./cpp/build/run 2>/dev/null | cmp - $${out} -s && $(CHECK); \
+				# fi; \
 				./deno/build/compile $${f} --opt --disassemble | ./cpp/build/run 2>/dev/null | cmp - $${out} -s && $(CHECK); \
 				echo ""; \
 			fi \

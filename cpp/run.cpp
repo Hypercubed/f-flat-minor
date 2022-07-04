@@ -8,6 +8,7 @@
 #include <cmath>
 #include <map>
 #include <boost/multiprecision/gmp.hpp>
+#include <boost/random.hpp>
 
 namespace mp = boost::multiprecision;
 
@@ -18,6 +19,7 @@ using Queue = std::deque<String>;
 using Definition = std::stack<String>;
 
 const auto TWO = BigInt(2);
+boost::random::mt19937 mt;
 
 #define POP()  \
   stack.top(); \
@@ -57,7 +59,7 @@ enum op_code
   op_nop = 0,
   op_eval = 1,
   op_putc = 2,
-  // print
+  op_print = 5,
   // clock
   op_drop = 8,
   op_pushr = 14,
@@ -65,7 +67,7 @@ enum op_code
   op_shiftl = 16,
   op_shiftr = 17,
   op_clr = 24,
-  // rand
+  op_rand = 26,
   // exit
   op_dup = 33,
   op_depth = 35,
@@ -97,10 +99,12 @@ void setup()
   symbols["nop"] = op_nop;
   symbols["eval"] = op_eval;
   symbols["putc"] = op_putc;
+  symbols["print"] = op_print;
   symbols["drop"] = op_drop;
   symbols["<<"] = op_shiftl;
   symbols[">>"] = op_shiftr;
   symbols["clr"] = op_clr;
+  symbols["rand"] = op_rand;
   symbols["%"] = op_mod;
   symbols["&"] = op_and;
   symbols["+"] = op_add;
@@ -184,6 +188,12 @@ void callSystem(int op)
     std::cout << a.convert_to<char>();
     break;
   }
+  case op_print:
+  {
+    auto a = POP();
+    std::cout << a;
+    break;
+  }
   case op_drop:
   {
     POP();
@@ -205,6 +215,13 @@ void callSystem(int op)
   {
     while (!stack.empty())
       stack.pop();
+    break;
+  }
+  case op_rand:
+  {
+    auto a = POP();
+    boost::random::uniform_int_distribution<BigInt> ui(0, a);
+    stack.push(ui(mt));
     break;
   }
   case op_dup:
@@ -381,6 +398,8 @@ void callOp(BigInt op)
 
 int main()
 {
+  mt.seed(static_cast<unsigned int>(std::time(0)));
+
   setup();
 
   for (String line; std::getline(std::cin, line);)
