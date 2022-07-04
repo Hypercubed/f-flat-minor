@@ -25,9 +25,15 @@ def getSym(n):
     ops[n] = nextOp()
   return ops[n]
   
-def define(name, item):
+def defineSystem(name, item):
   o = getSym(name)
   ops[name] = o
+  defs[o] = item
+
+def defineUser(o, item):
+  if o in defs:
+    print('User word already defined')
+    exit()
   defs[o] = item
 
 def clr():
@@ -181,44 +187,44 @@ def mark():
     if ss == ';':
       break
     d.append(ss)
-  defs[o] = d
+  defineUser(o, d)
 
-define('nop', nop)
-define('eval', call)
-define('putc', putc)
+defineSystem('nop', nop)
+defineSystem('eval', call)
+defineSystem('putc', putc)
 # getc
-define('print', printNumber)
-define('drop', lambda: stack.pop() )
-define('q<', pushq)
-define('q>', popq)
-define('clock', clock)
-define('clr', clr)
-define('rand', rand)
-define('dup', dup)
-define('depth', depth)
-define('swap', swap)
-define('%', mod)
-define('(', stash)
-define(')', fetch)
-define('*', mul)
-define('+', add)
-define('-', sub)
-define('.', printStack)
-define('/', div)
-define(':', mark)
+defineSystem('print', printNumber)
+defineSystem('drop', lambda: stack.pop() )
+defineSystem('q<', pushq)
+defineSystem('q>', popq)
+defineSystem('clock', clock)
+defineSystem('clr', clr)
+defineSystem('rand', rand)
+defineSystem('dup', dup)
+defineSystem('depth', depth)
+defineSystem('swap', swap)
+defineSystem('%', mod)
+defineSystem('(', stash)
+defineSystem(')', fetch)
+defineSystem('*', mul)
+defineSystem('+', add)
+defineSystem('-', sub)
+defineSystem('.', printStack)
+defineSystem('/', div)
+defineSystem(':', mark)
 # def
-define('<<', lsh)
-define('>>', rsh)
-define('<', lt)
-define('=', eq)
-define('>', gt)
-define('?', q)
+defineSystem('<<', lsh)
+defineSystem('>>', rsh)
+defineSystem('<', lt)
+defineSystem('=', eq)
+defineSystem('>', gt)
+defineSystem('?', q)
 # bra
 # ket
-define('^', pow)
-define('|', bor)
-define('&', band)
-define('~', bnot)
+defineSystem('^', pow)
+defineSystem('|', bor)
+defineSystem('&', band)
+defineSystem('~', bnot)
 
 systemOps = op
 

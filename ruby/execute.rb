@@ -21,10 +21,18 @@ def getSym(name)
   return $syms[name]
 end
 
-def define (name, d)
+def defineSystem(name, d)
   $op = getSym(name)
   $syms[name] = $op
   $defs[$op] = d
+end
+
+def defineUser(op, d)
+  if $defs[op]
+    puts "User word already defined"
+    exit
+  end
+  $defs[op] = d
 end
 
 def is_integer? (str)
@@ -108,7 +116,7 @@ def run ()
           d.push(s)
         end
       end
-      $defs[o] = d
+      defineUser(o, d)
       $stack.push o
     elsif item == "/*"
       while $queue.length() > 0
@@ -137,110 +145,111 @@ def tokenize (str)
   return str.gsub(/\s+/m, ' ').strip.split(" ").map { |s| token(s) }
 end
 
-define('nop', lambda {||
+defineSystem('nop', lambda {||
+
 })
 
-define('eval', lambda {||
+defineSystem('eval', lambda {||
   callOp $stack.pop
 })
 
-define('putc', lambda {||
+defineSystem('putc', lambda {||
   putc $stack.pop
 })
 
-define('print', lambda {||
+defineSystem('print', lambda {||
   print $stack.pop
 })
 
 # getc
 
-define('clock', lambda {||
+defineSystem('clock', lambda {||
   $stack.push Date.today.to_time.to_i
 })
 
-define('drop', lambda {||
+defineSystem('drop', lambda {||
   $stack.pop
 })
 
-define('q<', lambda {||
+defineSystem('q<', lambda {||
   $queue.push $stack.pop
 })
 
-define('q>', lambda {||
+defineSystem('q>', lambda {||
   $stack.push $queue.pop
 })
 
-define('clr', lambda {||
+defineSystem('clr', lambda {||
   $stack.clear
 })
 
-define('dup', lambda {||
+defineSystem('dup', lambda {||
   $stack.push $stack[-1]
 })
 
-define('depth', lambda {||
+defineSystem('depth', lambda {||
   $stack.push $stack.length()
 })
 
-define('swap', lambda {||
+defineSystem('swap', lambda {||
   a = $stack[-1]
   $stack[-1] = $stack[-2]
   $stack[-2] = a
 })
 
-define('%', lambda {||
+defineSystem('%', lambda {||
   a = $stack.pop
   $stack[-1] %= a
 })
 
-define('(', lambda {||
+defineSystem('(', lambda {||
   l = $stack.length
   $queue = $queue + $stack
   $stack.clear
   $queue.push l
 })
 
-define(')', lambda {||
+defineSystem(')', lambda {||
   l = $queue.pop
   $stack = $queue[-l..$queue.length] + $stack
   $queue = $queue[0..-l-1]
 })
 
-define('*', lambda {||
+defineSystem('*', lambda {||
   a = $stack.pop
   $stack[-1] *= a
 })
 
-define('+', lambda {||
+defineSystem('+', lambda {||
   a = $stack.pop
   $stack[-1] += a
 })
 
-define('-', lambda {||
+defineSystem('-', lambda {||
   a = $stack.pop
   $stack[-1] -= a
 })
 
-define('.', lambda {||
+defineSystem('.', lambda {||
   puts "[ " + $stack.join(" ") + " ]"
 })
 
-define('/', lambda {||
+defineSystem('/', lambda {||
   a = $stack.pop
   $stack[-1] /= a
 })
 
-define('>>', lambda {||
+defineSystem('>>', lambda {||
   a = $stack.pop
   $stack[-1] >>= a
 })
 
-define('<<', lambda {||
+defineSystem('<<', lambda {||
   a = $stack.pop
   $stack[-1] <<= a
 })
 
-define(':', lambda {||
+defineSystem(':', lambda {||
   o = $stack.pop
   d = Array.new
   while $queue.length() > 0
@@ -250,25 +259,25 @@ define(':', lambda {||
     end
     d.push s
   end
-  $defs[o] = d
+  defineUser(o, d)
 });
 
-define('<', lambda {||
+defineSystem('<', lambda {||
   a = $stack.pop
   $stack[-1] = ($stack[-1] < a) && 1 || 0
 })
 
-define('=', lambda {||
+defineSystem('=', lambda {||
   a = $stack.pop
   $stack[-1] = ($stack[-1] == a) && 1 || 0
 })
 
-define('>', lambda {||
+defineSystem('>', lambda {||
   a = $stack.pop
   $stack[-1] = ($stack[-1] > a) && 1 || 0
 })
 
-define('?', lambda {||
+defineSystem('?', lambda {||
   a = $stack.pop
   b = $stack.pop
   if b != 0
@@ -279,26 +288,26 @@ define('?', lambda {||
 # bra
 # ket
 
-define('^', lambda {||
+defineSystem('^', lambda {||
   a = $stack.pop
   $stack[-1] = $stack[-1]**a
 })
 
-define('&', lambda {||
+defineSystem('&', lambda {||
   a = $stack.pop
   $stack[-1] &= a
 })
 
-define('rand', lambda {||
+defineSystem('rand', lambda {||
   $stack[-1] = rand($stack[-1])
 })
 
-define(124.chr, lambda {||
+defineSystem(124.chr, lambda {||
   a = $stack.pop
   $stack[-1] |= a
 })
 
-define('~', lambda {||
+defineSystem('~', lambda {||
   $stack[-1] = ~$stack[-1]
 })
 

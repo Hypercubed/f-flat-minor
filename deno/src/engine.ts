@@ -350,7 +350,11 @@ export class Engine {
 
     this.defineSystem(() => {
       const a = this.pop();
-      this.stack[this.stack.length - 1] /= a;
+      if (a === 0n) {
+        throw new Error("DIV: Division by zero");
+      } else {
+        this.stack[this.stack.length - 1] /= a;
+      }
     }, OpCodes.DIV);
 
     this.defineSystem(() => {

@@ -17,6 +17,8 @@ var queue = []*Int(nil)
 var systemDict = make(map[byte]func())
 var userDict = make(map[int64][]*Int)
 
+var setupRan = false
+
 func GetStack() []*Int {
 	return stack
 }
@@ -86,7 +88,17 @@ func queuePush(a *Int) {
 // It takes a function and an integer, and adds the function to a map of functions, indexed by the
 // integer
 func defSystem(fn func(), code int) {
+	if _, ok := systemDict[byte(code)]; ok {
+		panic("System opcode already defined")
+	}
 	systemDict[byte(code)] = fn
+}
+
+func defUser(def []*Int, code int64) {
+	if _, ok := userDict[code]; ok {
+		panic("User word already defined")
+	}
+	userDict[code] = def
 }
 
 func call(c *Int) {
@@ -107,6 +119,10 @@ func call(c *Int) {
 }
 
 func Setup() {
+	if setupRan {
+		return
+	}
+
 	rand := rand.New(rand.NewSource(time.Now().UnixNano()))
 
 	defSystem(func() {
@@ -251,7 +267,7 @@ func Setup() {
 		mm := int(queuePop().Int64())
 		def := append([]*Int(nil), stack[mm:]...)
 		stack = stack[:mm]
-		userDict[pop().Int64()] = def
+		defUser(def, pop().Int64())
 	}, OP_DEF)
 
 	defSystem(func() {
@@ -298,7 +314,7 @@ func Setup() {
 		stack = stack[:mm]
 		nextAnonOp++
 		op := int64(nextAnonOp)
-		userDict[op] = def
+		defUser(def, op)
 		if depth > 0 {
 			push(NewInt(0))
 		}
@@ -319,6 +335,8 @@ func Setup() {
 		x := peek()
 		x.Not(x)
 	}, OP_NOT)
+
+	setupRan = true
 }
 
 func check(e error) {

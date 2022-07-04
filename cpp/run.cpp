@@ -177,6 +177,13 @@ BigInt ipow(const BigInt &base, const BigInt &exp)
   return ipow_internal(base, exp);
 }
 
+void defineUser(const int &op, const Definition def) {
+  if (defs.count(op)) {
+    throw std::logic_error("User word already defined");
+  }
+  defs[op] = def;
+}
+
 void callSystem(int op)
 {
   switch (op)
@@ -265,7 +272,7 @@ void callSystem(int op)
     }
     queue.pop_front();
     auto n = POP();
-    defs[n.convert_to<int>()] = def;
+    defineUser(n.convert_to<int>(), def);
     break;
   }
   case op_bra:
@@ -285,7 +292,7 @@ void callSystem(int op)
         def.push(str);
     }
     auto n = getSymbol();
-    defs[n] = def;
+    defineUser(n, def);
     stack.push(BigInt(n));
     break;
   }

@@ -157,6 +157,8 @@ func getInteger(s string) *Int {
 	return nil
 }
 
+var imported = make(map[string]bool)
+
 func CompileToIR(t []string, filename string) []IrInstruction {
 	ret := make([]IrInstruction, 0)
 
@@ -186,10 +188,13 @@ func CompileToIR(t []string, filename string) []IrInstruction {
 				ret = append(ret, ir...)
 			} else if tokens[0] == ".import" {
 				filepath := getFilepath(tokens[1], filename)
-				dat, err := os.ReadFile(filepath)
-				check(err)
-				ir := CompileToIR(Tokenize(string(dat)), filepath)
-				ret = append(ret, ir...)
+				if !imported[filepath] {
+					imported[filepath] = true
+					dat, err := os.ReadFile(filepath)
+					check(err)
+					ir := CompileToIR(Tokenize(string(dat)), filepath)
+					ret = append(ret, ir...)
+				}
 			} else if tokens[0] == ".m" {
 				ir := CompileToIR(Tokenize(tokens[1]), filename)
 				bigCode := CompileToBigIntArray(ir)
