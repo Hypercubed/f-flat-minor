@@ -126,10 +126,8 @@ export class Compiler {
             push(c.charCodeAt(0), i === 0 ? { comment: ss } : {});
           });
       } else if (ss.endsWith(":") && ss.length > 1) { // Definition
-        if (ss.length > 1) {
-          const name = ss.replace(/:$/, "");
-          push(this.getSymbol(name), { name: `${name}`, pointer: true });
-        }
+        const name = ss.replace(/:$/, "");
+        push(this.getSymbol(name), { name: `${name}`, pointer: true });
         call(OpCodes.MARK, { name: ":" });
       } else if (ss === COMMENT_START) { // Comment
         const comment = [];

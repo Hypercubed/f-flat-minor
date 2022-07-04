@@ -54,13 +54,18 @@ int getSymbol(const String &str)
   return symbols[str];
 }
 
+int getSymbol()
+{
+  return nextOp++;
+}
+
 enum op_code
 {
   op_nop = 0,
   op_eval = 1,
   op_putc = 2,
   op_print = 5,
-  // clock
+  op_clock = 6,
   op_drop = 8,
   op_pushr = 14,
   op_pullr = 15,
@@ -87,7 +92,7 @@ enum op_code
   op_eq = 61,
   op_gt = 62,
   op_when = 63,
-  // bra
+  op_bra = 91,
   // ket
   op_pow = 94,
   op_or = 124,
@@ -100,6 +105,7 @@ void setup()
   symbols["eval"] = op_eval;
   symbols["putc"] = op_putc;
   symbols["print"] = op_print;
+  symbols["clock"] = op_clock;
   symbols["drop"] = op_drop;
   symbols["<<"] = op_shiftl;
   symbols[">>"] = op_shiftr;
@@ -124,6 +130,7 @@ void setup()
   symbols["="] = op_eq;
   symbols[">"] = op_gt;
   symbols["?"] = op_when;
+  symbols["["] = op_bra;
   symbols["|"] = op_or;
   symbols["~"] = op_not;
 }
@@ -194,6 +201,11 @@ void callSystem(int op)
     std::cout << a;
     break;
   }
+  case op_clock:
+  {
+    stack.push(BigInt(static_cast<unsigned int>(std::time(0))));
+    break;
+  }
   case op_drop:
   {
     POP();
@@ -254,6 +266,27 @@ void callSystem(int op)
     queue.pop_front();
     auto n = POP();
     defs[n.convert_to<int>()] = def;
+    break;
+  }
+  case op_bra:
+  {
+    int depth = 1;
+    Definition def;
+    while (!queue.empty() && depth > 0) /* TODO: Handle nested brackets */
+    {
+      String str = queue.front();
+      queue.pop_front();
+
+      if (str == "[")
+        depth++;
+      else if (str == "]")
+        depth--;
+      if (depth > 0)
+        def.push(str);
+    }
+    auto n = getSymbol();
+    defs[n] = def;
+    stack.push(BigInt(n));
     break;
   }
   case op_mod:
@@ -396,6 +429,32 @@ void callOp(BigInt op)
   callOp(op.convert_to<int>());
 }
 
+String unescape(const String &s)
+{
+  String res;
+  String::const_iterator it = s.begin();
+  while (it != s.end())
+  {
+    char c = *it++;
+    if (c == '\\' && it != s.end())
+    {
+      switch (*it++) {
+      case '\\': c = '\\'; break;
+      case 'n': c = '\n'; break;
+      case 't': c = '\t'; break;
+      case 's': c = ' '; break;
+      // all other escapes
+      default: 
+        // invalid escape sequence - skip it. alternatively you can copy it as is, throw an exception...
+        continue;
+      }
+    }
+    res += c;
+  }
+
+  return res;
+}
+
 int main()
 {
   mt.seed(static_cast<unsigned int>(std::time(0)));
@@ -427,13 +486,25 @@ int main()
       {
         stack.push(getSymbol(str.substr(1, str.size() - 2)));
       }
-      else if (str.rfind("/*") == 0)
+      else if (str[0] == '\'' && str.back() == '\'')
+      {
+        str = unescape(str.substr(1, str.size() - 2));
+        for(char& c : str) {
+          stack.push(c);
+        }
+      }
+      else if (str.back() == ':' && str.size() > 1)
+      {
+        stack.push(getSymbol(str.substr(0, str.size() - 1)));
+        queue.push_front(":");
+      }
+      else if (str == "/*")
       {
         do
         {
           str = queue.front();
           queue.pop_front();
-        } while (str.rfind("*/") != str.size() - 2);
+        } while (str != "*/");
       }
       else if (symbols.find(str) != symbols.end())
       {

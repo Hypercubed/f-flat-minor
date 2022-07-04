@@ -1,4 +1,4 @@
-/* constants */
+/* constants 1 2 3 */
 true: 1 ;
 false: 0 ;
 
@@ -16,7 +16,7 @@ drop2: drop drop ;
 swapd: q< swap q> ;
 dupd: q< dup q> ;
 
-dip: swap slip ; .inline /* [B] [A] dip  == A [B] */
+dip: swap slip ; .inline /* [B] [A] dip == A [B] */
 dig: swapd swap ; .inline /* c b a -> b a c */
 bury: swap swapd ; .inline /* c b a -> a c b */
 rot: swap swapd swap ; .inline /* c b a -> a b c */
