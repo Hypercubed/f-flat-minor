@@ -1,18 +1,92 @@
 .load ./lib/core.ff
 
-_isqrt-closer: dup2 / over + 2 / ;
-_isqrt-loop: _isqrt-closer dup2 > [ nip _isqrt-loop ] ? ;
+(isqrt_newton):
+  dup2 / over + 1 >> /* update quess */
+  dup2 > [  /* continue? */
+    nip (isqrt_newton)
+  ] ? ;
 
-_isqrtn: dup 2 / _isqrt-loop drop nip ;
+/* newton's method with initial guess of x/2 */
+isqrt_newton: 
+  dup 1 >> /* initial guess of x/2 */
+  (isqrt_newton)
+  drop nip ;
+
+(isqrt_jarvis): /* b a */
+  dup2 <
+  [ 
+    over - /* b a-b */
+    [ 10 + ] dip /* b+10 a-b */
+    (isqrt_jarvis)
+  ]
+  ?
+;
+
+/* Jarvis (2006): a very strange method to work out square roots, using only subtraction */
+isqrt_jarvis:
+  5 *
+  0 swap
+  (isqrt_jarvis)
+  drop 10 /
+;
+
+/* recursive Digit-by-digit algorithm */
+isqrt_recur:
+  dup 1 > [ /* n if n < 2 */
+    dup /* n n */
+    2 >> isqrt_recur 1 << /* n 2*sqrt(n/4)+1 */
+    dup ++ dup * /* n 2*sqrt(n/4) (2*sqrt(n/4)+1)^2 */
+    dig /* 2*sqrt(n/4) (2*sqrt(n/4)+1)^2 n */
+    <=
+    [ ++ ] /* 2*sqrt(n/4)+1 */
+    ? /* 2*sqrt(n/4) else */
+  ] ?
+;
 
 isqrt:
-  dup 0 < [ 1 0 / ] [
-    dup 0 = [ drop 0 ] [
-      dup 4 < [ drop 1 ] [
-        _isqrtn
-      ] branch
-    ] branch
-  ] branch ;
+  dup 0 < [ 1 0 / ] ? /* error */
+  dup 1 > [
+    isqrt_recur
+  ] ? ;
+
+/* Benchmarking
+N: 1000 ; .inline
+
+time: 
+  clock
+  swap N times
+  [ drop ] N -- times
+  swap clock swap -
+;
+
+[ 4 isqrt_newton ]
+time . clr
+
+[ 4 isqrt_recur ]
+time . clr
+
+[ 4 isqrt_jarvis ]
+time . clr
+
+[ 2025 isqrt_newton ]
+time . clr
+
+[ 2025 isqrt_recur ]
+time . clr
+
+[ 2025 isqrt_jarvis ]
+time . clr
+
+[ 125348 isqrt_newton ]
+time . clr
+
+[ 125348 isqrt_recur ]
+time . clr
+
+[ 125348 isqrt_jarvis ]
+time . clr
+
+0 exit */
 
 0 isqrt . clr
 1 isqrt . clr
