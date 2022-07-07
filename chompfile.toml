@@ -2,18 +2,10 @@ version = 0.1
 default-task = 'build:'
 
 [[task]]
-name = 'build'
-dep = 'build:'
-
-[[task]]
 name = 'build:#'
 dep = '#/chompfile.toml'
 validation = 'none'
 run = 'chomp -c $DEP build'
-
-[[task]]
-name = 'test'
-dep = 'test:'
 
 [[task]]
 name = 'test:#'
@@ -27,11 +19,29 @@ run = '''
 '''
 
 [[task]]
-name = 'clean'
-dep = 'clean:'
-
-[[task]]
 name = 'clean:#'
 dep = '#/chompfile.toml'
 validation = 'none'
 run = 'chomp -c $DEP clean'
+
+[[task]]
+name = 'interpret:#'
+dep = '#/chompfile.toml'
+validation = 'none'
+serial = true
+run = '''
+  chomp -c $DEP interpret
+  echo ""
+  echo ""
+'''
+
+[[task]]
+name = 'execute:#'
+dep = '#/chompfile.toml'
+validation = 'none'
+serial = true
+run = '''
+  chomp -c $DEP execute
+  echo ""
+  echo ""
+'''
