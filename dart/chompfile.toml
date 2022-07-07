@@ -1,14 +1,14 @@
-default-task = 'build'
 version = 0.1
+default-task = 'build'
 
 [env]
-RED = "\\033[0;31m"
-NC = "\\033[0m"
-GRN = "\\033[0;32m"
-BLUE = "\\033[0;34m"
-CHECK = "printf \"${GRN}OK${NC} \" || printf \"${RED}FAIL${NC} \""
-BIN = "./bin/dart.exe"
-PP = "../deno/build/compile --opt --disassemble"
+BLUE = '\033[0;34m'
+NC = '\033[0m'
+BIN = './bin/dart.exe'
+PP = '../deno/build/compile --opt --disassemble'
+CHECK = 'printf "  ${GRN}OK${NC} " || printf "  ${RED}FAIL${NC} "'
+RED = '\033[0;31m'
+GRN = '\033[0;32m'
 
 [[task]]
 target = './bin/#.exe'
@@ -22,23 +22,36 @@ name = 'build'
 deps = ['./bin/dart.exe']
 
 [[task]]
-name = 'dart-interpret'
+name = 'interpret'
 dep = './bin/dart.exe'
 run = '''
 	cat ../ff/example_v0.ff | ./bin/dart.exe | cmp --s - "../ff/example_v0.out"
 '''
 
 [[task]]
-name = 'test'
-deps = [':build',':dart-interpret']
-display = 'none'
-serial = true
+name = 'build-deno-compiler'
+run = 'chomp -c ../deno/ :build:compile'
 
 [[task]]
-name = 'dart-ff'
-deps = ['../ff/##.out', './bin/dart.exe']
+name = 'test'
+deps = [
+    ':build',
+    ':interpret',
+]
+serial = true
+display = 'none'
+
+[[task]]
+name = 'ff'
+deps = [
+    '../ff/##.out',
+    './bin/dart.exe',
+    'build-deno-compiler',
+]
+serial = true
+invalidation = 'always'
+validation = 'none'
 display = 'status-only'
-invalidation = "always"
 run = '''
   shopt -s nullglob
   shopt -s extglob
@@ -47,5 +60,9 @@ run = '''
     ../deno/build/compile $i --opt --disassemble | ${{BIN}} | cmp - $DEP -s && ${{CHECK}};
   done
 '''
-serial = true
-validation = "none"
+
+[[task]]
+name = 'clean'
+run = '''
+  rm -./bin/dart.exe
+'''

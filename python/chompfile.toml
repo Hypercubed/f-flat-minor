@@ -2,36 +2,42 @@ version = 0.1
 default-task = 'build'
 
 [env]
-RED = "\\033[0;31m"
-NC = "\\033[0m"
-GRN = "\\033[0;32m"
-BLUE = "\\033[0;34m"
-CHECK = "printf \"${GRN}OK${NC} \" || printf \"${RED}FAIL${NC} \""
-BIN = "./execute.py"
+RED = '\033[0;31m'
+BLUE = '\033[0;34m'
+BIN = './execute.py'
+NC = '\033[0m'
+GRN = '\033[0;32m'
+CHECK = 'printf "  ${GRN}OK${NC} " || printf "  ${RED}FAIL${NC} "'
 
 [[task]]
 name = 'build-deno-preprocess'
 run = 'chomp -c ../deno/ build'
 
 [[task]]
-name = 'python-interpret'
+name = 'interpret'
 run = '''
 	cat ../ff/example.ff | ${{BIN}} | cmp --s - "../ff/example.out"
 '''
 
 [[task]]
 name = 'test'
+deps = [
+    ':interpret',
+    ':ff',
+]
 serial = true
 display = 'none'
-deps = [':python-interpret', ':python-ff']
 
 [[task]]
-name = 'python-ff'
-deps = ['../ff/##.out','../deno/build/preprocess']
+name = 'ff'
+deps = [
+    '../ff/##.out',
+    '../deno/build/preprocess',
+]
 serial = true
+invalidation = 'always'
+validation = 'none'
 display = 'status-only'
-validation = "none"
-invalidation = "always"
 run = '''
   if [ -f ${DEP%.*}.ffp ]; then
     ../deno/build/preprocess ${DEP%.*}.ffp | ${{BIN}} | cmp - $DEP -s && ${{CHECK}};
@@ -40,4 +46,3 @@ run = '''
     cat ${DEP%.*}.ff | ${{BIN}} | cmp - $DEP -s && ${{CHECK}};
   fi
 '''
-

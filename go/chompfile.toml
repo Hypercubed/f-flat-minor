@@ -1,23 +1,32 @@
-default-task = 'build'
 version = 0.1
+default-task = 'build'
 
 [env]
-RED = "\\033[0;31m"
-NC = "\\033[0m"
-GRN = "\\033[0;32m"
-BLUE = "\\033[0;34m"
-CHECK = "printf \"${GRN}OK${NC} \" || printf \"${RED}FAIL${NC} \""
+RED = '\033[0;31m'
+NC = '\033[0m'
+GRN = '\033[0;32m'
+BLUE = '\033[0;34m'
+CHECK = 'printf "  ${GRN}OK${NC} " || printf "  ${RED}FAIL${NC} "'
 
 [[task]]
 target = './build/##'
-deps = ['./cmd/##', './cmd/**/*.go', './src/**/*.go']
+deps = [
+    './cmd/##',
+    './cmd/**/*.go',
+    './src/**/*.go',
+]
 run = '''
   go build -o $TARGET $DEP
 '''
 
 [[task]]
-deps = ['./build/compile', './build/execute', './build/run', './build/repl']
 name = 'build'
+deps = [
+    './build/compile',
+    './build/execute',
+    './build/run',
+    './build/repl',
+]
 
 [[task]]
 name = 'clean'
@@ -26,37 +35,48 @@ run = '''
 '''
 
 [[task]]
+name = 'compile'
 dep = './build/compile'
-name = 'go-compile'
 run = '''
 	./build/compile --in ../ff/example.ff | cmp --s - "../ff/example.ffb"
 '''
 
 [[task]]
+name = 'execute'
 dep = './build/execute'
-name = 'go-execute'
 run = '''
 	cat ../ff/example.ffb | ./build/execute | cmp --s - "../ff/example.out"
 '''
 
 [[task]]
+name = 'interpret'
 dep = './build/run'
-name = 'go-interpret'
 run = '''
 	./build/run --in ../ff/example.ff | cmp --s - "../ff/example.out"
 '''
 
 [[task]]
-deps = ['build', ':go-compile', ':go-execute', ':go-interpret', ':go-ff']
-display = 'none'
 name = 'test'
+deps = [
+    'build',
+    ':compile',
+    ':execute',
+    ':interpret',
+    ':ff',
+]
 serial = true
+display = 'none'
 
 [[task]]
-deps = ['../ff/##.out', './build/run']
+name = 'ff'
+deps = [
+    '../ff/##.out',
+    './build/run',
+]
+serial = true
+invalidation = 'always'
+validation = 'none'
 display = 'status-only'
-invalidation = "always"
-name = 'go-ff'
 run = '''
   shopt -s nullglob
   shopt -s extglob
@@ -64,5 +84,9 @@ run = '''
     ./build/run --in $i | cmp - $DEP -s && ${{CHECK}};
   done
 '''
-serial = true
-validation = "none"
+
+[[task]]
+name = 'clean'
+run = '''
+  rm -rf ./build
+'''

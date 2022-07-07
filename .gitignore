@@ -4,9 +4,7 @@
 */.dart_tool/
 .packages
 
-*/artifacts/*
 */build/*
-
 dart/bin/*.exe
 
 */node_modules/*

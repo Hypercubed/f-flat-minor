@@ -25,3 +25,13 @@ run = '''
   echo ""
   echo ""
 '''
+
+[[task]]
+name = 'clean'
+dep = 'clean:'
+
+[[task]]
+name = 'clean:#'
+dep = '#/chompfile.toml'
+validation = 'none'
+run = 'chomp -c $DEP clean'
