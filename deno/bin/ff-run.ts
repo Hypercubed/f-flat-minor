@@ -16,6 +16,11 @@ export function run(argv: Arguments) {
   const textEncoder = new TextEncoder();
   
   const filename = argv.file || "-";
+
+  // console.log({ filename });
+  // console.log(Deno.cwd());
+  // Deno.exit(0);
+
   let code = filename == "-"
     ? textDecoder.decode(readStdin())
     : Deno.readTextFileSync(filename);

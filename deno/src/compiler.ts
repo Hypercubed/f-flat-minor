@@ -78,7 +78,7 @@ export class Compiler {
     let ss: string | bigint = "";
     const ret: IrInstruction[] = [];
     while (i < l) {
-      ss = s[i++];
+      ss = s[i++];   
 
       if (typeof ss === "bigint") {
         push(ss);

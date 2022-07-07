@@ -153,6 +153,8 @@ void ev() {
     var number = BigInt.tryParse(token);
     if (number != null) {
       stack.add(number);
+    } else if (token.startsWith('.') && token.length > 1) {
+      // no op
     } else if (token.startsWith('\'')) {
       var chars = token.substring(1).split('');
       var asc = chars.map((c) => BigInt.from(c.codeUnitAt(0))).toList();
