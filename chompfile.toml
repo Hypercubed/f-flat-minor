@@ -1,0 +1,27 @@
+version = 0.1
+default-task = 'build:'
+
+[[task]]
+name = 'build'
+dep = 'build:'
+
+[[task]]
+name = 'build:#'
+dep = '#/chompfile.toml'
+validation = 'none'
+run = 'chomp -c $DEP build'
+
+[[task]]
+name = 'test'
+dep = 'test:'
+
+[[task]]
+name = 'test:#'
+dep = '#/chompfile.toml'
+serial = true
+display = 'init-only'
+run = '''
+  chomp -c $DEP test
+  echo ""
+  echo ""
+'''

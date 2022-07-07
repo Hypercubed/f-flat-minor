@@ -1,0 +1,48 @@
+default-task = 'build'
+version = 0.1
+
+[env]
+RED = "\\033[0;31m"
+NC = "\\033[0m"
+GRN = "\\033[0;32m"
+BLUE = "\\033[0;34m"
+CHECK = "printf \"${GRN}OK${NC} \" || printf \"${RED}FAIL${NC} \""
+
+[[task]]
+target = './build/#'
+deps = ['./#.cpp']
+run = '''
+  g++ $DEP -std=c++11 -o $TARGET -O2 -lgmp
+'''
+
+[[task]]
+name = 'build'
+deps = ['./build/run']
+
+[[task]]
+name = 'cpp-interpret'
+dep = './build/run'
+run = '''
+	cat ../ff/example_v0.ff | ./build/run | cmp --s - "../ff/example_v0.out"
+'''
+
+[[task]]
+name = 'test'
+deps = [':build',':cpp-interpret', ':cpp-ff']
+display = 'none'
+serial = true
+
+[[task]]
+name = 'cpp-ff'
+deps = ['../ff/##.out', './build/run']
+display = 'status-only'
+invalidation = "always"
+run = '''
+  shopt -s nullglob
+  shopt -s extglob
+  for i in "${DEP%.*}.ff?(p)"; do
+    ../deno/build/compile $i --opt --disassemble | ./build/run | cmp - $DEP -s && ${{CHECK}};
+  done
+'''
+serial = true
+validation = "none"

@@ -1,0 +1,80 @@
+version = 0.1
+default-task = 'build'
+
+[env]
+RED = "\\033[0;31m"
+NC = "\\033[0m"
+GRN = "\\033[0;32m"
+BLUE = "\\033[0;34m"
+CHECK = "printf \"${GRN}OK${NC} \" || printf \"${RED}FAIL${NC} \""
+
+[[task]]
+deps = ['./bin/ff-##.ts', './src/**/*.ts']
+target = './build/##'
+run = '''
+  deno compile --unstable --allow-env --allow-read -o $TARGET $DEP
+'''
+
+[[task]]
+name = 'build'
+deps = ['./build/compile', './build/run', './build/execute', './build/preprocess']
+
+[[task]]
+name = 'deno-compile'
+dep = './build/compile'
+run = '''
+	./build/compile ../ff/example.ff | cmp --s - "../ff/example.ffb"
+'''
+
+[[task]]
+name = 'deno-execute'
+dep = './build/execute'
+run = '''
+	./build/execute ../ff/example.ffb | cmp --s - "../ff/example.out"
+'''
+
+[[task]]
+name = 'deno-interpret'
+dep = './build/run'
+run = '''
+	./build/run ../ff/example.ff | cmp --s - "../ff/example.out"
+'''
+
+[[task]]
+name = 'test'
+serial = true
+display = 'none'
+deps = ['build', ':deno-compile', ':deno-execute', ':deno-interpret', ':deno-ff', ':deno-ff-opt']
+
+[[task]]
+name = 'deno-ff'
+deps = ['../ff/##.out','./build/run']
+serial = true
+display = 'status-only'
+validation = "none"
+invalidation = "always"
+run = '''
+  if [ -f ${DEP%.*}.ffp ]; then
+    ./build/run ${DEP%.*}.ffp | cmp - $DEP -s && ${{CHECK}};
+  fi
+  if [ -f ${DEP%.*}.ff ]; then
+    ./build/run ${DEP%.*}.ff | cmp - $DEP -s && ${{CHECK}};
+  fi
+'''
+
+[[task]]
+name = 'deno-ff-opt'
+deps = ['../ff/##.out','./build/run']
+serial = true
+display = 'status-only'
+validation = "none"
+invalidation = "always"
+run = '''
+  if [ -f ${DEP%.*}.ffp ]; then
+    ./build/run ${DEP%.*}.ffp --opt | cmp - $DEP -s && ${{CHECK}};
+  fi
+  if [ -f ${DEP%.*}.ff ]; then
+    ./build/run ${DEP%.*}.ff --opt | cmp - $DEP -s && ${{CHECK}};
+  fi
+'''
+

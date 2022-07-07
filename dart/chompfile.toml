@@ -1,0 +1,51 @@
+default-task = 'build'
+version = 0.1
+
+[env]
+RED = "\\033[0;31m"
+NC = "\\033[0m"
+GRN = "\\033[0;32m"
+BLUE = "\\033[0;34m"
+CHECK = "printf \"${GRN}OK${NC} \" || printf \"${RED}FAIL${NC} \""
+BIN = "./bin/dart.exe"
+PP = "../deno/build/compile --opt --disassemble"
+
+[[task]]
+target = './bin/#.exe'
+deps = ['./bin/#.dart']
+run = '''
+  dart compile exe $DEP
+'''
+
+[[task]]
+name = 'build'
+deps = ['./bin/dart.exe']
+
+[[task]]
+name = 'dart-interpret'
+dep = './bin/dart.exe'
+run = '''
+	cat ../ff/example_v0.ff | ./bin/dart.exe | cmp --s - "../ff/example_v0.out"
+'''
+
+[[task]]
+name = 'test'
+deps = [':build',':dart-interpret']
+display = 'none'
+serial = true
+
+[[task]]
+name = 'dart-ff'
+deps = ['../ff/##.out', './bin/dart.exe']
+display = 'status-only'
+invalidation = "always"
+run = '''
+  shopt -s nullglob
+  shopt -s extglob
+  for i in "${DEP%.*}.ff?(p)"; do
+    echo $i
+    ../deno/build/compile $i --opt --disassemble | ${{BIN}} | cmp - $DEP -s && ${{CHECK}};
+  done
+'''
+serial = true
+validation = "none"
