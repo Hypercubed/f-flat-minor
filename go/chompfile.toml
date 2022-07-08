@@ -1,6 +1,8 @@
 version = 0.1
 default-task = 'build'
 
+extensions = ['../cmp-extension.js']
+
 [env]
 RED = '\033[0;31m'
 NC = '\033[0m'
@@ -38,22 +40,31 @@ run = '''
 name = 'compile'
 dep = './build/compile'
 run = '''
-	./build/compile --in ../ff/example.ff | cmp --s - "../ff/example.ffb"
+	./build/compile --in ../ff/example.ff
 '''
+template = 'cmp'
+[task.template-options]
+cmp = '../ff/example.ffb'
 
 [[task]]
 name = 'execute'
 dep = './build/execute'
 run = '''
-	cat ../ff/example.ffb | ./build/execute | cmp --s - "../ff/example.out"
+	cat ../ff/example.ffb | ./build/execute
 '''
+template = 'cmp'
+[task.template-options]
+cmp = '../ff/example.out'
 
 [[task]]
 name = 'interpret'
 dep = './build/run'
 run = '''
-	./build/run --in ../ff/example.ff | cmp --s - "../ff/example.out"
+	./build/run --in ../ff/example.ff
 '''
+template = 'cmp'
+[task.template-options]
+cmp = '../ff/example.out'
 
 [[task]]
 name = 'test'

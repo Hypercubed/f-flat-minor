@@ -1,6 +1,8 @@
 version = 0.1
 default-task = 'build'
 
+extensions = ['../cmp-extension.js']
+
 [env]
 RED = '\033[0;31m'
 CHECK = 'printf "  ${GRN}OK${NC} " || printf "  ${RED}FAIL${NC} "'
@@ -12,8 +14,8 @@ GRN = '\033[0;32m'
 name = 'build:##'
 target = './build/##'
 deps = [
-    './bin/ff-##.ts',
-    './src/**/*.ts',
+  './bin/ff-##.ts',
+  './src/**/*.ts',
 ]
 run = '''
   deno compile --unstable --allow-env --allow-read -o $TARGET $DEP
@@ -30,24 +32,28 @@ deps = [
 
 [[task]]
 name = 'compile'
-dep = './build/compile'
-run = '''
-	./build/compile ../ff/example.ff | cmp --s - "../ff/example.ffb"
-'''
+deps = ['./build/compile']
+template = 'cmp'
+run = './build/compile ../ff/example.ff'
+[task.template-options]
+cmp = '../ff/example.ffb'
 
 [[task]]
 name = 'execute'
 dep = './build/execute'
-run = '''
-	./build/execute ../ff/example.ffb | cmp --s - "../ff/example.out"
-'''
+template = 'cmp'
+invalidation = 'always'
+run = './build/execute ../ff/example.ffb'
+[task.template-options]
+cmp = '../ff/example.out'
 
 [[task]]
 name = 'interpret'
 dep = './build/run'
-run = '''
-	./build/run ../ff/example.ff | cmp --s - "../ff/example.out"
-'''
+run = './build/run ../ff/example.ff'
+template = 'cmp'
+[task.template-options]
+cmp = '../ff/example.out'
 
 [[task]]
 name = 'test'
@@ -56,8 +62,7 @@ deps = [
     ':compile',
     ':execute',
     ':interpret',
-    ':ff',
-    ':ff-opt',
+    ':ff'
 ]
 serial = true
 display = 'none'
@@ -68,36 +73,18 @@ deps = [
     '../ff/##.out',
     './build/run',
 ]
+target = '../ff/##'
 serial = true
 invalidation = 'always'
 validation = 'none'
 display = 'status-only'
 run = '''
-  if [ -f ${DEP%.*}.ffp ]; then
-    ./build/run ${DEP%.*}.ffp | cmp - $DEP -s && ${{CHECK}};
-  fi
-  if [ -f ${DEP%.*}.ff ]; then
-    ./build/run ${DEP%.*}.ff | cmp - $DEP -s && ${{CHECK}};
-  fi
-'''
-
-[[task]]
-name = 'ff-opt'
-deps = [
-    '../ff/##.out',
-    './build/run',
-]
-serial = true
-invalidation = 'always'
-validation = 'none'
-display = 'status-only'
-run = '''
-  if [ -f ${DEP%.*}.ffp ]; then
-    ./build/run ${DEP%.*}.ffp --opt | cmp - $DEP -s && ${{CHECK}};
-  fi
-  if [ -f ${DEP%.*}.ff ]; then
-    ./build/run ${DEP%.*}.ff --opt | cmp - $DEP -s && ${{CHECK}};
-  fi
+  shopt -s nullglob
+  shopt -s extglob
+  for i in "${TARGET}.ff?(p)"; do
+    ./build/run $i | cmp - $DEP -s && ${{CHECK}};
+    ./build/run $i --opt | cmp - $DEP -s && ${{CHECK}};
+  done
 '''
 
 [[task]]

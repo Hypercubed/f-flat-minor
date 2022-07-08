@@ -1,6 +1,8 @@
 version = 0.1
 default-task = 'build'
 
+extensions = ['../cmp-extension.js']
+
 [env]
 NC = '\033[0m'
 BLUE = '\033[0;34m'
@@ -22,9 +24,10 @@ deps = ['./build/run']
 [[task]]
 name = 'interpret'
 dep = './build/run'
-run = '''
-	cat ../ff/example_v0.ff | ./build/run | cmp --s - "../ff/example_v0.out"
-'''
+run = 'cat ../ff/example_v0.ff | ./build/run'
+template = 'cmp'
+[task.template-options]
+cmp = '../ff/example_v0.out'
 
 [[task]]
 name = 'test'

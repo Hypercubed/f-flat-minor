@@ -1,6 +1,8 @@
 version = 0.1
 default-task = 'build'
 
+extensions = ['../cmp-extension.js']
+
 [env]
 RED = '\033[0;31m'
 BLUE = '\033[0;34m'
@@ -15,15 +17,16 @@ run = 'chomp -c ../deno/ build'
 
 [[task]]
 name = 'interpret'
-run = '''
-	cat ../ff/example.ff | ${{BIN}} | cmp --s - "../ff/example.out"
-'''
+run = 'cat ../ff/example.ff | ${{BIN}}'
+template = 'cmp'
+[task.template-options]
+cmp = '../ff/example.out'
 
 [[task]]
 name = 'test'
 deps = [
-    ':interpret',
-    ':ff',
+  ':interpret',
+  ':ff',
 ]
 serial = true
 display = 'none'
