@@ -13,29 +13,69 @@
 (define op_pushr 14)
 (define op_pullr 15)
 (define op_clr 24)
+(define op_dup (char->integer #\!))
+(define op_when (char->integer #\?))
+
+(define symbols (make-hash))
+(hash-set! symbols "." op_dump)
+(hash-set! symbols "+" op_add)
+(hash-set! symbols "-" op_sub)
+(hash-set! symbols "*" op_mul)
+(hash-set! symbols "/" op_div)
+(hash-set! symbols "^" op_pow)
+(hash-set! symbols "swap" op_swap)
+(hash-set! symbols "%" op_mod)
+(hash-set! symbols ":" op_mark)
+(hash-set! symbols ";" op_def)
+(hash-set! symbols "q<" op_pushr)
+(hash-set! symbols "q>" op_pullr)
+(hash-set! symbols "clr" op_clr)
+(hash-set! symbols "?" op_when)
+(hash-set! symbols "dup" op_dup)
+
+(define next-op 0)
+
+(define (pointer->token str)
+  ;;; (displayln str)
+  (substring str 1 (- (string-length str) 1))
+  ;;; (displayln (substring str 1 (- (string-length str) 1)))
+)
+
+(define (add-token token)
+  (set! next-op (- next-op 1))
+  (hash-set! symbols token next-op)
+  next-op
+)
 
 (define (lookup token)
-  (match token
-    ["." op_dump]
-    ["+" op_add]
-    ["-" op_sub]
-    ["*" op_mul]
-    ["/" op_div]
-    ["^" op_pow]
-    ["swap" op_swap]
-    ["%" op_mod]
-    [":" op_mark]
-    [";" op_def]
-    ["q<" op_pushr]
-    ["q>" op_pullr]
-    ["clr" op_clr]
-    [else token]
-  ))
+  (cond
+    [(integer? (string->number token)) token]
+    [(pointer? token)
+      (define x (pointer->token token))
+      (if (hash-has-key? symbols x)
+        (hash-ref symbols x)
+        (add-token x)
+      )
+    ]
+    [(hash-has-key? symbols token) (hash-ref symbols token)]
+    [#t 
+      (add-token token)
+    ]
+  )
+)
 
 ;;; Reader
+(define (pointer? token)
+  (and (string? token)
+       (string-length token)
+       (eq? (string-ref token 0) #\[)
+  )
+)
+
 (define (op token)
   (cond
     [(integer? (string->number token)) "push"]
+    [(pointer? token) "push"]
     [#t "call"]
   ))
 
@@ -45,9 +85,12 @@
 (define (read src-tokens)
   (define values (map lookup src-tokens))
   (define ops (map op src-tokens))
-  (define src-datums (format-datums (quote (~a ~a "\"~a\"")) ops values src-tokens))
+  (define src-datums (format-datums '(~a ~a) ops values))
   ;;; (displayln src-datums)
-  (define module-datum `(module anything "ff.rkt" ,@src-datums))
+  (define module-datum `(module anything
+    "ff.rkt"
+    ;;; br
+  ,@src-datums))
   (datum->syntax #f module-datum)
 )
 
@@ -63,7 +106,9 @@
 ;;; engine
 (define stack empty)
 (define queue empty)
+(define depth 0)
 
+;;; engine ops
 (define (pop-stack!)
   (define arg (first stack))
   (set! stack (rest stack))
@@ -80,6 +125,13 @@
 (define (push-queue! arg)
   (set! queue (cons arg queue)))
 
+(define (prn-list! s)
+  (printf "[ ")
+  (for ([x (reverse s)]) (printf "~s " x))
+  (printf "]\n")
+  )
+
+;;; system ops
 (define (add-stack!)
   (push-stack! (+ (pop-stack!) (pop-stack!))))
 
@@ -107,10 +159,14 @@
     (push-stack! a)
     (push-stack! b)))
 
+(define (dup-stack!)
+  (let ([a (pop-stack!)])
+    (push-stack! a)
+    (push-stack! a)))
+
 (define (prn-stack!)
-  (printf "[ ")
-  (for ([x (reverse stack)]) (printf "~s " x))
-  (printf "]\n")
+  (prn-list! stack)
+  ;;; (prn-list! queue)
   )
 
 (define (clr-stack!)
@@ -122,27 +178,83 @@
 (define (pushr!)
   (push-queue! (pop-stack!)))
 
-(define (push x [c #f]) (push-stack! x))
+(define (when!)
+  (let ([a (pop-stack!)] [b (pop-stack!)])
+    (when (not (eq? b 0))
+      (call-op a)
+    )
+  ))
 
-(define (call [arg #f] [c #f])
+(define (mark!)
+  (set! depth (+ depth 1))
+  (push-stack! (length queue)))
+
+(define (def!)
+  (set! depth (- depth 1))
+  (define l (- (length queue) (pop-stack!)))
+  (define s (pop-stack!))
+  (define def empty)
+  (for ([i l])
+    (set! def (cons (pop-queue!) def))
+  )
+  (hash-set! definitions s def)
+)
+
+(define definitions (make-hash))
+(hash-set! definitions op_add add-stack!)
+(hash-set! definitions op_mul mul-stack!)
+(hash-set! definitions op_pow pow-stack!)
+(hash-set! definitions op_sub sub-stack!)
+(hash-set! definitions op_div div-stack!)
+(hash-set! definitions op_mod mod-stack!)
+(hash-set! definitions op_swap swap-stack!)
+(hash-set! definitions op_clr clr-stack!)
+(hash-set! definitions op_pushr pushr!)
+(hash-set! definitions op_pullr pullr!)
+(hash-set! definitions op_dump prn-stack!)
+(hash-set! definitions op_def def!)
+(hash-set! definitions op_mark mark!)
+(hash-set! definitions op_when when!)
+(hash-set! definitions op_dup dup-stack!)
+
+;;; IR ops
+(define (push x)
+  (cond
+    [(> depth 0) (push-queue! `(push ,x))]
+    [#t (push-stack! x)]
+  )
+)
+
+(define (eval* op) 
+  (match op
+    [(list 'push b) (push b)]
+    [(list 'call b) (call b)]
+  )
+)
+
+(define (call-op op)
+  (define def (hash-ref definitions op))
+  (cond
+    [(list? def) (map eval* def)]
+    [#t (def)]
+  )
+)
+
+(define trace #f)
+
+(define (call [arg #f])
 
   ;;; (displayln (string? arg))
 
   (cond
-    [(equal? (lookup "+")  arg) (add-stack!)]
-    [(equal? op_mul  arg) (mul-stack!)]
-    [(equal? op_sub  arg) (sub-stack!)]
-    [(equal? op_div  arg) (div-stack!)]
-    [(equal? op_pow  arg) (pow-stack!)]
-    [(equal? op_dump arg) (prn-stack!)]
-    [(equal? op_swap arg) (swap-stack!)]
-    [(equal? op_mod  arg) (mod-stack!)]
-    [(equal? op_clr  arg) (clr-stack!)]
-    [(equal? op_pushr arg) (pushr!)]
-    [(equal? op_pullr arg) (pullr!)]
+    [(eq? op_def arg) (def!)]
+    [(eq? op_mark arg) (mark!)]
+    [(> depth 0) (push-queue! `(call ,arg))]
+    [(hash-has-key? definitions arg) (call-op arg)]
+    [#t (error "unknown op: ~s" arg)]
   )
-  
-  ;;; (printf "~a\t -> ~a~N" arg stack)
+
+  (when trace (printf "~a\t -> ~a~N" arg stack))
 )
 
 (provide call push)
