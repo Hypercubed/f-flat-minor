@@ -1,0 +1,64 @@
+version = 0.1
+default-task = 'build'
+
+extensions = ['../cmp-extension.js']
+
+[env]
+NC = '\033[0m'
+BLUE = '\033[0;34m'
+CHECK = 'printf "  ${GRN}OK${NC} " || printf "  ${RED}FAIL${NC} "'
+RED = '\033[0;31m'
+GRN = '\033[0;32m'
+
+[[task]]
+target = './build/#'
+deps = ['./#.rkt']
+run = '''
+  raco exe -o $TARGET $DEP
+'''
+
+[[task]]
+name = 'build'
+deps = ['./build/ff-test']
+
+[[task]]
+name = 'interpret'
+deps = ['./build/ff-test']
+run = './build/ff-test'
+template = 'cmp'
+[task.template-options]
+cmp = '../ff/example_v0.out'
+
+[[task]]
+name = 'test'
+deps = [':interpret',]
+serial = true
+display = 'none'
+
+[[task]]
+name = 'build-deno-compiler'
+run = 'chomp -c ../deno/ :build:compile'
+
+[[task]]
+name = 'ff'
+deps = [
+    '../ff/##.out',
+    'build-deno-compiler',
+]
+serial = true
+invalidation = 'always'
+validation = 'none'
+display = 'status-only'
+run = '''
+  shopt -s nullglob
+  shopt -s extglob
+  for i in "${DEP%.*}.ff?(p)"; do
+    ../deno/build/compile $i --opt --disassemble | ./ff.sh | cmp - $DEP -s && ${{CHECK}};
+  done
+'''
+
+[[task]]
+name = 'clean'
+run = '''
+  rm -rf ./build
+'''

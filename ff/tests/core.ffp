@@ -1,6 +1,7 @@
 .import ../lib/core.ff
 .import ../lib/testing.ffp
 
+
 0 'Shuffling' prints
     3 5 dup2 5 assert_eq 3 assert_eq 5 assert_eq 3 assert_eq
 
@@ -73,6 +74,7 @@ prints OK
     'Z' lcase 'z' assert_eq
     'z' lcase 'z' assert_eq
 OK
+
 
 0 'Control\sFlow' prints 
     true 5 8 choose 5 assert_eq
