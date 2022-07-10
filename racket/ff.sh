@@ -1,4 +1,3 @@
 name="temp.ff"
-echo "#lang reader \"ff.rkt\"" > $name
-cat - $@ >> $name
-racket $name
+cat - $@ > $name
+racket ./ff.rkt $name

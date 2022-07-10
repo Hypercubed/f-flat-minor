@@ -1,4 +1,4 @@
-#lang reader "ff.rkt"
+#lang reader "./main.rkt"
 
 [(fact)] : dup 1 - fact * ;
 [fact] : dup 1 - [(fact)] ? ;

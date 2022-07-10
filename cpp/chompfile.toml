@@ -40,27 +40,28 @@ serial = true
 display = 'none'
 
 [[task]]
+display = 'none'
 name = 'build-deno-compiler'
-run = 'chomp -c ../deno/ :build:compile'
+run = 'chomp -c ../deno/ :preprocess'
 
 [[task]]
 name = 'ff'
 deps = [
-    '../ff/##.out',
-    './build/run',
-    'build-deno-compiler',
+  '../build/preprocess/##.ff',
+  'build-deno-compiler',
+  './build/run',
 ]
+target = '../ff/##.out'
 serial = true
 invalidation = 'always'
 validation = 'none'
 display = 'status-only'
 run = '''
-  shopt -s nullglob
-  shopt -s extglob
-  for i in "${DEP%.*}.ff?(p)"; do
-    ../deno/build/compile $i --opt --disassemble | ./build/run | cmp - $DEP -s && ${{CHECK}};
-  done
+  cat $DEP | ./build/run
 '''
+template = 'cmp'
+[task.template-options]
+cmp = '$TARGET'
 
 [[task]]
 name = 'clean'

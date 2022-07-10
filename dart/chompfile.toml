@@ -32,8 +32,9 @@ template = 'cmp'
 cmp = '../ff/example_v0.out'
 
 [[task]]
+display = 'none'
 name = 'build-deno-compiler'
-run = 'chomp -c ../deno/ :build:compile'
+run = 'chomp -c ../deno/ :disassemble'
 
 [[task]]
 name = 'test'
@@ -47,22 +48,21 @@ display = 'none'
 [[task]]
 name = 'ff'
 deps = [
-    '../ff/##.out',
-    './bin/dart.exe',
-    'build-deno-compiler',
+ '../build/disassemble/##.ff',
+  'build-deno-compiler',
+  './bin/dart.exe',
 ]
+target = '../ff/##.out'
 serial = true
 invalidation = 'always'
 validation = 'none'
 display = 'status-only'
 run = '''
-  shopt -s nullglob
-  shopt -s extglob
-  for i in "${DEP%.*}.ff?(p)"; do
-    echo $i
-    ../deno/build/compile $i --opt --disassemble | ${{BIN}} | cmp - $DEP -s && ${{CHECK}};
-  done
+  cat $DEP | ${{BIN}}
 '''
+template = 'cmp'
+[task.template-options]
+cmp = '$TARGET'
 
 [[task]]
 name = 'clean'

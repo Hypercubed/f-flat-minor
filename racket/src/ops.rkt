@@ -1,4 +1,4 @@
-#lang br/quicklang
+#lang racket/base
 
 (define op_nop 0)
 (define op_eval 1)
@@ -36,4 +36,4 @@
 (define op_or   (char->integer #\|))
 (define op_not  (char->integer #\~))
 
-(provide op_add op_sub op_mul op_div op_pow op_and op_or op_not op_lt op_eq op_gt op_when op_mark op_def op_drop op_pushr op_pullr op_shiftr op_shiftl op_clr op_dup op_depth op_swap op_mod op_eval op_putc op_dump op_nop)
+(provide (all-defined-out))

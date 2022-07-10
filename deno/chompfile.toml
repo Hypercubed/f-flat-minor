@@ -42,7 +42,6 @@ cmp = '../ff/example.ffb'
 name = 'execute'
 dep = './build/execute'
 template = 'cmp'
-invalidation = 'always'
 run = './build/execute ../ff/example.ffb'
 [task.template-options]
 cmp = '../ff/example.out'
@@ -71,7 +70,7 @@ display = 'none'
 name = 'ff'
 deps = [
     '../ff/##.out',
-    './build/run',
+    './build/run'
 ]
 target = '../ff/##'
 serial = true
@@ -91,4 +90,28 @@ run = '''
 name = 'clean'
 run = '''
   rm -rf ./build
+'''
+
+[[task]]
+name = 'disassemble'
+deps = ['../ff/##.out', '../ff/**/*.*', './build/compile']
+target = '../build/disassemble/##.ff'
+run = '''
+  shopt -s nullglob
+  shopt -s extglob
+  for i in "${DEP%.*}.ff?(p)"; do
+    ./build/compile $i --opt --disassemble > $TARGET
+  done
+'''
+
+[[task]]
+name = 'preprocess'
+deps = ['../ff/##.out', '../ff/**/*.*', './build/preprocess']
+target = '../build/preprocess/##.ff'
+run = '''
+  shopt -s nullglob
+  shopt -s extglob
+  for i in "${DEP%.*}.ff?(p)"; do
+    ./build/preprocess $i > $TARGET
+  done
 '''

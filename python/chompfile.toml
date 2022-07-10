@@ -12,8 +12,9 @@ GRN = '\033[0;32m'
 CHECK = 'printf "  ${GRN}OK${NC} " || printf "  ${RED}FAIL${NC} "'
 
 [[task]]
-name = 'build-deno-preprocess'
-run = 'chomp -c ../deno/ build'
+display = 'none'
+name = 'build-deno-compiler'
+run = 'chomp -c ../deno/ :disassemble'
 
 [[task]]
 name = 'interpret'
@@ -35,7 +36,7 @@ display = 'none'
 name = 'ff'
 deps = [
     '../ff/##.out',
-    '../deno/build/preprocess',
+    'build-deno-compiler',
 ]
 serial = true
 invalidation = 'always'
