@@ -5,6 +5,7 @@
 .packages
 
 **/build/*
+**/compiled/*
 dart/bin/*.exe
 
 */node_modules/*

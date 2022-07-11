@@ -11,6 +11,7 @@ RED = '\033[0;31m'
 GRN = '\033[0;32m'
 
 [[task]]
+name = 'exe:#'
 target = './build/#'
 deps = ['./#.rkt', './**/*.rkt']
 run = '''
@@ -19,7 +20,15 @@ run = '''
 
 [[task]]
 name = 'build'
-deps = ['./build/example']
+deps = [':exe:example', ':make:main']
+
+[[task]]
+name = 'make:#'
+target = './compiled/#_rkt.dep'
+deps = ['./#.rkt', './**/*.rkt']
+run = '''
+  raco make $DEP
+'''
 
 [[task]]
 name = 'interpret'
@@ -45,6 +54,7 @@ name = 'ff'
 deps = [
   '../build/disassemble/##.ff',
   'build-deno-compiler',
+  ':make:main',
 ]
 target = '../ff/##.out'
 serial = true
@@ -52,7 +62,7 @@ invalidation = 'always'
 validation = 'none'
 display = 'status-only'
 run = '''
-  racket ./ff.rkt $DEP
+  racket ./main.rkt $DEP
 '''
 template = 'cmp'
 [task.template-options]
