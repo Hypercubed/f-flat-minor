@@ -31,7 +31,7 @@ cmp = '../ff/example_v0.out'
 
 [[task]]
 name = 'test'
-deps = [':interpret']
+deps = [':interpret', ':ff']
 serial = true
 display = 'none'
 

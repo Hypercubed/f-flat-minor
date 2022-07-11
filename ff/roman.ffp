@@ -8,7 +8,7 @@ C: 100 'C' putc ;
 D: 500 'D' putc ;
 M: 1000 'M' putc ;
 
-roman!: [ dup2 < [ [ -1 * ] dip ] ? ] 1000 foldl! sum! 1000 - 0 '\t' prints print cr ;
+roman!: [ dup2 < [ [ -1 * ] dip ] ? ] 1000 foldl! sum! 1000 - 0 '\t' prints putn cr ;
 
 I roman!
 I I roman!

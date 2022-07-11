@@ -2,10 +2,10 @@
 
 ws: '\s' ;
 
-0 'Type\sa\scharacter:\s' print
+0 'Type\sa\scharacter:\s' prints
 
 getc
 
-0 '\nThe\sASCII\sis:\s' print
+0 '\nThe\sASCII\sis:\s' prints
 
 .

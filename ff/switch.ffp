@@ -45,14 +45,14 @@ switch-test:
   switch
 ;
 
--1 dup print cond-test
-0 dup print cond-test
-1 dup print cond-test
+-1 dup putn cond-test
+0 dup putn cond-test
+1 dup putn cond-test
 
--1 dup print match-test eval println
-0 dup print match-test eval println
-1 dup print match-test eval println
+-1 dup putn match-test eval println
+0 dup putn match-test eval println
+1 dup putn match-test eval println
 
--1 dup print switch-test println
-0 dup print switch-test println
-1 dup print switch-test println
+-1 dup putn switch-test println
+0 dup putn switch-test println
+1 dup putn switch-test println

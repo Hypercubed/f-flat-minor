@@ -7,5 +7,5 @@
   #'(#%module-begin HANDLE-EXPR ... ))
 (provide (rename-out [stacker-module-begin #%module-begin]))
 
-(provide read-syntax)
+(provide read-syntax quote)
 (provide call push)

@@ -95,7 +95,7 @@ enum op_code
   op_nop = 0,
   op_eval = 1,
   op_putc = 2,
-  op_print = 5,
+  op_putn = 5,
   op_clock = 6,
   op_drop = 8,
   op_pushr = 14,
@@ -135,7 +135,7 @@ void setup()
   symbols["nop"] = op_nop;
   symbols["eval"] = op_eval;
   symbols["putc"] = op_putc;
-  symbols["print"] = op_print;
+  symbols["putn"] = op_putn;
   symbols["clock"] = op_clock;
   symbols["drop"] = op_drop;
   symbols["<<"] = op_shiftl;
@@ -235,7 +235,7 @@ void callSystem(int op)
     std::cout << a.convert_to<char>();
     break;
   }
-  case op_print:
+  case op_putn:
   {
     auto a = POP();
     std::cout << a;

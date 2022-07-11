@@ -15,23 +15,7 @@
 (define (peek-stack!)
   (first stack))
 
-(define (pop-stack!)
-  (define arg (first stack))
-  (set! stack (rest stack))
-  arg)
-
-(define (push-stack! arg)
-  (set! stack (cons arg stack)))
-
-(define (pop-queue!)
-  (define arg (first queue))
-  (set! queue (rest queue))
-  arg)
-
-(define (push-queue! arg)
-  (set! queue (cons arg queue)))
-
-(define (prn-list! s)
+(define (print! s)
   (printf "[ ")
   (for ([x (reverse s)]) (printf "~s " x))
   (printf "]\n")
@@ -42,120 +26,123 @@
 
 ;;; system ops
 (define (add!)
-  (push-stack! (+ (pop-stack!) (pop-stack!))))
+  (push! stack (+ (pop! stack) (pop! stack))))
 
 (define (putc!)
-  (display (integer->char (pop-stack!))))
+  (display (integer->char (pop! stack))))
+
+(define (putn!)
+  (display (pop! stack)))
 
 (define (drop!)
-  (pop-stack!))
+  (pop! stack))
 
 (define (mul!)
-  (push-stack! (* (pop-stack!) (pop-stack!))))
+  (push! stack ((pop! stack) . * . (pop! stack))))
 
 (define (div!)
-  (let ([a (pop-stack!)] [b (pop-stack!)])
-    (push-stack! (quotient b a))))
+  (let ([a (pop! stack)] [b (pop! stack)])
+    (push! stack (quotient b a))))
 
 (define (sub!)
-  (let ([a (pop-stack!)] [b (pop-stack!)])
-    (push-stack! (- b a))))
+  (let ([a (pop! stack)])
+    (push! stack ((pop! stack) . - . a))))
 
 (define (pow!)
-  (let ([a (pop-stack!)] [b (pop-stack!)])
-    (push-stack! (expt b a))))
+  (let ([a (pop! stack)])
+    (push! stack (expt (pop! stack) a))))
 
 (define (mod!)
-  (let ([a (pop-stack!)] [b (pop-stack!)])
-    (push-stack! (modulo b a))))
+  (let ([a (pop! stack)])
+    (push! stack (modulo (pop! stack) a))))
 
 (define (and!)
-  (let ([a (pop-stack!)] [b (pop-stack!)])
-    (push-stack! (bitwise-and b a))))
+  (let ([a (pop! stack)])
+    (push! stack (bitwise-and (pop! stack) a))))
 
 (define (or!)
-  (let ([a (pop-stack!)] [b (pop-stack!)])
-    (push-stack! (bitwise-ior b a))))
+  (let ([a (pop! stack)])
+    (push! stack (bitwise-ior (pop! stack) a))))
 
 (define (not!)
-    (push-stack! (bitwise-not (pop-stack!))))
+    (push! stack (bitwise-not (pop! stack))))
 
 (define (shiftr!)
-  (let ([a (pop-stack!)] [b (pop-stack!)])
-    (push-stack! (arithmetic-shift b (- a)))))
+  (let ([a (pop! stack)])
+    (push! stack (arithmetic-shift (pop! stack) (- a)))))
 
 (define (shiftl!)
-  (let ([a (pop-stack!)] [b (pop-stack!)])
-    (push-stack! (arithmetic-shift b a))))
+  (let ([a (pop! stack)])
+    (push! stack (arithmetic-shift (pop! stack) a))))
 
 (define (lt!)
-  (let ([a (pop-stack!)] [b (pop-stack!)])
-    (push-stack! (boolean->integer (< b a)))))
+    (push! stack (boolean->integer ((pop! stack) . > . (pop! stack)))))
 
 (define (gt!)
-  (let ([a (pop-stack!)] [b (pop-stack!)])
-    (push-stack! (boolean->integer (> b a)))))
+    (push! stack (boolean->integer ((pop! stack) . < . (pop! stack)))))
 
 (define (eq!)
-  (let ([a (pop-stack!)] [b (pop-stack!)])
-    (push-stack! (boolean->integer (= b a)))))
+    (push! stack (boolean->integer ((pop! stack) . = . (pop! stack)))))
 
 (define (swap!)
-  (let ([a (pop-stack!)] [b (pop-stack!)])
-    (push-stack! a)
-    (push-stack! b)))
+  (let ([a (pop! stack)] [b (pop! stack)])
+    (push! stack a)
+    (push! stack b)))
 
 (define (dup!)
-  (push-stack! (peek-stack!)))
+  (push! stack (peek-stack!)))
 
 (define (dump!)
-  (prn-list! stack)
-  ;;; (prn-list! queue)
+  (print! stack)
+  ;;; (print! queue)
   )
 
 (define (clr!)
   (set! stack empty))
 
+(define (rand!)
+  (push! stack (random (pop! stack))))
+
 (define (pullr!)
-  (push-stack! (pop-queue!)))
+  (push! stack (pop! queue)))
 
 (define (pushr!)
-  (push-queue! (pop-stack!)))
+  (push! queue (pop! stack)))
 
 (define (when!)
-  (let ([a (pop-stack!)] [b (pop-stack!)])
+  (let ([a (pop! stack)] [b (pop! stack)])
     (when (not (zero? b))
-      (eval a)
+      (call a)
     )
   ))
 
 (define (mark!)
   (set! depth (+ depth 1))
-  (push-stack! (length queue)))
+  (push! stack (length queue)))
 
 (define (def!)
   (set! depth (- depth 1))
-  (define l (- (length queue) (pop-stack!)))
-  (define s (pop-stack!))
+  (define l (- (length queue) (pop! stack)))
+  (define s (pop! stack))
   (define def empty)
   (for ([i l])
-    (set! def (cons (pop-queue!) def))
+    (set! def (cons (pop! queue) def))
   )
   (hash-set! definitions s def)
 )
 
 (define (eval!)
-  (eval (pop-stack!)))
+  (call (pop! stack)))
 
 (define (depth!)
-  (push-stack! (length stack)))
+  (push! stack (length stack)))
 
 ;;; System ops
 (hash-set! definitions op_nop #f)
 (hash-set! definitions op_eval eval!)
 (hash-set! definitions op_putc putc!)
 ;;; getc
-;;; print
+(hash-set! definitions op_putn putn!)
 ;;; clock
 (hash-set! definitions op_drop drop!)
 (hash-set! definitions op_pushr pushr!)
@@ -163,7 +150,7 @@
 (hash-set! definitions op_shiftr shiftr!)
 (hash-set! definitions op_shiftl shiftl!)
 (hash-set! definitions op_clr clr!)
-;;; rand 
+(hash-set! definitions op_rand rand!)
 ;;; exit
 (hash-set! definitions op_dup dup!)
 (hash-set! definitions op_depth depth!)
@@ -190,39 +177,28 @@
 (hash-set! definitions op_not not!)
 
 ;;; IR ops
-(define (eval* op) 
-  (match op
-    [(list 'push b) (push b)]
-    [(list 'call b) (call b)]
-  )
-)
-
-(define (eval op)
-  (define def (hash-ref definitions op))
-  (cond
-    [(list? def) (map eval* def)]
-    [#t (def)]
-  )
+(define (call-internal op)
+  (if (procedure? op)
+    (op)
+    (for-each (lambda (x) ((car x) (cadr x))) op))
 )
 
 (define (push v)
-  (cond
-    [(> depth 0) (push-queue! `(push ,v))]
-    [#t (push-stack! v)]
-  )
+  (if (depth . > . 0)
+    (push! queue `(,push ,v))
+    (push! stack v))
 )
 
 (define (call op)
   (cond
     [(eq? op_def op) (def!)]
-    [(eq? op_mark op) (mark!)]
-    [(> depth 0) (push-queue! `(call ,op))]
-    [(hash-has-key? definitions op) (eval op)]
+    [(depth . > . 0) (push! queue `(,call ,op))]
+    [(hash-has-key? definitions op) (call-internal (hash-ref definitions op))]
     [#t (error "unknown op: ~s" op)]
   )
 
   (when trace (printf "~a\t -> ~a~N" op stack))
 )
 
-(provide stack queue)
+(provide stack queue definitions)
 (provide call push)

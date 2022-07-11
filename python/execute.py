@@ -193,7 +193,7 @@ defineSystem('nop', nop)
 defineSystem('eval', call)
 defineSystem('putc', putc)
 # getc
-defineSystem('print', printNumber)
+defineSystem('putn', printNumber)
 defineSystem('drop', lambda: stack.pop() )
 defineSystem('q<', pushq)
 defineSystem('q>', popq)

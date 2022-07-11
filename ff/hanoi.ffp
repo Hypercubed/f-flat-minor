@@ -26,5 +26,5 @@ move:  /* n a b c */
 
 drop drop drop
 2 swap ^ --
-cr print
+cr putn
 0 '\smoves' println

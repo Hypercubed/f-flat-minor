@@ -147,7 +147,7 @@ _F♭m<sup>+</sup>_ adds a preprocessor and compiler commands. A word starting w
 | EVAL     |  eval  |       1       |       F♭m       |
 | PUTC     |  putc  |       2       |       F♭m       |
 | GETC     |  getc  |       3       |       F♭m       |
-| PRINT    | print  |       5       |       F♭m       |
+| PRINT    |  putn  |       5       |       F♭m       |
 | CLOCK    | clock  |       6       |       F♭m       |
 | DROP     |  drop  | 8 (backspace) |       F♭m       |
 | PUSHR    |   q<   |      14       |       F♭m       |

@@ -316,7 +316,7 @@ export class Engine {
     this.defineSystem(() => {
       const data = encoder.encode(this.pop().toString(this.base));
       Deno.stdout.writeSync(data);
-    }, OpCodes.PRINT);
+    }, OpCodes.PUTN);
 
     this.defineSystem(() => {
       this.pop();

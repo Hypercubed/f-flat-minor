@@ -1,65 +1,59 @@
 #lang br/quicklang
 
-(require "./ops.rkt")
-(require "./symbols.rkt")
+(require "./ops.rkt" "./symbols.rkt")
 
-(define next-op 0)
+(define next-code!
+  (let ([n 0])
+  (λ ()
+    (set! n (sub1 n))
+    n)))
 
-(define (pointer->token str)
-  (substring str 1 (- (string-length str) 1))
-)
+(define BRA (string (integer->char op_bra)))
+(define KET (string (integer->char op_ket)))
 
-(define (add-token token)
-  (set! next-op (- next-op 1))
-  (hash-set! symbols token next-op)
-  next-op
-)
-
-(define (lookup token)
-  (cond
-    [(integer? (string->number token)) token]
-    [(pointer? token)
-      (define x (pointer->token token))
-      (if (hash-has-key? symbols x)
-        (hash-ref symbols x)
-        (add-token x)
-      )
-    ]
-    [(hash-has-key? symbols token) (hash-ref symbols token)]
-    [#t (add-token token)]
-  )
-)
-
-;;; Reader
 (define (pointer? token)
   (and (string? token)
        (string-length token)
-       (eq? (string-ref token 0) #\[) ; also check ends with ]
-  )
-)
+       (string-prefix? token BRA)
+       (string-suffix? token KET)))
 
-(define (get-op token)
+(define (pointer->token str)
+  (substring str 1 (sub1 (string-length str))))
+
+(define (add-token token code)
+  (hash-set! symbols token code)
+  code)
+
+(define (lookup token)
   (cond
-    [(integer? (string->number token)) "push"]
-    [(pointer? token) "push"]
-    [#t "call"]
+    [(pointer? token)
+      (lookup (pointer->token token))
+    ]
+    [(hash-has-key? symbols token)
+      (hash-ref symbols token)
+    ]
+    [#t (add-token token (next-code!))]
   ))
 
 (define (tokenize port)
   (flatten (map string-split (port->lines port))))
 
-(define (read src-tokens)
-  (define values (map lookup src-tokens))
-  (define ops (map get-op src-tokens))
-  (define src-datums (format-datums '(~a ~a) ops values))
-  ;;; (displayln src-datums)
-  (define module-datum `(module anything
-    "./src/expander.rkt"
-    ;;; br
-  ,@src-datums))
+(define (get-datum token)
+  (cond
+    [(integer? (string->number token)) (format-datum '(push ~a) token)]
+    [(eq? "*" token) (format-datum '(sub!))]
+    [(pointer? token) (format-datum '(push ~a) (lookup token))]
+    [#t (format-datum '(call ~a) (lookup token))]
+  ))
+
+;;; Reader
+(define (read-tokens src-tokens)
+  (define src-datums (map get-datum src-tokens))
+  (define module-datum `(module anything "./src/expander.rkt" ,@src-datums))
   (datum->syntax #f module-datum)
 )
 
 (define (read-syntax path port)
-  (read (tokenize port)))
+  (read-tokens (tokenize port)))
+
 (provide read-syntax)

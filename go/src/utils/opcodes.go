@@ -7,7 +7,7 @@ const (
 	OP_CALL  = 1
 	OP_PUTC  = 2
 	OP_GETC  = 3
-	OP_PRINT = 5
+	OP_PUTN  = 5
 	OP_CLOCK = 6
 	OP_DROP  = 8
 	OP_PUSHR = 14
@@ -47,7 +47,7 @@ const (
 	SYM_CALL  = "eval"
 	SYM_PUTC  = "putc"
 	SYM_GETC  = "getc"
-	SYM_PRINT = "print"
+	SYM_PUTN  = "putn"
 	SYM_CLOCK = "clock"
 	SYM_DROP  = "drop"
 	SYM_PUSHR = "q<"

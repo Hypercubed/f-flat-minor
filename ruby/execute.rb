@@ -157,7 +157,7 @@ defineSystem('putc', lambda {||
   putc $stack.pop
 })
 
-defineSystem('print', lambda {||
+defineSystem('putn', lambda {||
   print $stack.pop
 })
 

@@ -1,4 +1,4 @@
-#lang racket/base
+#lang br/quicklang
 
 (require "./ops.rkt")
 
@@ -7,7 +7,7 @@
 (hash-set! symbols "eval" op_eval)
 (hash-set! symbols "putc" op_putc)
 ;;; (hash-set! symbols "getc" op_getc)
-;;; print
+(hash-set! symbols "putn" op_putn)
 ;;; clock
 (hash-set! symbols "drop" op_drop)
 (hash-set! symbols "q<" op_pushr)
@@ -15,7 +15,7 @@
 (hash-set! symbols ">>" op_shiftr)
 (hash-set! symbols "<<" op_shiftl)
 (hash-set! symbols "clr" op_clr)
-;;; rand 
+(hash-set! symbols "rand" op_rand)
 ;;; exit 
 (hash-set! symbols "dup" op_dup)
 (hash-set! symbols "depth" op_depth)

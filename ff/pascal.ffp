@@ -2,7 +2,7 @@
 
 /* Pascal's triangle */
 
-ps: print sp ;
+ps: putn sp ;
 
 line: dup 0 swap [ dup2 ++ q< q< nck ps q> q> ] seq nck ps cr ;
 

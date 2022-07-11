@@ -1,8 +1,9 @@
-#lang racket/base
+#lang br/quicklang
 
 (define op_nop 0)
 (define op_eval 1)
 (define op_putc 2)
+(define op_putn 5)
 ;;; (define op_getc 3)
 (define op_drop 8)
 (define op_pushr 14)
@@ -10,7 +11,7 @@
 (define op_shiftr 16)
 (define op_shiftl 17)
 (define op_clr 24)
-;;; rand
+(define op_rand 26)
 ;;; exit
 (define op_dup (char->integer #\!))
 (define op_depth (char->integer #\#))
@@ -30,8 +31,8 @@
 (define op_eq  (char->integer #\=))
 (define op_gt  (char->integer #\>))
 (define op_when (char->integer #\?))
-;;; bra
-;;; ket
+(define op_bra (char->integer #\[))
+(define op_ket (char->integer #\]))
 (define op_pow  (char->integer #\^))
 (define op_or   (char->integer #\|))
 (define op_not  (char->integer #\~))
