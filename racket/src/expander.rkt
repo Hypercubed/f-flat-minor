@@ -1,6 +1,6 @@
 #lang br/quicklang
 
-(require "./ops.rkt" "./symbols.rkt" "./reader.rkt" "./engine.rkt")
+(require "./reader.rkt" "./engine.rkt")
 
 ;;; expander
 (define-macro (stacker-module-begin HANDLE-EXPR ...)

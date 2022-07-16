@@ -2,6 +2,8 @@
 
 (require "./ops.rkt" "./symbols.rkt")
 
+(define user_symbols (make-hash))
+
 (define next-code!
   (let ([n 0])
   (λ ()
@@ -21,7 +23,7 @@
   (substring str 1 (sub1 (string-length str))))
 
 (define (add-token token code)
-  (hash-set! symbols token code)
+  (hash-set! user_symbols token code)
   code)
 
 (define (lookup token)
@@ -29,8 +31,11 @@
     [(pointer? token)
       (lookup (pointer->token token))
     ]
-    [(hash-has-key? symbols token)
-      (hash-ref symbols token)
+    [(hash-has-key? system_symbols token)
+      (hash-ref system_symbols token)
+    ]
+    [(hash-has-key? user_symbols token)
+      (hash-ref user_symbols token)
     ]
     [#t (add-token token (next-code!))]
   ))
@@ -41,7 +46,6 @@
 (define (get-datum token)
   (cond
     [(integer? (string->number token)) (format-datum '(push ~a) token)]
-    [(eq? "*" token) (format-datum '(sub!))]
     [(pointer? token) (format-datum '(push ~a) (lookup token))]
     [#t (format-datum '(call ~a) (lookup token))]
   ))

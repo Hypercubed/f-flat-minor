@@ -1,6 +1,13 @@
-#lang br/quicklang
+#lang racket/base
 
+(require br/quicklang)
 (require "./ops.rkt")
+
+;;; helpers
+
+(define (flip f)
+  (λ (x y . args)
+    (apply f y x args)))
 
 ;;; engine
 (define stack empty)
@@ -38,42 +45,34 @@
   (pop! stack))
 
 (define (mul!)
-  (push! stack ((pop! stack) . * . (pop! stack))))
+  (push! stack (* (pop! stack) (pop! stack))))
 
 (define (div!)
-  (let ([a (pop! stack)] [b (pop! stack)])
-    (push! stack (quotient b a))))
+  (push! stack ((flip quotient) (pop! stack) (pop! stack))))
 
 (define (sub!)
-  (let ([a (pop! stack)])
-    (push! stack ((pop! stack) . - . a))))
+  (push! stack ((flip -) (pop! stack) (pop! stack))))
 
 (define (pow!)
-  (let ([a (pop! stack)])
-    (push! stack (expt (pop! stack) a))))
+  (push! stack ((flip expt) (pop! stack) (pop! stack))))
 
 (define (mod!)
-  (let ([a (pop! stack)])
-    (push! stack (modulo (pop! stack) a))))
+  (push! stack ((flip modulo) (pop! stack) (pop! stack))))
 
 (define (and!)
-  (let ([a (pop! stack)])
-    (push! stack (bitwise-and (pop! stack) a))))
+  (push! stack ((flip bitwise-and) (pop! stack) (pop! stack))))
 
 (define (or!)
-  (let ([a (pop! stack)])
-    (push! stack (bitwise-ior (pop! stack) a))))
+  (push! stack ((flip bitwise-ior) (pop! stack) (pop! stack))))
 
 (define (not!)
-    (push! stack (bitwise-not (pop! stack))))
+  (push! stack (bitwise-not (pop! stack))))
 
 (define (shiftr!)
-  (let ([a (pop! stack)])
-    (push! stack (arithmetic-shift (pop! stack) (- a)))))
+  (push! stack ((flip arithmetic-shift) (- (pop! stack)) (pop! stack))))
 
 (define (shiftl!)
-  (let ([a (pop! stack)])
-    (push! stack (arithmetic-shift (pop! stack) a))))
+  (push! stack ((flip arithmetic-shift) (pop! stack) (pop! stack))))
 
 (define (lt!)
     (push! stack (boolean->integer ((pop! stack) . > . (pop! stack)))))
@@ -126,7 +125,7 @@
   (define s (pop! stack))
   (define def empty)
   (for ([i l])
-    (set! def (cons (pop! queue) def))
+    (push! def (pop! queue))
   )
   (hash-set! definitions s def)
 )
@@ -137,63 +136,94 @@
 (define (depth!)
   (push! stack (length stack)))
 
-;;; System ops
-(hash-set! definitions op_nop #f)
-(hash-set! definitions op_eval eval!)
-(hash-set! definitions op_putc putc!)
-;;; getc
-(hash-set! definitions op_putn putn!)
-;;; clock
-(hash-set! definitions op_drop drop!)
-(hash-set! definitions op_pushr pushr!)
-(hash-set! definitions op_pullr pullr!)
-(hash-set! definitions op_shiftr shiftr!)
-(hash-set! definitions op_shiftl shiftl!)
-(hash-set! definitions op_clr clr!)
-(hash-set! definitions op_rand rand!)
+(define system_defs (hash
+  op_nop #f
+  op_eval eval!
+  op_putc putc!
+  ;;; op_getc
+  op_putn putn!
+  ;;; clock
+  op_drop drop!
+  op_pushr pushr!
+  op_pullr pullr!
+  op_shiftr shiftr!
+  op_shiftl shiftl!
+  op_clr clr!
+  op_rand rand!
+  ;;; exit 
 ;;; exit
-(hash-set! definitions op_dup dup!)
-(hash-set! definitions op_depth depth!)
-(hash-set! definitions op_swap swap!)
-(hash-set! definitions op_mod mod!)
-(hash-set! definitions op_and and!)
+  ;;; exit 
+;;; exit
+  ;;; exit 
+;;; exit
+  ;;; exit 
+  op_dup dup!
+  op_depth depth!
+  op_swap swap!
+  op_mod mod!
+  op_and and!
+  ;;; stash
 ;;; stash 
+  ;;; stash
+;;; stash 
+  ;;; stash
+;;; stash 
+  ;;; stash
+  ;;; fetch 
 ;;; fetch 
-(hash-set! definitions op_mul mul!)
-(hash-set! definitions op_add add!)
-(hash-set! definitions op_sub sub!)
-(hash-set! definitions op_dump dump!)
-(hash-set! definitions op_div div!)
-(hash-set! definitions op_mark mark!)
-(hash-set! definitions op_def def!)
-(hash-set! definitions op_lt lt!)
-(hash-set! definitions op_eq eq!)
-(hash-set! definitions op_gt gt!)
-(hash-set! definitions op_when when!)
+  ;;; fetch 
+;;; fetch 
+  ;;; fetch 
+;;; fetch 
+  ;;; fetch 
+  op_mul mul!
+  op_add add!
+  op_sub sub!
+  op_dump dump!
+  op_div div!
+  op_mark mark!
+  op_def def!
+  op_lt lt!
+  op_eq eq!
+  op_gt gt!
+  op_when when!
+  ;;; bra 
 ;;; bra 
+  ;;; bra 
+;;; bra 
+  ;;; bra 
+;;; bra 
+  ;;; bra 
+  ;;; ket 
 ;;; ket
-(hash-set! definitions op_pow pow!)
-(hash-set! definitions op_or or!)
-(hash-set! definitions op_not not!)
+  ;;; ket 
+;;; ket
+  ;;; ket 
+;;; ket
+  ;;; ket 
+  op_pow pow!
+  op_or or!
+  op_not not!
+))
 
 ;;; IR ops
-(define (call-internal op)
-  (if (procedure? op)
-    (op)
-    (for-each (lambda (x) ((car x) (cadr x))) op))
-)
+;;; (: unthunk (-> Any None))
+(define (unthunk x) (x))
 
+;;; (: push (-> Integer None))
 (define (push v)
-  (if (depth . > . 0)
-    (push! queue `(,push ,v))
+  (if (> depth 0)
+    (push! queue [thunk (push v)])
     (push! stack v))
 )
 
+;;; (: call (-> Integer None))
 (define (call op)
   (cond
     [(eq? op_def op) (def!)]
-    [(depth . > . 0) (push! queue `(,call ,op))]
-    [(hash-has-key? definitions op) (call-internal (hash-ref definitions op))]
+    [(> depth 0) (push! queue [thunk (call op)])]
+    [(hash-has-key? system_defs op) ((hash-ref system_defs op))]
+    [(hash-has-key? definitions op) (for-each unthunk (hash-ref definitions op))]
     [#t (error "unknown op: ~s" op)]
   )
 
