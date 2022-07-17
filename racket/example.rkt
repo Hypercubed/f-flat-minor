@@ -1,10 +1,10 @@
 #lang reader "./main.rkt"
 
-;;; /* factorial */
+/* factorial */
 
 fact: dup 1 > [ dup 1 - fact * ] ? ;
 
-;;; /* string printing */
+/* string printing */
 
 (prints): dup [ q< (prints) q> putc ] ? ;
 prints: (prints) drop ;

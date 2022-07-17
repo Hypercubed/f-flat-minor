@@ -2,9 +2,9 @@
 .import ../lib/testing.ffp
 
 0 'Numeric' prints 
-    /* 0b1111 15 assert_eq */
+    /* 0b1111 15 assert_eq
     0xFFFF 65535 assert_eq
-    /* 0o27 23 assert_eq */
+    /* 0o27 23 assert_eq
     1_000_000 1000000 assert_eq
     /* 0b1110_0000_0000_0000 57344 assert_eq
     1e10 10000000000 assert_eq */

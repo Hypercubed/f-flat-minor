@@ -1,11 +1,25 @@
 #lang br/quicklang
 
-(require "./reader.rkt" "./engine.rkt")
+(require "engine.rkt" "ops.rkt")
 
-;;; expander
-(define-macro (stacker-module-begin HANDLE-EXPR ...)
-  #'(#%module-begin HANDLE-EXPR ... ))
-(provide (rename-out [stacker-module-begin #%module-begin]))
+(define-macro (module-begin PARSE-TREE)
+  #'(#%module-begin
+     PARSE-TREE))
+(provide (rename-out [module-begin #%module-begin]))
 
-(provide read-syntax quote)
-(provide call push)
+(define-macro (ff-program EXPR ...)
+  #'(void EXPR ...))
+
+(define-macro (ff-marker ID)
+  #'(begin (push ID) (call op_mark)))
+
+(define-macro (ff-push VAL)
+  #'(push VAL))
+
+(define-macro (ff-call OP)
+  #'(call OP))
+
+(define-macro (ff-string STR)
+  #'(map push (map char->integer (string->list STR))))
+
+(provide ff-program ff-marker ff-push ff-call ff-string)

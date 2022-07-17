@@ -52,7 +52,7 @@ run = 'chomp -c ../deno/ :disassemble'
 [[task]]
 name = 'ff'
 deps = [
-  '../build/disassemble/##.ff',
+  '../build/preprocess/##.ff',
   'build-deno-compiler',
   ':make:main',
 ]

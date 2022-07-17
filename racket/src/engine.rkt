@@ -1,7 +1,6 @@
-#lang racket/base
+#lang racket
 
-(require br/quicklang)
-(require "./ops.rkt")
+(require "ops.rkt" br/list)
 
 ;;; helpers
 

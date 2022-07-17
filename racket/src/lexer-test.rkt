@@ -1,4 +1,5 @@
 #lang br
+
 (require "lexer.rkt" brag/support)
 
 (define (lex str)
