@@ -227,7 +227,6 @@
   )
 
   (void)
-
 )
 
 (provide stack queue definitions)
