@@ -35,8 +35,8 @@
   "=" op_eq
   ">" op_gt
   "?" op_when
-  ;;; bra 
-  ;;; ket 
+  "[" op_bra
+  "]" op_ket
   "^" op_pow
   "|" op_or
   "~" op_not

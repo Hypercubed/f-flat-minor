@@ -12,15 +12,42 @@
 
 (define BRA (string (integer->char op_bra)))
 (define KET (string (integer->char op_ket)))
+(define MARK (string (integer->char op_mark)))
+
+(define (marker? token)
+  (and (string? token)
+       (> (string-length token) 1)
+       (string-suffix? token MARK)))
+
+(define (marker->pointer str)
+  (string-append "[" (substring str 0 (sub1 (string-length str))) "]"))
+
+(define (string->ff-chars str)
+  (map char->ff-char (string->list (substring str 1 (sub1 (string-length str))))))
+
+(define (char->ff-char chr)
+  (string-append "'" (string chr) "'"))
 
 (define (pointer? token)
   (and (string? token)
-       (string-length token)
+       (> (string-length token) 2)
        (string-prefix? token BRA)
        (string-suffix? token KET)))
 
 (define (pointer->token str)
   (substring str 1 (sub1 (string-length str))))
+
+(define (ff-char? token)
+  (and (string? token)
+       (eq? (string-length token) 3)
+       (string-prefix? token "'")
+       (string-suffix? token "'")))
+
+(define (ff-string? token)
+  (and (string? token)
+       (> (string-length token) 4)
+       (string-prefix? token "'")
+       (string-suffix? token "'")))
 
 (define (add-token token code)
   (hash-set! user_symbols token code)
@@ -40,14 +67,25 @@
     [#t (add-token token (next-code!))]
   ))
 
+(define (expand token)
+  (cond
+    [(marker? token) (list (marker->pointer token) ":")]
+    [(ff-string? token) (string->ff-chars token)]
+    [else token]
+  ))
+
+(define (read-line line)
+  (if (string-prefix? line ";;;") '() (string-split line)))
+
 (define (tokenize port)
-  (flatten (map string-split (port->lines port))))
+  (flatten (map expand (flatten (map read-line (port->lines port))))))
 
 (define (get-datum token)
   (cond
     [(integer? (string->number token)) (format-datum '(push ~a) token)]
     [(pointer? token) (format-datum '(push ~a) (lookup token))]
-    [#t (format-datum '(call ~a) (lookup token))]
+    [(ff-char? token) (format-datum '(push ~a) (char->integer (string-ref token 1)))]
+    [else (format-datum '(call ~a) (lookup token))]
   ))
 
 ;;; Reader

@@ -15,7 +15,7 @@ name = 'exe:#'
 target = './build/#'
 deps = ['./#.rkt', './**/*.rkt']
 run = '''
-  raco exe --gui -o $TARGET $DEP
+  raco exe -o $TARGET $DEP
 '''
 
 [[task]]
@@ -36,7 +36,7 @@ deps = ['./build/example']
 run = './build/example'
 template = 'cmp'
 [task.template-options]
-cmp = '../ff/example_v0.out'
+cmp = '../ff/example.out'
 
 [[task]]
 name = 'test'

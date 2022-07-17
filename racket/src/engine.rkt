@@ -9,12 +9,18 @@
   (λ (x y . args)
     (apply f y x args)))
 
+(define next-code!
+  (let ([n 256])
+  (λ ()
+    (set! n (add1 n))
+    n)))
+
 ;;; engine
 (define stack empty)
 (define queue empty)
 
+(define depth-stack empty)
 (define definitions (make-hash))
-(define depth 0)
 (define trace #f)
 
 ;;; engine ops
@@ -116,18 +122,30 @@
   ))
 
 (define (mark!)
-  (set! depth (+ depth 1))
-  (push! stack (length queue)))
+  (push! depth-stack (length queue)))
+
+(define (bra!)
+  (push! depth-stack (length queue)))
 
 (define (def!)
-  (set! depth (- depth 1))
-  (define l (- (length queue) (pop! stack)))
+  (define l (- (length queue) (pop! depth-stack)))
   (define s (pop! stack))
   (define def empty)
   (for ([i l])
     (push! def (pop! queue))
   )
   (hash-set! definitions s def)
+)
+
+(define (ket!)
+  (define l (- (length queue) (pop! depth-stack)))
+  (define s (next-code!))
+  (define def empty)
+  (for ([i l])
+    (push! def (pop! queue))
+  )
+  (hash-set! definitions s def)
+  (push s)
 )
 
 (define (eval!)
@@ -151,30 +169,12 @@
   op_clr clr!
   op_rand rand!
   ;;; exit 
-;;; exit
-  ;;; exit 
-;;; exit
-  ;;; exit 
-;;; exit
-  ;;; exit 
   op_dup dup!
   op_depth depth!
   op_swap swap!
   op_mod mod!
   op_and and!
   ;;; stash
-;;; stash 
-  ;;; stash
-;;; stash 
-  ;;; stash
-;;; stash 
-  ;;; stash
-  ;;; fetch 
-;;; fetch 
-  ;;; fetch 
-;;; fetch 
-  ;;; fetch 
-;;; fetch 
   ;;; fetch 
   op_mul mul!
   op_add add!
@@ -187,20 +187,8 @@
   op_eq eq!
   op_gt gt!
   op_when when!
-  ;;; bra 
-;;; bra 
-  ;;; bra 
-;;; bra 
-  ;;; bra 
-;;; bra 
-  ;;; bra 
-  ;;; ket 
-;;; ket
-  ;;; ket 
-;;; ket
-  ;;; ket 
-;;; ket
-  ;;; ket 
+  op_bra bra!
+  op_ket ket!
   op_pow pow!
   op_or or!
   op_not not!
@@ -212,22 +200,34 @@
 
 ;;; (: push (-> Integer None))
 (define (push v)
-  (if (> depth 0)
+  (when trace (printf "~a\t - ~a\t - ~a~N" (reverse stack) v queue))
+
+  (if (> (length depth-stack) 0)
     (push! queue [thunk (push v)])
     (push! stack v))
 )
 
 ;;; (: call (-> Integer None))
 (define (call op)
+  (when trace (printf "~a\t - ~a\t - ~a~N" (reverse stack) op queue))
+
   (cond
+    [(eq? op_bra op) (bra!)]
+    [(eq? op_ket op) (ket!)]
     [(eq? op_def op) (def!)]
-    [(> depth 0) (push! queue [thunk (call op)])]
+    [(and (> (length depth-stack) 0) (hash-has-key? system_defs op))
+      (let ([def (hash-ref system_defs op)])
+        (push! queue def)
+      )
+    ]
+    [(> (length depth-stack) 0) (push! queue [thunk (call op)])]
     [(hash-has-key? system_defs op) ((hash-ref system_defs op))]
     [(hash-has-key? definitions op) (for-each unthunk (hash-ref definitions op))]
-    [#t (error "unknown op: ~s" op)]
+    [else (error "unknown op: ~s" op)]
   )
 
-  (when trace (printf "~a\t -> ~a~N" op stack))
+  (void)
+
 )
 
 (provide stack queue definitions)
