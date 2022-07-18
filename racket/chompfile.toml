@@ -73,3 +73,15 @@ name = 'clean'
 run = '''
   rm -rf ./build
 '''
+
+[[task]]
+name = 'bench'
+deps = ['build']
+validation = 'none'
+serial = true
+run = '''
+  hyperfine --warmup 3 \
+    './build/example'\
+    'racket ./example.rkt'\
+    'racket main.rkt ../ff/example.ff'
+'''

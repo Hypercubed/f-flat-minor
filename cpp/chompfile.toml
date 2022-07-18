@@ -24,10 +24,10 @@ deps = ['./build/run']
 [[task]]
 name = 'interpret'
 dep = './build/run'
-run = 'cat ../ff/example_v0.ff | ./build/run'
+run = 'cat ../ff/example.ff | ./build/run'
 template = 'cmp'
 [task.template-options]
-cmp = '../ff/example_v0.out'
+cmp = '../ff/example.out'
 
 [[task]]
 name = 'test'

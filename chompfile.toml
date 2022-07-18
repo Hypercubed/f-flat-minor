@@ -45,3 +45,20 @@ run = '''
   echo ""
   echo ""
 '''
+
+[[task]]
+name = 'bench'
+deps = ['build:deno', 'build:go', 'build:cpp', 'build:dart', 'build:racket']
+validation = 'none'
+serial = true
+run = '''
+  hyperfine --warmup 3 \
+    './deno/build/execute ./ff/example.ffb'\
+    'cat ./ff/example.ffb | ./go/build/execute'\
+    'cat ./ff/example.ff | ./cpp/build/run'\
+    'cat ./ff/example_v0.ff | ./dart/bin/dart.exe'\
+    'cat ./ff/example.ff | ./python/execute.py'\
+    'cat ./ff/example.ff | ./ruby/execute.rb'\
+    './racket/build/example'
+'''
+
