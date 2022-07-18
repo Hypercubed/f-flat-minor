@@ -52,13 +52,40 @@ deps = ['build:deno', 'build:go', 'build:cpp', 'build:dart', 'build:racket']
 validation = 'none'
 serial = true
 run = '''
-  hyperfine --warmup 3 \
+  hyperfine --warmup 3 --export-markdown benchmarks.md \
     './deno/build/execute ./ff/example.ffb'\
-    'cat ./ff/example.ffb | ./go/build/execute'\
+    './go/build/execute --in ./ff/example.ffb'\
     'cat ./ff/example.ff | ./cpp/build/run'\
     'cat ./ff/example_v0.ff | ./dart/bin/dart.exe'\
     'cat ./ff/example.ff | ./python/execute.py'\
     'cat ./ff/example.ff | ./ruby/execute.rb'\
     './racket/build/example'
+'''
+
+[[task]]
+name = 'bench:interp'
+deps = ['build:deno', 'build:go', 'build:cpp', 'build:dart', 'build:racket']
+validation = 'none'
+serial = true
+run = '''
+  hyperfine --warmup 3 --export-markdown benchmarks.md \
+    './deno/build/run ./ff/example.ff'\
+    './go/build/run --in ./ff/example.ff'\
+    'cat ./ff/example.ff | ./cpp/build/run'\
+    'cat ./ff/example_v0.ff | ./dart/bin/dart.exe'\
+    'cat ./ff/example.ff | ./python/execute.py'\
+    'cat ./ff/example.ff | ./ruby/execute.rb'\
+    'racket ./racket/main.rkt ./ff/example.ff'
+'''
+
+[[task]]
+name = 'bench:compile'
+deps = ['build:deno', 'build:go', 'build:cpp', 'build:dart', 'build:racket']
+validation = 'none'
+serial = true
+run = '''
+  hyperfine --warmup 3 --export-markdown benchmarks.md \
+    './deno/build/compile ./ff/example.ff'\
+    './go/build/compile --in ./ff/example.ff'
 '''
 

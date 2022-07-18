@@ -2,6 +2,7 @@ package main
 
 import (
 	"bufio"
+	"flag"
 	"io"
 	"io/ioutil"
 	"m/src/engine"
@@ -17,7 +18,16 @@ func check(e error) {
 func main() {
 	engine.Setup()
 
+	inFlagPtr := flag.String("in", "-", "the input file")
+	flag.Parse()
+
 	reader := bufio.NewReader(os.Stdin)
+
+	if *inFlagPtr != "" && *inFlagPtr != "-" {
+		f, err := os.Open(*inFlagPtr)
+		check(err)
+		reader = bufio.NewReader(f)
+	}
 
 	header := []byte("FbAbbCb")
 

@@ -1,6 +1,7 @@
 #lang racket
 
-(require "ops.rkt" br/list)
+(require "ops.rkt")
+(require br/define (for-syntax racket/base syntax/parse))
 
 ;;; helpers
 
@@ -22,10 +23,26 @@
 (define definitions (make-hash))
 (define trace #f)
 
-;;; engine ops
+;;; stack helpers
 
-(define (peek-stack!)
-  (first stack))
+(define-syntax (push! stx)
+  (syntax-parse stx
+    [(_ ID:id VAL)
+     #'(set! ID (cons VAL ID))]))
+
+(define-syntax (pop! stx)
+  (syntax-parse stx
+    [(_ ID:id)
+     #'(let ([x (car ID)])
+         (set! ID (cdr ID))
+         x)]))
+
+(define-syntax (peek! stx)
+  (syntax-parse stx
+    [(_ ID:id)
+     #'(car ID)]))
+
+;;; engine ops
 
 (define (print! s)
   (printf "[ ")
@@ -47,7 +64,7 @@
   (display (pop! stack)))
 
 (define (drop!)
-  (pop! stack))
+  (set! stack (cdr stack)))
 
 (define (mul!)
   (push! stack (* (pop! stack) (pop! stack))))
@@ -94,7 +111,7 @@
     (push! stack b)))
 
 (define (dup!)
-  (push! stack (peek-stack!)))
+  (push! stack (peek! stack)))
 
 (define (dump!)
   (print! stack)
@@ -194,10 +211,8 @@
 ))
 
 ;;; IR ops
-;;; (: unthunk (-> Any None))
 (define (unthunk x) (x))
 
-;;; (: push (-> Integer None))
 (define (push v)
   (when trace (printf "~a\t - ~a\t - ~a~N" (reverse stack) v queue))
 
@@ -206,7 +221,6 @@
     (push! stack v))
 )
 
-;;; (: call (-> Integer None))
 (define (call op)
   (when trace (printf "~a\t - ~a\t - ~a~N" (reverse stack) op queue))
 
