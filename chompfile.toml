@@ -53,6 +53,7 @@ validation = 'none'
 serial = true
 run = '''
   hyperfine --warmup 3  --export-markdown benchmarks.md\
+    './cpp/build/fact'\
     './deno/build/execute ./ff/example.ffb'\
     './go/build/execute --in ./ff/example.ffb'\
     'cat ./ff/example.ff | ./cpp/build/run'\
@@ -64,11 +65,12 @@ run = '''
 
 [[task]]
 name = 'bench:execute'
-deps = ['build:deno', 'build:go', 'build:racket']
+deps = ['build:deno', 'build:go', 'build:cpp', 'build:racket']
 validation = 'none'
 serial = true
 run = '''
   hyperfine --warmup 3 -N\
+    './cpp/build/fact'\
     './deno/build/execute ./ff/example.ffb'\
     './go/build/execute --in ./ff/example.ffb'\
     './racket/build/example'

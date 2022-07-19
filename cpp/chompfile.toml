@@ -11,6 +11,7 @@ RED = '\033[0;31m'
 GRN = '\033[0;32m'
 
 [[task]]
+name = 'build:#'
 target = './build/#'
 deps = ['./#.cpp']
 run = '''
@@ -19,11 +20,11 @@ run = '''
 
 [[task]]
 name = 'build'
-deps = ['./build/run']
+deps = ['build:run', 'build:fact']
 
 [[task]]
 name = 'interpret'
-dep = './build/run'
+dep = 'build:run'
 run = 'cat ../ff/example.ff | ./build/run'
 template = 'cmp'
 [task.template-options]
@@ -49,7 +50,7 @@ name = 'ff'
 deps = [
   '../build/preprocess/##.ff',
   'build-deno-compiler',
-  './build/run',
+  'build:run'
 ]
 target = '../ff/##.out'
 serial = true
@@ -67,4 +68,15 @@ cmp = '$TARGET'
 name = 'clean'
 run = '''
   rm -rf ./build
+'''
+
+[[task]]
+name = 'bench'
+deps = ['build:run', 'build:fact']
+validation = 'none'
+serial = true
+run = '''
+  hyperfine --warmup 3 \
+    'cat ../ff/example.ff | ./build/run'\
+    './build/fact'
 '''
