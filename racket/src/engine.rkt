@@ -4,6 +4,10 @@
 (require br/define (for-syntax racket/base syntax/parse))
 
 ;;; helpers
+(define (unthunk x) (x))
+
+(define (boolean->integer b)
+  (sub1 (length (memv b '(#t #f)))))
 
 (define (flip f)
   (λ (x y . args)
@@ -23,35 +27,24 @@
 (define definitions (make-hash))
 (define trace #f)
 
-;;; stack helpers
+;;; stack macros
 
-(define-syntax (push! stx)
-  (syntax-parse stx
-    [(_ ID:id VAL)
-     #'(set! ID (cons VAL ID))]))
+(define-macro (push! S VAL)
+  #'(set! S (cons VAL S)))
 
-(define-syntax (pop! stx)
-  (syntax-parse stx
-    [(_ ID:id)
-     #'(let ([x (car ID)])
-         (set! ID (cdr ID))
-         x)]))
+(define-macro (pop! S)
+  #'(let ([x (car S)])
+         (set! S (cdr S))
+         x))
 
-(define-syntax (peek! stx)
-  (syntax-parse stx
-    [(_ ID:id)
-     #'(car ID)]))
+(define-macro (peek! S)
+  #'(car S))
 
-;;; engine ops
-
-(define (print! s)
-  (printf "[ ")
-  (for ([x (reverse s)]) (printf "~s " x))
-  (printf "]\n")
-  )
-
-(define (boolean->integer b)
-  (sub1 (length (memv b '(#t #f)))))
+(define-macro (print! S)
+  #'(void (printf "[ ")
+  (for ([x (reverse S)]) (printf "~s " x))
+  (printf "]\n"))
+)
 
 ;;; system ops
 (define (add!)
@@ -210,11 +203,30 @@
   op_not not!
 ))
 
-;;; IR ops
-(define (unthunk x) (x))
+;;; internal macros
+(define-macro (do-trace V)
+    #'(printf "~a\t - ~a\t - ~a~N" (reverse stack) V queue))
+
+(define-macro (call-user DEF)
+    #'(for-each unthunk DEF))
+
+(define-macro (call-system OP)
+    #'(OP))
+
+(define-macro (call-defered OP)
+  #'(cond
+    [(hash-has-key? system_defs OP) (push! queue (hash-ref system_defs OP))]
+    [(hash-has-key? definitions OP) (let ([def (hash-ref definitions OP)])
+      (push! queue [thunk (call-user def)])
+    )]
+    [else (push! queue [thunk (call-user (hash-ref definitions OP))])]  ; need this for recursive definitions
+  )
+)
+
+;;; public calls
 
 (define (push v)
-  (when trace (printf "~a\t - ~a\t - ~a~N" (reverse stack) v queue))
+  (when trace (do-trace v))
 
   (if (> (length depth-stack) 0)
     (push! queue [thunk (push v)])
@@ -222,20 +234,15 @@
 )
 
 (define (call op)
-  (when trace (printf "~a\t - ~a\t - ~a~N" (reverse stack) op queue))
+  (when trace (do-trace op))
 
   (cond
     [(eq? op_bra op) (bra!)]
     [(eq? op_ket op) (ket!)]
     [(eq? op_def op) (def!)]
-    [(and (> (length depth-stack) 0) (hash-has-key? system_defs op))
-      (let ([def (hash-ref system_defs op)])
-        (push! queue def)
-      )
-    ]
-    [(> (length depth-stack) 0) (push! queue [thunk (call op)])]
-    [(hash-has-key? system_defs op) ((hash-ref system_defs op))]
-    [(hash-has-key? definitions op) (for-each unthunk (hash-ref definitions op))]
+    [(positive? (length depth-stack)) (call-defered op)]
+    [(hash-has-key? system_defs op) (call-system (hash-ref system_defs op))]
+    [(hash-has-key? definitions op) (call-user (hash-ref definitions op))]
     [else (error "unknown op: ~s" op)]
   )
 

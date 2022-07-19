@@ -52,7 +52,7 @@ deps = ['build:deno', 'build:go', 'build:cpp', 'build:dart', 'build:racket']
 validation = 'none'
 serial = true
 run = '''
-  hyperfine --warmup 3 --export-markdown benchmarks.md \
+  hyperfine --warmup 3  --export-markdown benchmarks.md\
     './deno/build/execute ./ff/example.ffb'\
     './go/build/execute --in ./ff/example.ffb'\
     'cat ./ff/example.ff | ./cpp/build/run'\
@@ -63,12 +63,24 @@ run = '''
 '''
 
 [[task]]
+name = 'bench:execute'
+deps = ['build:deno', 'build:go', 'build:racket']
+validation = 'none'
+serial = true
+run = '''
+  hyperfine --warmup 3 -N\
+    './deno/build/execute ./ff/example.ffb'\
+    './go/build/execute --in ./ff/example.ffb'\
+    './racket/build/example'
+'''
+
+[[task]]
 name = 'bench:interp'
 deps = ['build:deno', 'build:go', 'build:cpp', 'build:dart', 'build:racket']
 validation = 'none'
 serial = true
 run = '''
-  hyperfine --warmup 3 --export-markdown benchmarks.md \
+  hyperfine --warmup 3 \
     './deno/build/run ./ff/example.ff'\
     './go/build/run --in ./ff/example.ff'\
     'cat ./ff/example.ff | ./cpp/build/run'\
@@ -84,7 +96,7 @@ deps = ['build:deno', 'build:go', 'build:cpp', 'build:dart', 'build:racket']
 validation = 'none'
 serial = true
 run = '''
-  hyperfine --warmup 3 --export-markdown benchmarks.md \
+  hyperfine --warmup 3 -N\
     './deno/build/compile ./ff/example.ff'\
     './go/build/compile --in ./ff/example.ff'
 '''

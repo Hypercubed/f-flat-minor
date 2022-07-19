@@ -50,9 +50,15 @@ name = 'build-deno-compiler'
 run = 'chomp -c ../deno/ :disassemble'
 
 [[task]]
+display = 'none'
+name = 'build-deno-preprocess'
+run = 'chomp -c ../deno/ :preprocess'
+
+[[task]]
 name = 'ff'
 deps = [
   '../build/preprocess/##.ff',
+  'build-deno-preprocess',
   'build-deno-compiler',
   ':make:main',
 ]
