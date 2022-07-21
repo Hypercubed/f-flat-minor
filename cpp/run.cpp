@@ -1,4 +1,5 @@
 #include <iostream>
+#include <fstream>
 #include <string>
 #include <vector>
 #include <sstream>
@@ -498,17 +499,7 @@ std::string unescape(const std::string &s)
   return res;
 }
 
-int main()
-{
-  mt.seed(static_cast<unsigned int>(std::time(0)));
-
-  setup();
-
-  for (std::string line; std::getline(std::cin, line);)
-  {
-    enqueue_back(tokenize(line));
-  }
-
+void run() {
   while (!queue.empty())
   {
     auto str = queue.front();
@@ -559,7 +550,31 @@ int main()
         throw std::invalid_argument("undefined call: " + str);
       }
     }
+  }  
+}
+
+int main(int argc,  char **argv)
+{
+  mt.seed(static_cast<unsigned int>(std::time(0)));
+
+  setup();
+
+  if (argv[1]) {
+    std::string filename(argv[1]);
+    std::ifstream source;
+    source.open(filename);
+    for (std::string line; std::getline(source, line);)
+    {
+      enqueue_back(tokenize(line));
+    }
+  } else {
+    for (std::string line; std::getline(std::cin, line);)
+    {
+      enqueue_back(tokenize(line));
+    }
   }
+
+  run();
 
   return 0;
 }

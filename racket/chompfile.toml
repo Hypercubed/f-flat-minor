@@ -82,11 +82,12 @@ run = '''
 
 [[task]]
 name = 'bench'
-deps = ['build']
+deps = ['build', ':exe:fact']
 validation = 'none'
 serial = true
 run = '''
-  hyperfine --warmup 3 \
+  hyperfine --warmup 3 -N\
+    './build/fact' \
     './build/example'\
     'racket ./example.rkt'\
     'racket main.rkt ../ff/example.ff'

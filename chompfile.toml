@@ -56,7 +56,7 @@ run = '''
     './cpp/build/fact'\
     './deno/build/execute ./ff/example.ffb'\
     './go/build/execute --in ./ff/example.ffb'\
-    'cat ./ff/example.ff | ./cpp/build/run'\
+    './cpp/build/run ./ff/example.ff'\
     'cat ./ff/example_v0.ff | ./dart/bin/dart.exe'\
     'cat ./ff/example.ff | ./python/execute.py'\
     'cat ./ff/example.ff | ./ruby/execute.rb'\
@@ -85,7 +85,7 @@ run = '''
   hyperfine --warmup 3 \
     './deno/build/run ./ff/example.ff'\
     './go/build/run --in ./ff/example.ff'\
-    'cat ./ff/example.ff | ./cpp/build/run'\
+    './cpp/build/run ./ff/example.ff'\
     'cat ./ff/example_v0.ff | ./dart/bin/dart.exe'\
     'cat ./ff/example.ff | ./python/execute.py'\
     'cat ./ff/example.ff | ./ruby/execute.rb'\
