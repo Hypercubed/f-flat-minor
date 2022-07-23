@@ -189,6 +189,42 @@ _F♭m<sup>+</sup>_ adds a preprocessor and compiler commands. A word starting w
 
 [core.ff](./ff/lib/core.ff) Contains definitions of commonly used f-flat words. This can be included in other files by using the `.include` command or using the preprocessor implement in _F♭m<sup>+</sup>_.
 
+### Building, Testing and Benchmarking
+
+For build and testing we use [chomp](https://chompbuild.com/).  To build all projects run:
+
+```sh
+chomp build:
+```
+
+> Note: you'll need to setup development tools for each project first.
+
+or to build only one project run:
+
+```sh
+chomp build:{name}
+```
+
+Where `{name}` is the name of the project (i.e. `deno`, `cpp`, `racket`).
+
+To test all projects run:
+
+```sh
+chomp test:
+```
+
+or to test only one project run:
+
+```sh
+chomp test:{name}
+```
+
+For benchmarking run you will need to install [hyperfine](https://github.com/sharkdp/hyperfine) then run:
+
+```sh
+chomp bench
+```
+
 ## License
 
 This project is licensed under the MIT License - see the LICENSE file for details

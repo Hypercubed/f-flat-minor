@@ -58,7 +58,7 @@ invalidation = 'always'
 validation = 'none'
 display = 'status-only'
 run = '''
-  ./build/run %DEP
+  ./build/run $DEP
 '''
 template = 'cmp'
 [task.template-options]
