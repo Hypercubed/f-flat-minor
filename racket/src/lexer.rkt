@@ -1,5 +1,5 @@
 #lang br
-(require brag/support "ops.rkt" "symbols.rkt")
+(require brag/support ff/src/ops ff/src/symbols)
 
 (define user_symbols (make-hash))
 

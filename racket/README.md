@@ -43,6 +43,18 @@ The `main.rkt` file can run `ff` files directly.  No need to add the `#lang ff` 
 racket main.rkt example.ff
 ```
 
+or using stdin
+
+```
+cat example.ff | racket main.rkt -
+```
+
+## Usage in a REPL
+
+```sh
+racket main.rkt
+```
+
 ## License
 
 This project is licensed under the MIT License - see the LICENSE file for details

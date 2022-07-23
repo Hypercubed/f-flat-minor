@@ -1,6 +1,6 @@
 #lang br/quicklang
 
-(require "./ops.rkt")
+(require ff/src/ops)
 
 (define system_symbols (hash
   "nop" op_nop

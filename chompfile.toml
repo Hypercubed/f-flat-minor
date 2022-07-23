@@ -4,6 +4,7 @@ default-task = 'build:'
 [[task]]
 name = 'build:#'
 dep = '#/chompfile.toml'
+display = 'none'
 validation = 'none'
 run = 'chomp -c $DEP build'
 
@@ -11,8 +12,9 @@ run = 'chomp -c $DEP build'
 name = 'test:#'
 dep = '#/chompfile.toml'
 serial = true
-display = 'init-only'
+display = 'none'
 run = '''
+  echo "Running ${DEP} tests..."
   chomp -c $DEP test
   echo ""
   echo ""

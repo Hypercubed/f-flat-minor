@@ -1,10 +1,12 @@
 #lang br/quicklang
 
-(require "engine.rkt" "ops.rkt")
+(require ff/src/engine ff/src/ops)
 
-(define-macro (module-begin PARSE-TREE)
+(define-macro (module-begin . PARSE-TREE)
   #'(#%module-begin
-     (void PARSE-TREE)))
+    ;;; 'PARSE-TREE
+    (void . PARSE-TREE)
+  ))
 (provide (rename-out [module-begin #%module-begin]))
 
 (define-macro (ff-program EXPR ...)

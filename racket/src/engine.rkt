@@ -1,6 +1,6 @@
 #lang racket
 
-(require "ops.rkt")
+(require ff/src/ops)
 (require br/define (for-syntax racket/base syntax/parse))
 
 ;;; helpers
@@ -251,3 +251,4 @@
 
 (provide stack queue definitions)
 (provide call push)
+(provide dump!)

@@ -31,6 +31,12 @@ run = '''
 '''
 
 [[task]]
+name = 'clean'
+run = '''
+  rm -rf ./build ./compiled ./src/compiled
+'''
+
+[[task]]
 name = 'interpret'
 deps = ['./build/example']
 run = './build/example'
