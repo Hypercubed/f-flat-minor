@@ -1,6 +1,6 @@
 # f-flat-minor
 
-f-flat-minor (F♭m for short) is a tiny toy language and baby brother to [f-flat](https://github.com/Hypercubed/f-flat_node#readme). It is meant to be a tiny stack-oriented language used for learning new languages. The challenge is to implement f-flat-minor in as many languages as possible within the rules listed below.
+f-flat-minor (_F♭m_ for short) is a tiny toy language and baby brother to [f-flat](https://github.com/Hypercubed/f-flat_node#readme). It is meant to be a tiny stack-oriented language used for learning new languages. The challenge is to implement f-flat-minor in as many languages as possible within the rules listed below.
 
 ## The Rules
 
@@ -23,15 +23,15 @@ For each target language first implement a proof-of-concept interpreter either i
 | Python                | F♭m                                                                    |
 | Ruby                  | F♭m                                                                    |
 | Dart                  | F♭m                                                                    |
+| Racket                | F♭m                                                                    |
 | AssemblyScript        | F♭m<sup>o</sup>                                                        |
 | C++                   | F♭m<sup>o</sup>                                                        |
 | Rust                  | [ F♭m<sup>-</sup> ](https://replit.com/@Hypercubed/f-flat-minor-Rust)  |
 | Swift                 | [ F♭m<sup>-</sup> ](https://replit.com/@Hypercubed/f-flat-minor-Swift) |
+| Julia                 |
 | LLVM                  |
 | F#                    |
-| Lisp/Clojure/Racket   |
 | Haskell               |
-| Julia                 |
 | Lua                   |
 | Erlang/BEAM           |
 | Perl/Raku             |
@@ -43,7 +43,11 @@ For each target language first implement a proof-of-concept interpreter either i
 
 `f-flat-minor` is a minimal implementation of [f-flat](https://github.com/Hypercubed/f-flat_node#readme).
 
-Key features:
+### F♭m vs F-flat
+
+While _F♭m_ code looks very similar to _F-flat_ code they are almost opposite in their philosophy.  The main concept of _F-flat_ is that all system defined words should apply logically to all data types.  For example `+` operator is addition, concatenation, or logical OR depending on the data types.  In _F♭m_ there is only one data type (big integer) and, therefore, all operators have one meaning.  Even with that limitation the resulting language is very similar.
+
+### Features
 
 - Only one type (big integer)
 - Only one data stack

@@ -1,5 +1,7 @@
 #lang racket/base
 
+;;; This is a base rase inplementation of factorial used as a beckmark.
+
 (define (factorial n)
   (if (= 0 n)
       1
