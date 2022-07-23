@@ -49,6 +49,20 @@ or using stdin
 cat example.ff | racket main.rkt -
 ```
 
+## Usage with deno preprocessor
+
+First you will need to ensure the deno preprocessor is built.  In the `deno` project folder run:
+
+```sh
+chomp build:preprocess
+```
+
+Then in the Racket project folder us the shell script `pp.sh` to run the preprocessor.  Example:
+
+```sh
+./pp.sh example.ffp
+```
+
 ## Usage in a REPL
 
 ```sh
