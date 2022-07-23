@@ -63,22 +63,21 @@ run = 'chomp -c ../deno/ :preprocess'
 [[task]]
 name = 'ff'
 deps = [
-  '../build/preprocess/##.ff',
-  'build-deno-preprocess',
-  'build-deno-compiler',
-  ':make:main',
+    '../ff/##.out',
+    # './build/run'
 ]
-target = '../ff/##.out'
+target = '../ff/##'
 serial = true
 invalidation = 'always'
 validation = 'none'
 display = 'status-only'
 run = '''
-  racket ./main.rkt $DEP
+  shopt -s nullglob
+  shopt -s extglob
+  for i in "${TARGET}.ff?(p)"; do
+    racket main.rkt $i | cmp - $DEP -s && ${{CHECK}};
+  done
 '''
-template = 'cmp'
-[task.template-options]
-cmp = '$TARGET'
 
 [[task]]
 name = 'clean'
