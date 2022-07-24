@@ -21,11 +21,13 @@ def nextOp():
   return op
 
 def getSym(n):
+  n = n.lower()
   if n not in ops:
     ops[n] = nextOp()
   return ops[n]
   
 def defineSystem(name, item):
+  name = name.lower()
   o = getSym(name)
   ops[name] = o
   defs[o] = item
@@ -298,7 +300,7 @@ def run():
         if queue.pop(0) == '*/':
           break
     else:
-      o = ops[s]
+      o = ops[s.lower()]
       if o <= systemOps:
         callSystem(o)
       else:

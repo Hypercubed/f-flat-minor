@@ -1,6 +1,6 @@
 #lang br/quicklang
 
-(require ff/src/ops)
+(require ff/private/ops)
 
 (define system_symbols (hash
   "nop" op_nop

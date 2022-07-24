@@ -1,7 +1,7 @@
 .import ../lib/core.ff
 .import ../lib/testing.ffp
 
-0 'Numeric' prints 
+0 'Numeric' prints
     /* 0b1111 15 assert_eq
     0xFFFF 65535 assert_eq
     /* 0o27 23 assert_eq

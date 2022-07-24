@@ -1,10 +1,10 @@
 | Command | Mean [ms] | Min [ms] | Max [ms] | Relative |
 |:---|---:|---:|---:|---:|
-| `./cpp/build/fact` | 1.1 ± 1.1 | 0.1 | 9.8 | 1.00 |
-| `./deno/build/execute ./ff/example.ffb` | 34.3 ± 4.1 | 29.2 | 47.1 | 30.47 ± 30.68 |
-| `./go/build/execute --in ./ff/example.ffb` | 6.6 ± 1.1 | 4.7 | 13.8 | 5.88 ± 5.97 |
-| `./cpp/build/run ./ff/example.ff` | 6.7 ± 0.8 | 5.5 | 11.3 | 5.92 ± 5.95 |
-| `cat ./ff/example_v0.ff \| ./dart/bin/dart.exe` | 17.3 ± 2.5 | 14.1 | 27.5 | 15.38 ± 15.54 |
-| `cat ./ff/example.ff \| ./python/execute.py` | 26.9 ± 5.1 | 20.1 | 45.1 | 23.93 ± 24.34 |
-| `cat ./ff/example.ff \| ./ruby/execute.rb` | 63.3 ± 6.7 | 56.9 | 87.0 | 56.19 ± 56.47 |
-| `./racket/build/example` | 225.9 ± 14.3 | 209.2 | 251.4 | 200.68 ± 200.96 |
+| `./cpp/build/fact` | 1.0 ± 0.2 | 0.7 | 6.7 | 1.00 |
+| `./deno/build/execute ./ff/example.ffb` | 47.5 ± 2.3 | 44.1 | 56.1 | 45.24 ± 10.47 |
+| `./go/build/execute --in ./ff/example.ffb` | 1.8 ± 0.2 | 1.3 | 3.3 | 1.69 ± 0.44 |
+| `./cpp/build/run ./ff/example.ff` | 3.9 ± 0.6 | 3.3 | 9.5 | 3.74 ± 1.02 |
+| `cat ./ff/example_v0.ff \| ./dart/bin/dart.exe` | 6.0 ± 0.5 | 5.1 | 8.1 | 5.68 ± 1.38 |
+| `cat ./ff/example.ff \| ./python/execute.py` | 24.3 ± 2.3 | 22.1 | 34.0 | 23.11 ± 5.68 |
+| `cat ./ff/example.ff \| ./ruby/execute.rb` | 50.6 ± 3.5 | 46.9 | 60.9 | 48.22 ± 11.41 |
+| `./racket/build/example` | 354.2 ± 8.8 | 345.7 | 373.2 | 337.52 ± 76.77 |

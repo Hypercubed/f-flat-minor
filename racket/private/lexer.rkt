@@ -1,5 +1,5 @@
 #lang br
-(require brag/support ff/src/ops ff/src/symbols)
+(require brag/support ff/private/ops ff/private/symbols)
 
 (define user_symbols (make-hash))
 
@@ -10,10 +10,11 @@
     n)))
 
 (define (add-id id code)
-  (hash-set! user_symbols id code)
+  (hash-set! user_symbols (string-downcase id) code)
   code)
 
 (define (lookup id)
+  (set! id (string-downcase id))
   (cond
     [(hash-has-key? user_symbols id)
       (hash-ref user_symbols id)

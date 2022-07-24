@@ -1,6 +1,6 @@
 #lang br
 
-(require ff/src/lexer brag/support)
+(require ff/private/lexer brag/support)
 
 (define (make-tokenizer ip [path #f])
   (port-count-lines! ip)

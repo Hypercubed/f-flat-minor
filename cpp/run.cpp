@@ -10,6 +10,7 @@
 #include <map>
 #include <boost/multiprecision/gmp.hpp>
 #include <boost/random.hpp>
+#include <boost/algorithm/string.hpp>
 
 using namespace boost::multiprecision;
 
@@ -80,10 +81,11 @@ std::queue<std::string> tokenize(const std::string &str)
 
 int getSymbol(const std::string &str)
 {
-  if (symbols.find(str) != symbols.end())
-    return symbols[str];
-  symbols[str] = nextOp++;
-  return symbols[str];
+  const std::string s = boost::algorithm::to_lower_copy(str);
+  if (symbols.find(s) != symbols.end())
+    return symbols[s];
+  symbols[s] = nextOp++;
+  return symbols[s];
 }
 
 int getSymbol()
@@ -512,6 +514,8 @@ void run() {
     }
     catch (...)
     {
+      const std::string lower_str = boost::algorithm::to_lower_copy(str);
+
       if (str[0] == '.' && str.size() > 1)
       {
         // nop
@@ -541,9 +545,9 @@ void run() {
           queue.pop_front();
         } while (str != "*/");
       }
-      else if (symbols.find(str) != symbols.end())
+      else if (symbols.find(lower_str) != symbols.end())
       {
-        callOp(symbols[str]);
+        callOp(symbols[lower_str]);
       }
       else
       {

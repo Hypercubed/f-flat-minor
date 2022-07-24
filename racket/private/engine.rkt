@@ -1,6 +1,6 @@
 #lang racket
 
-(require ff/src/ops)
+(require ff/private/ops)
 (require br/define (for-syntax racket/base syntax/parse))
 
 ;;; helpers

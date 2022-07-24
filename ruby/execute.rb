@@ -14,6 +14,7 @@ $defs = Hash.new
 $systemOps = 0
 
 def getSym(name)
+  name = name.downcase
   if !$syms.has_key?(name)
     $op = $op + 1
     $syms[name] = $op
@@ -22,6 +23,7 @@ def getSym(name)
 end
 
 def defineSystem(name, d)
+  name = name.downcase
   $op = getSym(name)
   $syms[name] = $op
   $defs[$op] = d
@@ -124,7 +126,7 @@ def run ()
           break
         end
       end
-    elsif o = $syms[item]
+    elsif o = $syms[item.downcase]
       callOp o
     else
       print('undefined call to ', item)

@@ -1,6 +1,6 @@
 #lang br/quicklang
 
-(require ff/src/engine ff/src/ops)
+(require ff/private/engine ff/private/ops)
 
 (define-macro (module-begin . PARSE-TREE)
   #'(#%module-begin

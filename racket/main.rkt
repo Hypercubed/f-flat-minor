@@ -1,62 +1,53 @@
+#!/usr/bin/env racket
+
 #lang br/quicklang
 
-(require readline/readline)
-(require ff/src/reader)
-
-
-(define ns (make-base-namespace))
-
-(define (ff-run-file filename)
-  ;; parse file
-  (define module-syntax
-    (call-with-input-file* filename
-      (lambda (in)
-        (read-syntax filename in))))
-
-  ;;; eval module form in a namespace with racket/base
-  (eval module-syntax ns)
-
-  ;; require the module in the namespace to run it
-  (eval `(require ',(second (syntax->datum module-syntax))) ns)   
-)
-
-(define (ff-eval code)
-  (define in (open-input-string code))
-  (define module-syntax (read-syntax #f in))
-  (eval module-syntax ns)
-  (eval `(require ',(second (syntax->datum module-syntax))) ns)
-)
-
-(define (ff-run-repl) 
-  (let loop ()
-      (define x (readline "F♭m> "))
-      (unless (or (eof-object? x) (equal? x '(unquote exit)))
-        (add-history x)
-        (ff-eval x)
-        (ff-eval ".")
-        (loop)))
-)
-
-(define (ff-run-stdin) 
-  (let loop ()
-      (define x (readline ""))
-      (unless (or (eof-object? x) (equal? x '(unquote exit)))
-        (ff-eval x)
-        (loop)))
-)
-
-(provide read-syntax ff-eval ff-run-file ff-run-repl ff-run-stdin)
+(require ff/private/reader ff/private/preprocess ff/commands/run ff/commands/repl)
+(provide read-syntax ff-eval ff-run-file ff-run-repl)
 
 (module+ main
   (require racket/cmdline)
   (require racket/match)
 
+  (define pp-only (make-parameter #f))
+  (define evaluate (make-parameter #f))
+  (define pp (make-parameter #t))
+
   (command-line
+    #:usage-help
+    "Run with a filename to execute the file."
+    "Run with `-` as the filename to read from stdin."
+    "Run without filename to enter the REPL."
+
+    #:once-each
+    [("--pp-only")
+      "run preprocessor to stdout and exit"
+      (pp-only #t)]
+
+    [("-e" "--eval") EVALUATE
+      "Evaluate expression and exit"
+      (evaluate EVALUATE)]
+
+    [("--no-pp")
+      "Disable preprocessor"
+      (pp #f)]
+
     #:args ([filename #f])
 
+    (when (evaluate)
+      (ff-eval (evaluate))
+      (exit)
+    )
+
+    (when (pp-only)
+      (define port (open-input-file filename))
+      (displayln (preprocess filename port))
+      (exit)
+    )
+
     (cond
-      [(not filename) (ff-run-repl)]
-      [(equal? filename "-") (ff-run-stdin)]
-      [else (ff-run-file filename)])
+      [(not filename) (ff-run-repl #:pp (pp))]
+      [(equal? filename "-") (ff-run-repl #:pp (pp) #:echo #f)]
+      [else (ff-run-file filename #:pp (pp))])
   )
 )

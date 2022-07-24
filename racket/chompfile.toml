@@ -51,20 +51,10 @@ serial = true
 display = 'none'
 
 [[task]]
-display = 'none'
-name = 'build-deno-compiler'
-run = 'chomp -c ../deno/ :disassemble'
-
-[[task]]
-display = 'none'
-name = 'build-deno-preprocess'
-run = 'chomp -c ../deno/ :preprocess'
-
-[[task]]
 name = 'ff'
 deps = [
-    '../ff/##.out',
-    # './build/run'
+  '../ff/##.out',
+  'make:main'
 ]
 target = '../ff/##'
 serial = true
@@ -91,9 +81,10 @@ deps = ['build', ':exe:fact']
 validation = 'none'
 serial = true
 run = '''
-  hyperfine --warmup 3 -N\
+  hyperfine --warmup 3\
     './build/fact' \
     './build/example'\
     'racket ./example.rkt'\
-    'racket main.rkt ../ff/example.ff'
+    'racket main.rkt ../ff/example.ff'\
+    'racket main.rkt --no-pp ../ff/example.ff'
 '''

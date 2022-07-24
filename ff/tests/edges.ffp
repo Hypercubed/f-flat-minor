@@ -1,0 +1,13 @@
+.import ../lib/core.ff
+.import ../lib/testing.ffp
+
+0 'Case\sInsensitive' prints
+  x: 1 2 + ;
+  X 3 assert_eq
+
+  Y: 5 8 + ;
+  y 13 assert_eq
+
+  [Z] : 21 34 + ;
+  z 55 assert_eq
+OK
