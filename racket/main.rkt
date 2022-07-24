@@ -10,7 +10,7 @@
   (require racket/match)
 
   (define pp-only (make-parameter #f))
-  (define evaluate (make-parameter #f))
+  (define evaluate (make-parameter ""))
   (define pp (make-parameter #t))
 
   (command-line
@@ -24,17 +24,19 @@
       "run preprocessor to stdout and exit"
       (pp-only #t)]
 
-    [("-e" "--eval") EVALUATE
-      "Evaluate expression and exit"
-      (evaluate EVALUATE)]
 
     [("--no-pp")
       "Disable preprocessor"
       (pp #f)]
 
+    #:multi
+    [("-e" "--eval") expression
+      "Evaluate expression and exit"
+      (evaluate (string-append (evaluate) expression "\n"))]
+
     #:args ([filename #f])
 
-    (when (evaluate)
+    (when (non-empty-string? (evaluate))
       (ff-eval (evaluate))
       (exit)
     )
