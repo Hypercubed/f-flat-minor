@@ -1,6 +1,6 @@
 #lang racket
 
-(require ff/private/reader)
+(require ff/lang/reader)
 
 (define (ff-run-file filename #:pp [pp #t])
   (define ns (make-base-namespace))

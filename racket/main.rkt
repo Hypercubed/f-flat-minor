@@ -2,8 +2,10 @@
 
 #lang br/quicklang
 
-(require ff/private/reader ff/private/preprocess ff/commands/run ff/commands/repl)
-(provide read-syntax ff-eval ff-run-file ff-run-repl)
+(require ff/lang/reader ff/private/preprocess ff/commands/run ff/commands/repl)
+
+(provide read read-syntax get-info)
+(provide ff-eval ff-run-file ff-run-repl)
 
 (module+ main
   (require racket/cmdline)

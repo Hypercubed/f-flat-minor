@@ -33,7 +33,7 @@ run = '''
 [[task]]
 name = 'clean'
 run = '''
-  rm -rf ./build ./compiled ./src/compiled
+  rm -rf ./build ./compiled ./src/compiled ./commands/compiled
 '''
 
 [[task]]
