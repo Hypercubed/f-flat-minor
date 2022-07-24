@@ -129,20 +129,6 @@ Factorial 100:
 
 - _Comments_ - All text between a `/*` and `*/` is ignored. Comments cannot be nested.
 
-### _F♭m<sup>+</sup>_
-
-_F♭m<sup>+</sup>_ adds a preprocessor and compiler commands. A word starting with a period `.` (other than `.` itself) is a compiler or preprocessor command. Unlike other words the compiler/preprocessor commands are never pushed to the stack. If a implementation does not support a compiler/preprocessor command it should ignore it. The following commands are supported:
-
-- `.load` -- loads another file in place
-
-- `.include` -- loads another file in place only once (same as `.load` except a file will not be imported twice)
-
-- `.m` -- macro command, the rest of the line will be executed at compile time and included in the output.
-
-- `.inline` -- indicates that a previous definition is safe for inlining (using during optimization)
-
-- `.unsafe` -- indicates that a previous definition is not safe for inlining (using during optimization)
-
 ### Vocabulary
 
 | Mnemonic | Syntax |  Op (Ascii)   |     Version     |
@@ -185,9 +171,31 @@ _F♭m<sup>+</sup>_ adds a preprocessor and compiler commands. A word starting w
 | OR       |   \|   |   124 (\|)    |       F♭m       |
 | NOT      |   ~    |    126 (~)    |       F♭m       |
 
-### Standard Library
+### _F♭m<sup>+</sup>_
 
-[core.ff](./ff/lib/core.ff) Contains definitions of commonly used f-flat words. This can be included in other files by using the `.include` command or using the preprocessor implement in _F♭m<sup>+</sup>_.
+_F♭m<sup>+</sup>_ adds a preprocessor and compiler commands. A word starting with a period `.` (other than `.` itself) is a compiler or preprocessor command. Unlike other words the compiler/preprocessor commands are never pushed to the stack. If an implementation does not support a compiler/preprocessor command it should ignore it. The following commands are supported:
+
+| Command    |                                           Description                                            |       Support       |
+| ---------- | :----------------------------------------------------------------------------------------------: | :-----------------: |
+| `.load`    |                                   loads another file in place                                    | Deno, Go and Racket |
+| `.include` | loads another file in place only once (same as `.load` except a file will not be imported twice) | Deno, Go and Racket |
+| `.m`       | macro command, the rest of the line will be executed at compile time and included in the output. |      Deno, Go       |
+| `.inline`  |      indicates that a previous definition is safe for inlining (using during optimization)       |        Deno         |
+| `.unsafe`  |    indicates that a previous definition is not safe for inlining (using during optimization)     |        Deno         |
+
+### Standard Library and Preprocessor
+
+[core.ff](./ff/lib/core.ff) Contains definitions of commonly used _F♭m_ words. This can be included in other files by using the `.load` or `.import` command in implementations that support _F♭m<sup>+</sup>_ (currently Deno, Go, and Racket). By convention _F♭m_ files that require the preprocessor have the `.ffp` extension. For implementations that don't support _F♭m<sup>+</sup>_ compiler commands, the source file can be preprocessed using Deno or Racket versions. Example:
+
+```
+./deno/build/preprocess my_file.ffp | ./ccp/build/run
+```
+
+or
+
+```
+./racket/main.rkt --pp-only ./ff/fact.ffp | ./python/execute.py
+```
 
 ### Building, Testing and Benchmarking
 

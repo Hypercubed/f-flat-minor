@@ -11,3 +11,11 @@
   [Z] : 21 34 + ;
   z 55 assert_eq
 OK
+
+0 'Compiler\sCommands\n' prints
+.this should be ignored
+1 2 + .this_also_ignored 3 assert_eq
+5
+. 8 + /* this should not be ignored */
+13 assert_eq
+OK

@@ -17,34 +17,37 @@ export class Preprocessor {
     return lines.map((line) => {
       if (line.length > 1 && (line[0] === ".")) {
         const [cmd, ...rest] = line.split(" ");
-        switch (cmd) {
-          case ".exit":
-            Deno.exit();
-            break;
-          case ".load": {
-            const filepath = this.findFile(rest.join(" "), filename);
-            const code = Deno.readTextFileSync(filepath);
-            return this.preprocess(Preprocessor.tokenize(code), filepath);
-          }
-          case ".import": {
-            const filepath = this.findFile(rest.join(" "), filename);
-            if (!this.imported.has(filepath)) {
-              this.imported.add(filepath);
+        if (cmd[0] === "." && cmd.length > 1) {
+          switch (cmd) {
+            case ".exit":
+              Deno.exit();
+              break;
+            case ".load": {
+              const filepath = this.findFile(rest.join(" "), filename);
               const code = Deno.readTextFileSync(filepath);
               return this.preprocess(Preprocessor.tokenize(code), filepath);
             }
-            return "";
+            case ".import": {
+              const filepath = this.findFile(rest.join(" "), filename);
+              if (!this.imported.has(filepath)) {
+                this.imported.add(filepath);
+                const code = Deno.readTextFileSync(filepath);
+                return this.preprocess(Preprocessor.tokenize(code), filepath);
+              }
+              return "";
+            }
+            case ".m": {
+              const ir = this.compiler.compileToIR(
+                Compiler.tokenize(rest.join(" ")),
+              );
+              this.engine.loadIR(ir);
+              this.engine.run();
+              const stack = this.engine.getStack();
+              this.engine.clear();
+              return stack.map(String).join(" ") + ` /* ${line} */`;
+            }
           }
-          case ".m": {
-            const ir = this.compiler.compileToIR(
-              Compiler.tokenize(rest.join(" ")),
-            );
-            this.engine.loadIR(ir);
-            this.engine.run();
-            const stack = this.engine.getStack();
-            this.engine.clear();
-            return stack.map(String).join(" ") + ` /* ${line} */`;
-          }
+          return "";
         }
       }
       return line;
