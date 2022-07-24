@@ -16,18 +16,18 @@ For each target language first implement a proof-of-concept interpreter either i
 
 ## Progress
 
-| Language              | Interpreter                                                            | Compiler/Executer | REPL |
-| --------------------- | ---------------------------------------------------------------------- | ----------------- | ---- |
-| Typescript/Deno       | F♭m<sup>+</sup>                                                        | ✓                 | ✓    |
-| Go                    | F♭m                                                                    | ✓                 | ✓    |
-| Python                | F♭m                                                                    |
-| Ruby                  | F♭m                                                                    |
-| Dart                  | F♭m                                                                    |
-| Racket                | F♭m                                                                    |                    | ✓    |
-| AssemblyScript        | F♭m<sup>o</sup>                                                        |
-| C++                   | F♭m<sup>o</sup>                                                        |
-| Rust                  | [ F♭m<sup>-</sup> ](https://replit.com/@Hypercubed/f-flat-minor-Rust)  |
-| Swift                 | [ F♭m<sup>-</sup> ](https://replit.com/@Hypercubed/f-flat-minor-Swift) |
+| Language              | Support                                                                | Interpreter | "ByteCode" | REPL |
+| --------------------- | ---------------------------------------------------------------------- | ----------- | ---------- | ---- |
+| Typescript/Deno       | F♭m<sup>+</sup>                                                        | ✓           | ✓          | ✓    |
+| Go                    | F♭m<sup>+</sup>                                                        | ✓           | ✓          | ✓    |
+| Racket                | F♭m<sup>+</sup>                                                        | ✓           |            | ✓    |
+| Python                | F♭m                                                                    | ✓           |
+| Ruby                  | F♭m                                                                    | ✓           |
+| Dart                  | F♭m                                                                    | ✓           |
+| AssemblyScript        | F♭m<sup>o</sup>                                                        | ✓           |
+| C++                   | F♭m<sup>o</sup>                                                        | ✓           |
+| Rust                  | [ F♭m<sup>-</sup> ](https://replit.com/@Hypercubed/f-flat-minor-Rust)  | ✓           |
+| Swift                 | [ F♭m<sup>-</sup> ](https://replit.com/@Hypercubed/f-flat-minor-Swift) | ✓           |
 | Julia                 |
 | LLVM                  |
 | F#                    |
@@ -45,7 +45,7 @@ For each target language first implement a proof-of-concept interpreter either i
 
 ### F♭m vs F-flat
 
-While _F♭m_ code looks very similar to _F-flat_ code they are almost opposite in their philosophy.  The main concept of _F-flat_ is that all system defined words should apply logically to all data types.  For example `+` operator is addition, concatenation, or logical OR depending on the data types.  In _F♭m_ there is only one data type (big integer) and, therefore, all operators have one meaning.  Even with that limitation the resulting language is very similar.
+While _F♭m_ code looks very similar to _F-flat_ code they are almost opposite in their philosophy. The main concept of _F-flat_ is that all system defined words should apply logically to all data types. For example `+` operator is addition, concatenation, or logical OR depending on the data types. In _F♭m_ there is only one data type (big integer) and, therefore, all operators have one meaning. Even with that limitation the resulting language is very similar.
 
 ### Features
 
@@ -191,7 +191,7 @@ _F♭m<sup>+</sup>_ adds a preprocessor and compiler commands. A word starting w
 
 ### Building, Testing and Benchmarking
 
-For build and testing we use [chomp](https://chompbuild.com/).  To build all projects run:
+For build and testing we use [chomp](https://chompbuild.com/). To build all projects run:
 
 ```sh
 chomp build:
