@@ -55,14 +55,14 @@ validation = 'none'
 serial = true
 run = '''
   hyperfine --warmup 3  --export-markdown benchmarks.md\
-    './cpp/build/fact'\
-    './deno/build/execute ./ff/example.ffb'\
-    './go/build/execute --in ./ff/example.ffb'\
-    './cpp/build/run ./ff/example.ff'\
-    'cat ./ff/example_v0.ff | ./dart/bin/dart.exe'\
-    'cat ./ff/example.ff | ./python/execute.py'\
-    'cat ./ff/example.ff | ./ruby/execute.rb'\
-    './racket/build/example'
+    './cpp/build/fact' -n watermark\
+    './go/build/execute --in ./ff/example.ffb' -n go\
+    './cpp/build/run ./ff/example.ff' -n cpp\
+    'cat ./ff/example_v0.ff | ./dart/bin/dart.exe' -n dart\
+    'cat ./ff/example.ff | ./python/execute.py' -n python\
+    './deno/build/execute ./ff/example.ffb' -n deno\
+    'cat ./ff/example.ff | ./ruby/execute.rb' -n ruby\
+    './racket/build/example' -n racket
 '''
 
 [[task]]
