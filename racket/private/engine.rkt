@@ -252,3 +252,37 @@
 (provide stack queue definitions)
 (provide call push)
 (provide dump!)
+
+(module+ test
+  (require rackunit)
+
+  (push -1)      ;;; define factorial
+  (call op_mark)
+  (call op_dup)
+  (push 1)
+  (call op_gt)
+  (call op_bra)
+  (call op_dup)
+  (push 1)
+  (call op_sub)
+  (call -1)
+  (call op_mul)
+  (call op_ket)
+  (call op_when)
+  (call op_def)
+
+  (push 100)  ;;; factorial of 100
+  (call -1)
+
+  (push 10)   ;;; remove lower 25 digits
+  (push 25)
+  (call op_pow)
+  (call op_div)
+
+  (push 10)  ;;; get lower 6 digits
+  (push 6)
+  (call op_pow)
+  (call op_mod)
+
+  (check-equal? stack '[91686])
+)

@@ -1,4 +1,4 @@
-#lang br
+#lang racket
 (require brag/support ff/private/ops ff/private/symbols)
 
 (define user_symbols (make-hash))
