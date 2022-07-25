@@ -37,7 +37,7 @@
   (string-replace (string-replace (string-replace str "\\t" "\t") "\\s" " ") "\\n" "\n"))
 
 (define ff-lexer
-  (lexer-src-pos
+  (lexer
    [comment (token 'COMMENT lexeme #:skip? #t)]
    [whitespace (token 'WHITESPACE lexeme #:skip? #t)]
    [command (token 'COMMENT lexeme #:skip? #t)]

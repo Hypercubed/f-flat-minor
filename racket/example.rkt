@@ -1,3 +1,4 @@
+#!/usr/bin/env racket
 #lang reader ff
 
 /* factorial */
