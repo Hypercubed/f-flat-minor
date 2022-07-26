@@ -4,8 +4,6 @@
 (require br/define (for-syntax racket/base syntax/parse))
 
 ;;; helpers
-(define (unthunk x) (x))
-
 (define (boolean->integer b)
   (sub1 (length (memv b '(#t #f)))))
 
@@ -23,8 +21,9 @@
 (define stack empty)
 (define queue empty)
 
-(define depth-stack empty)
 (define definitions (make-hash))
+
+(define queue-pointer '())
 (define trace #f)
 
 ;;; stack macros
@@ -130,31 +129,24 @@
     )
   ))
 
+(define (mark-def! op)
+  (push! queue-pointer op)
+  (hash-set! definitions op empty)
+)
+
 (define (mark!)
-  (push! depth-stack (length queue)))
+  (mark-def! (pop! stack)))
 
 (define (bra!)
-  (push! depth-stack (length queue)))
+  (mark-def! (next-code!)))
 
 (define (def!)
-  (define l (- (length queue) (pop! depth-stack)))
-  (define s (pop! stack))
-  (define def empty)
-  (for ([i l])
-    (push! def (pop! queue))
-  )
-  (hash-set! definitions s def)
+  (pop! queue-pointer)
 )
 
 (define (ket!)
-  (define l (- (length queue) (pop! depth-stack)))
-  (define s (next-code!))
-  (define def empty)
-  (for ([i l])
-    (push! def (pop! queue))
-  )
-  (hash-set! definitions s def)
-  (push s)
+  (define qp (pop! queue-pointer))
+  (push qp)
 )
 
 (define (eval!)
@@ -164,7 +156,7 @@
   (push! stack (length stack)))
 
 (define system_defs (hash
-  op_nop #f
+  op_nop void
   op_eval eval!
   op_putc putc!
   ;;; op_getc
@@ -208,42 +200,66 @@
     #'(printf "~a\t - ~a\t - ~a~N" (reverse stack) V queue))
 
 (define-macro (call-user DEF)
-    #'(for-each unthunk DEF))
+    #'(do-queue DEF))
 
 (define-macro (call-system OP)
     #'(OP))
 
-(define-macro (call-defered OP)
-  #'(cond
-    [(hash-has-key? system_defs OP) (push! queue (hash-ref system_defs OP))]
-    [(hash-has-key? definitions OP) (let ([def (hash-ref definitions OP)])
-      (push! queue [thunk (call-user def)])
-    )]
-    [else (push! queue [thunk (call-user (hash-ref definitions OP))])]  ; need this for recursive definitions
+(define (call-immediate op)
+  (when trace (do-trace op))
+  (cond
+    [(hash-has-key? system_defs op) (call-system (hash-ref system_defs op))]
+    [(hash-has-key? definitions op) (call-user (hash-ref definitions op))]
+    [else (error "unknown op: ~s" op)]
   )
+)
+
+(define (push-immediate val)
+  (when trace (do-trace val))
+  (push! stack val)
+)
+
+(define (do-queue q)
+  (unless (empty? q)
+    (let ([op (pop! q)] [v (pop! q)])
+      ;;; Nieve
+      ; (push-immediate v)
+      ; (call-immediate op)
+
+      ;;; Smart
+      (if (zero? op)
+        (push-immediate v)
+        (call-immediate v)
+      )
+      (do-queue q)
+    )
+  )
+)
+
+(define-macro (call-defered QP OP)
+  #'(hash-set! definitions QP (append (hash-ref definitions QP) `(1 ,OP)))
+)
+
+(define-macro (push-defered QP VAL)
+  #'(hash-set! definitions QP (append (hash-ref definitions QP) `(0 ,VAL)))
 )
 
 ;;; public calls
 
-(define (push v)
-  (when trace (do-trace v))
-
-  (if (> (length depth-stack) 0)
-    (push! queue [thunk (push v)])
-    (push! stack v))
-)
+(define (push val)
+  (if (empty? queue-pointer) 
+    (push-immediate val)
+    (push-defered (peek! queue-pointer) val)
+))
 
 (define (call op)
-  (when trace (do-trace op))
-
   (cond
+    [(eq? op_mark op) (mark!)]
+    [(eq? op_def op) (def!)]
     [(eq? op_bra op) (bra!)]
     [(eq? op_ket op) (ket!)]
-    [(eq? op_def op) (def!)]
-    [(positive? (length depth-stack)) (call-defered op)]
-    [(hash-has-key? system_defs op) (call-system (hash-ref system_defs op))]
-    [(hash-has-key? definitions op) (call-user (hash-ref definitions op))]
-    [else (error "unknown op: ~s" op)]
+    [(empty? queue-pointer) (call-immediate op)]
+    [else (call-defered (peek! queue-pointer) op)]
   )
 
   (void)
@@ -251,7 +267,6 @@
 
 (provide stack queue definitions)
 (provide call push)
-(provide dump!)
 
 (module+ test
   (require rackunit)
