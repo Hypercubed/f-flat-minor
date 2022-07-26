@@ -256,7 +256,9 @@
 (module+ test
   (require rackunit)
 
-  (push -1)      ;;; define factorial
+  (define fact -1)
+
+  (push fact)      ;;; define factorial
   (call op_mark)
   (call op_dup)
   (push 1)
@@ -265,14 +267,14 @@
   (call op_dup)
   (push 1)
   (call op_sub)
-  (call -1)
+  (call fact)
   (call op_mul)
   (call op_ket)
   (call op_when)
   (call op_def)
 
   (push 100)  ;;; factorial of 100
-  (call -1)
+  (call fact)
 
   (push 10)   ;;; remove lower 25 digits
   (push 25)
