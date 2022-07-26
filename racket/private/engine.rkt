@@ -246,6 +246,25 @@
 
 ;;; public calls
 
+(define (queue-push val)
+  (set! queue (append queue `(0 ,val))))
+
+(define (queue-call op)
+  (set! queue (append queue `(1 ,op))))
+
+(define (call op)
+  (cond
+    [(eq? op_mark op) (mark!)]
+    [(eq? op_def op) (def!)]
+    [(eq? op_bra op) (bra!)]
+    [(eq? op_ket op) (ket!)]
+    [(empty? queue-pointer) (call-immediate op)]
+    [else (call-defered (peek! queue-pointer) op)]
+  )
+
+  (void)
+)
+
 (define (push val)
   (if (empty? queue-pointer) 
     (push-immediate val)
