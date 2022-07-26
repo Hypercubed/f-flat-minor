@@ -54,7 +54,8 @@ deps = ['build:deno', 'build:go', 'build:cpp', 'build:dart', 'build:racket']
 validation = 'none'
 serial = true
 run = '''
-  hyperfine --warmup 3  --export-markdown benchmarks.md\
+  hyperfine --warmup 3\
+    --export-markdown benchmarks.md\
     './cpp/build/fact' -n watermark\
     './go/build/execute --in ./ff/example.ffb' -n go\
     './cpp/build/run ./ff/example.ff' -n cpp\
