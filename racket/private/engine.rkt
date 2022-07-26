@@ -33,8 +33,8 @@
 
 (define-macro (pop! S)
   #'(let ([x (car S)])
-         (set! S (cdr S))
-         x))
+      (set! S (cdr S))
+      x))
 
 (define-macro (peek! S)
   #'(car S))
@@ -42,8 +42,7 @@
 (define-macro (print! S)
   #'(void (printf "[ ")
   (for ([x (reverse S)]) (printf "~s " x))
-  (printf "]\n"))
-)
+  (printf "]\n")))
 
 ;;; system ops
 (define (add!)
@@ -98,17 +97,16 @@
     (push! stack (boolean->integer ((pop! stack) . = . (pop! stack)))))
 
 (define (swap!)
-  (let ([a (pop! stack)] [b (pop! stack)])
-    (push! stack a)
-    (push! stack b)))
+  (define a (pop! stack))
+  (define b (pop! stack))
+  (push! stack a)
+  (push! stack b))
 
 (define (dup!)
   (push! stack (peek! stack)))
 
 (define (dump!)
-  (print! stack)
-  ;;; (print! queue)
-  )
+  (print! stack))
 
 (define (clr!)
   (set! stack empty))
@@ -123,11 +121,10 @@
   (push! queue (pop! stack)))
 
 (define (when!)
-  (let ([a (pop! stack)] [b (pop! stack)])
-    (when (not (zero? b))
-      (call a)
-    )
-  ))
+  (define a (pop! stack))
+  (define b (pop! stack))
+  (unless (zero? b)
+    (call a)))
 
 (define (mark-def! op)
   (push! current-definition op)
@@ -197,13 +194,13 @@
 
 ;;; internal macros
 (define-macro (do-trace V)
-    #'(printf "~a\t - ~a\t - ~a~N" (reverse stack) V queue))
+  #'(printf "~a\t - ~a\t - ~a~N" (reverse stack) V queue))
 
 (define-macro (call-user OP)
-    #'(call-sentence (hash-ref definitions OP)))
+  #'(call-sentence (hash-ref definitions OP)))
 
 (define-macro (call-system OP)
-    #'((hash-ref system_defs OP)))
+  #'((hash-ref system_defs OP)))
 
 ;;; Actually call an op on the stack
 (define (call-immediate op)
@@ -221,7 +218,7 @@
   (push! stack val)
 )
 
-;;; Run the defintion (list of defferd ops)
+;;; Run the definition (list of deferred ops)
 (define (call-sentence def)
   (unless (empty? def)
     (let ([v (pop! def)] [op (pop! def)])
@@ -254,11 +251,11 @@
 
 (define (call op)
   (cond
+    [(empty? current-definition) (call-immediate op)]
     [(eq? op_mark op) (mark!)]
     [(eq? op_def op) (def!)]
     [(eq? op_bra op) (bra!)]
     [(eq? op_ket op) (ket!)]
-    [(empty? current-definition) (call-immediate op)]
     [else (deferred op op_eval)] ;;; currently in a definition
   )
 )
