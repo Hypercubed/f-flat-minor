@@ -23,7 +23,7 @@
 
 (define definitions (make-hash))
 
-(define queue-pointer '())
+(define current-definition '())
 (define trace #f)
 
 ;;; stack macros
@@ -130,7 +130,7 @@
   ))
 
 (define (mark-def! op)
-  (push! queue-pointer op)
+  (push! current-definition op)
   (hash-set! definitions op empty)
 )
 
@@ -141,11 +141,11 @@
   (mark-def! (next-code!)))
 
 (define (def!)
-  (pop! queue-pointer)
+  (pop! current-definition)
 )
 
 (define (ket!)
-  (define qp (pop! queue-pointer))
+  (define qp (pop! current-definition))
   (push qp)
 )
 
@@ -199,29 +199,32 @@
 (define-macro (do-trace V)
     #'(printf "~a\t - ~a\t - ~a~N" (reverse stack) V queue))
 
-(define-macro (call-user DEF)
-    #'(do-queue DEF))
+(define-macro (call-user OP)
+    #'(call-sentence (hash-ref definitions OP)))
 
 (define-macro (call-system OP)
-    #'(OP))
+    #'((hash-ref system_defs OP)))
 
+;;; Actually call an op on the stack
 (define (call-immediate op)
   (when trace (do-trace op))
   (cond
-    [(hash-has-key? system_defs op) (call-system (hash-ref system_defs op))]
-    [(hash-has-key? definitions op) (call-user (hash-ref definitions op))]
+    [(hash-has-key? system_defs op) (call-system op)]
+    [(hash-has-key? definitions op) (call-user op)]
     [else (error "unknown op: ~s" op)]
   )
 )
 
+;;; Actually push a value to the stack
 (define (push-immediate val)
   (when trace (do-trace val))
   (push! stack val)
 )
 
-(define (do-queue q)
-  (unless (empty? q)
-    (let ([op (pop! q)] [v (pop! q)])
+;;; Run the defintion (list of defferd ops)
+(define (call-sentence def)
+  (unless (empty? def)
+    (let ([v (pop! def)] [op (pop! def)])
       ;;; Nieve
       ; (push-immediate v)
       ; (call-immediate op)
@@ -231,44 +234,22 @@
         (push-immediate v)
         (call-immediate v)
       )
-      (do-queue q)
+      (call-sentence def)
     )
   )
 )
 
-(define-macro (call-defered QP OP)
-  #'(hash-set! definitions QP (append (hash-ref definitions QP) `(1 ,OP)))
-)
-
-(define-macro (push-defered QP VAL)
-  #'(hash-set! definitions QP (append (hash-ref definitions QP) `(0 ,VAL)))
+;;; Adds a deferred operation to the current definition
+(define-macro (deferred VAL OP)
+  #'(hash-set! definitions (peek! current-definition) (append (hash-ref definitions (peek! current-definition)) `(,VAL ,OP)))
 )
 
 ;;; public calls
 
-(define (queue-push val)
-  (set! queue (append queue `(0 ,val))))
-
-(define (queue-call op)
-  (set! queue (append queue `(1 ,op))))
-
-(define (call op)
-  (cond
-    [(eq? op_mark op) (mark!)]
-    [(eq? op_def op) (def!)]
-    [(eq? op_bra op) (bra!)]
-    [(eq? op_ket op) (ket!)]
-    [(empty? queue-pointer) (call-immediate op)]
-    [else (call-defered (peek! queue-pointer) op)]
-  )
-
-  (void)
-)
-
 (define (push val)
-  (if (empty? queue-pointer) 
+  (if (empty? current-definition)
     (push-immediate val)
-    (push-defered (peek! queue-pointer) val)
+    (deferred val op_nop) ;;; currently in a definition
 ))
 
 (define (call op)
@@ -277,11 +258,9 @@
     [(eq? op_def op) (def!)]
     [(eq? op_bra op) (bra!)]
     [(eq? op_ket op) (ket!)]
-    [(empty? queue-pointer) (call-immediate op)]
-    [else (call-defered (peek! queue-pointer) op)]
+    [(empty? current-definition) (call-immediate op)]
+    [else (deferred op op_eval)] ;;; currently in a definition
   )
-
-  (void)
 )
 
 (provide stack queue definitions)
