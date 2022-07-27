@@ -27,6 +27,12 @@ validation = 'none'
 run = 'chomp -c $DEP clean'
 
 [[task]]
+name = 'clean'
+deps = ['clean:']
+validation = 'none'
+run = 'rm -rf build'
+
+[[task]]
 name = 'interpret:#'
 dep = '#/chompfile.toml'
 validation = 'none'
@@ -105,4 +111,10 @@ run = '''
     './deno/build/compile ./ff/example.ff'\
     './go/build/compile --in ./ff/example.ff'
 '''
+
+[[task]]
+name = 'loc'
+deps = ['clean']
+validation = 'none'
+run = 'cloc --force-lang-def=.cloc . --quiet --md --hide-rate > loc.md'
 
