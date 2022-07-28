@@ -1,7 +1,8 @@
-#lang racket
+#lang racket/base
 
+(require br/define racket/list)
 (require ff/private/ops)
-(require br/define (for-syntax racket/base syntax/parse))
+(require (for-syntax racket/base syntax/parse))
 
 ;;; helpers
 (define-macro (boolean->integer B)
