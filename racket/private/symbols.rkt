@@ -1,4 +1,4 @@
-#lang br/quicklang
+#lang typed/racket/base
 
 (require ff/private/ops)
 

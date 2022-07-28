@@ -4,12 +4,8 @@
 (require br/define (for-syntax racket/base syntax/parse))
 
 ;;; helpers
-(define (boolean->integer b)
-  (sub1 (length (memv b '(#t #f)))))
-
-(define (flip f)
-  (λ (x y . args)
-    (apply f y x args)))
+(define-macro (boolean->integer B)
+  #'(if B 1 0))
 
 (define next-code!
   (let ([n 256])
@@ -17,27 +13,35 @@
     (set! n (add1 n))
     n)))
 
-;;; engine
-(define stack empty)
-(define queue empty)
+; (define-type Stack (Listof Integer))
 
+;;; engine
+; (: stack Stack)
+(define stack '())
+
+; (: stash Stack)
+(define stash '())
+
+; (define-type Definitions (Mutable-HashTable Integer Stack))
 (define definitions (make-hash))
 
+; (: current-definition Stack)
 (define current-definition '())
+
 (define trace #f)
+(define running #f)
 
 ;;; stack macros
 
+; (: push! (-> Stack Void))
 (define-macro (push! S VAL)
   #'(set! S (cons VAL S)))
 
+; (: pop! (-> Stack Integer))
 (define-macro (pop! S)
   #'(let ([x (car S)])
       (set! S (cdr S))
       x))
-
-(define-macro (peek! S)
-  #'(car S))
 
 (define-macro (print! S)
   #'(void (printf "[ ")
@@ -61,75 +65,82 @@
   (push! stack (* (pop! stack) (pop! stack))))
 
 (define (div!)
-  (push! stack ((flip quotient) (pop! stack) (pop! stack))))
+  (define rhs (pop! stack))
+  (push! stack (quotient (pop! stack) rhs)))
 
 (define (sub!)
-  (push! stack ((flip -) (pop! stack) (pop! stack))))
+  (define rhs (pop! stack))
+  (push! stack (- (pop! stack) rhs)))
 
 (define (pow!)
-  (push! stack ((flip expt) (pop! stack) (pop! stack))))
+  (define rhs (pop! stack))
+  (push! stack (expt (pop! stack) rhs)))
 
 (define (mod!)
-  (push! stack ((flip modulo) (pop! stack) (pop! stack))))
+  (define rhs (pop! stack))
+  (push! stack (modulo (pop! stack) rhs)))
 
 (define (and!)
-  (push! stack ((flip bitwise-and) (pop! stack) (pop! stack))))
+  (define rhs (pop! stack))
+  (push! stack (bitwise-and (pop! stack) rhs)))
 
 (define (or!)
-  (push! stack ((flip bitwise-ior) (pop! stack) (pop! stack))))
+  (define rhs (pop! stack))
+  (push! stack (bitwise-ior (pop! stack) rhs)))
 
 (define (not!)
   (push! stack (bitwise-not (pop! stack))))
 
 (define (shiftr!)
-  (push! stack ((flip arithmetic-shift) (- (pop! stack)) (pop! stack))))
+  (define rhs (pop! stack))
+  (push! stack (arithmetic-shift (pop! stack) (- rhs))))
 
 (define (shiftl!)
-  (push! stack ((flip arithmetic-shift) (pop! stack) (pop! stack))))
+  (define rhs (pop! stack))
+  (push! stack (arithmetic-shift (pop! stack) rhs)))
 
 (define (lt!)
-    (push! stack (boolean->integer ((pop! stack) . > . (pop! stack)))))
+    (push! stack (boolean->integer (> (pop! stack) (pop! stack)))))
 
 (define (gt!)
-    (push! stack (boolean->integer ((pop! stack) . < . (pop! stack)))))
+    (push! stack (boolean->integer (< (pop! stack) (pop! stack)))))
 
 (define (eq!)
-    (push! stack (boolean->integer ((pop! stack) . = . (pop! stack)))))
+    (push! stack (boolean->integer (= (pop! stack) (pop! stack)))))
 
 (define (swap!)
-  (define a (pop! stack))
-  (define b (pop! stack))
-  (push! stack a)
-  (push! stack b))
+  (define rhs (pop! stack))
+  (define lhs (pop! stack))
+  (push! stack rhs)
+  (push! stack lhs))
 
 (define (dup!)
-  (push! stack (peek! stack)))
+  (push! stack (car stack)))
 
 (define (dump!)
   (print! stack))
 
 (define (clr!)
-  (set! stack empty))
+  (set! stack '()))
 
 (define (rand!)
   (push! stack (random (pop! stack))))
 
 (define (pullr!)
-  (push! stack (pop! queue)))
+  (push! stack (pop! stash)))
 
 (define (pushr!)
-  (push! queue (pop! stack)))
+  (push! stash (pop! stack)))
 
 (define (when!)
-  (define a (pop! stack))
-  (define b (pop! stack))
-  (unless (zero? b)
-    (call a)))
+  (define rhs (pop! stack))
+  (define lhs (pop! stack))
+  (unless (zero? lhs)
+    (call rhs)))
 
 (define (mark-def! op)
   (push! current-definition op)
-  (hash-set! definitions op empty)
-)
+  (hash-set! definitions op '()))
 
 (define (mark!)
   (mark-def! (pop! stack)))
@@ -137,18 +148,17 @@
 (define (bra!)
   (mark-def! (next-code!)))
 
+; (: def! (-> Void))
 (define (def!)
-  (pop! current-definition)
-)
+  (pop! current-definition))
 
 (define (ket!)
-  (define qp (pop! current-definition))
-  (push qp)
-)
+  (push (pop! current-definition)))
 
 (define (eval!)
   (call (pop! stack)))
 
+; (: depth! (-> Void))
 (define (depth!)
   (push! stack (length stack)))
 
@@ -189,66 +199,57 @@
   op_ket ket!
   op_pow pow!
   op_or or!
-  op_not not!
-))
+  op_not not!))
 
 ;;; internal macros
 (define-macro (do-trace V)
-  #'(printf "~a\t - ~a\t - ~a~N" (reverse stack) V queue))
+  #'(printf "~a\t - ~a\t - ~a~N" (reverse stack) V stash))
 
 (define-macro (call-user OP)
-  #'(call-sentence (hash-ref definitions OP)))
+  #'(call-definition (hash-ref definitions OP)))
 
 (define-macro (call-system OP)
   #'((hash-ref system_defs OP)))
 
 ;;; Actually call an op on the stack
+; (: call-immediate (-> Integer Void))
 (define (call-immediate op)
   (when trace (do-trace op))
   (cond
     [(hash-has-key? system_defs op) (call-system op)]
     [(hash-has-key? definitions op) (call-user op)]
-    [else (error "unknown op: ~s" op)]
-  )
-)
+    [else (error "unknown op: ~s" op)]))
 
 ;;; Actually push a value to the stack
+; (: push-immediate (-> Integer Void))
 (define (push-immediate val)
   (when trace (do-trace val))
-  (push! stack val)
-)
+  (push! stack val))
 
 ;;; Run the definition (list of deferred ops)
-(define (call-sentence def)
+; (: call-definition (-> Integer Void))
+(define (call-definition def)
   (unless (empty? def)
-    (let ([v (pop! def)] [op (pop! def)])
-      ;;; Nieve
-      ; (push-immediate v)
-      ; (call-immediate op)
-
-      ;;; Smart
-      (if (zero? op)
-        (push-immediate v)
-        (call-immediate v)
-      )
-      (call-sentence def)
+    (if (zero? (cadr def))
+      (push-immediate (car def))
+      (call-immediate (car def))
     )
-  )
-)
+    (call-definition (cddr def))
+  ))
 
 ;;; Adds a deferred operation to the current definition
 (define-macro (deferred VAL OP)
-  #'(hash-set! definitions (peek! current-definition) (append (hash-ref definitions (peek! current-definition)) `(,VAL ,OP)))
-)
+  #'(hash-set! definitions (car current-definition) (append (hash-ref definitions (car current-definition)) `(,VAL ,OP))))
 
 ;;; public calls
 
+; (: push (-> Integer Void))
 (define (push val)
   (if (empty? current-definition)
     (push-immediate val)
-    (deferred val op_nop) ;;; currently in a definition
-))
+    (deferred val op_nop))) ;;; currently in a definition
 
+; (: call (-> Integer Void))
 (define (call op)
   (cond
     [(empty? current-definition) (call-immediate op)]
@@ -257,10 +258,9 @@
     [(eq? op_bra op) (bra!)]
     [(eq? op_ket op) (ket!)]
     [else (deferred op op_eval)] ;;; currently in a definition
-  )
-)
+  ))
 
-(provide stack queue definitions)
+(provide stack stash definitions)
 (provide call push)
 
 (module+ test
@@ -296,5 +296,4 @@
   (call op_pow)
   (call op_mod)
 
-  (check-equal? stack '[91686])
-)
+  (check-equal? stack '[91686]))
