@@ -267,37 +267,37 @@
 (provide stack stash definitions)
 (provide call push)
 
-; (module+ test
-;   (require rackunit)
+(module+ test
+  (require rackunit)
 
-;   (define fact -1)
+  (define fact -1)
 
-;   (push fact)      ;;; define factorial
-;   (call op_mark)
-;   (call op_dup)
-;   (push 1)
-;   (call op_gt)
-;   (call op_bra)
-;   (call op_dup)
-;   (push 1)
-;   (call op_sub)
-;   (call fact)
-;   (call op_mul)
-;   (call op_ket)
-;   (call op_when)
-;   (call op_def)
+  (push fact)      ;;; define factorial
+  (call op_mark)
+  (call op_dup)
+  (push 1)
+  (call op_gt)
+  (call op_bra)
+  (call op_dup)
+  (push 1)
+  (call op_sub)
+  (call fact)
+  (call op_mul)
+  (call op_ket)
+  (call op_when)
+  (call op_def)
 
-;   (push 100)  ;;; factorial of 100
-;   (call fact)
+  (push 100)  ;;; factorial of 100
+  (call fact)
 
-;   (push 10)   ;;; remove lower 25 digits
-;   (push 25)
-;   (call op_pow)
-;   (call op_div)
+  (push 10)   ;;; remove lower 25 digits
+  (push 25)
+  (call op_pow)
+  (call op_div)
 
-;   (push 10)  ;;; get lower 6 digits
-;   (push 6)
-;   (call op_pow)
-;   (call op_mod)
+  (push 10)  ;;; get lower 6 digits
+  (push 6)
+  (call op_pow)
+  (call op_mod)
 
-;   (check-equal? stack '[91686]))
+  (check-equal? stack '[91686]))
