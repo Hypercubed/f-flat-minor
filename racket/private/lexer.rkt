@@ -1,5 +1,7 @@
-#lang racket
-(require brag/support ff/private/ops ff/private/symbols)
+#lang racket/base
+
+(require racket/string brag/support)
+(require ff/private/ops ff/private/symbols)
 
 (define user_symbols (make-hash))
 

@@ -1,4 +1,4 @@
-#lang br
+#lang racket/base
 
 (require ff/private/lexer brag/support)
 

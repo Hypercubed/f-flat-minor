@@ -1,4 +1,4 @@
-#lang typed/racket/base
+#lang racket/base
 
 (define op_nop 0)
 (define op_eval 1)

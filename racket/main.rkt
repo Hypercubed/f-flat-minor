@@ -1,7 +1,8 @@
 #!/usr/bin/env racket
 
-#lang br/quicklang
+#lang racket/base
 
+(require racket/string)
 (require ff/lang/reader ff/private/preprocess ff/commands/run ff/commands/repl)
 
 (provide read read-syntax get-info)

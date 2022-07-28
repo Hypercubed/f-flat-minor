@@ -1,7 +1,6 @@
-#lang racket
+#lang racket/base
 
-(require racket/path)
-(require racket/set)
+(require racket/string racket/path racket/set racket/port)
 
 (define imported (mutable-set '()))
 
@@ -13,7 +12,7 @@
 
 (define (do-load path line)
   (begin
-    (define filepath (get-path (second (string-split line)) path))
+    (define filepath (get-path (car (cdr (string-split line))) path))
 
     (define port (open-input-file filepath))
     (preprocess filepath port)
@@ -21,7 +20,7 @@
 
 (define (do-import path line)
   (begin
-    (define filepath (get-path (second (string-split line)) path))
+    (define filepath (get-path (car (cdr (string-split line))) path))
     (define code "")
     (unless (set-member? imported filepath)
       (set-add! imported filepath)

@@ -22,11 +22,11 @@
 ; (: stash Stack)
 (define stash '())
 
-; (define-type Definitions (Mutable-HashTable Integer Stack))
+; (: definitions (Mutable-HashTable Integer Stack))
 (define definitions (make-hash))
 
-; (: current-definition Stack)
-(define current-definition '())
+; (: def-stack Stack)
+(define def-stack '())
 
 (define trace #f)
 (define running #f)
@@ -40,8 +40,12 @@
 ; (: pop! (-> Stack Integer))
 (define-macro (pop! S)
   #'(let ([x (car S)])
-      (set! S (cdr S))
-      x))
+    (set! S (cdr S))
+    x))
+
+; (: drp! (-> Stack Integer))
+(define-macro (drp! S)
+  #'(set! S (cdr S)))
 
 (define-macro (print! S)
   #'(void (printf "[ ")
@@ -59,7 +63,7 @@
   (display (pop! stack)))
 
 (define (drop!)
-  (set! stack (cdr stack)))
+  (drp! stack))
 
 (define (mul!)
   (push! stack (* (pop! stack) (pop! stack))))
@@ -74,7 +78,7 @@
 
 (define (pow!)
   (define rhs (pop! stack))
-  (push! stack (expt (pop! stack) rhs)))
+  (push! stack (floor (expt (pop! stack) rhs))))
 
 (define (mod!)
   (define rhs (pop! stack))
@@ -138,8 +142,9 @@
   (unless (zero? lhs)
     (call rhs)))
 
+; (: mark-def! (-> Integer Void))
 (define (mark-def! op)
-  (push! current-definition op)
+  (push! def-stack op)
   (hash-set! definitions op '()))
 
 (define (mark!)
@@ -148,17 +153,15 @@
 (define (bra!)
   (mark-def! (next-code!)))
 
-; (: def! (-> Void))
 (define (def!)
-  (pop! current-definition))
+  (drp! def-stack))
 
 (define (ket!)
-  (push (pop! current-definition)))
+  (push (pop! def-stack)))
 
 (define (eval!)
   (call (pop! stack)))
 
-; (: depth! (-> Void))
 (define (depth!)
   (push! stack (length stack)))
 
@@ -209,7 +212,7 @@
   #'(call-definition (hash-ref definitions OP)))
 
 (define-macro (call-system OP)
-  #'((hash-ref system_defs OP)))
+  #'(void ((hash-ref system_defs OP))))
 
 ;;; Actually call an op on the stack
 ; (: call-immediate (-> Integer Void))
@@ -227,7 +230,7 @@
   (push! stack val))
 
 ;;; Run the definition (list of deferred ops)
-; (: call-definition (-> Integer Void))
+; (: call-definition (-> Stack Void))
 (define (call-definition def)
   (unless (empty? def)
     (if (zero? (cadr def))
@@ -239,20 +242,20 @@
 
 ;;; Adds a deferred operation to the current definition
 (define-macro (deferred VAL OP)
-  #'(hash-set! definitions (car current-definition) (append (hash-ref definitions (car current-definition)) `(,VAL ,OP))))
+  #'(hash-set! definitions (car def-stack) (append (hash-ref definitions (car def-stack)) `(,VAL ,OP))))
 
 ;;; public calls
 
 ; (: push (-> Integer Void))
 (define (push val)
-  (if (empty? current-definition)
+  (if (empty? def-stack)
     (push-immediate val)
     (deferred val op_nop))) ;;; currently in a definition
 
 ; (: call (-> Integer Void))
 (define (call op)
   (cond
-    [(empty? current-definition) (call-immediate op)]
+    [(empty? def-stack) (call-immediate op)]
     [(eq? op_mark op) (mark!)]
     [(eq? op_def op) (def!)]
     [(eq? op_bra op) (bra!)]
@@ -263,37 +266,37 @@
 (provide stack stash definitions)
 (provide call push)
 
-(module+ test
-  (require rackunit)
+; (module+ test
+;   (require rackunit)
 
-  (define fact -1)
+;   (define fact -1)
 
-  (push fact)      ;;; define factorial
-  (call op_mark)
-  (call op_dup)
-  (push 1)
-  (call op_gt)
-  (call op_bra)
-  (call op_dup)
-  (push 1)
-  (call op_sub)
-  (call fact)
-  (call op_mul)
-  (call op_ket)
-  (call op_when)
-  (call op_def)
+;   (push fact)      ;;; define factorial
+;   (call op_mark)
+;   (call op_dup)
+;   (push 1)
+;   (call op_gt)
+;   (call op_bra)
+;   (call op_dup)
+;   (push 1)
+;   (call op_sub)
+;   (call fact)
+;   (call op_mul)
+;   (call op_ket)
+;   (call op_when)
+;   (call op_def)
 
-  (push 100)  ;;; factorial of 100
-  (call fact)
+;   (push 100)  ;;; factorial of 100
+;   (call fact)
 
-  (push 10)   ;;; remove lower 25 digits
-  (push 25)
-  (call op_pow)
-  (call op_div)
+;   (push 10)   ;;; remove lower 25 digits
+;   (push 25)
+;   (call op_pow)
+;   (call op_div)
 
-  (push 10)  ;;; get lower 6 digits
-  (push 6)
-  (call op_pow)
-  (call op_mod)
+;   (push 10)  ;;; get lower 6 digits
+;   (push 6)
+;   (call op_pow)
+;   (call op_mod)
 
-  (check-equal? stack '[91686]))
+;   (check-equal? stack '[91686]))
