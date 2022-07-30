@@ -1,12 +1,11 @@
 #lang br/quicklang
 
 (require ff/private/ops)
+(require (for-syntax racket/list))
 (require (for-syntax ff/globals ff/private/ops))
 
 (define-macro (module-begin . PARSE-TREE)
-  #`(#%module-begin
-    ;;; 'PARSE-TREE
-    ; (void . PARSE-TREE)
+  #'(#%module-begin
     (define compiled . PARSE-TREE)
     (provide compiled)
   ))
@@ -15,18 +14,18 @@
 (define-macro (ff-program EXPR ...)
   #'(flatten (list EXPR ...)))
 
-(define (ff-marker ID)
-  (ff-push ID)
-  (ff-call op_mark))
+(define-macro (ff-marker ID)
+  #'(list ID 0 op_mark 1))
 
-(define (ff-push VAL)
-  (list VAL 0))
+(define-macro (ff-push VAL)
+  #'(list VAL 0))
 
-(define (ff-call OP)
-  (list OP 1))
+(define-macro (ff-call OP)
+  #'(list OP 1))
 
-(define (ff-string STR)
-  (define chars (map char->integer (string->list STR)))
-  (map ff-push chars))
+(define-macro (ff-string STR)
+  (define chars (map char->integer (string->list (syntax->datum #'STR))))
+  (define cmds (flatten (map (lambda (x) (list x 0)) chars)))
+  #`(list '#,cmds))
 
 (provide ff-program ff-marker ff-push ff-call ff-string)

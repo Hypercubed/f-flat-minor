@@ -16,10 +16,11 @@
   (eval module-syntax ns)
 
   ;; require the module in the namespace to run it
-  (eval `(require ',(second (syntax->datum module-syntax))) ns)
+  (define datum (car (cdr (syntax->datum module-syntax))))
+  (eval `(require ',datum) ns)
 
   (display HEADER)
-  (display (encode (eval `compiled ns))))
+  (display (encode (eval 'compiled ns))))
 
 (provide ff-compile-file)
 
