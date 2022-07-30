@@ -26,7 +26,7 @@
 
 (define (sextets s [o '()])
   (if (zero? s)
-    o
+    (cons 0 o)
     (let ([sextet (bitwise-and s VLQ_BASE_MASK)] [z (arithmetic-shift s -5)])
       (if (zero? z)
         (cons sextet o)
