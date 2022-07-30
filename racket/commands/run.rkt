@@ -1,15 +1,15 @@
 #lang racket
 
-(require ff/lang/reader)
+(require ff/globals ff/lang/reader)
 
-(define (ff-run-file filename #:pp [pp #t])
+(define (ff-run-file filename )
   (define ns (make-base-namespace))
 
   ;; parse file
   (define module-syntax
     (call-with-input-file* filename
       (lambda (in)
-        (read-syntax filename in #:pp pp))))
+        (read-syntax filename in))))
 
   ;;; eval module form in a namespace with racket/base
   (eval module-syntax ns)

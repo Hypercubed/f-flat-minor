@@ -264,8 +264,17 @@
     [else (deferred op op_eval)] ;;; currently in a definition
   ))
 
+(define (run def)
+  (unless (empty? def)
+    (if (zero? (cadr def))
+      (push (car def))
+      (call (car def))
+    )
+    (run (cddr def))
+  ))
+
 (provide stack stash definitions)
-(provide call push)
+(provide call push run)
 
 (module+ test
   (require rackunit)

@@ -13,13 +13,13 @@
     (set! port (open-input-string code path))
   )
   (define s-exprs (parse port (make-tokenizer port path)))
-  (define module-datum `(module ff-mod ff/private/expander ,s-exprs))
+  (define module-datum `(module ff-mod ff/private/compiler ,s-exprs))
   (strip-context (datum->syntax #f module-datum)))
 
 (define (get-info port mod line col pos)
     (lambda (key default)
       (case key
-        [(module-language) "private/expander.rkt"]
+        [(module-language) "private/compiler.rkt"]
         [else default])))
 
 (provide (rename-out [ff-read read]

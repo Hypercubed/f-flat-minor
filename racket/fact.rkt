@@ -6,7 +6,12 @@
 (define (factorial n)
   (if (= 0 n)
       1
-      (* n (factorial (- n 1)))))
+      (* n (factorial (sub1 n)))))
+
+; (time 
+;   (factorial 100)
+;   (factorial 1000)
+;   (factorial 5000))
 
 (define out (current-output-port))
 

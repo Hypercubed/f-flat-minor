@@ -3,7 +3,7 @@
 #lang racket/base
 
 (require racket/string)
-(require ff/lang/reader ff/private/preprocess ff/commands/run ff/commands/repl)
+(require ff/globals ff/lang/reader ff/private/preprocess ff/commands/run ff/commands/compile ff/commands/repl)
 
 (provide read read-syntax get-info)
 (provide ff-eval ff-run-file ff-run-repl)
@@ -14,7 +14,7 @@
 
   (define pp-only (make-parameter #f))
   (define evaluate (make-parameter ""))
-  (define pp (make-parameter #t))
+  (define compile (make-parameter #f))
 
   (command-line
     #:usage-help
@@ -30,7 +30,11 @@
 
     [("--no-pp")
       "Disable preprocessor"
-      (pp #f)]
+      (*pp* #f)]
+
+    [("-c" "--compile")
+      "Compile without running"
+      (compile #t)]
 
     #:multi
     [("-e" "--eval") expression
@@ -51,8 +55,11 @@
     )
 
     (cond
-      [(not filename) (ff-run-repl #:pp (pp))]
-      [(equal? filename "-") (ff-run-repl #:pp (pp) #:echo #f)]
-      [else (ff-run-file filename #:pp (pp))])
-  )
+      [(not filename)
+        (begin
+          (displayln "Welcome to F♭A𝄫C♭")
+          (ff-run-repl))]
+      [(equal? filename "-") (ff-run-repl #:echo #f)]
+      [(compile) (ff-compile-file filename)]
+      [else (ff-run-file filename)]))
 )

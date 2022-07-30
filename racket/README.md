@@ -12,7 +12,7 @@ In this directory (./racket) run `raco pkg install`.  After setup finishes, you 
 
 include `#lang ff` in your source file to use the language.  Example:
 
-```
+```forth
 #lang reader ff
 
 /* factorial */
@@ -45,7 +45,7 @@ racket main.rkt example.ff
 
 or using stdin
 
-```
+```sh
 cat example.ff | racket main.rkt -
 ```
 
