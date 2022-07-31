@@ -1,7 +1,7 @@
 #lang racket/base
 
 (require racket/list)
-(require ff/private/engine ff/globals ff/lang/reader-compiler ff/private/vlq)
+(require ff/globals ff/lang/reader-compiler ff/private/vlq)
 
 (define (ff-compile-file filename )
   (define ns (make-base-namespace))

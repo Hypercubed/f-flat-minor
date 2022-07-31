@@ -26,16 +26,16 @@
     "Run without filename to enter the REPL."
 
     #:once-each
-    [("--pp-only")
+    [("--pp-only" "--preprocess-only")
       "run preprocessor to stdout and exit"
       (pp-only #t)
       (*pp* #t)]
 
-    [("--no-pp")
+    [("--no-pp" "--no-preprocess")
       "Force disable preprocessor"
       (*pp* #f)]
 
-    [("--pp")
+    [("-p" "--preprocess")
       "Force enable preprocessor"
       (*pp* #t)]
 

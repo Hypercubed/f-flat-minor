@@ -38,8 +38,9 @@ run = '''
 
 [[task]]
 name = 'test:interpret'
+dep = 'make:main'
 run = '''
-./main.rkt ../ff/example.ff
+  ./main.rkt ../ff/example.ff
 '''
 template = 'cmp'
 [task.template-options]
@@ -47,6 +48,7 @@ cmp = '../ff/example.out'
 
 [[task]]
 name = 'test:compile'
+dep = 'make:main'
 run = '''
 	./main.rkt --compile ../ff/example.ff
 '''
@@ -56,6 +58,7 @@ cmp = '../ff/example.ffb'
 
 [[task]]
 name = 'test:execute'
+dep = 'make:main'
 run = '''
 	./main.rkt ../ff/example.ffb
 '''
