@@ -82,7 +82,7 @@ run = '''
     './cpp/build/fact'\
     './deno/build/execute ./ff/example.ffb'\
     './go/build/execute --in ./ff/example.ffb'\
-    './racket/build/example'
+    './racket/main.rkt ./ff/example.ffb'
 '''
 
 [[task]]
@@ -103,13 +103,14 @@ run = '''
 
 [[task]]
 name = 'bench:compile'
-deps = ['build:deno', 'build:go', 'build:cpp', 'build:dart', 'build:racket']
+deps = ['build:deno', 'build:go', 'build:racket']
 validation = 'none'
 serial = true
 run = '''
   hyperfine --warmup 3 -N\
     './deno/build/compile ./ff/example.ff'\
-    './go/build/compile --in ./ff/example.ff'
+    './go/build/compile --in ./ff/example.ff'\
+    './racket/main.rkt -c ./ff/example.ff'
 '''
 
 [[task]]
