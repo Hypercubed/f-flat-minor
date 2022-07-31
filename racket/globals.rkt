@@ -2,7 +2,7 @@
 
 (define HEADER "FbAbbCb")
 
-(define *pp* (make-parameter #t))
+(define *pp* (make-parameter null))
 
 (provide (all-defined-out))
 

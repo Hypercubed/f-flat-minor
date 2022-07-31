@@ -12,7 +12,7 @@
 (provide (rename-out [module-begin #%module-begin]))
 
 (define-macro (ff-program EXPR ...)
-  #'(flatten (list EXPR ...)))
+  #`(flatten (list EXPR ...)))
 
 (define-macro (ff-marker ID)
   #'(list ID 0 op_mark 1))
@@ -26,6 +26,6 @@
 (define-macro (ff-string STR)
   (define chars (map char->integer (string->list (syntax->datum #'STR))))
   (define cmds (flatten (map (lambda (x) (list x 0)) chars)))
-  #`(list '#,cmds))
+  #`(list #,@cmds))
 
 (provide ff-program ff-marker ff-push ff-call ff-string)
