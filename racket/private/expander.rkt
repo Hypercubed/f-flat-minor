@@ -3,18 +3,18 @@
 (require ff/private/engine ff/private/ops)
 (require (for-syntax ff/private/ops))
 
-(define-macro (module-begin . PARSE-TREE)
+(define-macro (module-begin PARSE-TREE ...)
   #'(#%module-begin
     ;;; 'PARSE-TREE
-    (void . PARSE-TREE)
+    PARSE-TREE ...
   ))
 (provide (rename-out [module-begin #%module-begin]))
 
 (define-macro (ff-program EXPR ...)
-  #'(list EXPR ...))
+  #'(void EXPR ...))
 
 (define-macro (ff-marker ID)
-  #`(list (push ID) (call op_mark)))
+  #`(begin (push ID) (call op_mark)))
 
 (define-macro (ff-push VAL)
   #'(push VAL))
@@ -52,8 +52,11 @@
     [(equal? op op_not) #'(call op_not)]
     [else #'(call OP)]))
 
+(define-macro (pusher ARG ...)
+  #'(begin (push ARG) ...))
+
 (define-macro (ff-string STR)
   (define chars (map char->integer (string->list (syntax->datum #'STR))))
-  #`(map push '#,chars))
+  #`(pusher #,@chars))
 
 (provide ff-program ff-marker ff-push ff-call ff-string)

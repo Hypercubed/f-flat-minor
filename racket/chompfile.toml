@@ -109,5 +109,5 @@ run = '''
     './build/example'\
     'racket ./example.rkt'\
     'racket main.rkt ../ff/example.ff'\
-    'racket main.rkt --pp ../ff/example.ff'
+    'racket main.rkt -p ../ff/example.ff'
 '''
