@@ -31,7 +31,7 @@ deps = [
 ]
 
 [[task]]
-name = 'compile'
+name = 'test:compile'
 deps = ['./build/compile']
 template = 'cmp'
 run = './build/compile ../ff/example.ff'
@@ -39,7 +39,7 @@ run = './build/compile ../ff/example.ff'
 cmp = '../ff/example.ffb'
 
 [[task]]
-name = 'execute'
+name = 'test:execute'
 dep = './build/execute'
 template = 'cmp'
 run = './build/execute ../ff/example.ffb'
@@ -47,7 +47,7 @@ run = './build/execute ../ff/example.ffb'
 cmp = '../ff/example.out'
 
 [[task]]
-name = 'interpret'
+name = 'test:interpret'
 dep = './build/run'
 run = './build/run ../ff/example.ff'
 template = 'cmp'
@@ -58,16 +58,16 @@ cmp = '../ff/example.out'
 name = 'test'
 deps = [
     'build',
-    ':compile',
-    ':execute',
-    ':interpret',
-    ':ff'
+    ':test:compile',
+    ':test:execute',
+    ':test:interpret',
+    ':test:ff'
 ]
 serial = true
 display = 'none'
 
 [[task]]
-name = 'ff'
+name = 'test:ff'
 deps = [
     '../ff/##.out',
     './build/run'
@@ -94,7 +94,7 @@ run = '''
 
 [[task]]
 name = 'disassemble'
-deps = ['../ff/##.out', '../ff/**/*.*', './build/compile']
+deps = ['../ff/##.out', '../ff/**/*.*', ':build:compile']
 target = '../build/disassemble/##.ff'
 display = 'init-only'
 run = '''
@@ -107,7 +107,7 @@ run = '''
 
 [[task]]
 name = 'preprocess'
-deps = ['../ff/##.out', '../ff/**/*.*', './build/preprocess']
+deps = ['../ff/##.out', '../ff/**/*.*', ':build:preprocess']
 target = '../build/preprocess/##.ff'
 display = 'init-only'
 run = '''
@@ -115,6 +115,19 @@ run = '''
   shopt -s extglob
   for i in "${DEP%.*}.ff?(p)"; do
     ./build/preprocess $i > $TARGET
+  done
+'''
+
+[[task]]
+name = 'compile'
+deps = ['../ff/##.out', '../ff/**/*.*', ':build:compile']
+target = '../build/compiled/##.ffb'
+display = 'init-only'
+run = '''
+  shopt -s nullglob
+  shopt -s extglob
+  for i in "${DEP%.*}.ff?(p)"; do
+    ./build/compile $i > $TARGET
   done
 '''
 

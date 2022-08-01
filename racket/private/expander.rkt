@@ -52,11 +52,9 @@
     [(equal? op op_not) #'(call op_not)]
     [else #'(call OP)]))
 
-(define-macro (pusher ARG ...)
-  #'(begin (push ARG) ...))
-
 (define-macro (ff-string STR)
-  (define chars (map char->integer (string->list (syntax->datum #'STR))))
-  #`(pusher #,@chars))
+  (define ints (map char->integer (string->list (syntax->datum #'STR))))
+  (with-pattern ([(INTS ...) ints])
+    #`(begin (push INTS) ...)))
 
 (provide ff-program ff-marker ff-push ff-call ff-string)

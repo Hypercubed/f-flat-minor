@@ -11,11 +11,16 @@ const COMMENT_END = "*/";
 
 function toNumber(str: string) {
   try {
+    let sgn = 1n;
     str = str.replaceAll('_', '');
-    if (str.includes('e') || str.includes('E')) {
-      return BigInt(+str);
+    if (str.startsWith('-0')) {  // needed to support `-0b11` for example
+      sgn = -1n;
+      str = str.replace('-', '');
     }
-    return BigInt(str);
+    if (str.includes('e') || str.includes('E')) {
+      return sgn*BigInt(+str);
+    }
+    return sgn*BigInt(str);
   } catch (_e) {
     return undefined;
   }
