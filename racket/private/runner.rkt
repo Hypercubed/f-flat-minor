@@ -1,10 +1,11 @@
 #lang br/quicklang
 
-(require ff/private/engine ff/private/ops)
+(require ff/globals ff/private/engine ff/private/ops)
 (require (for-syntax racket/list))
 (require (for-syntax ff/globals ff/private/ops))
 
-(define-macro (module-begin . PARSE-TREE) #'(#%module-begin (run . PARSE-TREE)))
+(define-macro (module-begin . PARSE-TREE) #`(#%module-begin
+  (run . PARSE-TREE)))
 (provide (rename-out [module-begin #%module-begin]))
 
 (define-macro (ff-program EXPR ...)

@@ -1,7 +1,7 @@
 #lang racket/base
 
 (require br/define racket/list)
-(require ff/private/ops)
+(require ff/globals ff/private/ops)
 (require (for-syntax racket/base syntax/parse))
 
 ;;; helpers
@@ -28,9 +28,6 @@
 
 ; (: def-stack Stack)
 (define def-stack '())
-
-(define trace #f)
-(define running #f)
 
 ;;; stack macros
 
@@ -218,7 +215,7 @@
 ;;; Actually call an op on the stack
 ; (: call-immediate (-> Integer Void))
 (define (call-immediate op)
-  (when trace (do-trace op))
+  (when (*trace*) (do-trace op))
   (cond
     [(hash-has-key? system_defs op) (call-system op)]
     [(hash-has-key? definitions op) (call-user op)]
@@ -227,7 +224,7 @@
 ;;; Actually push a value to the stack
 ; (: push-immediate (-> Integer Void))
 (define (push-immediate val)
-  (when trace (do-trace val))
+  (when (*trace*) (do-trace val))
   (push! stack val))
 
 ;;; Run the definition (list of deferred ops)

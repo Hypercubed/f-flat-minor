@@ -1,6 +1,6 @@
 #lang racket/base
 
-(require ff/lang/reader)
+(require ff/lang/runner)
 
 (define (ff-eval code [ns (make-base-namespace)] [path "."])
   (define port (open-input-string code))

@@ -1,7 +1,7 @@
 #lang racket/base
 
 (require racket/list racket/string)
-(require ff/private/engine ff/globals ff/lang/reader-compiler ff/private/vlq)
+(require ff/globals ff/private/engine ff/private/vlq)
 
 (define (read-file filename)
   (with-input-from-file filename

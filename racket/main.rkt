@@ -47,6 +47,10 @@
       "Execute bigcode (binary)"
       (binary #t)]
 
+    [("-t" "--trace")
+      "Turn on tracing"
+      (*trace* #t)]
+
     #:multi
     [("-e" "--eval") expression
       "Evaluate expression and exit"

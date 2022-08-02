@@ -1,13 +1,13 @@
 #lang br/quicklang
 
-(require ff/private/ops)
+(require ff/globals ff/private/ops ff/private/vlq)
 (require (for-syntax racket/list))
 (require (for-syntax ff/globals ff/private/ops))
 
 (define-macro (module-begin . PARSE-TREE)
-  #'(#%module-begin
-    (define compiled . PARSE-TREE)
-    (provide compiled)
+  #`(#%module-begin
+    (display HEADER)
+    (display (encode . PARSE-TREE))
   ))
 (provide (rename-out [module-begin #%module-begin]))
 

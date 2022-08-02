@@ -1,9 +1,8 @@
 #lang racket/base
 
-(require racket/list)
-(require ff/globals ff/lang/reader-compiler ff/private/vlq)
+(require ff/lang/compiler)
 
-(define (ff-compile-file filename )
+(define (ff-compile-file filename)
   (define ns (make-base-namespace))
 
   ;; parse file
@@ -17,10 +16,7 @@
 
   ;; require the module in the namespace to run it
   (define datum (car (cdr (syntax->datum module-syntax))))
-  (eval `(require ',datum) ns)
-
-  (display HEADER)
-  (display (encode (eval 'compiled ns))))
+  (eval `(require ',datum) ns))
 
 (provide ff-compile-file)
 
