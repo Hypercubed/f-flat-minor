@@ -1,0 +1,29 @@
+version = 0.1
+
+extensions = ['../cmp-extension.js']
+
+[[task]]
+name = 'test'
+deps = ['test:interpret']
+serial = true
+display = 'none'
+
+[[task]]
+name = 'test:interpret'
+run = '''
+  ./ff.wls
+'''
+template = 'cmp'
+[task.template-options]
+cmp = '../ff/example.out'
+
+[[task]]
+name = 'bench'
+validation = 'none'
+serial = true
+run = '''
+  hyperfine --warmup 3 -N\
+    'wolframscript ./fact.wls'\
+    'wolframscript ./ff.wls'\
+    'wolframscript -cloud ./ff.wls'
+'''

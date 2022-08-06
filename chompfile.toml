@@ -69,7 +69,8 @@ run = '''
     'cat ./ff/example.ff | ./python/execute.py' -n python\
     './deno/build/execute ./ff/example.ffb' -n deno\
     'cat ./ff/example.ff | ./ruby/execute.rb' -n ruby\
-    './racket/build/example' -n racket
+    './racket/build/example' -n racket\
+    './wolfram/example.wls' -n wolfram
 '''
 
 [[task]]
