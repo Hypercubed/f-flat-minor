@@ -28,11 +28,11 @@ For each target language first implement a proof-of-concept interpreter either i
 | C++                   | F♭m<sup>o</sup>                                                        | ✓           |
 | Rust                  | [ F♭m<sup>-</sup> ](https://replit.com/@Hypercubed/f-flat-minor-Rust)  | ✓           |
 | Swift                 | [ F♭m<sup>-</sup> ](https://replit.com/@Hypercubed/f-flat-minor-Swift) | ✓           |
-| Wolfram Language      | F♭m<sup>-</sup>                                                        |             |
+| Wolfram Language      | F♭m<sup>-</sup>
+| Haskell               | F♭m<sup>-</sup>  
 | Julia                 |
 | LLVM                  |
 | F#                    |
-| Haskell               |
 | Lua                   |
 | Erlang/BEAM           |
 | Perl/Raku             |

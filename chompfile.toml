@@ -56,7 +56,7 @@ run = '''
 
 [[task]]
 name = 'bench'
-deps = ['build:deno', 'build:go', 'build:cpp', 'build:dart', 'build:racket']
+deps = ['build:ghc', 'build:deno', 'build:go', 'build:cpp', 'build:dart', 'build:racket']
 validation = 'none'
 serial = true
 run = '''
@@ -70,7 +70,8 @@ run = '''
     './deno/build/execute ./ff/example.ffb' -n deno\
     'cat ./ff/example.ff | ./ruby/execute.rb' -n ruby\
     './racket/build/example' -n racket\
-    './wolfram/example.wls' -n wolfram
+    './wolfram/example.wls' -n wolfram\
+    './ghc/build/ff' -n ghc\
 '''
 
 [[task]]
