@@ -1,0 +1,40 @@
+version = 0.1
+
+extensions = ['../cmp-extension.js']
+
+[[task]]
+name = 'test'
+deps = ['test:interpret']
+serial = true
+display = 'none'
+
+[[task]]
+name = 'build:#'
+target = './build/#'
+deps = ['./#.hs']
+run = '''
+  ghc -outputdir ./build $DEP -o $TARGET
+'''
+
+[[task]]
+name = 'build'
+deps = ['build:ff', 'build:fact']
+
+[[task]]
+name = 'test:interpret'
+run = '''
+  runhaskell ./ff.hs
+'''
+
+[[task]]
+name = 'bench'
+deps = ['build:ff', 'build:fact']
+validation = 'none'
+serial = true
+run = '''
+  hyperfine --warmup 3 -N\
+    'runhaskell ./fact.hs'\
+    'runhaskell ./ff.hs'\
+    './build/fact'\
+    './build/ff'
+'''
