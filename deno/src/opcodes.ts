@@ -25,6 +25,7 @@ export enum OpCodes {
   SUB = "-".charCodeAt(0),
   PRN = ".".charCodeAt(0),
   DIV = "/".charCodeAt(0),
+  RAT = "\\".charCodeAt(0),
   MARK = ":".charCodeAt(0),
   DEF = ";".charCodeAt(0),
   LT = "<".charCodeAt(0),
@@ -76,6 +77,7 @@ export const systemWords: Record<string, number> = {
   "]": OpCodes.KET,
   "|": OpCodes.OR,
   "~": OpCodes.NOT,
+  "\\\\": OpCodes.RAT,
 };
 
 export const MAX_SYSTEM_OP_CODE = 0xFF;

@@ -1,0 +1,12 @@
+!: dup 1 > [ dup 1 - ! * ] ? trim ;
+
+trim: dup 10 % 0 = [ 10 / trim ] ? ;
+five: 100_000 % ;
+
+9 ! five . clr  /* 36288 */
+10 ! five . clr  /* 36288 */
+20 ! five . clr  /* 17664 */
+
+1_000 ! trim five . clr /* 53472 */
+ 
+1_000_000_000_000 ! trim five . clr /* 16576 */
