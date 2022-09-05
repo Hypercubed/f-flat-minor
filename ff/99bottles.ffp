@@ -1,0 +1,16 @@
+.load ./lib/core.ff
+
+bottles: dup putn 0 '\sbottles' ;
+beer: bottles '\sof\sbeer' ;
+wall: beer '\son\sthe\swall\n' ;
+take: 0 '\nTake\sone\sdown,\spass\sit\saround\n' ;
+verse: 
+  wall prints
+  beer prints
+  --
+  take prints
+  wall prints
+  cr ;
+verses: verse dup [ verses ] ? ;
+
+99 verses

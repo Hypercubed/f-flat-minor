@@ -132,7 +132,7 @@ Factorial 100:
 
 ### Vocabulary
 
-See [Learn _F♭m_ in Minutes](./docs/learn-ffm-in-minutes.md) for a more detailed explanation of the vocabulary.
+See [F♭m by example](./docs/fbm-by-example.md) for a more detailed explanation of the vocabulary.
 
 | Mnemonic | Syntax |  Op (Ascii)   |     Version     |
 | -------- | :----: | :-----------: | :-------------: |

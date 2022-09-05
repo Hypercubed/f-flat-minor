@@ -1,4 +1,4 @@
-# Introduction
+# F♭m by example
 
 This is a small F♭m tutorial.  The code snippets below are meant to demonstrate input and outputs in the f-flat-minor repl.  Lines starting with `F♭m>` are user input followed by output.  The output by the repl is the current stack.  The stack is always displayed in brackets.  For example:
 
