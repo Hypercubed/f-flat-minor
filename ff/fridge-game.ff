@@ -1,0 +1,32 @@
+.load lib/core.ff
+
+fridge-game:
+  0 'You\sare\sin\sa\sfridge.\sWhat\sdo\syou\swant\sto\sdo?' newline
+  '1.\sTry\sto\sget\sout.' newline
+  '2.\sEat.' newline
+  '3.\sDie.' newline println
+
+  getc
+
+  dup '1' = [ 0 'You\stry\sto\sget\sout.\sYou\sfail.\sYou\sdie.' newline println ] ?
+  dup '2' = [
+    0 'You\seat.\sYou\seat\ssome\smore.' newline
+    'Damn,\sthis\sfood\sis\stasty!' newline
+    'You\seat\sso\smuch\syou\sdie.' newline println
+  ] ?
+  dup '3' = [
+    0
+    'You\sdie.' newline println
+  ] ?
+
+  0 'Play\sagain?\s(type\sy\sif\syou\sdo)' newline println
+  
+  getc
+
+  'y' = 
+    [ fridge-game ]
+    [ 0 'Thanks\sfor\splaying.' newline println ]
+    branch
+;
+
+fridge-game

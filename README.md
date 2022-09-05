@@ -132,13 +132,15 @@ Factorial 100:
 
 ### Vocabulary
 
+See [Learn _F♭m_ in Minutes](./docs/learn-ffm-in-minutes.md) for a more detailed explanation of the vocabulary.
+
 | Mnemonic | Syntax |  Op (Ascii)   |     Version     |
 | -------- | :----: | :-----------: | :-------------: |
 | NOP      |  nop   |   0 (null)    |       F♭m       |
 | EVAL     |  eval  |       1       |       F♭m       |
 | PUTC     |  putc  |       2       |       F♭m       |
 | GETC     |  getc  |       3       |       F♭m       |
-| PRINT    |  putn  |       5       |       F♭m       |
+| PUTN     |  putn  |       5       |       F♭m       |
 | CLOCK    | clock  |       6       |       F♭m       |
 | DROP     |  drop  | 8 (backspace) |       F♭m       |
 | PUSHR    |   q<   |      14       |       F♭m       |
