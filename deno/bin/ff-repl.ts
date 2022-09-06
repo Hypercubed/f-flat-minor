@@ -16,9 +16,9 @@ const core = path.fromFileUrl(
 );
 
 export async function run(args: Arguments) {
-  const compiler = new Compiler();
-  const interpreter = new Engine();
-  const preprocessor = new Preprocessor();
+  let compiler = new Compiler();
+  let interpreter = new Engine();
+  let preprocessor = new Preprocessor();
 
   console.log();
   console.log(GREETINGS);
@@ -38,10 +38,21 @@ export async function run(args: Arguments) {
   }
 
   function run(line: string) {
+    if (line.trim() === '.reset') {
+      compiler = new Compiler();
+      interpreter = new Engine();
+      preprocessor = new Preprocessor();
+      return;
+    }
     const code = preprocessor.preprocess([line]);
     const ir = compiler.compileToIR(Compiler.tokenize(code));
     interpreter.loadIR(ir);
-    interpreter.run();
+
+    try {
+      interpreter.run();
+    } catch(err) {
+      console.error(err);
+    }
   }
 }
 
