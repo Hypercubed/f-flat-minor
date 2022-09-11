@@ -7,5 +7,6 @@
 **/build/*
 **/compiled/*
 dart/bin/*.exe
+rust/target/*
 
 */node_modules/*

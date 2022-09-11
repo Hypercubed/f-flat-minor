@@ -1,0 +1,32 @@
+version = 0.1
+default-task = 'build'
+
+extensions = ['../cmp-extension.js']
+
+[[task]]
+name = 'build'
+deps = ['build:example0']
+
+[[task]]
+name = 'test'
+dep = 'test:interpret'
+serial = true
+display = 'none'
+
+[[task]]
+name = 'build:#'
+dep = './#.rs'
+run = '''
+  cargo build --release --bin $MATCH
+  cp ./target/release/$MATCH ./build/$MATCH
+'''
+
+[[task]]
+name = 'test:interpret'
+dep = 'build:example0'
+run = '''
+  ./build/example0
+'''
+template = 'cmp'
+[task.template-options]
+cmp = '../ff/example.out'
