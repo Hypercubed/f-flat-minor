@@ -26,10 +26,10 @@ For each target language first implement a proof-of-concept interpreter either i
 | Dart                  | F♭m                                                                    | ✓           |
 | AssemblyScript        | F♭m<sup>o</sup>                                                        | ✓           |
 | C++                   | F♭m<sup>o</sup>                                                        | ✓           |
-| Rust                  | [ F♭m<sup>-</sup> ](https://replit.com/@Hypercubed/f-flat-minor-Rust)  | ✓           |
+| Rust                  | F♭m<sup>o</sup>                                                        | ✓           |
 | Swift                 | [ F♭m<sup>-</sup> ](https://replit.com/@Hypercubed/f-flat-minor-Swift) | ✓           |
-| Wolfram Language      | F♭m<sup>-</sup>
-| Haskell               | F♭m<sup>-</sup>  
+| Wolfram Language      | F♭m<sup>-</sup>                                                        |
+| Haskell               | F♭m<sup>-</sup>                                                        |
 | Julia                 |
 | LLVM                  |
 | F#                    |
@@ -103,12 +103,10 @@ fact: dup 1 > [ dup 1 - fact * ] ? ;
 
 /* string printing */
 
-(prints): dup [ putc (prints) ] ? ;
+(prints): dup [ q< (prints) q> putc ] ? ;
 prints: (prints) drop ;
-println: prints 10 putc ;
 
-0 32 'Factorial' prints
-0 '100:' println
+0 'Factorial' 32 '100:' 10 prints
 
 100 fact .
 ```

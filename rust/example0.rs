@@ -9,6 +9,7 @@ enum Definition {
 }
 
 static mut STACK: Vec<BigInt> = Vec::new();
+static mut QUEUE: Vec<BigInt> = Vec::new();
 static mut SYMBOLS: Vec<String> = Vec::new();
 static mut DEFINITIONS: Vec<Definition> = Vec::new();
 
@@ -44,10 +45,12 @@ unsafe fn ev (words: Vec<&str>) {
       Err(_) => {
         let word_len = word.len();
         let first_letter = &word[0..1];
-        if first_letter == "&" {
-          push(BigInt::from(get_symbol(&word[1..])));
-        } else if first_letter == "'" {
-          for c in (&word[1..]).chars().rev() {
+        let last_letter = &word[word_len - 1..word_len];
+
+        if first_letter == "[" && last_letter == "]" {
+          push(BigInt::from(get_symbol(&word[1..word_len-1])));
+        } else if first_letter == "'" && last_letter == "'" {
+          for c in (&word[1..word_len-1]).chars() {
             push(BigInt::from(c as u32));
           }
         } else if &word[word_len-1..] == ":" {
@@ -187,6 +190,16 @@ fn main() {
     }
   }
 
+  unsafe fn qpush() {
+    let a = pop();
+    QUEUE.push(a);
+  }
+
+  unsafe fn qpop() {
+    let a = QUEUE.pop().unwrap_or(BigInt::zero());
+    push(a);
+  }
+
   unsafe fn putc() {
     print!("{}", pop().to_u32().unwrap() as u8 as char);
   }
@@ -205,28 +218,24 @@ fn main() {
     define_system("=", eq);
     define_system("dip", dip);
     define_system("?", q);
+    define_system("q<", qpush);
+    define_system("q>", qpop);
     define_system("putc", putc);
   }
 
   unsafe {
     ev(tokenize("
 
-    /* common definitions */
-    rot: &swap dip swap ;
-    choose: &swap ? drop ;
-    ifte: rot choose call ;
-
     /* define factorial */
     (fact): dup 1 - fact * ;
-    fact: dup 1 - &(fact) ? ;
+    fact: dup 1 - [(fact)] ? ;
 
     /* string printing */
-    print_f: putc print ;
-    print: dup &drop &print_f ifte ;
-    println: print 10 putc ;
+    ((prints)): q< (prints) q> putc  ;
+    (prints): dup [((prints))] ? ;
+    prints: (prints) drop ;
 
-    0 32 'Factorial print
-    0 '100: println
+    0 'Factorial' 32 '100:' 10 prints
 
     100 fact .
 
