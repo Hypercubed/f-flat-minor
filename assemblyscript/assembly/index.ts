@@ -9,8 +9,6 @@ const symbols = new Map<string, Base>();
 const core_defs = new Map<Base, () => void>();
 const user_defs = new Map<Base, string[]>();
 
-let output = '';
-
 function peek(): Base {
   if (stack.length === 0) {
     throw 'err';
@@ -177,15 +175,17 @@ setup();
 
 ev(tokenize(`
 
-(fact): dup 1 - fact * ;
-fact: dup 1 - &(fact) ? ;
+  /* define factorial */
+  (fact): dup 1 - fact * ;
+  fact: dup 1 - &(fact) ? ;
 
-(prints): q< prints_ q> putc ;
-prints_: dup &(prints) ? ;
-prints: prints_ drop ;
+  /* string printing */
+  ((prints)): q< (prints) q> putc ;
+  (prints): dup &((prints)) ? ;
+  prints: (prints) drop ;
 
-0 'Factorial 32 '10: 10 prints
+  0 'Factorial 32 '10: 10 prints
 
-10 fact .
+  10 fact .
 
 `));
