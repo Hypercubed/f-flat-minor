@@ -4,16 +4,16 @@
   "description": "",
   "main": "index.js",
   "scripts": {
-    "test": "node tests",
+    "test": "wasmtime ./build/release.wasm",
     "asbuild:debug": "asc assembly/index.ts --target debug",
     "asbuild:release": "asc assembly/index.ts --target release",
     "asbuild": "npm run asbuild:debug && npm run asbuild:release",
-    "start": "npx serve ."
+    "run": "wasmtime ./build/release.wasm"
   },
   "author": "",
   "license": "ISC",
   "devDependencies": {
-    "assemblyscript": "^0.20.6"
+    "assemblyscript": "^0.27.14"
   },
   "type": "module",
   "exports": {
@@ -21,5 +21,10 @@
       "import": "./build/release.js",
       "types": "./build/release.d.ts"
     }
+  },
+  "dependencies": {
+    "@assemblyscript/loader": "^0.27.14",
+    "@assemblyscript/wasi-shim": "^0.1.0",
+    "as-wasi": "^0.6.0"
   }
 }

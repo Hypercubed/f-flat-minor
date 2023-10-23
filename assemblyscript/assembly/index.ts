@@ -3,10 +3,13 @@
 type Base = i64;
 
 const stack: Base[] = [];
+const rstack: Base[] = [];
 
 const symbols = new Map<string, Base>();
 const core_defs = new Map<Base, () => void>();
 const user_defs = new Map<Base, string[]>();
+
+let output = '';
 
 function peek(): Base {
   if (stack.length === 0) {
@@ -60,16 +63,16 @@ function setup(): void {
     stack.splice(0, stack.length);
   });
 
-  defineCore('call', () => {;
+  defineCore('eval', () => {;
     callOp(pop());
   });
 
   defineCore('.', () => {  // print stack
-    log(`[${stack}]`);
+    console.log(`[${stack}]`);
   });
 
   defineCore('putc', () => {
-    output += String.fromCharCode(pop() as i32);
+    process.stdout.write(String.fromCharCode(pop() as i32));
   });
 
  defineCore('drop', () => stack.pop());
@@ -86,23 +89,19 @@ function setup(): void {
   });
 
   defineCore('+', () => {
-    const a = pop();
-    stack[stack.length - 1] += a;
+    stack[stack.length - 2] += pop();
   });
 
   defineCore('-', () => {
-    const a = pop();
-    stack[stack.length - 1] -= a;
+    stack[stack.length - 2] -= pop();
   });
 
   defineCore('*', () => {
-    const a = pop();
-    stack[stack.length - 1] *= a;
+    stack[stack.length - 2] *= pop();
   });
 
   defineCore('/', () => {
-    const a = pop();
-    stack[stack.length - 1] /= a;
+    stack[stack.length - 2] /= pop();
   });
 
   defineCore('=', () => {
@@ -116,11 +115,12 @@ function setup(): void {
     }
   });
 
-  defineCore('dip', () => {
-    const a = pop()
-    const b = pop()
-    callOp(a)
-    stack.push(b);
+  defineCore('q<', () => {
+    rstack.push(pop());
+  });
+
+  defineCore('q>', () => {
+    stack.push(rstack.pop());
   });
 }
 
@@ -134,7 +134,7 @@ function ev(tokens: string[]): void {
     if (!isNaN(parseInt(token))) {
       stack.push(I64.parseInt(token, 10));
     } else if (token.startsWith('\'')) { // String
-      token.replace('\'', '')
+      token.replaceAll('\'', '')
         .split('')
         .forEach(c => stack.push(c.charCodeAt(0)));
     } else if (token.startsWith('&')) { // Symbol
@@ -154,7 +154,7 @@ function ev(tokens: string[]): void {
       }
       user_defs.set(code, def);
     } else if (token.startsWith('/*')) {  // Comment
-      while (!token.endsWith('*/') && i < tokens.length) {
+      while (!token.endsWith('*/') && i < tokens.length && token !== '*/') {
         token = tokens[i++];
       }
     } else {
@@ -164,47 +164,28 @@ function ev(tokens: string[]): void {
 }
 
 function tokenize(s: string): string[] {
+  s = s.replaceAll('\n', ' ').replaceAll('\r', ' ');
+
   return s.split(' ')
     .map<string>(s => s.trim())
     .filter(s => s !== '');
 }
 
-let output = '';
+// RUN
 
-function log(line: string): void {
-  output += line + '\n';
-}
+setup();
 
-export function main(): string {
-  setup();
+ev(tokenize(`
 
-  ev(tokenize(`
-  
-    /* common definitions */
+(fact): dup 1 - fact * ;
+fact: dup 1 - &(fact) ? ;
 
-    --: 1 - ;
-    rot: q< swap q> swap ;
-    choose: 0 = &swap ? drop ;
-    branch: rot choose eval ;
-    
-    /* factorial */
-    
-    fact_t: dup -- fact * ;
-    fact_f: drop 1 ;
-    fact: dup &fact_t &fact_f branch ;
-    
-    /* string printing */
-    
-    print_t: putc print ;
-    print: dup &print_t &drop branch ;
-    println: print 10 putc ;
-    
-    0 32 'Factorial print
-    0 '100: println
-    
-    100 fact .
-  
-  `));
+(prints): q< prints_ q> putc ;
+prints_: dup &(prints) ? ;
+prints: prints_ drop ;
 
-  return output;
-}
+0 'Factorial 32 '10: 10 prints
+
+10 fact .
+
+`));
