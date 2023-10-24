@@ -55,25 +55,27 @@ function callOp(code: Base): void {
 }
 
 function setup(): void {
-  defineCore('nop', () => {});
+  defineCore('nop', () => { });
 
   defineCore('cls', () => {
     stack.splice(0, stack.length);
   });
 
-  defineCore('eval', () => {;
+  defineCore('eval', () => {
+    ;
     callOp(pop());
   });
 
   defineCore('.', () => {  // print stack
-    console.log(`[${stack}]`);
+    const s = stack.map((v: i64) => v.toString()).join(' ');
+    console.log(`[ ${s} ]`);
   });
 
   defineCore('putc', () => {
     process.stdout.write(String.fromCharCode(pop() as i32));
   });
 
- defineCore('drop', () => stack.pop());
+  defineCore('drop', () => stack.pop());
 
   defineCore('swap', () => {  // swap
     const a = pop();
@@ -138,7 +140,7 @@ function ev(tokens: string[]): void {
     } else if (token.startsWith('&')) { // Symbol
       const name = token.replace('&', '');
       stack.push(getSymbol(name));
-    } else if (symbols.has(token))  {  // Definition
+    } else if (symbols.has(token)) {  // Definition
       const code = symbols.get(token);
       callOp(code);
     } else if (token.endsWith(':')) { // Definition
@@ -184,8 +186,8 @@ ev(tokenize(`
   (prints): dup &((prints)) ? ;
   prints: (prints) drop ;
 
-  0 'Factorial 32 '10: 10 prints
+  0 'Factorial 32 '20: 10 prints
 
-  10 fact .
+  20 fact .
 
 `));
