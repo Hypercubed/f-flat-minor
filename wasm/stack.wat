@@ -8,14 +8,11 @@
   ;; $itoa is relative to this memory.
   (memory (export "memory") 1)
 
-  ;; Using some memory for a number-->digit ASCII lookup-table
-  (data (i32.const 100) "0123456789")
-
   (func $emit (param $a i32)
     (i32.store (i32.const 8) (local.get $a))
     
-    (i32.store (i32.const 0) (i32.const 8))  ;; iov.iov_base - This is a pointer to the start of the 'hello world\n' string
-    (i32.store (i32.const 4) (i32.const 1))  ;; iov.iov_len - The length of the 'hello world\n' string
+    (i32.store (i32.const 0) (i32.const 8))  ;; iov.iov_base - This is a pointer to the start of the string
+    (i32.store (i32.const 4) (i32.const 1))  ;; iov.iov_len - The length of the string
     
     (call $fd_write
         (i32.const 1) ;; file_descriptor - 1 for stdout
@@ -27,23 +24,25 @@
     drop
   )
 
+  ;; Print unsigned integer to stdout
   (func $print_u (param $num i64)
     (local $digit i32)
     (local $dchar i32)
 
     (i64.rem_u (local.get $num) (i64.const 10))  ;; get lowest digit
     (i32.wrap_i64)  ;; convert to i32
-    (i32.load8_u offset=100)  ;; lookup digit char
-
+    (i32.add (i32.const 48))  ;; convert to ascii
+ 
     (local.set $num (i64.div_u (local.get $num) (i64.const 10)))  ;; get rid of lowest digit
     (i64.ne (local.get $num) (i64.const 0))  ;; check if we're done
     if
-      (call $print (local.get $num))
+      (call $print_u (local.get $num))
     end
 
     (call $emit)  ;; emit digit char
   )
 
+  ;; Print signed integer to stdout
   (func $print (param $num i64)
     (i64.lt_s (local.get $num) (i64.const 0)) 
     if
@@ -257,12 +256,6 @@
     (call $push (i64.const 20))
     call $USER/fact
     call $DUMP
-
-    (call $DROP)
-    call $DUMP
-
-    ;; (call $DROP)
-    ;; call $DUMP
   )
 
   ;; (func $main (export "_start")

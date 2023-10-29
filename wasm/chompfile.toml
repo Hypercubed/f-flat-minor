@@ -1,0 +1,33 @@
+version = 0.1
+default-task = 'build'
+
+[[task]]
+name = 'interpret'
+deps = ['interpret:stack']
+
+[[task]]
+name = 'interpret:#'
+dep = './#.wat'
+run = 'wasmtime $DEP'
+
+[[task]]
+name = 'build'
+deps = ['build:stack']
+
+[[task]]
+name = 'build:#'
+target = './build/#.wasm'
+deps = ['./#.wat']
+run = '''
+  wat2wasm $DEP -o $TARGET
+'''
+
+[[task]]
+name = 'execute'
+deps = ['execute:stack']
+
+[[task]]
+name = 'execute:#'
+dep = './build/#.wasm'
+run = 'wasmtime $DEP'
+
