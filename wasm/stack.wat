@@ -27,8 +27,7 @@
     drop
   )
 
-  ;; TODO: negitive numbers
-  (func $print (param $num i64)
+  (func $print_u (param $num i64)
     (local $digit i32)
     (local $dchar i32)
 
@@ -38,14 +37,21 @@
 
     (local.set $num (i64.div_u (local.get $num) (i64.const 10)))  ;; get rid of lowest digit
     (i64.ne (local.get $num) (i64.const 0))  ;; check if we're done
-    (if
-      (then
-        (local.get $num)
-        (call $print)
-      )
-    )
+    if
+      (call $print (local.get $num))
+    end
 
     (call $emit)  ;; emit digit char
+  )
+
+  (func $print (param $num i64)
+    (i64.lt_s (local.get $num) (i64.const 0)) 
+    if
+      (call $emit (i32.const 45))  ;; -
+      (local.set $num (i64.sub (i64.const 0) (local.get $num)))  ;; make positive
+    end
+
+    (call $print_u (local.get $num))
   )
 
   ;; THE STACK
@@ -55,7 +61,7 @@
   (global $sp (mut i32) (i32.const 9992))  ;; Stack pointer
 
   (type $f (func))
-  (table 512 anyfunc)
+  (table 512 funcref)
 
   (func $inc_sp
     (i32.add (global.get $sp) (global.get $size))
@@ -79,8 +85,13 @@
   )
   
   (func $peek
-    ;; TODO: check out of bounds
     (result i64)
+
+    (i32.lt_u (global.get $sp) (global.get $tos))
+    if
+      unreachable
+    end
+
     global.get $sp
     i64.load
   )
@@ -222,30 +233,36 @@
 
   ;; USER FUNCTIONS
   
-  (func $USER$_fact_
+  (func $USER/_fact_
     call $DUP
     (call $push (i64.const 1))
     call $SUB
-    call $USER$fact
+    call $USER/fact
     call $MUL
   )
-  (elem (i32.const 256) $USER$_fact_)
+  (elem (i32.const 256) $USER/_fact_)
 
-  (func $USER$fact
+  (func $USER/fact
     call $DUP
     (call $push (i64.const 1))
     call $SUB
     (call $push (i64.const 256)) ;; $__fact__
     call $WHEN
   )
-  (elem (i32.const 257) $USER$fact)
+  (elem (i32.const 257) $USER/fact)
 
   ;; THE PROGRAM
 
   (func $main (export "_start")
     (call $push (i64.const 20))
-    call $USER$fact
+    call $USER/fact
     call $DUMP
+
+    (call $DROP)
+    call $DUMP
+
+    ;; (call $DROP)
+    ;; call $DUMP
   )
 
   ;; (func $main (export "_start")
