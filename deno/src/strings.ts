@@ -43,6 +43,6 @@ function hex2char(hex: string): string {
   return result;
 }
 
-function dec2hex(x: number): string {
+export function dec2hex(x: number): string {
   return (x + 0).toString(16).toUpperCase();
 }

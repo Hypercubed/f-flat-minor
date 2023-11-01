@@ -53,11 +53,35 @@
     (call $print_u (local.get $num))
   )
 
-  ;; THE STACK
 
+  ;; THE QUEUE
+  (global $qsize i32 (i32.const 12))     ;; Size of each stack element
+  (global $toq i32 (i32.const 10000))  ;; Top of queue
+  (global $boq (mut i32) (i32.const 10000))  ;; Bottom of queue
+  (global $qp (mut i32) (i32.const 10000))  ;; Queue pointer
+
+  (func $qget (param $qp i32) (result i64 i32)
+    (local.get $qp)
+    i64.load ;; value
+
+    (i32.add (local.get $qp) (i32.const 8))
+    i32.load  ;; operation
+  )
+
+  ;; (func $qnext
+  ;;   (result i64 i32)
+
+  ;;   (global.get $qp)
+  ;;   call $qget
+
+  ;;   (i32.add (global.get $qp) (global.get $qsize))
+  ;;   global.set $qp
+  ;; )
+
+  ;; THE STACK
   (global $size i32 (i32.const 8))     ;; Size of each stack element
-  (global $tos i32 (i32.const 10000))  ;; Top of stack
-  (global $sp (mut i32) (i32.const 9992))  ;; Stack pointer
+  (global $tos i32 (i32.const 20000))  ;; Top of stack
+  (global $sp (mut i32) (i32.const 19992))  ;; Stack pointer
 
   (type $f (func))
   (table 512 funcref)
@@ -111,8 +135,42 @@
     i32.div_u
   )
 
-  (func $call (param $n i32) (local.get $n)
+  (func $call_internal (param $n i32)
+    (local.get $n)
     (call_indirect (type $f))
+  )
+
+  (func $call_user (param $n i32)
+    i32.const 96
+    local.get $n
+    i32.const 4
+    i32.mul
+    i32.sub  ;; -1*(n-1)*4 + 100 === 96 - 4n
+    i32.load
+    call $run
+  )
+
+  (func $call (param $n i32)
+    (i32.lt_s (local.get $n) (i32.const 0))
+    if
+      (local.get $n)
+      call $call_user
+      return
+    end
+
+    (i32.le_s (local.get $n) (i32.const 256))
+    if
+      (local.get $n)
+      call $call_internal
+      return
+    end
+
+    ;; (i32.gt_s (local.get $n) (i32.const 256))
+    ;; if
+    ;;   (local.get $n)
+    ;;   call $call_user
+    ;;   return
+    ;; end
   )
 
   ;; INTERNAL DEFINITIONS
@@ -215,7 +273,7 @@
     i32.wrap_i64
     call $call
   )
-  (elem (i32.const 1) $SWAP)
+  (elem (i32.const 1) $EVAL)
 
   (func $WHEN
     (local $a i64)
@@ -228,39 +286,102 @@
       call $call
     end
   )
-  (elem (i32.const 63) $SWAP)
+  (elem (i32.const 63) $WHEN)
 
-  ;; USER FUNCTIONS
+  ;; USER DEFINITIONS
   
-  (func $_256
-    call $DUP
-    (call $push (i64.const 1))
-    call $SUB
-    call $_fact
-    call $MUL
-  )
-  (elem (i32.const 256) $_256)
+  ;; FACT -1
+  (data (i32.const 10000)
+    ;; (i64 -1) (i32 0)  ;; PUSH -1
+    ;; (i64 58) (i32 1)   ;; :
+    (i64 33) (i32 1)  ;; DUP
+    (i64 1) (i32 0)   ;; PUSH 1
+    (i64 45) (i32 1)  ;; SUB
+    (i64 -2) (i32 0)  ;; PUSH USER/_fact_
+    (i64 63) (i32 1)  ;; WHEN
+    (i64 0) (i32 59)  ;; EOF
+    ;; (i64 59) (i32 1)  ;; ;
+  ;; )
 
-  (func $_fact
-    call $DUP
-    (call $push (i64.const 1))
-    call $SUB
-    (call $push (i64.const 256)) ;; $__fact__
-    call $WHEN
+  ;; _FACT_ -2
+  ;; (data (i32.const 10072)
+    ;; (i64 -1) (i32 0)  ;; PUSH -1
+    ;; (i64 58) (i32 1)   ;; :
+    (i64 33) (i32 1)  ;; DUP
+    (i64 1) (i32 0)  ;; PUSH 1
+    (i64 45) (i32 1)  ;; SUB
+    (i64 -1) (i32 1)  ;; CALL USER/fact
+    (i64 42) (i32 1)  ;; MUL
+    (i64 0) (i32 59)  ;; EOF
+    ;; (i64 59) (i32 1)  ;; ;
+  ;; )
+
+  ;; main
+  ;; (data (i32.const 10144)
+    (i64 20) (i32 0)  ;; PUSH 20  ;; 0
+    (i64 -1) (i32 1)  ;; CALL USER/fact
+    (i64 46) (i32 1)  ;; DUMP
+    (i64 0) (i32 27)  ;; EXIT
   )
-  (elem (i32.const 257) $_fact)
+
+  ;; pointers to user functions
+  (data (i32.const 100)
+    (i32 10000)  ;; USER/fact (-1)
+    (i32 10072)  ;; USER/_fact_ (-2)
+  )
 
   ;; THE PROGRAM
 
-  (func $main (export "_start")
-    (call $push (i64.const 20))
-    call $_fact
-    call $DUMP
+  ;; Runs "bytecode" from the queue
+  ;; Starts at $qp
+  ;; until it hits an exit instruction
+  (func $run (param $qp i32)
+    (local $op i32)
+    (local $val i64)
+
+    (block $run_block
+      (loop $run_loop
+
+        (call $qget (local.get $qp))
+        (local.set $op)
+        (local.set $val)
+
+        (i32.eq (local.get $op) (i32.const 27)) ;; End of Program
+        (i32.eq (local.get $op) (i32.const 59)) ;; End of Function Block
+        i32.or
+        br_if $run_block
+
+        (local.set $qp (i32.add (local.get $qp) (global.get $qsize)))
+        ;; (global.set $qp (local.get $qp))
+
+        ;; fast path for call
+        (i32.eq (local.get $op) (i32.const 1))
+        if
+          local.get $val
+          i32.wrap_i64
+          call $call
+          br $run_loop
+        end
+
+        (local.get $val)
+        call $push
+
+        ;; fast path for push
+        (i32.eq (local.get $op) (i32.const 0))
+        br_if $run_loop
+
+        (local.get $op)
+        call $call
+
+        br $run_loop
+      )
+    )
   )
 
-  ;; (func $main (export "_start")
-  ;;   (call $push (i64.const 20))
-  ;;   (call $call (i32.const 257))
-  ;;   (call $call (i32.const 46))
-  ;; )
+  (func $main (export "_start")
+    (global.set $qp (i32.const 10144))
+
+    (global.get $qp)
+    (call $run)
+  )
 )

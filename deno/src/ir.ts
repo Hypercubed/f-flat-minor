@@ -122,6 +122,17 @@ export function printLowLevelIr(ir: Array<IrInstruction>) {
   });
 }
 
+export function printDecimalCode(ir: Array<IrInstruction>) {
+  const bc = ir.map(i => {
+    const o = i.op === IROp.call ? OpCodes.CALL : OpCodes.NOP;
+    const v = i.value;
+ 
+    return `${v} ${o}`;
+  });
+
+  console.log(bc.join(' '));
+}
+
 export function bigCodeToIr(bc: Array<bigint>): Array<IrInstruction> {
   const ir: Array<IrInstruction> = [];
   let ip = 0;

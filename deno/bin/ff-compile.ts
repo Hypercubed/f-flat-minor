@@ -7,11 +7,13 @@ import { Arguments } from "https://deno.land/x/yargs@v17.5.1-deno/deno-types.ts"
 import { base64ToArrayBuffer, dumpByteArray } from "../src/dump.ts";
 
 import { readStdin } from "../src/read.ts";
-import { disassembleIr, printHighLevelIr, printLowLevelIr } from "../src/ir.ts";
+import { disassembleIr, printByteCode, printDecimalCode, printHighLevelIr, printLowLevelIr } from "../src/ir.ts";
 import { Compiler } from "../src/compiler.ts";
 import { HEADER } from "../src/constants.ts";
 import { Optimizer } from "../src/optimizer.ts";
 import { Preprocessor } from "../src/preprocess.ts";
+import { normalize } from "https://deno.land/std@0.57.0/path/posix.ts";
+import { dec2hex } from "../src/strings.ts";
 
 export function run(argv: Arguments) {
   const textEncoder = new TextEncoder();
@@ -56,7 +58,7 @@ export function run(argv: Arguments) {
   if (argv.hlir) {
     printHighLevelIr(ir);
     Deno.exit();
-  }  
+  }
 
   if (argv.opt) {
     const optimizer = new Optimizer();
@@ -82,7 +84,20 @@ export function run(argv: Arguments) {
     Deno.exit();
   }
 
+  if (argv.dc) {
+    printDecimalCode(ir);
+    Deno.exit();
+  }
+  
   const base64Encoded = Compiler.compileToBase64(ir);
+
+  if (argv.bc) {
+    const byteCode = base64ToArrayBuffer(base64Encoded);
+    const s = [...byteCode].map(decimalToHexString).join(' ');
+    console.log(s);
+    Deno.exit();
+  }
+
 
   if (argv.dump) {
     const byteCode = base64ToArrayBuffer(base64Encoded);
@@ -100,4 +115,13 @@ if (import.meta.main) {
   const argv = yargs(Deno.args).argv;
   argv.file = argv._[0] || "-";
   run(argv);
+}
+
+function decimalToHexString(n: number) {
+  const s = dec2hex(n);
+  if (s.length % 2 == 1) {
+    return '0' + s;
+  }
+
+  return s;
 }

@@ -62,7 +62,6 @@ function setup(): void {
   });
 
   defineCore('eval', () => {
-    ;
     callOp(pop());
   });
 
