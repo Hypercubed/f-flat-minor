@@ -55,7 +55,7 @@
   )
 
   ;; THE DICTIONARY
-  (global $dict_pointer (mut i32) (i32.const 1000))  ;; Dictionary pointer
+  (global $dict_pointer (mut i32) (i32.const 10000))  ;; Dictionary pointer
   (global $def_pointer (mut i32) (i32.const 100))  ;; Definition pointer
 
   ;; Converts a definition id to a location in the def pointer
