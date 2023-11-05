@@ -16,10 +16,10 @@
     (i32.store (i32.const 4) (i32.const 1))  ;; iov.iov_len - The length of the string
     
     (call $fd_write
-        (i32.const 1) ;; file_descriptor - 1 for stdout
-        (i32.const 0) ;; *iovs - The pointer to the iov array, which is stored at memory location 0
-        (i32.const 1) ;; iovs_len - We're printing 1 string stored in an iov - so one.
-        (i32.const 8) ;; nwritten - A place in memory to store the number of bytes written
+      (i32.const 1) ;; file_descriptor - 1 for stdout
+      (i32.const 0) ;; *iovs - The pointer to the iov array, which is stored at memory location 0
+      (i32.const 1) ;; iovs_len - We're printing 1 string stored in an iov - so one.
+      (i32.const 8) ;; nwritten - A place in memory to store the number of bytes written
     )
 
     drop
