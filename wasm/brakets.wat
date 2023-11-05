@@ -8,6 +8,8 @@
   ;; $itoa is relative to this memory.
   (memory (export "memory") 1)
 
+  (data (i32.const 20) "hello world\n")
+
   ;; emits a single character to stdout
   (func $emit (param $a i32)
     (i32.store (i32.const 8) (local.get $a))
