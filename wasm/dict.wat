@@ -533,6 +533,14 @@
     (call $CALL (global.get $WHEN))
     (call $CALL (global.get $DEF))
 
+    (call $PUSH (i64.const -3))
+    (call $CALL (global.get $MARK))
+    (call $PUSH (i64.const 1))
+    (call $PUSH (i64.const 2))
+    (call $PUSH (i64.const 3))
+    (call $CALL (global.get $DEF))
+
+
     (call $PUSH (i64.const 20))
     (call $CALL (i32.const -1)) ;; FACT
     (call $CALL (global.get $DUMP))
