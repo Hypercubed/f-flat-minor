@@ -1,22 +1,39 @@
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+;; f-flat-minor (WASM)
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+
 (module
+  ;; EXTERNAL FUNCTIONS
+
   ;; Import the required fd_write WASI function which will write the given io vectors to stdout
   ;; The function signature for fd_write is:
   ;; (File Descriptor, *iovs, iovs_len, nwritten) -> Returns number of bytes written
   (import "wasi_unstable" "fd_write" (func $fd_write (param i32 i32 i32 i32) (result i32)))
 
-  ;; Declare linear memory and export it to host. The offset returned by
-  ;; $itoa is relative to this memory.
-  (memory (export "memory") 1)
+  ;; MEMORY
 
-  ;; ERRORS
+  ;; Declare linear memory and export it to host.
+  (memory (export "memory") 0x640)
 
-  (data (i32.const 20) (i8 9) "FF Error:")
+  ;; **** MEMORY LAYOUT ****
+  ;; 0 - 8 - string pointers for io vectors
+  ;; 100 - String Constants
+  ;; 1000 - Definition Base
+  ;; 10000 - Dictionary Base
+  ;; 30000 - Stack Base
 
-  (data (i32.const 30) (i8 15) "Stack underflow")
-  (global $underflowError i32 (i32.const 30))
+  ;; STRINGS
 
-  (data (i32.const 46) (i8 23) "Cannot nest definitions")
-  (global $nestError i32 (i32.const 46))
+  (data (i32.const 120) (i8 9) "FF Error:")
+
+  (data (i32.const 130) (i8 15) "Stack underflow")
+  (global $underflowError i32 (i32.const 130))
+
+  (data (i32.const 146) (i8 23) "Cannot nest definitions")
+  (global $nestError i32 (i32.const 146))
+
+  (data (i32.const 170) (i8 23) "Undefined function call")
+  (global $undefinedFunction i32 (i32.const 170))
 
   (func $prints (param $base i32)
         ;; Creating a new io vector within linear memory
@@ -33,7 +50,7 @@
   )
 
   (func $logError (param $base i32)
-    (call $prints (i32.const 20))
+    (call $prints (i32.const 120))
     (call $emit (i32.const 32))  ;; space
     (call $prints (local.get $base))
     (call $emit (i32.const 10))  ;; lf
@@ -74,21 +91,21 @@
     (call $emit)  ;; emit digit char
   )
 
-  ;; (func $print_i32_u (param $num i32)
-  ;;   (local $digit i32)
-  ;;   (local $dchar i32)
+  (func $print_i32_u (param $num i32)
+    (local $digit i32)
+    (local $dchar i32)
 
-  ;;   (i32.rem_u (local.get $num) (i32.const 10))  ;; get lowest digit
-  ;;   (i32.add (i32.const 48))  ;; convert to ascii
+    (i32.rem_u (local.get $num) (i32.const 10))  ;; get lowest digit
+    (i32.add (i32.const 48))  ;; convert to ascii
  
-  ;;   (local.set $num (i32.div_u (local.get $num) (i32.const 10)))  ;; get rid of lowest digit
-  ;;   (i32.ne (local.get $num) (i32.const 0))  ;; check if we're done
-  ;;   if
-  ;;     (call $print_i32_u (local.get $num))
-  ;;   end
+    (local.set $num (i32.div_u (local.get $num) (i32.const 10)))  ;; get rid of lowest digit
+    (i32.ne (local.get $num) (i32.const 0))  ;; check if we're done
+    if
+      (call $print_i32_u (local.get $num))
+    end
 
-  ;;   (call $emit)  ;; emit digit char
-  ;; )
+    (call $emit)  ;; emit digit char
+  )
 
   ;; Print signed i64 to stdout
   (func $print (param $num i64)
@@ -105,15 +122,15 @@
   ;;   (call $emit (i32.const 10))  ;; newline
   ;; )
 
-  ;; (func $print_i32_s (param $num i32)
-  ;;   (i32.lt_s (local.get $num) (i32.const 0)) 
-  ;;   if
-  ;;     (call $emit (i32.const 45))  ;; -
-  ;;     (local.set $num (i32.sub (i32.const 0) (local.get $num)))  ;; make positive
-  ;;   end
+  (func $print_i32_s (param $num i32)
+    (i32.lt_s (local.get $num) (i32.const 0)) 
+    if
+      (call $emit (i32.const 45))  ;; -
+      (local.set $num (i32.sub (i32.const 0) (local.get $num)))  ;; make positive
+    end
 
-  ;;   (call $print_i32_u (local.get $num))
-  ;; )
+    (call $print_i32_u (local.get $num))
+  )
 
   ;; THE DICTIONARY
   (global $dict_pointer (mut i32) (i32.const 10000))  ;; Dictionary pointer
@@ -173,7 +190,17 @@
     (i32.lt_s (local.get $n) (i32.const 0))
     if
       (call $lookupRuntimeDef (local.get $n))
-      (call $run (i32.load offset=1000))
+
+      (i32.load offset=1000)
+      (local.tee $n)
+      (i32.eqz)
+      if
+        (call $logError (global.get $undefinedFunction))
+        unreachable
+      end
+
+
+      (call $run (local.get $n))
       return
     end
 
@@ -355,6 +382,22 @@
   (elem (i32.const 0) $NOP)
   (global $NOP i32 (i32.const 0))
 
+  (func $EVAL
+    call $pop
+    i32.wrap_i64
+    call $call
+  )
+  (elem (i32.const 1) $EVAL)
+  (global $EVAL i32 (i32.const 1))
+
+  (func $PUTC
+    call $pop
+    i32.wrap_i64
+    call $emit
+  )
+  (elem (i32.const 2) $PUTC)
+  (global $PUTC i32 (i32.const 2))
+
   (func $ADD
     call $pop
     call $peek
@@ -469,14 +512,6 @@
   (elem (i32.const 36) $SWAP)
   (global $SWAP i32 (i32.const 36))
 
-  (func $EVAL
-    call $pop
-    i32.wrap_i64
-    call $call
-  )
-  (elem (i32.const 1) $EVAL)
-  (global $EVAL i32 (i32.const 1))
-
   (func $WHEN
     (local $a i64)
     
@@ -493,6 +528,22 @@
   )
   (elem (i32.const 63) $WHEN)
   (global $WHEN i32 (i32.const 63))
+
+  (func $DIP
+    (local $op i32)
+    
+    call $pop
+    i32.wrap_i64
+    local.set $op
+
+    call $pop
+
+    local.get $op
+    call $call
+    call $push
+  )
+  (elem (i32.const 30) $DIP)
+  (global $DIP i32 (i32.const 30))
 
   (func $MARK
     (i32.ne (global.get $enqueue) (i32.const 0))
@@ -608,23 +659,57 @@
 
   (func $main (export "_start")
 
-    (call $PUSH (i64.const -2))  ;; FACT
-    (call $CALL (global.get $MARK))
-    (call $CALL (global.get $DUP))
-    (call $PUSH (i64.const 1))
-    (call $CALL (global.get $SUB))
-      (call $CALL (global.get $BRA))
-      (call $CALL (global.get $DUP))
-      (call $PUSH (i64.const 1))
-      (call $CALL (global.get $SUB))
-      (call $CALL (i32.const -2)) ;; FACT
-      (call $CALL (global.get $MUL))
-      (call $CALL (global.get $KET))
-    (call $CALL (global.get $WHEN))
-    (call $CALL (global.get $DEF))
+    (call $PUSH (i64.const -2))       ;; &FACT
+    (call $CALL (global.get $MARK))   ;; :
+    (call $CALL (global.get $DUP))    ;; DUP
+    (call $PUSH (i64.const 1))        ;; 1
+    (call $CALL (global.get $SUB))    ;; SUB
+      (call $CALL (global.get $BRA))  ;; [
+      (call $CALL (global.get $DUP))  ;; DUP
+      (call $PUSH (i64.const 1))      ;; 1
+      (call $CALL (global.get $SUB))  ;; SUB
+      (call $CALL (i32.const -2))     ;; FACT
+      (call $CALL (global.get $MUL))  ;; MUL
+      (call $CALL (global.get $KET))  ;; ]
+    (call $CALL (global.get $WHEN))   ;; ?
+    (call $CALL (global.get $DEF))    ;; ;
 
-    (call $PUSH (i64.const 20))
-    (call $CALL (i32.const -2)) ;; FACT
-    (call $CALL (global.get $DUMP))
+    (call $PUSH (i64.const -3))       ;; &(prints)
+    (call $CALL (global.get $MARK))   ;; :
+    (call $CALL (global.get $DUP))    ;; DUP
+      (call $CALL (global.get $BRA))  ;; [
+      (call $PUSH (i64.const -3))     ;; (prints)
+      (call $CALL (global.get $DIP))  ;; DIP
+      (call $CALL (global.get $PUTC)) ;; PUTC
+      (call $CALL (global.get $KET))  ;; ]
+    (call $CALL (global.get $WHEN))   ;; ?
+    (call $CALL (global.get $DEF))    ;; ;
+
+    (call $PUSH (i64.const -4))       ;; &prints
+    (call $CALL (global.get $MARK))   ;; :
+    (call $CALL (i32.const -3))       ;; (prints)
+    (call $CALL (global.get $DROP))   ;; DROP
+    (call $CALL (global.get $DEF))    ;; ;
+
+    (call $PUSH (i64.const 0))        ;; 0
+    (call $PUSH (i64.const 70))       ;; F
+    (call $PUSH (i64.const 97))       ;; a
+    (call $PUSH (i64.const 99))       ;; c
+    (call $PUSH (i64.const 116))      ;; t
+    (call $PUSH (i64.const 111))      ;; o
+    (call $PUSH (i64.const 114))      ;; r
+    (call $PUSH (i64.const 105))      ;; i
+    (call $PUSH (i64.const 97))       ;; a
+    (call $PUSH (i64.const 108))      ;; l
+    (call $PUSH (i64.const 32))       ;; 32
+    (call $PUSH (i64.const 49))       ;; 1
+    (call $PUSH (i64.const 48))       ;; 0
+    (call $PUSH (i64.const 58))       ;; :
+    (call $PUSH (i64.const 10))       ;; 10
+    (call $CALL (i32.const -4))       ;; prints
+
+    (call $PUSH (i64.const 20))       ;; 20
+    (call $CALL (i32.const -2))       ;; FACT
+    (call $CALL (global.get $DUMP))   ;; .
   )
 )
