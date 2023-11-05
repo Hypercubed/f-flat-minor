@@ -8,7 +8,36 @@
   ;; $itoa is relative to this memory.
   (memory (export "memory") 1)
 
-  (data (i32.const 20) "hello world\n")
+  ;; ERRORS
+
+  (data (i32.const 20) (i8 9) "FF Error:")
+
+  (data (i32.const 30) (i8 15) "Stack underflow")
+  (global $underflowError i32 (i32.const 30))
+
+  (data (i32.const 46) (i8 23) "Cannot nest definitions")
+  (global $nestError i32 (i32.const 46))
+
+  (func $prints (param $base i32)
+        ;; Creating a new io vector within linear memory
+        (i32.store (i32.const 0) (i32.add (i32.const 1) (local.get $base)))  ;; iov.iov_base - This is a pointer to the start of the 'hello world\n' string
+        (i32.store (i32.const 4) (i32.load8_u (local.get $base)))  ;; iov.iov_len - The length of the 'hello world\n' string
+
+        (call $fd_write
+            (i32.const 1) ;; file_descriptor - 1 for stdout
+            (i32.const 0) ;; *iovs - The pointer to the iov array, which is stored at memory location 0
+            (i32.const 1) ;; iovs_len - We're printing 1 string stored in an iov - so one.
+            (i32.const 20) ;; nwritten - A place in memory to store the number of bytes written
+        )
+        drop ;; Discard the number of bytes written from the top of the stack
+  )
+
+  (func $logError (param $base i32)
+    (call $prints (i32.const 20))
+    (call $emit (i32.const 32))  ;; space
+    (call $prints (local.get $base))
+    (call $emit (i32.const 10))  ;; lf
+  )
 
   ;; emits a single character to stdout
   (func $emit (param $a i32)
@@ -88,7 +117,7 @@
 
   ;; THE DICTIONARY
   (global $dict_pointer (mut i32) (i32.const 10000))  ;; Dictionary pointer
-  (global $def_pointer (mut i32) (i32.const 100))  ;; Definition pointer
+  (global $def_pointer (mut i32) (i32.const 1000))  ;; Definition pointer
 
   ;; Converts a definition id to a location in the def pointer
   (func $lookupRuntimeDef (param $n i32) (result i32)
@@ -144,7 +173,7 @@
     (i32.lt_s (local.get $n) (i32.const 0))
     if
       (call $lookupRuntimeDef (local.get $n))
-      (call $run (i32.load offset=100))
+      (call $run (i32.load offset=1000))
       return
     end
 
@@ -231,6 +260,7 @@
 
     (i32.lt_u (global.get $stack_pointer) (i32.const 8))
     if
+      (call $logError (global.get $underflowError))
       unreachable
     end
 
@@ -245,6 +275,7 @@
 
     (i32.lt_u (local.get $n) (i32.const 0))
     if
+      (call $logError (global.get $underflowError))
       unreachable
     end
 
@@ -256,6 +287,7 @@
   (func $poke (param $n i64)
     (i32.lt_u (global.get $stack_pointer) (i32.const 0))
     if
+      (call $logError (global.get $underflowError))
       unreachable
     end
 
@@ -303,9 +335,15 @@
 
       br $break
     ))
-
+    
     (local.tee $i (i32.sub (local.get $i) (i32.const 8)))
     (global.set $stack_pointer)
+
+    (i32.lt_u (global.get $stack_pointer) (i32.const 0))
+    if
+      (call $logError (global.get $underflowError))
+      unreachable
+    end
   )
 
   ;; INTERNAL CORE DEFINITIONS
@@ -459,6 +497,7 @@
   (func $MARK
     (i32.ne (global.get $enqueue) (i32.const 0))
     if
+      (call $logError (global.get $nestError))
       unreachable
     end
 
@@ -491,7 +530,7 @@
     (i32.wrap_i64 (call $pop)) ;; Get user def id
     call $lookupRuntimeDef  ;; get location of dictionary pointer
     local.get $dst     ;; get location of dictionary
-    (i32.store offset=100)
+    (i32.store offset=1000)
   )
   (elem (i32.const 59) $DEF)
   (global $DEF i32 (i32.const 59))
