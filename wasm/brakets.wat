@@ -89,7 +89,7 @@
   (global $def_pointer (mut i32) (i32.const 100))  ;; Definition pointer
 
   ;; Converts a definition id to a location in the def pointer
-  (func $get_def_loc (param $n i32) (result i32)
+  (func $lookupRuntimeDef (param $n i32) (result i32)
     local.get $n
     i32.const 1
     i32.add
@@ -106,21 +106,114 @@
     i32.wrap_i64
   )
 
+  ;; move the stack, starting at the mark on the stack to end od stack, to the dictionary
+  (func $moveStackToDict
+    (param $dst i32)
+    (local $src i32)
+    (local $size i32)
+    (local $sp i32)
+
+    (global.get $stack_pointer)
+    local.set $sp
+
+    call $backtrackToLastMarkOnStack
+
+    (i32.add (i32.const 16) (global.get $stack_pointer))
+    local.set $src
+
+    (i32.sub (local.get $sp) (local.get $src))
+    local.set $size
+
+    (i32.add (local.get $src) (i32.const 30000))
+    (local.set $src)
+
+    (memory.copy
+      (local.get $dst)
+      (local.get $src)
+      (local.get $size)
+    )
+
+    (i32.add (local.get $size) (global.get $dict_pointer))
+    (global.set $dict_pointer)
+  )
+
+  (func $call (param $n i32)
+    ;; compile time user definition
+    (i32.lt_s (local.get $n) (i32.const 0))
+    if
+      (call $lookupRuntimeDef (local.get $n))
+      (call $run (i32.load offset=100))
+      return
+    end
+
+    ;; internal definition
+    (i32.le_s (local.get $n) (i32.const 256))
+    if
+      (call_indirect (type $f) (local.get $n))
+      return
+    end
+
+    ;; run time user definition
+    (call $run (local.get $n))
+  )
+
+  ;; Runs "bytecode" from the dictionary
+  ;; Starts at $dict_pointer
+  ;; until it hits an exit instruction
+  (func $run (param $ip i32)
+    (local $op i32)
+    (local $val i64)
+
+    (block $run_block
+      (loop $run_loop
+        (call $dict_get (local.get $ip))
+        local.set $op
+        local.set $val
+
+        (i32.or
+          (i32.eq (local.get $op) (global.get $DEF)) ;; End of Defintion Block
+          (i32.eq (local.get $op) (global.get $KET)) ;; End of Bracket Block
+        )
+        br_if $run_block
+
+        (local.set $ip (i32.add (local.get $ip) (i32.const 16)))  ;; dict pointer size
+
+        ;; fast path for call
+        (i32.eq (local.get $op) (i32.const 1))
+        if
+          (i32.wrap_i64 (local.get $val))
+          call $call
+          br $run_loop
+        end
+
+        (call $push (local.get $val))
+
+        ;; fast path for push
+        (i32.eq (local.get $op) (i32.const 0))
+        br_if $run_loop
+        
+        (call $call (local.get $op))
+
+        br $run_loop
+      )
+    )
+  )
+
   ;; THE STACK
   (global $stack_pointer (mut i32) (i32.const 0))  ;; Stack pointer (offset 30000)
 
-  (func $inc_stack_pointer
+  (func $inc
     (i32.add (global.get $stack_pointer) (i32.const 8))
     global.set $stack_pointer
   )
 
-  (func $dec_stack_pointer
+  (func $dec
     (i32.sub (global.get $stack_pointer) (i32.const 8))
     global.set $stack_pointer
   )
 
   (func $push (param $v i64)
-    call $inc_stack_pointer
+    call $inc
     local.get $v
     call $poke
   )
@@ -128,7 +221,7 @@
   (func $pop
     (result i64)
     call $peek
-    call $dec_stack_pointer
+    call $dec
   )
   
   (func $peek
@@ -178,28 +271,42 @@
     )
   )
 
-  (func $call_user (param $n i32)
-    (call $get_def_loc (local.get $n))
-    (call $run (i32.load offset=100))
+  ;; moves the stack pointer back to previous mark
+  (func $backtrackToLastMarkOnStack
+    (local $i i32)
+    (local $op i32)
+
+    (local.set $i (i32.add (global.get $stack_pointer) (i32.const 8)))
+
+    (block $break (loop $loop
+      (local.tee $i (i32.sub (local.get $i) (i32.const 16)))
+      (i32.le_s (i32.const 0))
+      br_if $break
+
+      (local.get $i)
+      call $peekn
+      (i64.ne (i64.const 1))
+      br_if $loop
+
+      (i32.sub (local.get $i) (i32.const 8))
+      call $peekn
+      i32.wrap_i64
+      local.set $op
+
+      (i32.and
+        (i32.ne (global.get $MARK) (local.get $op))
+        (i32.ne (global.get $BRA) (local.get $op))
+      )
+      br_if $loop
+
+      br $break
+    ))
+
+    (local.tee $i (i32.sub (local.get $i) (i32.const 8)))
+    (global.set $stack_pointer)
   )
 
-  (func $call (param $n i32)
-    (i32.lt_s (local.get $n) (i32.const 0))
-    if
-      (call $call_user (local.get $n))
-      return
-    end
-
-    (i32.le_s (local.get $n) (i32.const 256))
-    if
-      (call_indirect (type $f) (local.get $n))
-      return
-    end
-
-    (call $run (local.get $n))
-  )
-
-  ;; INTERNAL DEFINITIONS
+  ;; INTERNAL CORE DEFINITIONS
 
   (type $f (func))
   (table 256 funcref)
@@ -348,10 +455,10 @@
   (global $WHEN i32 (i32.const 63))
 
   (func $MARK
-    ;; (global.get $enqueue)
-    ;; if
-    ;;   unreachable
-    ;; end
+    (i32.ne (global.get $enqueue) (i32.const 0))
+    if
+      unreachable
+    end
 
     (call $push (i64.extend_i32_s (global.get $MARK)))
     (call $push (i64.const 1))
@@ -361,123 +468,63 @@
   (elem (i32.const 58) $MARK)
   (global $MARK i32 (i32.const 58))
 
-  (func $backtrackToMark
-    (local $i i32)
-
-    (local.set $i (i32.add (global.get $stack_pointer) (i32.const 8)))
-
-    (block $break (loop $loop
-      (local.tee $i (i32.sub (local.get $i) (i32.const 16)))
-      (i32.le_s (i32.const 0))
-      br_if $break
-
-      (local.get $i)
-      call $peekn
-      (i64.ne (i64.const 1))
-      br_if $loop
-
-      (i32.sub (local.get $i) (i32.const 8))
-      call $peekn
-      i32.wrap_i64
-      (i32.ne (global.get $MARK))
-      br_if $loop
-
-      br $break
-    ))
-
-    (local.tee $i (i32.sub (local.get $i) (i32.const 8)))
-    (global.set $stack_pointer)
-  )
-
   (func $DEF
-    (local $src i32)
-    (local $size i32)
     (local $dst i32)
-    (local $sp i32)
 
-    (global.get $enqueue)
+    (i32.eq (global.get $enqueue) (i32.const 0))
     if
-      (call $push (i64.extend_i32_s (global.get $DEF)))
-      (call $push (i64.extend_i32_s (global.get $DEF)))
-
-      (global.get $stack_pointer)
-      local.set $sp
-
-      call $backtrackToMark
-
-      (i32.add (i32.const 16) (global.get $stack_pointer))
-      local.set $src
-
-      (i32.sub (local.get $sp) (local.get $src))
-      local.set $size
-
-
-      (global.get $dict_pointer)
-      (local.set $dst)
-
-      (i32.add (local.get $src) (i32.const 30000))
-      (local.set $src)
-
-      (memory.copy
-        (local.get $dst)
-        (local.get $src)
-        (local.get $size)
-      )
-
-      (i32.wrap_i64 (call $pop)) ;; Get user def id
-      call $get_def_loc  ;; get location of definition
-      local.get $dst     ;; get location of dictionary
-      (i32.store offset=100)
-
-      (i32.add (local.get $size) (global.get $dict_pointer))
-      (global.set $dict_pointer)
-
-      (global.set $enqueue (i32.sub (global.get $enqueue) (i32.const 1)))
-    else
       unreachable
     end
+
+    (call $push (i64.extend_i32_s (global.get $DEF)))
+    (call $push (i64.extend_i32_s (global.get $DEF)))
+
+    (global.get $dict_pointer)
+    (local.tee $dst)
+
+    call $moveStackToDict
+
+    (global.set $enqueue (i32.sub (global.get $enqueue) (i32.const 1)))
+
+    (i32.wrap_i64 (call $pop)) ;; Get user def id
+    call $lookupRuntimeDef  ;; get location of dictionary pointer
+    local.get $dst     ;; get location of dictionary
+    (i32.store offset=100)
   )
   (elem (i32.const 59) $DEF)
   (global $DEF i32 (i32.const 59))
 
-  ;; Runs "bytecode" from the dictionary
-  ;; Starts at $dict_pointer
-  ;; until it hits an exit instruction
-  (func $run (param $ip i32)
-    (local $op i32)
-    (local $val i64)
+  (func $BRA
+    (call $push (i64.extend_i32_s (global.get $BRA)))
+    (call $push (i64.const 1))
 
-    (block $run_block
-      (loop $run_loop
-        (call $dict_get (local.get $ip))
-        local.set $op
-        local.set $val
-
-        (i32.eq (local.get $op) (global.get $DEF)) ;; End of Function Block
-        br_if $run_block
-
-        (local.set $ip (i32.add (local.get $ip) (i32.const 16)))  ;; dict pointer size
-
-        ;; fast path for call
-        (i32.eq (local.get $op) (i32.const 1))
-        if
-          (i32.wrap_i64 (local.get $val))
-          call $call
-          br $run_loop
-        end
-
-        (call $push (local.get $val))
-
-        ;; fast path for push
-        (i32.eq (local.get $op) (i32.const 0))
-        br_if $run_loop
-        
-        (call $call (local.get $op))
-
-        br $run_loop
-      )
-    )
+    (global.set $enqueue (i32.add (global.get $enqueue) (i32.const 1)))
   )
+  (elem (i32.const 91) $BRA)
+  (global $BRA i32 (i32.const 91))
+
+  (func $KET
+    (local $dst i32)
+
+    (i32.eq (global.get $enqueue) (i32.const 0))
+    if
+      unreachable
+    end
+
+    (call $push (i64.extend_i32_s (global.get $KET)))
+    (call $push (i64.extend_i32_s (global.get $KET)))
+
+    (global.get $dict_pointer)
+    (local.tee $dst)
+
+    call $moveStackToDict
+
+    (global.set $enqueue (i32.sub (global.get $enqueue) (i32.const 1)))
+
+    (call $PUSH (i64.extend_i32_u (local.get $dst))) ;; push location of dictionary entry
+  )
+  (elem (i32.const 93) $KET)
+  (global $KET i32 (i32.const 93))
 
   ;; controls if we're writing to the queue or running in the stack
   (global $enqueue (mut i32) (i32.const 0))
@@ -490,7 +537,12 @@
         (i32.ne (local.get $n) (global.get $MARK))
         (i32.ne (local.get $n) (global.get $DEF))
       )
-      (global.get $enqueue)
+      (i32.and
+        (i32.ne (local.get $n) (global.get $BRA))
+        (i32.ne (local.get $n) (global.get $KET))
+      )
+      i32.and
+      (i32.ne (global.get $enqueue) (i32.const 0))
     )
     if
       (call $push (i64.extend_i32_s (local.get $n)))
@@ -502,7 +554,7 @@
 
   (func $PUSH (export "PUSH")
     (param $n i64)
-    global.get $enqueue
+    (i32.ne (global.get $enqueue) (i32.const 0))
     if
       (call $push (local.get $n))
       (call $push (i64.const 0))
@@ -515,21 +567,18 @@
 
   (func $main (export "_start")
 
-    (call $PUSH (i64.const -1))  ;; _FACT_
-    (call $CALL (global.get $MARK))
-    (call $CALL (global.get $DUP))
-    (call $PUSH (i64.const 1))
-    (call $CALL (global.get $SUB))
-    (call $CALL (i32.const -2)) ;; FACT
-    (call $CALL (global.get $MUL))
-    (call $CALL (global.get $DEF))
-
     (call $PUSH (i64.const -2))  ;; FACT
     (call $CALL (global.get $MARK))
     (call $CALL (global.get $DUP))
     (call $PUSH (i64.const 1))
     (call $CALL (global.get $SUB))
-    (call $PUSH (i64.const -1))  ;; [_FACT_]
+      (call $CALL (global.get $BRA))
+      (call $CALL (global.get $DUP))
+      (call $PUSH (i64.const 1))
+      (call $CALL (global.get $SUB))
+      (call $CALL (i32.const -2)) ;; FACT
+      (call $CALL (global.get $MUL))
+      (call $CALL (global.get $KET))
     (call $CALL (global.get $WHEN))
     (call $CALL (global.get $DEF))
 
