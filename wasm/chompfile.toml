@@ -2,8 +2,17 @@ version = 0.1
 default-task = 'build'
 
 [[task]]
+name = 'example'
+deps = ['interpret:example']
+
+[[task]]
 name = 'interpret'
-deps = ['interpret:stack']
+deps = [
+  'build:interpret'
+]
+run = '''
+  node --experimental-modules --experimental-wasm-modules ./interpret.js
+'''
 
 [[task]]
 name = 'interpret:#'
@@ -12,19 +21,19 @@ run = 'wasmtime $DEP'
 
 [[task]]
 name = 'build'
-deps = ['build:stack']
+deps = ['build:example']
 
 [[task]]
 name = 'build:#'
 target = './build/#.wasm'
 deps = ['./#.wat']
 run = '''
-  wat2wasm $DEP -o $TARGET
+  wat2wasm $DEP -o $TARGET --enable-bulk-memory --enable-multi-value
 '''
 
 [[task]]
 name = 'execute'
-deps = ['execute:stack']
+deps = ['execute:example']
 
 [[task]]
 name = 'execute:#'

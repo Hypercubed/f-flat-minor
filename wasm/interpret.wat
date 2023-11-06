@@ -24,15 +24,15 @@
 
   ;; STRINGS
 
-  (data (i32.const 120) (i8 9) "FF Error:")
+  (data (i32.const 120) "\09" "FF Error:")
 
-  (data (i32.const 130) (i8 15) "Stack underflow")
+  (data (i32.const 130) "\0F" "Stack underflow")
   (global $underflowError i32 (i32.const 130))
 
-  (data (i32.const 146) (i8 23) "Cannot nest definitions")
+  (data (i32.const 146) "\17" "Cannot nest definitions")
   (global $nestError i32 (i32.const 146))
 
-  (data (i32.const 170) (i8 23) "Undefined function call")
+  (data (i32.const 170) "\17" "Undefined function call")
   (global $undefinedFunction i32 (i32.const 170))
 
   (func $prints (param $base i32)
@@ -292,7 +292,7 @@
     end
 
     (i64.load offset=29992
-      global.get $stack_pointer
+      (global.get $stack_pointer)
     ) ;; Top of stack - 8
   )
 
@@ -319,8 +319,8 @@
     end
 
     (i64.store offset=29992 ;; Top of stack - 8
-      global.get $stack_pointer
-      local.get $n
+      (global.get $stack_pointer)
+      (local.get $n)
     )
   )
 
@@ -633,7 +633,7 @@
         (i32.ne (local.get $n) (global.get $BRA))
         (i32.ne (local.get $n) (global.get $KET))
       )
-      i32.and
+      (i32.and)
       (i32.ne (global.get $enqueue) (i32.const 0))
     )
     if
@@ -653,63 +653,5 @@
     else
       (call $push (local.get $n))
     end
-  )
-
-  ;; THE PROGRAM
-
-  (func $main (export "_start")
-
-    (call $PUSH (i64.const -2))       ;; &FACT
-    (call $CALL (global.get $MARK))   ;; :
-    (call $CALL (global.get $DUP))    ;; DUP
-    (call $PUSH (i64.const 1))        ;; 1
-    (call $CALL (global.get $SUB))    ;; SUB
-      (call $CALL (global.get $BRA))  ;; [
-      (call $CALL (global.get $DUP))  ;; DUP
-      (call $PUSH (i64.const 1))      ;; 1
-      (call $CALL (global.get $SUB))  ;; SUB
-      (call $CALL (i32.const -2))     ;; FACT
-      (call $CALL (global.get $MUL))  ;; MUL
-      (call $CALL (global.get $KET))  ;; ]
-    (call $CALL (global.get $WHEN))   ;; ?
-    (call $CALL (global.get $DEF))    ;; ;
-
-    (call $PUSH (i64.const -3))       ;; &(prints)
-    (call $CALL (global.get $MARK))   ;; :
-    (call $CALL (global.get $DUP))    ;; DUP
-      (call $CALL (global.get $BRA))  ;; [
-      (call $PUSH (i64.const -3))     ;; (prints)
-      (call $CALL (global.get $DIP))  ;; DIP
-      (call $CALL (global.get $PUTC)) ;; PUTC
-      (call $CALL (global.get $KET))  ;; ]
-    (call $CALL (global.get $WHEN))   ;; ?
-    (call $CALL (global.get $DEF))    ;; ;
-
-    (call $PUSH (i64.const -4))       ;; &prints
-    (call $CALL (global.get $MARK))   ;; :
-    (call $CALL (i32.const -3))       ;; (prints)
-    (call $CALL (global.get $DROP))   ;; DROP
-    (call $CALL (global.get $DEF))    ;; ;
-
-    (call $PUSH (i64.const 0))        ;; 0
-    (call $PUSH (i64.const 70))       ;; F
-    (call $PUSH (i64.const 97))       ;; a
-    (call $PUSH (i64.const 99))       ;; c
-    (call $PUSH (i64.const 116))      ;; t
-    (call $PUSH (i64.const 111))      ;; o
-    (call $PUSH (i64.const 114))      ;; r
-    (call $PUSH (i64.const 105))      ;; i
-    (call $PUSH (i64.const 97))       ;; a
-    (call $PUSH (i64.const 108))      ;; l
-    (call $PUSH (i64.const 32))       ;; 32
-    (call $PUSH (i64.const 49))       ;; 1
-    (call $PUSH (i64.const 48))       ;; 0
-    (call $PUSH (i64.const 58))       ;; :
-    (call $PUSH (i64.const 10))       ;; 10
-    (call $CALL (i32.const -4))       ;; prints
-
-    (call $PUSH (i64.const 20))       ;; 20
-    (call $CALL (i32.const -2))       ;; FACT
-    (call $CALL (global.get $DUMP))   ;; .
   )
 )
