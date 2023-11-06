@@ -1,0 +1,5 @@
+/* factorial */
+
+fact: dup 1 - [ dup 1 - fact * ] ? ;
+
+20 fact .

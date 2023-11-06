@@ -1,14 +1,14 @@
 const fs = require('fs');
 const WASI = require('wasi');
 
-const wasmBuffer = fs.readFileSync('./interpret.wasm');
+const wasmBuffer = fs.readFileSync('./build/interpret.wasm');
 
 const mod = new WebAssembly.Module(wasmBuffer);
 
 const wasi = new WASI({});
 
 const inst = new WebAssembly.Instance(mod, {
-  wasi_unstable: wasi.exports,
+  wasi_unstable: wasi.exports
 });
 wasi.setMemory(inst.exports.memory);
 
@@ -35,6 +35,24 @@ const Op = {
   BRA: "[".charCodeAt(0),
   KET: "]".charCodeAt(0)
 }
+
+// PUSH   -1         ; FACT
+// CALL   58         ; :
+// CALL   33         ; DUP
+// PUSH   1
+// CALL   45         ; -
+// CALL   91         ; [
+// CALL   33         ; DUP
+// PUSH   1
+// CALL   45         ; -
+// CALL   -1         ; FACT
+// CALL   42         ; *
+// CALL   93         ; ]
+// CALL   63         ; ?
+// CALL   59         ; ;
+// PUSH   20
+// CALL   -1         ; FACT
+// CALL   46         ; .
 
 PUSH(-1n);
 CALL(Op.MARK);
