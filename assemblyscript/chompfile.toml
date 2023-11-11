@@ -1,0 +1,29 @@
+version = 0.1
+default-task = 'build'
+
+[[task]]
+name = 'build'
+deps = ['build:index']
+
+[[task]]
+name = 'build:#'
+target = './build/#.wasm'
+deps = ['./assembly/#.ts']
+run = '''
+  asc $DEP --target $MATCH
+'''
+
+[[task]]
+name = 'execute'
+deps = ['build:index', 'execute:index']
+
+[[task]]
+name = 'execute:#'
+dep = './build/#.wasm'
+run = 'wasmtime $DEP'
+
+[[task]]
+name = 'clean'
+run = '''
+  rm -rf ./build
+'''

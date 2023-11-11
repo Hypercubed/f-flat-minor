@@ -11,11 +11,11 @@ NC = '\033[0m'
 GRN = '\033[0;32m'
 
 [[task]]
-name = 'build:##'
-target = './build/##'
+name = 'build:#'
+target = './build/#'
 deps = [
-  './bin/ff-##.ts',
-  './src/**/*.ts',
+  './bin/ff-#.ts',
+  './src/**/*.ts'
 ]
 run = '''
   deno compile --unstable --allow-env --allow-read -o $TARGET $DEP

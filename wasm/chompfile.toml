@@ -28,7 +28,7 @@ name = 'build:#'
 target = './build/#.wasm'
 deps = ['./#.wat']
 run = '''
-  wat2wasm $DEP -o $TARGET --enable-bulk-memory --enable-multi-value
+  wat2wasm $DEP -o $TARGET
 '''
 
 [[task]]

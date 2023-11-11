@@ -313,9 +313,9 @@ export class Engine {
 
     this.defineSystem(() => {
       const input = new Uint8Array(1);
-      Deno.setRaw(0, true);
+      Deno.stdin.setRaw(true);
       Deno.stdin.readSync(input);
-      Deno.setRaw(0, false);
+      Deno.stdin.setRaw(false);
       this.push(BigInt(input[0]));
     }, OpCodes.GETC);
 

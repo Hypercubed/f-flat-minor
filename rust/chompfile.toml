@@ -18,6 +18,7 @@ name = 'build:#'
 dep = './#.rs'
 run = '''
   cargo build --release --bin $MATCH
+  mkdir -p ./build/
   cp ./target/release/$MATCH ./build/$MATCH
 '''
 

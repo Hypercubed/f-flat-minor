@@ -11,15 +11,15 @@ BLUE = '\033[0;34m'
 CHECK = 'printf "  ${GRN}OK${NC} " || printf "  ${RED}FAIL${NC} "'
 
 [[task]]
-name = 'build:##'
-target = './build/##'
+name = 'build:#'
+target = './build/#'
 deps = [
-    './cmd/##',
+    './cmd/#',
     './cmd/**/*.go',
     './src/**/*.go',
 ]
 run = '''
-  go build -o $TARGET $DEP
+  go build -o ./$TARGET ./$DEP
 '''
 
 [[task]]

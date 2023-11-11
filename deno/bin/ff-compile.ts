@@ -7,7 +7,7 @@ import { Arguments } from "https://deno.land/x/yargs@v17.5.1-deno/deno-types.ts"
 import { base64ToArrayBuffer, dumpByteArray } from "../src/dump.ts";
 
 import { readStdin } from "../src/read.ts";
-import { disassembleIr, printByteCode, printDecimalCode, printHighLevelIr, printLowLevelIr } from "../src/ir.ts";
+import { disassembleIr, printDecimalCode, printHighLevelIr, printLowLevelIr } from "../src/ir.ts";
 import { Compiler } from "../src/compiler.ts";
 import { HEADER } from "../src/constants.ts";
 import { Optimizer } from "../src/optimizer.ts";
