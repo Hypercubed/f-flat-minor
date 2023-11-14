@@ -2,24 +2,16 @@ version = 0.1
 default-task = 'build'
 
 [env]
-GPP_U = '"" "" "(" "," ")" "(" ")" "#" ""'
+GPP_U = '"#" "" "(" "," ")" "(" ")" "#" ""'
 GPP_M = '"#" "\n" " " " " "\n" "(" ")"'
+GPP_S = '"\"" "\"" ";;"'
 
 [[task]]
 name = 'example'
-deps = ['interpret:example']
+deps = ['execute:example']
 
 [[task]]
-name = 'interpret'
-deps = [
-  'build:interpret'
-]
-run = '''
-  node --experimental-modules --experimental-wasm-modules ./interpret.js
-'''
-
-[[task]]
-name = 'interpret:#'
+name = 'run:#'
 dep = './#.wat'
 run = '''
 cat $DEP | eval gpp -U ${GPP_U} -M ${GPP_M} | wasmtime -
@@ -27,12 +19,36 @@ cat $DEP | eval gpp -U ${GPP_U} -M ${GPP_M} | wasmtime -
 
 [[task]]
 name = 'build'
-deps = ['build:example']
+deps = ['build/example.wasm', 'build/interpret.wasm']
 
 [[task]]
-name = 'build:#'
-target = './build/#.wasm'
-deps = ['./#.wat']
+name = 'gpp'
+target = 'build/##.wat'
+dep = '##.wat'
+run = '''
+  cat $DEP | eval gpp -U ${GPP_U} -M ${GPP_M} +s ${GPP_S} > $TARGET
+'''
+
+[[task]]
+name = 'wat2wasm'
+target = 'build/##.wasm'
+dep = 'build/##.wat'
+run = '''
+  wat2wasm $DEP -o $TARGET
+'''
+
+[[task]]
+name = 'wat2wasm:example'
+target = 'build/example.wasm'
+dep = 'build/example.wat'
+run = '''
+  wat2wasm $DEP -o $TARGET
+'''
+
+[[task]]
+name = 'wat2wasm:interpret'
+target = 'build/interpret.wasm'
+dep = 'build/interpret.wat'
 run = '''
   wat2wasm $DEP -o $TARGET
 '''
@@ -42,7 +58,12 @@ name = 'execute'
 deps = ['execute:example']
 
 [[task]]
-name = 'execute:#'
-dep = './build/#.wasm'
+name = 'execute:example'
+deps = ['build/example.wasm']
 run = 'wasmtime $DEP'
+
+[[task]]
+name = 'execute:interpret'
+deps = ['build/interpret.wasm']
+run = 'node --experimental-modules --experimental-wasm-modules ./interpret.js'
 
