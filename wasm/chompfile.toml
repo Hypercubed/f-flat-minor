@@ -1,6 +1,10 @@
 version = 0.1
 default-task = 'build'
 
+[env]
+GPP_U = '"" "" "(" "," ")" "(" ")" "#" ""'
+GPP_M = '"#" "\n" " " " " "\n" "(" ")"'
+
 [[task]]
 name = 'example'
 deps = ['interpret:example']
@@ -17,7 +21,9 @@ run = '''
 [[task]]
 name = 'interpret:#'
 dep = './#.wat'
-run = 'wasmtime $DEP'
+run = '''
+cat $DEP | eval gpp -U ${GPP_U} -M ${GPP_M} | wasmtime -
+'''
 
 [[task]]
 name = 'build'
