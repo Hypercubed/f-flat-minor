@@ -1,3 +1,13 @@
+#ifndef HAVE_WASI
+  #include ./wasi.wat
+#endif
+
+#ifndef HAVE_STRINGS
+  #include ./strings.wat
+#endif
+
+#define HAVE_CORE
+
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;; f-flat-minor (WASM)
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
@@ -6,37 +16,12 @@
   #define STACK_ELEMENT_SIZE 8
   #define STACK_OFFSET 29992
   
-  ;; MEMORY
-
-  ;; Declare linear memory and export it to host.
-  (memory (export "memory") 0x640)
-
   ;; **** MEMORY LAYOUT ****
   ;; 0 - 8 - string pointers for io vectors
   ;; 100 - String Constants
   ;; 1000 - Definition Base
   ;; 10000 - Dictionary Base
   ;; 30000 - Stack Base
-
-  ;; STRINGS
-
-  (data (i32.const 120) "\09" "FF Error:")
-  #define FF_ERROR (i32.const 120)
-
-  (data (i32.const 130) "\0F" "Stack underflow")
-  #define UNDERFLOW_ERROR (i32.const 130)
-
-  (data (i32.const 146) "\17" "Cannot nest definitions")
-  #define NEST_ERROR (i32.const 146)
-
-  (data (i32.const 170) "\17" "Undefined function call")
-  #define UNDEFINED_FUNCTION (i32.const 170)
-
-  (func $logError (param $base i32)
-    (call $prints #FF_ERROR)
-    (call $i32.emit (i32.const #CHAR_SPACE))
-    (call $log (local.get $base))
-  )
 
   ;; THE DICTIONARY
   (global $dict_pointer (mut i32) (i32.const 10000))  ;; Dictionary pointer
@@ -101,7 +86,7 @@
       (local.tee $n)
       (i32.eqz)
       if
-        (call $logError #UNDEFINED_FUNCTION)
+        (call $error (i32.const #UNDEFINED_FUNCTION))
         unreachable
       end
 
@@ -144,7 +129,7 @@
 
     (i32.lt_u (global.get $stack_pointer) (i32.const #STACK_ELEMENT_SIZE))
     if
-      (call $logError #UNDERFLOW_ERROR)
+      (call $error (i32.const #UNDERFLOW_ERROR))
       unreachable
     end
 
@@ -159,7 +144,7 @@
 
     (i32.lt_u (local.get $n) (i32.const 0))
     if
-      (call $logError #UNDERFLOW_ERROR)
+      (call $error (i32.const #UNDERFLOW_ERROR))
       unreachable
     end
 
@@ -171,7 +156,7 @@
   (func $poke (param $n i64)
     (i32.lt_u (global.get $stack_pointer) (i32.const 0))
     if
-      (call $logError #UNDERFLOW_ERROR)
+      (call $error (i32.const #UNDERFLOW_ERROR))
       unreachable
     end
 
@@ -368,7 +353,7 @@
   (func $MARK
     (i32.ne (global.get $enqueue) (i32.const 0))
     if
-      (call $logError #NEST_ERROR)
+      (call $error (i32.const #NEST_ERROR))
       unreachable
     end
 
@@ -549,7 +534,7 @@
 
     (i32.lt_u (global.get $stack_pointer) (i32.const 0))
     if
-      (call $logError #UNDERFLOW_ERROR)
+      (call $error (i32.const #UNDERFLOW_ERROR))
       unreachable
     end
   )

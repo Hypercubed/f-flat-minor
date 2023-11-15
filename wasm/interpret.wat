@@ -1,4 +1,5 @@
 (module
-  #include ./include/wasi.wat
   #include ./include/core.wat
+
+  (memory (export "memory") 0x640)
 )

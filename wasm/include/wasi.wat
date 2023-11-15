@@ -1,3 +1,5 @@
+#define HAVE_WASI
+
 #define CHAR_DASH 45
 #define CHAR_ZERO 48
 #define CHAR_SPACE 32
@@ -13,43 +15,28 @@
 ;; Prints a string to stdout
 ;; $base is a pointer to the start of the string
 ;; The string starts with a length byte
-(func $iov.write (param $len i32) (param $prt i32) (result i32)
-  ;; Creating a new io vector within linear memory
-  (i32.store (i32.const 0) (local.get $prt))  ;; iov.iov_base - This is a pointer to the start of the string
-  (i32.store (i32.const 4) (local.get $len))  ;; iov.iov_len - The length of the string
-
+(func $iov.write (param $prt i32)
   (call $fd_write
-      (i32.const 1) ;; file_descriptor - 1 for stdout
-      (i32.const 0) ;; *iovs - The pointer to the iov array, which is stored at memory location 0
-      (i32.const 1) ;; iovs_len - We're printing 1 string stored in an iov - so one.
-      (i32.const 20) ;; nwritten - A place in memory to store the number of bytes written
+    (i32.const 1) ;; file_descriptor - 1 for stdout
+    (local.get $prt) ;; *iovs - The pointer to the iov array, which is stored at memory location 0
+    (i32.const 1) ;; iovs_len - We're printing 1 string stored in an iov - so one.
+    (i32.const 20) ;; nwritten - A place in memory to store the number of bytes written
   )
-)
-
-;; Prints a string to stdout
-;; $base is a pointer to the start of the string
-;; The string starts with a length byte
-(func $prints (param $ptr i32)
-  (i32.load8_u (local.get $ptr))
-  (i32.add (i32.const 1) (local.get $ptr))
-  call $iov.write
   drop
 )
 
-(func $log (param $base i32)
-  (call $prints (local.get $base))
+(func $log (param $prt i32)
+  (call $iov.write (local.get $prt))
   (call $i32.emit (i32.const #CHAR_NEWLINE))  ;; lf
 )
 
 ;; emits a single character to stdout
 (func $i32.emit (param $a i32)
-  (i32.store (i32.const 8) (local.get $a))
+  (i32.store (i32.const 0) (i32.const 8))  ;; iov.iov_base - This is a pointer to the start of the string
+  (i32.store (i32.const 4) (i32.const 1))  ;; iov.iov_len - The length of the string
+  (i32.store (i32.const 8) (local.get $a)) ;; this is the character we want to print
   
-  i32.const 1  ;; iov.iov_len - The length of the string
-  i32.const 8  ;; iov.iov_base - This is a pointer to the start of the string
-
-  call $iov.write
-  drop
+  (call $iov.write (i32.const 0))
 )
 
 ;; Print unsigned i64 to stdout

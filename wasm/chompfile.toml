@@ -7,10 +7,6 @@ GPP_M = '"#" "\n" " " " " "\n" "(" ")"'
 GPP_S = '"\"" "\"" ";;"'
 
 [[task]]
-name = 'example'
-deps = ['execute:example']
-
-[[task]]
 name = 'run:#'
 dep = './#.wat'
 run = '''
@@ -54,16 +50,12 @@ run = '''
 '''
 
 [[task]]
-name = 'execute'
-deps = ['execute:example']
-
-[[task]]
-name = 'execute:example'
+name = 'example'
 deps = ['build/example.wasm']
 run = 'wasmtime $DEP'
 
 [[task]]
-name = 'execute:interpret'
+name = 'interpret'
 deps = ['build/interpret.wasm']
 run = 'node --experimental-modules --experimental-wasm-modules ./interpret.js'
 

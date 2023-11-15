@@ -1,6 +1,7 @@
 (module
-  #include ./include/wasi.wat
   #include ./include/core.wat
+
+  (memory (export "memory") 0x640)
 
   #define PUSH (call $PUSH (i64.const #1))
   #define CALL (call $CALL (i32.const #1))
@@ -9,7 +10,7 @@
 
   (func $main (export "_start")
 
-    ;; #define FACT -2
+    #define FACT -2
     
     #PUSH(#FACT)       ;; &FACT
     #CALL(#OP_MARK)   ;; :
@@ -67,7 +68,5 @@
     #PUSH(20)       ;; 20
     #CALL(#FACT)       ;; FACT
     #CALL(#OP_DUMP)   ;; .
-
-    ;; (call $prints #FF_ERROR)
   )
 )
