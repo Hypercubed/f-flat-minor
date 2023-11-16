@@ -1,61 +1,83 @@
 version = 0.1
 default-task = 'build'
 
+extensions = ['../cmp-extension.js']
+
 [env]
-GPP_U = '"#" "" "(" "," ")" "(" ")" "#" ""'
-GPP_M = '"#" "\n" " " " " "\n" "(" ")"'
-GPP_S = '"\"" "\"" ";;"'
+GPP_U = '-U "#" "" "(" "," ")" "(" ")" "#" ""'
+GPP_M = '-M "#" "\n" " " " " "\n" "(" ")"'
+GPP_S = '+s "\"" "\"" ";;"'
 
 [[task]]
 name = 'run:#'
 dep = './#.wat'
 run = '''
-cat $DEP | eval gpp -U ${GPP_U} -M ${GPP_M} | wasmtime -
+  cat $DEP | eval gpp $GPP_U $GPP_M $GPP_S | wasmtime -
 '''
+
+[[task]]
+name = 'exec:#'
+dep = './#.wat'
+run = '''
+  chomp gpp:$MATCH
+  chomp wat2wasm:./build/$MATCH
+  wasmtime ./build/$MATCH.wasm
+'''
+
+[[task]]
+name = 'test:#'
+dep = '#.wat'
+run = '''
+  cp ${MATCH}.out ./build/test.out
+  cat $DEP | eval gpp $GPP_U $GPP_M $GPP_S | wasmtime -
+'''
+template = 'cmp'
+[task.template-options]
+cmp = './build/test.out'
+
+[[task]]
+name = 'reset:#'
+dep = '#.wat'
+run = '''
+cat $DEP | eval gpp $GPP_U $GPP_M $GPP_S | wasmtime - > ${MATCH}.out
+'''
+
+## Build
 
 [[task]]
 name = 'build'
-deps = ['build/example.wasm', 'build/interpret.wasm']
+deps = [':build:./test/example', 'build:./interpret']
 
 [[task]]
-name = 'gpp'
+name = 'gpp:#'
 target = 'build/##.wat'
 dep = '##.wat'
 run = '''
-  cat $DEP | eval gpp -U ${GPP_U} -M ${GPP_M} +s ${GPP_S} > $TARGET
+  cat $DEP | eval gpp $GPP_U $GPP_M $GPP_S > $TARGET
 '''
 
 [[task]]
-name = 'wat2wasm'
+name = 'wat2wasm:#'
+target = '##.wasm'
+dep = '##.wat'
+run = '''
+  wat2wasm $DEP -o $TARGET
+'''
+
+[[task]]
+name = 'build:#'
 target = 'build/##.wasm'
-dep = 'build/##.wat'
+deps = ['##.wat']
 run = '''
-  wat2wasm $DEP -o $TARGET
-'''
-
-[[task]]
-name = 'wat2wasm:example'
-target = 'build/example.wasm'
-dep = 'build/example.wat'
-run = '''
-  wat2wasm $DEP -o $TARGET
-'''
-
-[[task]]
-name = 'wat2wasm:interpret'
-target = 'build/interpret.wasm'
-dep = 'build/interpret.wat'
-run = '''
-  wat2wasm $DEP -o $TARGET
+  chomp gpp:$MATCH
+  chomp wat2wasm:./build/$MATCH
 '''
 
 [[task]]
 name = 'example'
-deps = ['build/example.wasm']
-run = 'wasmtime $DEP'
+deps = ['run:./test/example']
 
 [[task]]
 name = 'interpret'
 deps = ['build/interpret.wasm']
 run = 'node --experimental-modules --experimental-wasm-modules ./interpret.js'
-

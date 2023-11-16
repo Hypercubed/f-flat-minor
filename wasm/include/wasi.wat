@@ -1,11 +1,15 @@
 #define HAVE_WASI
 
+#define CHAR_NEWLINE 10
+#define CHAR_SPACE 32
+#define CHAR_PLUS 43
 #define CHAR_DASH 45
 #define CHAR_ZERO 48
-#define CHAR_SPACE 32
-#define CHAR_NEWLINE 10
+#define CHAR_EQUAL 61
 #define CHAR_BRA 91
 #define CHAR_KET 93
+#define CHAR_UNDERSCORE 95
+#define CHAR_X 120
 
 ;; Import the required fd_write WASI function which will write the given io vectors to stdout
 ;; The function signature for fd_write is:
@@ -94,4 +98,37 @@
   end
 
   (call $i32.print_u (local.get $num))
+)
+
+(func $i32.print_hex_u (param $num i32)
+  (local $dchar i32)
+
+  (i32.rem_u (local.get $num) (i32.const 16))  ;; get lowest byte
+  (i32.add (i32.const 48))  ;; convert to ascii
+  (local.tee $dchar)
+
+  (i32.gt_u (i32.const 57))  ;; if > 9
+  if
+    (i32.add (local.get $dchar) (i32.const 7))  ;; convert to ascii
+    (local.set $dchar)
+  end
+
+  (local.get $dchar)
+  (local.set $num (i32.div_u (local.get $num) (i32.const 16)))  ;; get rid of lowest digit
+  (i32.ne (local.get $num) (i32.const 0))  ;; check if we're done
+  if
+    (call $i32.print_hex_u (local.get $num))  ;; tail recurse to print next digit
+  end
+
+  (call $i32.emit)  ;; emit digit char
+)
+
+(func $i32.print_hex_s (param $num i32)
+    (i32.lt_s (local.get $num) (i32.const 0)) 
+  if
+    (call $i32.emit (i32.const #CHAR_DASH))
+    (local.set $num (i32.sub (i32.const 0) (local.get $num)))  ;; make positive
+  end
+
+  (call $i32.print_hex_u (local.get $num))
 )
