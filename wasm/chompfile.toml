@@ -31,9 +31,6 @@ run = '''
   cp ${MATCH}.out ./build/test.out
   cat $DEP | eval gpp $GPP_U $GPP_M $GPP_S | wasmtime -
 '''
-template = 'cmp'
-[task.template-options]
-cmp = './build/test.out'
 
 [[task]]
 name = 'reset:#'
@@ -81,3 +78,9 @@ deps = ['run:./test/example']
 name = 'interpret'
 deps = ['build/interpret.wasm']
 run = 'node --experimental-modules --experimental-wasm-modules ./interpret.js'
+
+[[task]]
+name = 'test'
+run = '''
+  bats --tap ./test/test.bats
+'''
