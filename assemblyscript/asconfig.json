@@ -1,13 +1,11 @@
 {
   "targets": {
     "index": {
-      "outFile": "build/index.wasm",
-      "textFile": "build/index.wat",
       "sourceMap": true,
       "optimizeLevel": 3,
-      "shrinkLevel": 0,  
-      "converge": false,
-      "noAssert": false
+      "shrinkLevel": 2,
+      "converge": true,
+      "noAssert": true
     }
   },
   "extends": "./node_modules/@assemblyscript/wasi-shim/asconfig.json"

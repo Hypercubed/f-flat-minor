@@ -7,20 +7,23 @@ deps = ['build:index']
 
 [[task]]
 name = 'build:#'
-target = './build/#.wasm'
-deps = ['./assembly/#.ts']
+targets = ['./build/#.wasm', './build/#.wat']
+deps = ['##.ts']
 run = '''
-  asc $DEP --target $MATCH
+  asc $DEP --target $MATCH --optimize --outFile ./build/$MATCH.wasm --textFile ./build/$MATCH.wat
 '''
 
 [[task]]
-name = 'execute'
-deps = ['build:index', 'execute:index']
+name = 'run:#'
+deps = ['##.ts']
+run = '''
+  chomp build:$MATCH
+  wasmtime ./build/$MATCH.wasm
+'''
 
 [[task]]
-name = 'execute:#'
-dep = './build/#.wasm'
-run = 'wasmtime $DEP'
+name = 'example'
+deps = [':run:src/interp']
 
 [[task]]
 name = 'clean'
