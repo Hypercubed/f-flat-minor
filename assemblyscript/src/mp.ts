@@ -38,31 +38,105 @@ function fromU64(value: u64): MpInt {
   return new MpInt([low32(value), high32(value)]);
 }
 
-class MpInt {
-  constructor(public data: u32[], public neg: boolean = false) {
-    this.data = trim(data);
+function codeToU32(code: u32): u32 {
+  if (code >= 48 && code <= 57) {
+    return <u32>(code - 48);
+  }
+  if (code >= 65 && code <= 90) {
+    return <u32>(code - 55);
+  }
+  if (code >= 97 && code <= 122) {
+    return <u32>(code - 87);
+  }
+  throw new Error(`Invalid digit code ${code}`);
+}
+
+function fromStringU(value: string, base: u32 = 10): MpInt {
+  const len = value.length;
+  let res = MpInt.from(0);
+  if (value === '0') return res;
+  for (let i = 0; i < len; i++) {
+    const code = <u32>value.charCodeAt(i);
+    const val = codeToU32(code);
+    res = res.mul(base).add(val);
+  }
+  return res;
+}
+
+function getBase(value: string): u32 {
+  const first = value.charAt(0);
+  if (first === '0') {
+    if (value.length === 1) return 10;
+
+    const second = value.charCodeAt(1);
+    switch (second) {
+      case 'b'.charCodeAt(0):
+        return 2;
+      case 'o'.charCodeAt(0):
+        return 8;
+      case 'x'.charCodeAt(0):
+        return 16;
+    }
+  }
+  return 10;
+}
+
+function fromString(value: string): MpInt {
+  const neg = value.substr(0, 1) === '-';
+  value = neg ? value.substr(1) : value;
+  const base = getBase(value);
+  value = value.substr(base === 10 ? 0 : 2);
+  const r = fromStringU(value, base);
+  return neg ? r.negate() : r;
+}
+
+export class MpInt {
+  constructor(protected readonly _data: u32[], protected readonly _neg: boolean = false) {
+    this._data = trim(_data);
+    if (_data.length === 1 && _data[0] === 0) {
+      this._neg = false;
+    }
   }
 
-  isNeg(): boolean {
-    return this.neg;
+  get isNeg(): boolean {
+    return this._neg;
+  }
+
+  get size(): i32 {
+    return this._data.length;
   }
 
   abs(): MpInt {
-    return new MpInt(this.data);
+    return new MpInt(this._data);
+  }
+
+  add<T>(_rhs: T): MpInt {
+    const rhs = MpInt.from(_rhs);
+
+    if (this._neg && rhs._neg) {
+      return this._uadd(rhs).negate();
+    }
+
+    if (this._neg) {
+      return rhs._usub(this);
+    }
+
+    if (rhs._neg) {
+      return this._usub(rhs);
+    }
+
+    return this._uadd(rhs);
   }
 
   // unsigned add
-  add<T>(_rhs: T): MpInt {
-    const rhs = MpInt.from(_rhs);
-    const lhs: MpInt = this;
-
-    const len = lhs.data.length > rhs.data.length ? lhs.data.length : rhs.data.length;
+  private _uadd(rhs: MpInt): MpInt {
+    const len = this._data.length > rhs._data.length ? this._data.length : rhs._data.length;
     const result: u32[] = new Array(len);
 
     let carry: u64 = 0;
     for (let i: i32 = 0; i < len; ++i) {
-      const rhs_limb: u64 = rhs.data.length > i ? u64(rhs.data[i]) : 0;
-      const lhs_limb: u64 = lhs.data.length > i ? u64(lhs.data[i]) : 0;
+      const rhs_limb: u64 = rhs._data.length > i ? u64(rhs._data[i]) : 0;
+      const lhs_limb: u64 = this._data.length > i ? u64(this._data[i]) : 0;
 
       const doubleLimb: u64 = carry + rhs_limb + lhs_limb;
       carry = high32(doubleLimb);
@@ -76,51 +150,82 @@ class MpInt {
     return new MpInt(trim(result));
   }
 
-  // unsigned sub
   sub<T>(_rhs: T): MpInt {
     const rhs = MpInt.from(_rhs);
-    let data = rhs.data;
+
+    if (this._neg && rhs._neg) {
+      return this._usub(rhs).negate();
+    }
+
+    if (this._neg) {
+      return this._uadd(rhs).negate();
+    }
+
+    if (rhs._neg) {
+      return this._uadd(rhs);
+    }
+
+    return this._usub(rhs);
+  }
+
+  // unsigned sub
+  private _usub(rhs: MpInt): MpInt {
+    if (this._ucmp(rhs) < 0) {
+      return rhs.__usub(this).negate();
+    }
+    return this.__usub(rhs);
+  }
+
+  // unsigned sub (rhs > lhs)
+  private __usub(rhs: MpInt): MpInt {
+    let data = rhs._data;
 
     data = data.map((v: u32) => ~v);  // ones' complement of rhs
-    const r = this.add(new MpInt(data)).add(1);
-    const d = r.data
+    const r = this._uadd(new MpInt(data))._uadd(MpInt.ONE);
+    const d = r._data
     d.pop();  // remove carry
 
     return new MpInt(trim(d), false);
   }
 
   // signed mul
-  mul<T>(_rhs: T): MpInt {
-    const rhs = MpInt.from(_rhs);
+  mul<T>(rhs: T): MpInt {
+    return this._mul(MpInt.from(rhs));
+  }
+
+  private _mul(rhs: MpInt): MpInt {
     const lhs: MpInt = this;
 
-    const s_lhs = lhs.neg;
-    const s_rhs = rhs.neg;
+    const s_lhs = this._neg;
+    const s_rhs = rhs._neg;
 
-    const q = lhs.data.length;
-    const p = rhs.data.length;
+    const q = this._data.length;
+    const p = rhs._data.length;
     const result: u32[] = new Array(q + p);
 
     for (let i: i32 = 0; i < q; ++i) {
       let carry: u64 = 0;
       for (let j: i32 = 0; j < p; ++j) {
         const k = i + j;
-        const doubleLimb: u64 = carry + u64(lhs.data[i]) * u64(rhs.data[j]) + u64(result[k]);
+        const doubleLimb: u64 = carry + u64(this._data[i]) * u64(rhs._data[j]) + u64(result[k]);
         carry = high32(doubleLimb);
         result[k] = low32(doubleLimb);
       }
       result[i + p] = low32(carry);
     }
 
-    // process.stdout.write(`${result}\n`);
     return new MpInt(trim(result), s_lhs !== s_rhs);
+  }
+
+  negate(): MpInt {
+    return new MpInt(this._data, !this._neg);
   }
 
   toString(): string {
     const result: string[] = [];
 
-    for (let i: i32 = this.data.length - 1; i >= 0; --i) {
-      result.push(u32ToHex(this.data[i]));
+    for (let i: i32 = this._data.length - 1; i >= 0; --i) {
+      result.push(u32ToHex(this._data[i]));
     }
 
     let r = result.join('');
@@ -131,16 +236,39 @@ class MpInt {
 
     r = '0x' + r;
 
-    if (this.neg) {
+    if (this._neg) {
       r = '-' + r;
     }
 
     return r;
   }
 
-  private reduce(): MpInt {
-    this.data = trim(this.data);
-    return this;
+  private cmp<T>(_rhs: T): i32 {
+    const rhs = MpInt.from(_rhs);
+
+    const lhs_s = this._neg;
+    const rhs_s = rhs._neg;
+
+    if (lhs_s !== rhs_s) return lhs_s ? -1 : 1;
+
+    const c = this._ucmp(rhs);
+
+    return lhs_s ? -c : c;
+  }
+
+  private _ucmp(rhs: MpInt): i32 {
+    const lhs_s = this.size;
+    const rhs_s = rhs.size;
+
+    if (lhs_s !== rhs_s) return lhs_s > rhs_s ? 1 : -1;
+    for (let i = lhs_s - 1; i >= 0; i--) {
+      const lhs_v = this._data[i];
+      const rhs_v = rhs._data[i];
+      if (lhs_v != rhs_v) {
+        return lhs_v > rhs_v ? 1 : -1;
+      }
+    }
+    return 0;
   }
 
   static from<T>(val: T): MpInt {
@@ -149,83 +277,16 @@ class MpInt {
     if (val instanceof u32) return fromU32(val as u32);
     if (val instanceof i64) return fromI64(val as i64);
     if (val instanceof u64) return fromU64(val as u64);
+    if (typeof val === 'string') return fromString(val)
 
     throw new TypeError("Unsupported generic type " + nameof<T>(val));
   }
+
+  static ZERO: MpInt = new MpInt([0]);
+  static ONE: MpInt = new MpInt([1]);
 }
 
 function u32ToHex(value: u32): string {
   const r = '00000000' + value.toString(16).toUpperCase();
   return r.substr(r.length - 8);
 }
-
-function testAdd(a: MpInt, b: MpInt): void {
-  const c: MpInt = a.add(b);
-
-  process.stdout.write(`${a} + ${b} = ${c}\n`);
-}
-
-function testSub(a: MpInt, b: MpInt): void {
-  const c: MpInt = a.sub(b);
-
-  process.stdout.write(`${a} - ${b} = ${c}\n`);
-}
-
-function testMul(a: MpInt, b: MpInt): void {
-  const c: MpInt = a.mul(b);
-
-  process.stdout.write(`${a} * ${b} = ${c}\n`);
-}
-
-// process.stdout.write(`FF = ${MpInt.from(0xFF)}\n`);
-// process.stdout.write(`-FF = ${MpInt.from(-0xFF)}\n`);
-
-// process.stdout.write(`FFFFFFFF = ${MpInt.from(0xFFFFFFFF)}\n`);
-// process.stdout.write(`-FFFFFFFF = ${MpInt.from(-0xFFFFFFFF)}\n`);
-
-// process.stdout.write('\n');
-
-// testAdd(MpInt.from(0x0), MpInt.from(0x0));
-// testAdd(MpInt.from(0xBE00), MpInt.from(0x00EF));
-// testAdd(MpInt.from(0xDEAD0000), MpInt.from(0x0000BEEF));
-// testAdd(MpInt.from(0xFFFFFFFF), MpInt.from(0xFFFFFFFF));
-
-// testAdd(MpInt.from(0xDEADBEEF00000000 as u64), MpInt.from(0x00000000FFFFFFFF as u64));
-// testAdd(MpInt.from(0xDEAD0000FFFFFFFF as u64), MpInt.from(0x0000BEEFFFFFFFFF as u64));
-
-// process.stdout.write('\n');
-
-process.stdout.write('\n');
-
-testSub(MpInt.from(0x0), MpInt.from(0x0));
-testSub(MpInt.from(0xFFFF), MpInt.from(0x00FF));
-testSub(MpInt.from(0xFFFFFFFF), MpInt.from(0x0000FFFF));
-testSub(MpInt.from(0xFFFFFF), MpInt.from(0x00FFFF));
-testSub(MpInt.from(<u64>0xFFFF_FFFF_FFFF), MpInt.from(0x0000_0000_FFFF as u64));
-testSub(MpInt.from(<u64>0xFFFF_FFFF_FFFF_FFFF), MpInt.from(0xF0F0_F0F0_F0F0_F0F0 as u64));
-testSub(MpInt.from(<u64>0x9999_8888_7777_6666), MpInt.from(0x6666_7777_8888_9999 as u64));
-testSub(MpInt.from(<u64>0xFEDCBA987654321), MpInt.from(0x123456789ABCDEF as u64));
-
-process.stdout.write('\n');
-
-// testMul(MpInt.from(0x0), MpInt.from(0x0));
-// testMul(MpInt.from(0x1), MpInt.from(0x1));
-// testMul(MpInt.from(0x10), MpInt.from(0x10));
-// testMul(MpInt.from(u32(0xFFFF)), MpInt.from(u32(0xFFFF)));
-// testMul(MpInt.from(0xFFFFFFFF), MpInt.from(0xFFFFFFFF));
-
-// testMul(MpInt.from(-0x10), MpInt.from(-0x10));
-// testMul(MpInt.from(0x10), MpInt.from(-0x10));
-// testMul(MpInt.from(-0x10), MpInt.from(0x10));
-
-// process.stdout.write('\n');
-
-// const n = 120;
-// let a = MpInt.from(0x1);
-// for (let i: i32 = 1; i <= n; ++i) {
-//   a = a.mul(MpInt.from(i));
-// }
-
-// process.stdout.write(`${n}! = ${a}\n`);
-
-// process.stdout.write(`\n`);

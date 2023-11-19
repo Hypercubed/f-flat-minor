@@ -6,6 +6,7 @@
 
 **/build/*
 **/compiled/*
+**/.tap/*
 dart/bin/*.exe
 rust/target/*
 

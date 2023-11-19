@@ -1,6 +1,6 @@
 {
   "targets": {
-    "index": {
+    "release": {
       "sourceMap": true,
       "optimizeLevel": 3,
       "shrinkLevel": 2,

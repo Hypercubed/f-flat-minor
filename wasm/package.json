@@ -8,11 +8,8 @@
   },
   "author": "",
   "license": "ISC",
-  "dependencies": {
-    "bats": "^1.10.0",
-    "wasi": "^0.0.6"
-  },
   "devDependencies": {
+    "bats": "^1.10.0",
     "bats-assert": "github:ztombol/bats-assert",
     "bats-support": "github:ztombol/bats-support"
   }

@@ -3,14 +3,14 @@ default-task = 'build'
 
 [[task]]
 name = 'build'
-deps = ['build:index']
+deps = ['build:src/mp']
 
 [[task]]
 name = 'build:#'
 targets = ['./build/#.wasm', './build/#.wat']
-deps = ['##.ts']
+deps = ['##.ts', './src/**/*.ts']
 run = '''
-  asc $DEP --target $MATCH --optimize --outFile ./build/$MATCH.wasm --textFile ./build/$MATCH.wat
+  asc $DEP --target $MATCH --bindings --exportRuntime --optimize --outFile ./build/$MATCH.wasm --textFile ./build/$MATCH.wat
 '''
 
 [[task]]
@@ -24,6 +24,15 @@ run = '''
 [[task]]
 name = 'example'
 deps = [':run:src/interp']
+
+[[task]]
+name = 'test'
+invalidation = 'always'
+deps = [':build:./src/test-exports']
+run = '''
+  tap --node-arg="--require=suppress-experimental-warnings" --allow-empty-coverage run ./tests/*.js
+  bats ./bats/tests.bats
+'''
 
 [[task]]
 name = 'clean'

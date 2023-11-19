@@ -13,7 +13,12 @@
   "author": "",
   "license": "ISC",
   "devDependencies": {
-    "assemblyscript": "^0.27.14"
+    "assemblyscript": "^0.27.14",
+    "bats": "^1.10.0",
+    "bats-assert": "^2.0.0",
+    "bats-support": "^0.2.0",
+    "suppress-experimental-warnings": "^1.1.17",
+    "tap": "^18.6.1"
   },
   "type": "module",
   "exports": {
