@@ -194,8 +194,6 @@ export class MpInt {
   }
 
   private _mul(rhs: MpInt): MpInt {
-    const lhs: MpInt = this;
-
     const s_lhs = this._neg;
     const s_rhs = rhs._neg;
 
@@ -243,7 +241,15 @@ export class MpInt {
     return r;
   }
 
-  private cmp<T>(_rhs: T): i32 {
+  toU32(): u32 {
+    return this._data[0];
+  }
+
+  eqz(): boolean {
+    return this._data.length === 1 && this._data[0] === 0;
+  }
+
+  cmp<T>(_rhs: T): i32 {
     const rhs = MpInt.from(_rhs);
 
     const lhs_s = this._neg;

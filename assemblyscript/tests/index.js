@@ -48,7 +48,13 @@ const sub = (a, b) => {
 }
 
 const mul = (a, b) => {
-  const r = __getString(__mul(__newString(String(a)), __newString(String(b))));
+  let r;
+  try {
+    r = __getString(__mul(__newString(String(a)), __newString(String(b))));
+  } catch (e) {
+    console.error(`Error: mul(${a}, ${b}) = ${r}`, e);
+    return `Error: mul(${a}, ${b}) = ${r}\n`;
+  }
   if (VERBOSE) console.log(`mul(${a}, ${b}) = ${r}`);
   return r;
 };
@@ -258,6 +264,13 @@ t.test('multiplication', t => {
     t.same(mul(0x10, 0x10), 0x100);
     t.same(mul(0xFFFF, 0xFFFF), 0xFFFE0001n);
     t.same(mul(0xFFFFFFFF, 0xFFFFFFFF), 0xFFFFFFFE00000001n);
+
+    t.same(mul(
+      '0x2E75F2AA067132A276C13262E7268D7CECC8190A00000',
+      '0x35F29E388C20BFBAC4964BFBA000'),
+      '0x9CA7373A70FFDE7FC610FC43850F3BB95922DD391B0C36B388502F72F5F8A74400000000');
+      // 9ca7373a70ffde7fc610fc43850f3bb95922dd391b0c36b388502f72f5f8a74400000000
+
     t.end();
   });
 

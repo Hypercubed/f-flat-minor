@@ -23,7 +23,7 @@ run = '''
 
 [[task]]
 name = 'example'
-deps = [':run:src/interp']
+deps = [':run:src/interp-mp']
 
 [[task]]
 name = 'test'
