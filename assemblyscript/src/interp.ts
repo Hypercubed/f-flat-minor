@@ -1,5 +1,3 @@
-// import "wasi";
-
 type Base = i64;
 
 const stack: Base[] = [];

@@ -1,9 +1,7 @@
 import { MpZ } from "../src/mp";
 
 function testAdd(a: MpZ, b: MpZ): void {
-  const c: MpZ = a.add(b);
-
-  process.stdout.write(`${a} + ${b} = ${c}\n`);
+  process.stdout.write(`${a} + ${b} = ${a + b}\n`);
 }
 
 testAdd(MpZ.from(0x0), MpZ.from(0x0));

@@ -1,9 +1,7 @@
 import { MpZ } from "../src/mp";
 
 function testSub(a: MpZ, b: MpZ): void {
-  const c: MpZ = a.sub(b);
-
-  process.stdout.write(`${a} - ${b} = ${c}\n`);
+  process.stdout.write(`${a} - ${b} = ${a - b}\n`);
 }
 
 testSub(MpZ.from(0x0), MpZ.from(0x0));

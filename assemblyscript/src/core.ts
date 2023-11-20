@@ -1,5 +1,3 @@
-// import "wasi";
-
 import { MpZ } from "./mp";
 
 export const stack: MpZ[] = [];

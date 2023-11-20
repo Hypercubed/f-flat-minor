@@ -1,23 +1,18 @@
 const LOW_MASK = 0xFFFFFFFF;
 
-function toStaticArray(data: u32[]): StaticArray<u32> {
+function toStaticArray<T>(data: T[]): StaticArray<u32> {
   while (data.length > 1 && data[data.length - 1] === 0) {
-    data.pop();
+    data = data.slice(0, data.length - 1)
   }
   return StaticArray.fromArray(data);
 }
 
-// function trim(data: u32[]): u32[] {
-//   while (data.length > 1 && data[data.length - 1] === 0) {
-//     data.pop();
-//   }
-//   return data;
-// }
-
+@inline
 function low32(value: u64): u32 {
   return u32(value & LOW_MASK);
 }
 
+@inline
 function high32(value: u64): u32 {
   return u32(value >> 32 & LOW_MASK);
 }
@@ -43,7 +38,7 @@ function fromI64(value: i64): MpZ {
   if (hi === 0) {
     return new MpZ([lo] as StaticArray<u32>, neg);
   }
-  return new MpZ([low32(value), high32(value)]  as StaticArray<u32>, neg);
+  return new MpZ([low32(value), high32(value)] as StaticArray<u32>, neg);
 }
 
 function fromU64(value: u64): MpZ {
@@ -107,6 +102,7 @@ function fromString(value: string): MpZ {
   return neg ? r.neg() : r;
 }
 
+@final
 export class MpZ {
   constructor(protected readonly _data: StaticArray<u32>, protected readonly _neg: boolean = false) {
     if (_data.length === 1 && _data[0] === 0) {
@@ -238,7 +234,7 @@ export class MpZ {
   // TODO: mod
   // TODO: pow
 
-  div(rhs: MpZ): MpZ {
+  div<T>(rhs: T): MpZ {
     return this._div(MpZ.from(rhs));
   }
 
@@ -320,31 +316,31 @@ export class MpZ {
   }
 
   toU32(): u32 {
-    return this._data[0];
+    return unchecked(this._data[0]);
   }
   
-  eq(rhs: MpZ): boolean {
-    return this.cmp(rhs) === 0;
+  eq<T>(rhs: T): boolean {
+    return this.cmp<T>(MpZ.from(rhs)) === 0;
   }
 
-  gt(rhs: MpZ): boolean {
-    return this.cmp(rhs) > 0;
+  gt<T>(rhs: T): boolean {
+    return this.cmp<T>(MpZ.from(rhs)) > 0;
   }
 
-  gte(rhs: MpZ): boolean {
-    return this.cmp(rhs) >= 0;
+  gte<T>(rhs: T): boolean {
+    return this.cmp<T>(MpZ.from(rhs)) >= 0;
   }
 
-  lt(rhs: MpZ): boolean {
-    return this.cmp(rhs) < 0;
+  lt<T>(rhs: T): boolean {
+    return this.cmp<T>(MpZ.from(rhs)) < 0;
   }
 
-  lte(rhs: MpZ): boolean {
-    return this.cmp(rhs) <= 0;
+  lte<T>(rhs: T): boolean {
+    return this.cmp<T>(MpZ.from(rhs)) <= 0;
   }
 
   eqz(): boolean {
-    return this._data.length === 1 && this._data[0] === 0;
+    return this._data.length === 1 && unchecked(this._data[0]) === 0;
   }
 
   cmp<T>(_rhs: T): i32 {
@@ -386,8 +382,61 @@ export class MpZ {
     throw new TypeError("Unsupported generic type " + nameof<T>(val));
   }
 
+  @lazy
   static ZERO: MpZ = new MpZ([0]);
+
+  @lazy
   static ONE: MpZ = new MpZ([1]);
+
+  @inline @operator('*')
+  static mul(lhs: MpZ, rhs: MpZ): MpZ {
+    return lhs.mul(rhs);
+  }
+
+  @inline @operator('/')
+  static div(lhs: MpZ, rhs: MpZ): MpZ {
+    return lhs.div(rhs);
+  }
+
+  @inline @operator('+')
+  static add(lhs: MpZ, rhs: MpZ): MpZ {
+    return lhs.add(rhs);
+  }
+
+  @inline @operator('-')
+  static sub(lhs: MpZ, rhs: MpZ): MpZ {
+    return lhs.sub(rhs);
+  }
+
+  @inline @operator('==')
+  static eq(lhs: MpZ, rhs: MpZ): boolean {
+    return lhs.eq(rhs);
+  }
+
+  @inline @operator('>')
+  static gt(lhs: MpZ, rhs: MpZ): boolean {
+    return lhs.gt(rhs);
+  }
+
+  @inline @operator('>=')
+  static gte(lhs: MpZ, rhs: MpZ): boolean {
+    return lhs.gte(rhs);
+  }
+
+  @inline @operator('<')
+  static lt(lhs: MpZ, rhs: MpZ): boolean {
+    return lhs.lt(rhs);
+  }
+
+  @inline @operator('<=')
+  static lte(lhs: MpZ, rhs: MpZ): boolean {
+    return lhs.lte(rhs);
+  }
+
+  @inline @operator('!=')
+  static neq(lhs: MpZ, rhs: MpZ): boolean {
+    return !lhs.eq(rhs);
+  }
 }
 
 function u32ToHex(value: u32): string {
