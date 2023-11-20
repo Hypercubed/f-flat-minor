@@ -10,7 +10,7 @@ name = 'build:#'
 targets = ['./build/#.wasm', './build/#.wat']
 deps = ['##.ts', './src/**/*.ts']
 run = '''
-  asc $DEP --target $MATCH --bindings --exportRuntime --optimize --outFile ./build/$MATCH.wasm --textFile ./build/$MATCH.wat
+  asc $DEP --target debug --outFile ./build/$MATCH.wasm --textFile ./build/$MATCH.wat
 '''
 
 [[task]]
@@ -27,10 +27,19 @@ deps = [':run:src/interp-mp']
 
 [[task]]
 name = 'test'
-invalidation = 'always'
-deps = [':build:./src/test-exports']
+deps = [':build:./src/test-exports', './tests/*.js', ':tap', ':bats']
+
+[[task]]
+name = 'tap'
+deps = [':build:./src/test-exports', './tests/*.js']
 run = '''
   tap --node-arg="--require=suppress-experimental-warnings" --allow-empty-coverage run ./tests/*.js
+'''
+
+[[task]]
+name = 'bats'
+deps = [':build:./src/test-exports', './bats/*.bats']
+run = '''
   bats ./bats/tests.bats
 '''
 

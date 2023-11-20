@@ -1,37 +1,45 @@
-import { MpInt } from "./mp";
+import { MpZ } from "./mp";
 
-export function int(_a: string): string {
-  const a = MpInt.from(_a);
+export function __int(_a: string): string {
+  const a = MpZ.from(_a);
   return a.toString();
 }
 
-export function add(_a: string, _b: string): string {
-  const a = MpInt.from(_a);
-  const b = MpInt.from(_b);
-  const c: MpInt = a.add(b);
+export function __add(_a: string, _b: string): string {
+  const a = MpZ.from(_a);
+  const b = MpZ.from(_b);
+  const c: MpZ = a.add(b);
 
   return c.toString();
 }
 
-export function mul(_a: string, _b: string): string {
-  const a = MpInt.from(_a);
-  const b = MpInt.from(_b);
-  const c: MpInt = a.mul(b);
+export function __mul(_a: string, _b: string): string {
+  const a = MpZ.from(_a);
+  const b = MpZ.from(_b);
+  const c: MpZ = a.mul(b);
 
   return c.toString();
 }
 
-export function sub(_a: string, _b: string): string {
-  const a = MpInt.from(_a);
-  const b = MpInt.from(_b);
-  const c: MpInt = a.sub(b);
+export function __div(_a: string, _b: string): string {
+  const a = MpZ.from(_a);
+  const b = MpZ.from(_b);
+  const c: MpZ = a.div(b);
 
   return c.toString();
 }
 
-export function cmp(_a: string, _b: string): i32 {
-  const a = MpInt.from(_a);
-  const b = MpInt.from(_b);
+export function __sub(_a: string, _b: string): string {
+  const a = MpZ.from(_a);
+  const b = MpZ.from(_b);
+  const c: MpZ = a.sub(b);
+
+  return c.toString();
+}
+
+export function __cmp(_a: string, _b: string): i32 {
+  const a = MpZ.from(_a);
+  const b = MpZ.from(_b);
   const c: i32 = a.cmp(b);
 
   return c;

@@ -1,11 +1,18 @@
 const LOW_MASK = 0xFFFFFFFF;
 
-function trim(data: u32[]): u32[] {
+function toStaticArray(data: u32[]): StaticArray<u32> {
   while (data.length > 1 && data[data.length - 1] === 0) {
     data.pop();
   }
-  return data;
+  return StaticArray.fromArray(data);
 }
+
+// function trim(data: u32[]): u32[] {
+//   while (data.length > 1 && data[data.length - 1] === 0) {
+//     data.pop();
+//   }
+//   return data;
+// }
 
 function low32(value: u64): u32 {
   return u32(value & LOW_MASK);
@@ -15,27 +22,37 @@ function high32(value: u64): u32 {
   return u32(value >> 32 & LOW_MASK);
 }
 
-function fromI32(value: i32): MpInt {
+function fromI32(value: i32): MpZ {
   if (value < 0) {
-    return new MpInt([u32(-value)], true);
+    return new MpZ([u32(-value)] as StaticArray<u32>, true);
   }
-  return new MpInt([value]);
+  return new MpZ([value] as StaticArray<u32>);
 }
 
-function fromU32(value: u32): MpInt {
-  return new MpInt([value]);
+function fromU32(value: u32): MpZ {
+  return new MpZ([value] as StaticArray<u32>);
 }
 
-function fromI64(value: i64): MpInt {
+function fromI64(value: i64): MpZ {
   const neg = value < 0;
   if (value < 0) {
     value = -value;
   }
-  return new MpInt([low32(value), high32(value)], neg);
+  const hi = high32(value);
+  const lo = low32(value);
+  if (hi === 0) {
+    return new MpZ([lo] as StaticArray<u32>, neg);
+  }
+  return new MpZ([low32(value), high32(value)]  as StaticArray<u32>, neg);
 }
 
-function fromU64(value: u64): MpInt {
-  return new MpInt([low32(value), high32(value)]);
+function fromU64(value: u64): MpZ {
+  const hi = high32(value);
+  const lo = low32(value);
+  if (hi === 0) {
+    return new MpZ([lo] as StaticArray<u32>, false);
+  }
+  return new MpZ([low32(value), high32(value)]  as StaticArray<u32>, false);
 }
 
 function codeToU32(code: u32): u32 {
@@ -51,9 +68,9 @@ function codeToU32(code: u32): u32 {
   throw new Error(`Invalid digit code ${code}`);
 }
 
-function fromStringU(value: string, base: u32 = 10): MpInt {
+function fromStringU(value: string, base: u32 = 10): MpZ {
   const len = value.length;
-  let res = MpInt.from(0);
+  let res = MpZ.from(0);
   if (value === '0') return res;
   for (let i = 0; i < len; i++) {
     const code = <u32>value.charCodeAt(i);
@@ -81,18 +98,17 @@ function getBase(value: string): u32 {
   return 10;
 }
 
-function fromString(value: string): MpInt {
+function fromString(value: string): MpZ {
   const neg = value.substr(0, 1) === '-';
   value = neg ? value.substr(1) : value;
   const base = getBase(value);
   value = value.substr(base === 10 ? 0 : 2);
   const r = fromStringU(value, base);
-  return neg ? r.negate() : r;
+  return neg ? r.neg() : r;
 }
 
-export class MpInt {
-  constructor(protected readonly _data: u32[], protected readonly _neg: boolean = false) {
-    this._data = trim(_data);
+export class MpZ {
+  constructor(protected readonly _data: StaticArray<u32>, protected readonly _neg: boolean = false) {
     if (_data.length === 1 && _data[0] === 0) {
       this._neg = false;
     }
@@ -106,15 +122,15 @@ export class MpInt {
     return this._data.length;
   }
 
-  abs(): MpInt {
-    return new MpInt(this._data);
+  abs(): MpZ {
+    return new MpZ(this._data);
   }
 
-  add<T>(_rhs: T): MpInt {
-    const rhs = MpInt.from(_rhs);
+  add<T>(_rhs: T): MpZ {
+    const rhs = MpZ.from(_rhs);
 
     if (this._neg && rhs._neg) {
-      return this._uadd(rhs).negate();
+      return this._uadd(rhs).neg();
     }
 
     if (this._neg) {
@@ -129,7 +145,7 @@ export class MpInt {
   }
 
   // unsigned add
-  private _uadd(rhs: MpInt): MpInt {
+  private _uadd(rhs: MpZ): MpZ {
     const len = this._data.length > rhs._data.length ? this._data.length : rhs._data.length;
     const result: u32[] = new Array(len);
 
@@ -147,18 +163,18 @@ export class MpInt {
       result.push(u32(carry));
     }
 
-    return new MpInt(trim(result));
+    return new MpZ(toStaticArray(result));
   }
 
-  sub<T>(_rhs: T): MpInt {
-    const rhs = MpInt.from(_rhs);
+  sub<T>(_rhs: T): MpZ {
+    const rhs = MpZ.from(_rhs);
 
     if (this._neg && rhs._neg) {
-      return this._usub(rhs).negate();
+      return this._usub(rhs).neg();
     }
 
     if (this._neg) {
-      return this._uadd(rhs).negate();
+      return this._uadd(rhs).neg();
     }
 
     if (rhs._neg) {
@@ -169,37 +185,35 @@ export class MpInt {
   }
 
   // unsigned sub
-  private _usub(rhs: MpInt): MpInt {
+  private _usub(rhs: MpZ): MpZ {
     if (this._ucmp(rhs) < 0) {
-      return rhs.__usub(this).negate();
+      return rhs.__usub(this).neg();
     }
     return this.__usub(rhs);
   }
 
   // unsigned sub (rhs > lhs)
-  private __usub(rhs: MpInt): MpInt {
-    let data = rhs._data;
-
-    data = data.map((v: u32) => ~v);  // ones' complement of rhs
-    const r = this._uadd(new MpInt(data))._uadd(MpInt.ONE);
-    const d = r._data
+  private __usub(rhs: MpZ): MpZ {
+    const data: u32[] = rhs._data.map((v: u32) => ~v);  // ones' complement of rhs
+    const r = this._uadd(new MpZ(toStaticArray(data)))._uadd(MpZ.ONE);
+    const d: u32[] = r._data.slice();
     d.pop();  // remove carry
 
-    return new MpInt(trim(d), false);
+    return new MpZ(toStaticArray(d), false);
   }
 
   // signed mul
-  mul<T>(rhs: T): MpInt {
-    return this._mul(MpInt.from(rhs));
+  mul<T>(rhs: T): MpZ {
+    return this._mul(MpZ.from(rhs));
   }
 
-  private _mul(rhs: MpInt): MpInt {
+  private _mul(rhs: MpZ): MpZ {
     const s_lhs = this._neg;
     const s_rhs = rhs._neg;
 
     const q = this._data.length;
     const p = rhs._data.length;
-    const result: u32[] = new Array(q + p);
+    const result = new Array<u32>(q + p);
 
     for (let i: i32 = 0; i < q; ++i) {
       let carry: u64 = 0;
@@ -212,11 +226,75 @@ export class MpInt {
       result[i + p] = low32(carry);
     }
 
-    return new MpInt(trim(result), s_lhs !== s_rhs);
+    return new MpZ(toStaticArray(result), s_lhs !== s_rhs);
   }
 
-  negate(): MpInt {
-    return new MpInt(this._data, !this._neg);
+  // TODO: clz
+  // TODO: ctz
+  // TODO: shl
+  // TODO: shr
+  // TODO: div
+  // TODO: rem
+  // TODO: mod
+  // TODO: pow
+
+  div(rhs: MpZ): MpZ {
+    return this._div(MpZ.from(rhs));
+  }
+
+  private _div(rhs: MpZ): MpZ {
+    if (rhs.eqz()) throw new Error("Divide by zero");
+    if (rhs.eq(MpZ.ONE)) return this;
+
+    const s_lhs = this._neg;
+    const s_rhs = rhs._neg;
+
+    if (rhs.size === 1) {
+      const r = this._shortuDiv(rhs._data[0]);
+      return new MpZ(toStaticArray(r), this._neg !== rhs._neg);
+    }
+
+    // Very slow division algorithm
+    let result = MpZ.ZERO;
+
+    let dividend = this.abs();
+    const divisor = rhs.abs();
+
+    let rem = dividend;
+
+    // process.stdout.write(`rem: ${rem}\n`);
+    // process.stdout.write(`divisor: ${divisor}\n`);
+    // process.stdout.write(`rem._ucmp(divisor): ${rem._ucmp(divisor)}\n`);
+
+    while (rem._ucmp(divisor) >= 0) {
+      rem = rem._usub(divisor);
+      result = result._uadd(MpZ.ONE);
+
+      // process.stdout.write(`rem: ${rem}\n`);
+      // process.stdout.write(`divisor: ${divisor}\n`);
+      // process.stdout.write(`rem._ucmp(divisor): ${rem._ucmp(divisor)}\n`);
+    }
+
+    return s_lhs !== s_rhs ? result.neg() : result;
+  }
+
+  private _shortuDiv(rhs: u32): Array<u32> {
+    const result: u32[] = [0];
+    
+    let rem: u64 = 0;
+    for (let i: i32 = this.size - 1; i >= 0; --i) {
+      const doubleLimb: u64 = u64(this._data[i]) + (rem << 32);
+      result[i] = low32(doubleLimb / rhs);
+      rem = doubleLimb % rhs;
+    }
+
+    return result;
+  }
+
+  @operator.prefix('-')
+  neg(): MpZ {
+    if (this.eqz()) return this;
+    return new MpZ(this._data, !this._neg);
   }
 
   toString(): string {
@@ -244,13 +322,33 @@ export class MpInt {
   toU32(): u32 {
     return this._data[0];
   }
+  
+  eq(rhs: MpZ): boolean {
+    return this.cmp(rhs) === 0;
+  }
+
+  gt(rhs: MpZ): boolean {
+    return this.cmp(rhs) > 0;
+  }
+
+  gte(rhs: MpZ): boolean {
+    return this.cmp(rhs) >= 0;
+  }
+
+  lt(rhs: MpZ): boolean {
+    return this.cmp(rhs) < 0;
+  }
+
+  lte(rhs: MpZ): boolean {
+    return this.cmp(rhs) <= 0;
+  }
 
   eqz(): boolean {
     return this._data.length === 1 && this._data[0] === 0;
   }
 
   cmp<T>(_rhs: T): i32 {
-    const rhs = MpInt.from(_rhs);
+    const rhs = MpZ.from(_rhs);
 
     const lhs_s = this._neg;
     const rhs_s = rhs._neg;
@@ -262,7 +360,7 @@ export class MpInt {
     return lhs_s ? -c : c;
   }
 
-  private _ucmp(rhs: MpInt): i32 {
+  private _ucmp(rhs: MpZ): i32 {
     const lhs_s = this.size;
     const rhs_s = rhs.size;
 
@@ -277,8 +375,8 @@ export class MpInt {
     return 0;
   }
 
-  static from<T>(val: T): MpInt {
-    if (val instanceof MpInt) return val;
+  static from<T>(val: T): MpZ {
+    if (val instanceof MpZ) return val;
     if (val instanceof i32) return fromI32(val as i32);
     if (val instanceof u32) return fromU32(val as u32);
     if (val instanceof i64) return fromI64(val as i64);
@@ -288,8 +386,8 @@ export class MpInt {
     throw new TypeError("Unsupported generic type " + nameof<T>(val));
   }
 
-  static ZERO: MpInt = new MpInt([0]);
-  static ONE: MpInt = new MpInt([1]);
+  static ZERO: MpZ = new MpZ([0]);
+  static ONE: MpZ = new MpZ([1]);
 }
 
 function u32ToHex(value: u32): string {

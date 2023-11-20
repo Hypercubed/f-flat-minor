@@ -4,11 +4,7 @@
   "description": "",
   "main": "index.js",
   "scripts": {
-    "test": "wasmtime ./build/release.wasm",
-    "asbuild:debug": "asc assembly/index.ts --target debug",
-    "asbuild:release": "asc assembly/index.ts --target release",
-    "asbuild": "npm run asbuild:debug && npm run asbuild:release",
-    "run": "wasmtime ./build/release.wasm"
+    "test": "chomp test",
   },
   "author": "",
   "license": "ISC",

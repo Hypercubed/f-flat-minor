@@ -1,17 +1,17 @@
-import { MpInt } from "../src/mp";
+import { MpZ } from "../src/mp";
 
-function testMul(a: MpInt, b: MpInt): void {
-  const c: MpInt = a.mul(b);
+function testMul(a: MpZ, b: MpZ): void {
+  const c: MpZ = a.mul(b);
 
   process.stdout.write(`${a} * ${b} = ${c}\n`);
 }
 
-testMul(MpInt.from(0x0), MpInt.from(0x0));
-testMul(MpInt.from(0x1), MpInt.from(0x1));
-testMul(MpInt.from(0x10), MpInt.from(0x10));
-testMul(MpInt.from(u32(0xFFFF)), MpInt.from(u32(0xFFFF)));
-testMul(MpInt.from(0xFFFFFFFF), MpInt.from(0xFFFFFFFF));
+testMul(MpZ.from(0x0), MpZ.from(0x0));
+testMul(MpZ.from(0x1), MpZ.from(0x1));
+testMul(MpZ.from(0x10), MpZ.from(0x10));
+testMul(MpZ.from(u32(0xFFFF)), MpZ.from(u32(0xFFFF)));
+testMul(MpZ.from(0xFFFFFFFF), MpZ.from(0xFFFFFFFF));
 
-testMul(MpInt.from(-0x10), MpInt.from(-0x10));
-testMul(MpInt.from(0x10), MpInt.from(-0x10));
-testMul(MpInt.from(-0x10), MpInt.from(0x10));
+testMul(MpZ.from(-0x10), MpZ.from(-0x10));
+testMul(MpZ.from(0x10), MpZ.from(-0x10));
+testMul(MpZ.from(-0x10), MpZ.from(0x10));

@@ -1,11 +1,24 @@
 {
   "targets": {
-    "release": {
+    "debug": {
       "sourceMap": true,
+      "optimizeLevel": 0,
+      "shrinkLevel": 0,
+      "converge": false,
+      "noAssert": true,
+      "bindings": true,
+      "exportRuntime": true,
+      "maxMemory": true
+    },
+    "release": {
+      "sourceMap": false,
       "optimizeLevel": 3,
       "shrinkLevel": 2,
       "converge": true,
-      "noAssert": true
+      "noAssert": true,
+      "bindings": true,
+      "exportRuntime": true,
+      "maxMemory": true
     }
   },
   "extends": "./node_modules/@assemblyscript/wasi-shim/asconfig.json"
