@@ -8,8 +8,9 @@ deps = ['build:src/mp']
 [[task]]
 name = 'build:#'
 targets = ['./build/#.wasm', './build/#.wat']
-deps = ['##.ts', './src/**/*.ts']
+deps = ['##.ts', './src/*.ts']
 run = '''
+  rm -f ./build/$MATCH.wasm
   asc $DEP --target debug --outFile ./build/$MATCH.wasm --textFile ./build/$MATCH.wat
 '''
 
@@ -41,6 +42,14 @@ name = 'bats'
 deps = [':build:./src/test-exports', './bats/*.bats']
 run = '''
   bats ./bats/tests.bats
+'''
+
+[[task]]
+name = 'bench:#'
+deps = ['##.ts']
+run = '''
+  chomp build:$MATCH
+  hyperfine 'wasmtime ./build/$MATCH.wasm'
 '''
 
 [[task]]

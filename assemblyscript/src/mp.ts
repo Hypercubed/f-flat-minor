@@ -1,11 +1,5 @@
 const LOW_MASK = 0xFFFFFFFF;
-
-function toStaticArray<T>(data: T[]): StaticArray<u32> {
-  while (data.length > 1 && data[data.length - 1] === 0) {
-    data = data.slice(0, data.length - 1)
-  }
-  return StaticArray.fromArray(data);
-}
+const LIMB_BITS = 32;
 
 @inline
 function low32(value: u64): u32 {
@@ -15,6 +9,13 @@ function low32(value: u64): u32 {
 @inline
 function high32(value: u64): u32 {
   return u32(value >> 32 & LOW_MASK);
+}
+
+function toStaticArray<T>(data: T[]): StaticArray<u32> {
+  while (data.length > 1 && data[data.length - 1] === 0) {
+    data = data.slice(0, data.length - 1)
+  }
+  return StaticArray.fromArray(data);
 }
 
 function fromI32(value: i32): MpZ {
@@ -119,6 +120,7 @@ export class MpZ {
   }
 
   abs(): MpZ {
+    if (!this._neg) return this;
     return new MpZ(this._data);
   }
 
@@ -190,23 +192,32 @@ export class MpZ {
 
   // unsigned sub (rhs > lhs)
   private __usub(rhs: MpZ): MpZ {
-    const data: u32[] = rhs._data.map((v: u32) => ~v);  // ones' complement of rhs
-    const r = this._uadd(new MpZ(toStaticArray(data)))._uadd(MpZ.ONE);
-    const d: u32[] = r._data.slice();
-    d.pop();  // remove carry
+    const len = this._data.length > rhs._data.length ? this._data.length : rhs._data.length;
+    const result: u32[] = new Array(len);
 
-    return new MpZ(toStaticArray(d), false);
+    let carry: u64 = 1;
+    for (let i: i32 = 0; i < this._data.length; ++i) {
+      const rhs_limb: u64 = rhs._data.length > i ? u64(rhs._data[i]) : 0;
+      const lhs_limb: u64 = this._data.length > i ? u64(this._data[i]) : 0;
+
+      const doubleLimb: u64 = LOW_MASK + lhs_limb - rhs_limb + carry;
+      carry = high32(doubleLimb);
+      result[i] = low32(doubleLimb);
+    }
+
+    return new MpZ(toStaticArray(result));
   }
 
-  // signed mul
-  mul<T>(rhs: T): MpZ {
-    return this._mul(MpZ.from(rhs));
-  }
-
-  private _mul(rhs: MpZ): MpZ {
+  mul<T>(_rhs: T): MpZ {
+    const rhs = MpZ.from(_rhs);
     const s_lhs = this._neg;
     const s_rhs = rhs._neg;
 
+    return s_lhs !== s_rhs ? this._umul(rhs).neg() : this._umul(rhs);
+  }
+
+  // unsigned mul
+  private _umul(rhs: MpZ): MpZ {
     const q = this._data.length;
     const p = rhs._data.length;
     const result = new Array<u32>(q + p);
@@ -222,56 +233,84 @@ export class MpZ {
       result[i + p] = low32(carry);
     }
 
-    return new MpZ(toStaticArray(result), s_lhs !== s_rhs);
+    return new MpZ(toStaticArray(result));
   }
 
-  // TODO: clz
+  // count leading zeros
+  private _clz(): u32 {
+    const d = this._data[this._data.length - 1];
+    return <u32>clz(d);
+  }
+
+  // count bits
+  private _bits(): u32 {
+    return <u32>(this._data.length * LIMB_BITS - this._clz());
+  }
+
+  private _limbShiftLeft(limbs: u32): MpZ {
+    const data = this._data.slice();
+    const low = new Array<u32>(limbs);
+    return new MpZ(toStaticArray(low.concat(data)));
+  }
+
+  private _bitShiftLeft(n: u32): MpZ {
+    return this._umul(MpZ.from(2**n));
+  }
+
+  public _shl(n: u32): MpZ {
+    const limbs = n / LIMB_BITS;
+    const bits = n % LIMB_BITS;
+
+    const r = this._bitShiftLeft(bits);
+    return r._limbShiftLeft(limbs);
+  }
+
   // TODO: ctz
   // TODO: shl
   // TODO: shr
-  // TODO: div
   // TODO: rem
   // TODO: mod
   // TODO: pow
 
-  div<T>(rhs: T): MpZ {
-    return this._div(MpZ.from(rhs));
-  }
-
-  private _div(rhs: MpZ): MpZ {
-    if (rhs.eqz()) throw new Error("Divide by zero");
-    if (rhs.eq(MpZ.ONE)) return this;
-
+  div<T>(_rhs: T): MpZ {
+    const rhs = MpZ.from(_rhs);
     const s_lhs = this._neg;
     const s_rhs = rhs._neg;
+
+    const dividend = this.abs();
+    const divisor = rhs.abs();
+
+    return s_lhs !== s_rhs ? dividend._udiv(divisor).neg() : dividend._udiv(divisor);
+  }
+
+  private _udiv(rhs: MpZ): MpZ {
+    if (rhs.eqz()) throw new Error("Divide by zero");
+    if (this.eqz()) return MpZ.ZERO;
+    if (rhs.eq(MpZ.ONE)) return this;
 
     if (rhs.size === 1) {
       const r = this._shortuDiv(rhs._data[0]);
       return new MpZ(toStaticArray(r), this._neg !== rhs._neg);
     }
 
-    // Very slow division algorithm
     let result = MpZ.ZERO;
+    let rem = this;
+    const m = rhs._bits() + 1;
+    
+    while (rem._ucmp(rhs) >= 0) {
+      const n = rem._bits();
 
-    let dividend = this.abs();
-    const divisor = rhs.abs();
-
-    let rem = dividend;
-
-    // process.stdout.write(`rem: ${rem}\n`);
-    // process.stdout.write(`divisor: ${divisor}\n`);
-    // process.stdout.write(`rem._ucmp(divisor): ${rem._ucmp(divisor)}\n`);
-
-    while (rem._ucmp(divisor) >= 0) {
-      rem = rem._usub(divisor);
-      result = result._uadd(MpZ.ONE);
-
-      // process.stdout.write(`rem: ${rem}\n`);
-      // process.stdout.write(`divisor: ${divisor}\n`);
-      // process.stdout.write(`rem._ucmp(divisor): ${rem._ucmp(divisor)}\n`);
+      if (n > m) {
+        const DLBQ = MpZ.ONE._shl(n - m);  // Decent Lower Bound Quotient
+        rem = rem.__usub(rhs._umul(DLBQ));
+        result = result._uadd(DLBQ);
+      } else {
+        rem = rem.__usub(rhs);
+        result = result._uadd(MpZ.ONE);
+      }
     }
 
-    return s_lhs !== s_rhs ? result.neg() : result;
+    return result;
   }
 
   private _shortuDiv(rhs: u32): Array<u32> {
@@ -387,6 +426,9 @@ export class MpZ {
 
   @lazy
   static ONE: MpZ = new MpZ([1]);
+
+  @lazy
+  static TWO: MpZ = new MpZ([2]);
 
   @inline @operator('*')
   static mul(lhs: MpZ, rhs: MpZ): MpZ {
