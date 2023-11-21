@@ -426,15 +426,20 @@ t.test("division", (t) => {
 
   t.test("n>m>0xFFFFFFFF", (t) => {
     t.same(div("0xFFFFFFFFFFFFFFFF", "0xFFFFFFFFFFFFFFF"), 0x10);
+    __collect();
     t.same(div("0xFFFFFFFFFFFFFFFF", "0xFFFFFFFFFFFFF"), 0x1000);
+    __collect();
 
     t.same(div("0xFFFFFFFFFFFFFFFFFFFF", "0xFFFFFFFFFFFFFFFFFFF"), 0x10);
+    __collect();
     t.same(div("0xFFFFFFFFFFFFFFFFFFFF", "0xFFFFFFFFFFFFFFFFF"), 0x1000);
+    __collect();
 
     t.same(
       div("0xDEADBEEFDEADBEEF00000000", "0xDEADBEEFDEADBEEF0000"),
       0x10000
     );
+    __collect();
 
     t.end();
   });
@@ -454,7 +459,6 @@ t.test("division", (t) => {
       __collect();
     }
   });
-
   t.end();
 });
 

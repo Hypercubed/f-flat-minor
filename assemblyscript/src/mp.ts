@@ -1,4 +1,7 @@
+@inline
 const LOW_MASK = 0xFFFFFFFF;
+
+@inline
 const LIMB_BITS = 32;
 
 @inline
@@ -65,29 +68,28 @@ function codeToU32(code: u32): u32 {
 }
 
 function fromStringU(value: string, base: u32 = 10): MpZ {
-  const len = value.length;
-  let res = MpZ.from(0);
+  let res = MpZ.ZERO;
   if (value === '0') return res;
-  for (let i = 0; i < len; i++) {
-    const code = <u32>value.charCodeAt(i);
+  for (let i = 0; i < value.length; i++) {
+    const code: u32 = value.charCodeAt(i);
     const val = codeToU32(code);
     res = res.mul(base).add(val);
   }
   return res;
 }
 
-function getBase(value: string): u32 {
-  const first = value.charAt(0);
-  if (first === '0') {
-    if (value.length === 1) return 10;
+function getBase(str: string): u32 {
+  if (str.length === 1) return 10;
 
-    const second = value.charCodeAt(1);
+  const first = str.charAt(0);
+  if (first === '0') {
+    const second = str.charCodeAt(1);
     switch (second) {
-      case 'b'.charCodeAt(0):
+      case 98: // b
         return 2;
-      case 'o'.charCodeAt(0):
+      case 111: // o
         return 8;
-      case 'x'.charCodeAt(0):
+      case 120: // x
         return 16;
     }
   }
@@ -124,21 +126,14 @@ export class MpZ {
     return new MpZ(this._data);
   }
 
+  // Addition
+
   add<T>(_rhs: T): MpZ {
     const rhs = MpZ.from(_rhs);
 
-    if (this._neg && rhs._neg) {
-      return this._uadd(rhs).neg();
-    }
-
-    if (this._neg) {
-      return rhs._usub(this);
-    }
-
-    if (rhs._neg) {
-      return this._usub(rhs);
-    }
-
+    if (this._neg && rhs._neg) return this._uadd(rhs).neg();
+    if (this._neg) return rhs._usub(this);
+    if (rhs._neg) return this._usub(rhs);
     return this._uadd(rhs);
   }
 
@@ -149,8 +144,8 @@ export class MpZ {
 
     let carry: u64 = 0;
     for (let i: i32 = 0; i < len; ++i) {
-      const rhs_limb: u64 = rhs._data.length > i ? u64(rhs._data[i]) : 0;
-      const lhs_limb: u64 = this._data.length > i ? u64(this._data[i]) : 0;
+      const rhs_limb: u64 = rhs._data.length > i ? u64(unchecked(rhs._data[i])) : 0;
+      const lhs_limb: u64 = this._data.length > i ? u64(unchecked(this._data[i])) : 0;
 
       const doubleLimb: u64 = carry + rhs_limb + lhs_limb;
       carry = high32(doubleLimb);
@@ -164,29 +159,20 @@ export class MpZ {
     return new MpZ(toStaticArray(result));
   }
 
+  // Subtraction
+
   sub<T>(_rhs: T): MpZ {
     const rhs = MpZ.from(_rhs);
 
-    if (this._neg && rhs._neg) {
-      return this._usub(rhs).neg();
-    }
-
-    if (this._neg) {
-      return this._uadd(rhs).neg();
-    }
-
-    if (rhs._neg) {
-      return this._uadd(rhs);
-    }
-
+    if (this._neg && rhs._neg) return this._usub(rhs).neg();
+    if (this._neg) return this._uadd(rhs).neg();
+    if (rhs._neg) return this._uadd(rhs);
     return this._usub(rhs);
   }
 
   // unsigned sub
   private _usub(rhs: MpZ): MpZ {
-    if (this._ucmp(rhs) < 0) {
-      return rhs.__usub(this).neg();
-    }
+    if (this._ucmp(rhs) < 0) return rhs.__usub(this).neg();
     return this.__usub(rhs);
   }
 
@@ -197,16 +183,18 @@ export class MpZ {
 
     let carry: u64 = 1;
     for (let i: i32 = 0; i < this._data.length; ++i) {
-      const rhs_limb: u64 = rhs._data.length > i ? u64(rhs._data[i]) : 0;
-      const lhs_limb: u64 = this._data.length > i ? u64(this._data[i]) : 0;
+      const rhs_limb: u64 = rhs._data.length > i ? u64(unchecked(rhs._data[i])) : 0;
+      const lhs_limb: u64 = this._data.length > i ? u64(unchecked(this._data[i])) : 0;
 
-      const doubleLimb: u64 = LOW_MASK + lhs_limb - rhs_limb + carry;
+      const doubleLimb: u64 = <u64>LOW_MASK + lhs_limb - rhs_limb + carry;
       carry = high32(doubleLimb);
       result[i] = low32(doubleLimb);
     }
 
     return new MpZ(toStaticArray(result));
   }
+
+  // Multiplication
 
   mul<T>(_rhs: T): MpZ {
     const rhs = MpZ.from(_rhs);
@@ -226,7 +214,7 @@ export class MpZ {
       let carry: u64 = 0;
       for (let j: i32 = 0; j < p; ++j) {
         const k = i + j;
-        const doubleLimb: u64 = carry + u64(this._data[i]) * u64(rhs._data[j]) + u64(result[k]);
+        const doubleLimb: u64 = carry + u64(unchecked(this._data[i])) * u64(unchecked(rhs._data[j])) + u64(unchecked(result[k]));
         carry = high32(doubleLimb);
         result[k] = low32(doubleLimb);
       }
@@ -238,7 +226,7 @@ export class MpZ {
 
   // count leading zeros
   private _clz(): u32 {
-    const d = this._data[this._data.length - 1];
+    const d = unchecked(this._data[this._data.length - 1]);
     return <u32>clz(d);
   }
 
@@ -254,15 +242,13 @@ export class MpZ {
   }
 
   private _bitShiftLeft(n: u32): MpZ {
+    // TODO: optimize
     return this._umul(MpZ.from(2**n));
   }
 
   public _shl(n: u32): MpZ {
-    const limbs = n / LIMB_BITS;
-    const bits = n % LIMB_BITS;
-
-    const r = this._bitShiftLeft(bits);
-    return r._limbShiftLeft(limbs);
+    const r = this._bitShiftLeft(n % LIMB_BITS);
+    return r._limbShiftLeft(n / LIMB_BITS);
   }
 
   // TODO: ctz
@@ -271,6 +257,8 @@ export class MpZ {
   // TODO: rem
   // TODO: mod
   // TODO: pow
+
+  // Division
 
   div<T>(_rhs: T): MpZ {
     const rhs = MpZ.from(_rhs);
@@ -289,7 +277,7 @@ export class MpZ {
     if (rhs.eq(MpZ.ONE)) return this;
 
     if (rhs.size === 1) {
-      const r = this._shortuDiv(rhs._data[0]);
+      const r = this._shortuDiv(unchecked(rhs._data[0]));
       return new MpZ(toStaticArray(r), this._neg !== rhs._neg);
     }
 
@@ -318,7 +306,7 @@ export class MpZ {
     
     let rem: u64 = 0;
     for (let i: i32 = this.size - 1; i >= 0; --i) {
-      const doubleLimb: u64 = u64(this._data[i]) + (rem << 32);
+      const doubleLimb: u64 = u64(unchecked(this._data[i])) + (rem << 32);
       result[i] = low32(doubleLimb / rhs);
       rem = doubleLimb % rhs;
     }
@@ -333,25 +321,13 @@ export class MpZ {
   }
 
   toString(): string {
-    const result: string[] = [];
+    let r = '';
 
     for (let i: i32 = this._data.length - 1; i >= 0; --i) {
-      result.push(u32ToHex(this._data[i]));
+      r += u32ToHex(unchecked(this._data[i]), i !== this._data.length - 1);
     }
 
-    let r = result.join('');
-
-    while (r.length > 1 && r.substr(0, 1) === '0') {
-      r = r.substr(1);
-    }
-
-    r = '0x' + r;
-
-    if (this._neg) {
-      r = '-' + r;
-    }
-
-    return r;
+    return this._neg ? `-0x${r}` : `0x${r}`;
   }
 
   toU32(): u32 {
@@ -401,8 +377,8 @@ export class MpZ {
 
     if (lhs_s !== rhs_s) return lhs_s > rhs_s ? 1 : -1;
     for (let i = lhs_s - 1; i >= 0; i--) {
-      const lhs_v = this._data[i];
-      const rhs_v = rhs._data[i];
+      const lhs_v = unchecked(this._data[i]);
+      const rhs_v = unchecked(rhs._data[i]);
       if (lhs_v != rhs_v) {
         return lhs_v > rhs_v ? 1 : -1;
       }
@@ -481,7 +457,8 @@ export class MpZ {
   }
 }
 
-function u32ToHex(value: u32): string {
-  const r = '00000000' + value.toString(16).toUpperCase();
-  return r.substr(r.length - 8);
+function u32ToHex(value: u32, pad: boolean = true): string {
+  let r = value.toString(16).toUpperCase();
+  if (!pad) return r;
+  return ('00000000' + r).substr(r.length);
 }
