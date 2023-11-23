@@ -13,6 +13,4 @@ process.stdout.write(`100!/99! = ${fact(100) / fact(99)}\n`);
 process.stdout.write(`1000!/999! = ${fact(1000) / fact(999)}\n`);
 process.stdout.write(`100!/9! = ${fact(100) / fact(9)}\n`);
 
-// process.stdout.write(`1000! = ${fact(1000)}\n`);
-// process.stdout.write(`99! = ${fact(99)}\n`);
 process.stdout.write(`1000!/500! = ${fact(1000) / fact(500)}\n`);

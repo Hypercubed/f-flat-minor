@@ -54,6 +54,7 @@ async function reset() {
 
 const int = (a) => {
   const r = __getString(__int(__newString(String(a))));
+  __collect();
   if (VERBOSE) console.log(`int(${a}) = ${r}`);
   return r;
 };
@@ -62,6 +63,7 @@ const add = (a, b) => {
   let r;
   try {
     r = __getString(__add(__newString(String(a)), __newString(String(b))));
+    __collect();
   } catch (e) {
     console.error(`Error: add(${a}, ${b}) = ${r}`, e);
     return `Error: add(${a}, ${b}) = ${r}`;
@@ -74,6 +76,7 @@ const sub = (a, b) => {
   let r;
   try {
     r = __getString(__sub(__newString(String(a)), __newString(String(b))));
+    __collect();
   } catch (e) {
     console.error(`Error: sub(${a}, ${b}) = ${r}`, e);
     return `Error: sub(${a}, ${b}) = ${r}`;
@@ -86,6 +89,7 @@ const mul = (a, b) => {
   let r;
   try {
     r = __getString(__mul(__newString(String(a)), __newString(String(b))));
+    __collect();
   } catch (e) {
     console.error(`Error: mul(${a}, ${b}) = ${r}`, e);
     return `Error: mul(${a}, ${b}) = ${r}`;
@@ -98,6 +102,7 @@ const div = (a, b) => {
   let r;
   try {
     r = __getString(__div(__newString(String(a)), __newString(String(b))));
+    __collect();
   } catch (e) {
     console.error(`Error: div(${a}, ${b}) = ${r}`, e);
     return `Error: div(${a}, ${b}) = ${r}`;
@@ -110,6 +115,7 @@ const cmp = (a, b) => {
   let r;
   try {
     r = __cmp(__newString(String(a)), __newString(String(b)));
+    __collect();
   } catch (e) {
     console.error(`Error: cmp(${a}, ${b}) = ${r}`, e);
     return `Error: cmp(${a}, ${b}) = ${r}`;
@@ -126,12 +132,14 @@ const shl = (a, b) => {
 
 const fact = (a) => {
   const r = __getString(__fact(a));
+  __collect();
   if (VERBOSE) console.log(`fact(${a}) = ${r}`);
   return r;
 };
 
 const factDiv = (a, b) => {
   const r = __getString(__factDiv(a, b));
+  __collect();
   if (VERBOSE) console.log(`fact(${a}) = ${r}`);
   return r;
 };
@@ -208,7 +216,6 @@ t.test("addition", (t) => {
     t.same(add(0x00000000deadbeefn, 0xdeadbeef00000000n), 0xdeadbeefdeadbeefn);
 
     t.same(add(2950793089775236n, 2160715205785584n), 0x1228e3c4392e74n);
-    __collect();
     t.same(add(403105631078710n, 3402969886132728n), 3806075517211438n);
     t.end();
   });
@@ -232,13 +239,9 @@ t.test("addition", (t) => {
       const n = BigInt(Math.random() * Math.pow(2, 53));
       const m = BigInt(Math.random() * Math.pow(2, 53));
       t.same(add(n, m), toHex(n + m));
-      __collect();
       t.same(add(-n, m), toHex(-n + m));
-      __collect();
       t.same(add(n, -m), toHex(n + -m));
-      __collect();
       t.same(add(-n, -m), toHex(-n + -m));
-      __collect();
     }
     t.end();
   });
@@ -292,19 +295,15 @@ t.test("subtraction", (t) => {
 
       // lhs>0 rhs>0
       t.same(sub(n, m), toHex(n - m));
-      __collect();
 
       // rhs<0
       t.same(sub(n, -m), toHex(n - -m));
-      __collect();
 
       // lhs<0
       t.same(sub(-n, m), toHex(-n - m));
-      __collect();
 
       // lhs<0 rhs<0
       t.same(sub(-n, -m), toHex(-n - -m));
-      __collect();
     }
     t.end();
   });
@@ -426,20 +425,15 @@ t.test("division", (t) => {
 
   t.test("n>m>0xFFFFFFFF", (t) => {
     t.same(div("0xFFFFFFFFFFFFFFFF", "0xFFFFFFFFFFFFFFF"), 0x10);
-    __collect();
     t.same(div("0xFFFFFFFFFFFFFFFF", "0xFFFFFFFFFFFFF"), 0x1000);
-    __collect();
 
     t.same(div("0xFFFFFFFFFFFFFFFFFFFF", "0xFFFFFFFFFFFFFFFFFFF"), 0x10);
-    __collect();
     t.same(div("0xFFFFFFFFFFFFFFFFFFFF", "0xFFFFFFFFFFFFFFFFF"), 0x1000);
-    __collect();
 
     t.same(
       div("0xDEADBEEFDEADBEEF00000000", "0xDEADBEEFDEADBEEF0000"),
       0x10000
     );
-    __collect();
 
     t.end();
   });
@@ -450,15 +444,12 @@ t.test("division", (t) => {
       const m = BigInt(Math.random() * Math.pow(2, 53));
       const v = n / m;
       t.same(div(n, m), toHex(v));
-      __collect();
       t.same(div(-n, -m), toHex(v));
-      __collect();
       t.same(div(-n, m), toHex(-v));
-      __collect();
       t.same(div(n, -m), toHex(-v));
-      __collect();
     }
   });
+
   t.end();
 });
 
@@ -525,7 +516,6 @@ t.test("cmp", async (t) => {
       const m = BigInt(Math.random() * Math.pow(2, 53));
       t.equal(cmp(n, m), n > m ? 1 : n < m ? -1 : 0);
       t.equal(cmp(-n, -m), n > m ? -1 : n < m ? 1 : 0);
-      __collect();
     }
     t.end();
   });

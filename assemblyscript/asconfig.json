@@ -5,7 +5,7 @@
       "optimizeLevel": 0,
       "shrinkLevel": 0,
       "converge": false,
-      "noAssert": true,
+      "noAssert": false,
       "bindings": true,
       "exportRuntime": true,
       "maxMemory": true
