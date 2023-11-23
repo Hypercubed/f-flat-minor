@@ -33,6 +33,10 @@ run_ts() {
   run_ts fact
 }
 
+@test "shift using mp" {
+  run_ts shift
+}
+
 @test "interp mp" {
   chomp build:./src/interp-mp
   run wasmtime ./build/src/interp-mp.wasm

@@ -275,16 +275,30 @@ export class MpZ {
     return this._shortuDiv(2**n);
   }
 
-  @operator('<<')
-  public _shl(n: u32): MpZ {
+  private _shl(n: u32): MpZ {
     if (n === 0) return this;
     return this._limbShiftLeft(n / LIMB_BITS)._bitShiftLeft(n % LIMB_BITS);
   }
 
-  @operator('>>')
-  public _shr(n: u32): MpZ {
+  private _shr(n: u32): MpZ {
     if (n === 0) return this;
     return this._limbShiftRight(n / LIMB_BITS)._bitShiftRight(n % LIMB_BITS);
+  }
+
+  @operator('<<')
+  shl(n: u32): MpZ {
+    if (n === 0) return this;
+    if (this.eqz()) return MpZ.ZERO;
+    if (n < 0) return this._shr(-n);
+    return this._shl(n);
+  }
+
+  @operator('>>')
+  shr(n: u32): MpZ {
+    if (n === 0) return this;
+    if (this.eqz()) return MpZ.ZERO;
+    if (n < 0) return this._shl(-n);
+    return this._shr(n);
   }
 
   // TODO: ctz
@@ -330,33 +344,50 @@ export class MpZ {
 
     const k = this._bits() + rhs._bits();
     const d = rhs._inv(k);
-    return this._umul(d)._shr(k);
+    const q = this._umul(d)._shr(k);
+    const rem = this - q._umul(rhs);
+
+    return (rem >= rhs) ? q._uadd(MpZ.ONE) : q;
+  }
+
+  inv(k: u32): MpZ {
+    if (this.eqz()) throw new Error("Divide by zero");
+    if (this.eq(MpZ.ONE)) return this._shl(k);
+
+    const s_lhs = this._neg;
+    const n = this._bits();
+    if (k < n) return MpZ.ZERO;
+    if (k <= 2*n) return this._inv(2*n)._shr(2*n - k);
+    return s_lhs ? this._inv(k).neg() : this._inv(k);
   }
 
   // Calculate 2**k/x using Newton-Raphson method
   private _inv(k: u32): MpZ {
-    const n = this._bits();
+    assert(!this.isNeg, "_inv: lhs must be positive");
+    assert(this._bits() <= k, "_inv: k must be greater than the number of bits in x");
+
+    const divisor = this;
+    const n = divisor._bits();
 
     const k2 = MpZ.ONE._shl(k);  // 2^k
     const pow2 = k2._umul(MpZ.TWO); // 2^(k+1)
 
     // initial guess for convergence (0 < x < 2**(k+1)/b)
     const T1 = MpZ.from(48)._shl(k - n);  // 48 * 2^k / 2^n
-    const T2 = MpZ.from(32)._shl(k - n - n).mul(this);  // 32 * 2^(k-n) * x / 2^n
-    let x = T1._usub(T2)._shortuDiv(17); // 48/17 - 32/17 * x ~= 1/D
-    let lastX = MpZ.ZERO;
-    let y = x._umul(this);
+    const T2 = MpZ.from(32)._shl(k - n - n).mul(divisor);  // 32 * 2^(k-n) * x / 2^n
+    let q = T1._usub(T2)._shortuDiv(17); // 48/17 - 32/17 * x ~= 1/D
 
-    while (lastX != x) {
-      lastX = x;
-      x = x._umul(pow2._usub(y)) >> k;  // TEST: fused multiply-subtract
-      y = x._umul(this);
-      if (y < k2) {
-        x = x._uadd(MpZ.ONE);
-      }
+    // let q = this._shl(k - n - n);
+
+    let lastQ = MpZ.ZERO;
+    let y = q._umul(divisor);
+    while (lastQ != q) {
+      lastQ = q;
+      q = q._umul(pow2._usub(y)) >> k;  // TEST: fused multiply-subtract
+      y = q._umul(divisor);
     }
 
-    return x;
+    return q;
   }
 
   // unsigned div
