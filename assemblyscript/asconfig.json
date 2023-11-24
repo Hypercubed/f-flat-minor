@@ -18,7 +18,7 @@
       "noAssert": true,
       "bindings": true,
       "exportRuntime": true,
-      "maxMemory": true
+      "maxMemory": false
     }
   },
   "extends": "./node_modules/@assemblyscript/wasi-shim/asconfig.json"
