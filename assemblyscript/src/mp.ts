@@ -105,6 +105,15 @@ function fromString(value: string): MpZ {
   return neg ? r.neg() : r;
 }
 
+// TODO: ctz
+// TODO: shl(MpZ)
+// TODO: shr(MpZ)
+// TODO: pow
+// TODO: log
+// TODO: sqrt
+// TODO: fused arithmetic
+// TODO: bitwise operators
+
 @final
 export class MpZ {
   constructor(protected readonly _data: StaticArray<u32>, protected readonly _neg: boolean = false) {
@@ -238,6 +247,21 @@ export class MpZ {
     return new MpZ(toStaticArray(result));
   }
 
+  private _umulShort(rhs: u32): MpZ {
+    const q = this._data.length;
+    const result = new Array<u32>(q + 1);
+
+    let carry: u64 = 0;
+    for (let i: i32 = 0; i < q; ++i) {
+      carry += u64(unchecked(this._data[i])) * u64(rhs);
+      result[i] = low32(carry);
+      carry = high32(carry);
+    }
+    result[q] = low32(carry);
+
+    return new MpZ(toStaticArray(result));
+  }
+
   // count leading zeros
   private _clz(): u32 {
     const d = unchecked(this._data[this._data.length - 1]);
@@ -266,13 +290,13 @@ export class MpZ {
   private _bitShiftLeft(n: u32): MpZ {
     assert(n < LIMB_BITS, "_bitShiftLeft: n must be less than LIMB_BITS");
     if (n === 0) return this;
-    return this._umul(MpZ.from(2**n));
+    return this._umulShort(2**n);
   }
 
   private _bitShiftRight(n: u32): MpZ {
     assert(n < LIMB_BITS, "_bitShiftRight: n must be less than LIMB_BITS");
     if (n === 0) return this;
-    return this._shortuDiv(2**n);
+    return this._udivShort(2**n);
   }
 
   private _shl(n: u32): MpZ {
@@ -301,14 +325,6 @@ export class MpZ {
     return this._shr(n);
   }
 
-  // TODO: ctz
-  // TODO: shl
-  // TODO: shr
-  // TODO: rem
-  // TODO: mod
-  // TODO: pow
-  // TODO: fms (fused multiply-subtract)
-
   // Division
 
   div<T>(_rhs: T): MpZ {
@@ -329,7 +345,7 @@ export class MpZ {
     if (dividend.lt(divisor)) return MpZ.ZERO;
     
     if (divisor.size === 1) {
-      const r = dividend._shortuDiv(unchecked(divisor._data[0]));
+      const r = dividend._udivShort(unchecked(divisor._data[0]));
       return s_lhs !== s_rhs ? r.neg() : r;
     }
 
@@ -337,17 +353,20 @@ export class MpZ {
   }
 
   // unsigned div
-  // Netwon-Raphson division
+  // Using Netwon-Raphson inversion
   private _udiv(rhs: MpZ): MpZ {
     assert(this >= rhs, "_udiv: lhs must be greater than rhs");
     assert(!rhs.isNeg, "_udiv: lhs must positive");
 
     const k = this._bits() + rhs._bits();
     const d = rhs._inv(k);
-    const q = this._umul(d)._shr(k);
-    const rem = this - q._umul(rhs);
+    let q = this._umul(d)._shr(k);
 
-    return (rem >= rhs) ? q._uadd(MpZ.ONE) : q;
+    while (this._usub(q._umul(rhs)) >= rhs) {
+      q = q._uadd(MpZ.ONE);
+    }
+
+    return q;
   }
 
   inv(k: u32): MpZ {
@@ -370,12 +389,12 @@ export class MpZ {
     const n = divisor._bits();
 
     const k2 = MpZ.ONE._shl(k);  // 2^k
-    const pow2 = k2._umul(MpZ.TWO); // 2^(k+1)
+    const pow2 = k2._umulShort(2); // 2^(k+1)
 
     // initial guess for convergence (0 < x < 2**(k+1)/b)
     const T1 = MpZ.from(48)._shl(k - n);  // 48 * 2^k / 2^n
-    const T2 = MpZ.from(32)._shl(k - n - n).mul(divisor);  // 32 * 2^(k-n) * x / 2^n
-    let q = T1._usub(T2)._shortuDiv(17); // 48/17 - 32/17 * x ~= 1/D
+    const T2 = MpZ.from(32)._shl(k - n - n)._umul(divisor);  // 32 * 2^(k-n) * x / 2^n
+    let q = T1._usub(T2)._udivShort(17); // 48/17 - 32/17 * x ~= 1/D
 
     // let q = this._shl(k - n - n);
 
@@ -423,10 +442,20 @@ export class MpZ {
 
   mod<T>(_rhs: T): MpZ {
     const rhs = MpZ.from(_rhs);
-    return this.sub(this.div(rhs).mul(rhs));
+    if (rhs.eqz()) throw new Error("Divide by zero");
+    const q = this.div(rhs);
+    const m = this._usub(rhs._umul(q));
+    return this.isNeg ? m.neg() : m;
   }
 
-  private _shortuDiv(rhs: u32): MpZ {
+  rem<T>(_rhs: T): MpZ {
+    const rhs = MpZ.from(_rhs);
+    if (rhs.eqz()) throw new Error("Divide by zero");
+    const q = this.div(rhs);
+    return this.sub(rhs.mul(q));
+  }
+
+  private _udivShort(rhs: u32): MpZ {
     const result: u32[] = [0];
 
     let rem: u64 = 0;
@@ -583,6 +612,11 @@ export class MpZ {
   @inline @operator('!=')
   static neq(lhs: MpZ, rhs: MpZ): boolean {
     return !lhs.eq(rhs);
+  }
+
+  @inline @operator('%')
+  static mod(lhs: MpZ, rhs: MpZ): MpZ {
+    return lhs.mod(rhs);
   }
 
   static A: MpZ = MpZ.from(48/17);
