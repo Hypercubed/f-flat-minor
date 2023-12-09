@@ -25,6 +25,7 @@ let {
   __fact,
   __factDiv,
   __shl,
+  __inv,
 } = lib.exports;
 
 const VERBOSE = false;
@@ -50,6 +51,7 @@ async function reset() {
   __fact = lib.exports.__fact;
   __factDiv = lib.exports.__factDiv;
   __shl = lib.exports.__shl;
+  __inv = lib.exports.__inv;
 }
 
 const int = (a) => {
@@ -126,6 +128,14 @@ const cmp = (a, b) => {
 
 const shl = (a, b) => {
   let r = __getString(__shl(__newString(String(a)), b));
+  __collect();
+  if (VERBOSE) console.log(`shl(${a}, ${b}) = ${r}`);
+  return r;
+};
+
+const inv = (a, b) => {
+  let r = __getString(__inv(__newString(String(a)), b));
+  __collect();
   if (VERBOSE) console.log(`shl(${a}, ${b}) = ${r}`);
   return r;
 };
@@ -152,6 +162,16 @@ function toHex(a) {
     return "-0x" + a.slice(1);
   }
   return "0x" + a;
+}
+
+function random() {
+  const limbs = Math.floor(32 * Math.random());
+  return new Uint32Array(limbs)
+    .reduce((a, _, k) => {
+      const p = 2n**BigInt(k * 32);
+      const l = BigInt(Math.floor(Math.random() * Math.pow(2, 32)));
+      return a + l*p;
+    }, 0n);
 }
 
 t.beforeEach(async () => {
@@ -193,11 +213,11 @@ t.test("create", (t) => {
       t.same(int(i), "0x" + i.toString(16).toUpperCase());
       t.same(int(-i), "-0x" + i.toString(16).toUpperCase());
 
-      const n = BigInt(Math.random() * Math.pow(2, 53));
+      const n = random();
       t.same(int(n), toHex(n));
       t.same(int(-n), toHex(-n));
 
-      const m = BigInt(Math.random() * Math.pow(2, 53));
+      const m = random();
       const v = n + m * 2n ** 53n;
       t.same(int(v), toHex(v));
       t.same(int(-v), toHex(-v));
@@ -236,8 +256,8 @@ t.test("addition", (t) => {
 
   t.test("addition random", async (t) => {
     for (let i = 0; i < N; i++) {
-      const n = BigInt(Math.random() * Math.pow(2, 53));
-      const m = BigInt(Math.random() * Math.pow(2, 53));
+      const n = random();
+      const m = random();
       t.same(add(n, m), toHex(n + m));
       t.same(add(-n, m), toHex(-n + m));
       t.same(add(n, -m), toHex(n + -m));
@@ -290,8 +310,8 @@ t.test("subtraction", (t) => {
 
   t.test("random", async (t) => {
     for (let i = 0; i < N; i++) {
-      let n = BigInt(Math.random() * Math.pow(2, 53));
-      let m = BigInt(Math.random() * Math.pow(2, 53));
+      let n = random();
+      let m = random();
 
       // lhs>0 rhs>0
       t.same(sub(n, m), toHex(n - m));
@@ -353,8 +373,8 @@ t.test("multiplication", (t) => {
 
   t.test("multiplication random", async (t) => {
     for (let i = 0; i < N; i++) {
-      const n = BigInt(Math.random() * Math.pow(2, 53));
-      const m = BigInt(Math.random() * Math.pow(2, 53));
+      const n = random();
+      const m = random();
       const v = n * m;
       t.same(mul(n, m), toHex(v));
       __collect();
@@ -440,8 +460,10 @@ t.test("division", (t) => {
 
   t.test("division random", async (t) => {
     for (let i = 0; i < N; i++) {
-      const n = BigInt(Math.random() * Math.pow(2, 53));
-      const m = BigInt(Math.random() * Math.pow(2, 53));
+      const n = random();
+      let m = random();
+      if (m === 0n) m++;
+
       const v = n / m;
       t.same(div(n, m), toHex(v));
       t.same(div(-n, -m), toHex(v));
@@ -449,6 +471,31 @@ t.test("division", (t) => {
       t.same(div(n, -m), toHex(-v));
     }
   });
+
+  t.end();
+});
+
+t.test("inverse", t => {
+  t.same(inv(0x1, 0), 1);
+  t.same(inv(0x1, 16), 2**16);
+  t.same(inv(0x1, 32), 2**32);
+  t.same(inv(0x1, 64), 2**64);
+0
+  t.same(inv(0x3, 32), 0x55555555);
+  t.same(inv(0xBEEF, 32), 0x1573D);
+  t.same(inv(0xDEADBEEF, 64), 0x1264EB565);
+
+  t.same(inv('0xDEADBEEFDEADBEEF', 64), 0x1);
+
+  for (let i = 0; i < N; i++) {
+    let n = random();
+    if (n === 0n) n++;
+
+    t.same(inv(n, 8), 2n**8n/n);
+    t.same(inv(n, 16), 2n**16n/n);
+    t.same(inv(n, 32), 2n**32n/n);
+    t.same(inv(n, 64), 2n**64n/n);
+  }
 
   t.end();
 });
@@ -512,8 +559,8 @@ t.test("cmp", async (t) => {
 
   t.test("random", async (t) => {
     for (let i = 0; i < N; i++) {
-      const n = BigInt(Math.random() * Math.pow(2, 53));
-      const m = BigInt(Math.random() * Math.pow(2, 53));
+      const n = random();
+      const m = random();
       t.equal(cmp(n, m), n > m ? 1 : n < m ? -1 : 0);
       t.equal(cmp(-n, -m), n > m ? -1 : n < m ? 1 : 0);
     }

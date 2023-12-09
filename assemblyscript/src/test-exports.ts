@@ -41,6 +41,11 @@ export function __cmp(_a: string, _b: string): i32 {
   return a.cmp(b);
 }
 
+export function __inv(_a: string, k: u32): string {
+  const a = MpZ.from(_a);
+  return a.inv(k).toString();
+}
+
 function fact(n: u32): MpZ {
   let a = MpZ.from(1);
   for (let i: u32 = 1; i <= n; ++i) {
