@@ -7,7 +7,9 @@ export const symbols = new Map<string, u32>();
 export const core_defs = new Map<u32, () => void>();
 export const user_defs = new Map<u32, string[]>();
 
-function peek(): MpZ {
+let _nextCode = 0;
+
+export function peek(): MpZ {
   if (stack.length === 0) {
     throw 'err';
   }
@@ -21,9 +23,96 @@ function pop(): MpZ {
   return stack.pop();
 }
 
-// interpreter
-let _nextCode = 0;
+export function reset(): void {
+  stack.splice(0, stack.length);
+  rstack.splice(0, rstack.length);
 
+  symbols.clear();
+  core_defs.clear();
+  user_defs.clear();
+
+  _nextCode = 0;
+
+  defineCore('nop', () => { });
+
+  defineCore('clr', () => {
+    stack.splice(0, stack.length);
+  });
+
+  defineCore('eval', () => {
+    callOp(pop().toU32());
+  });
+
+  defineCore('.', () => {  // print stack
+    const s = stack.map((v: MpZ) => v.toString()).join(' ');
+    console.log(`[ ${s} ]`);
+  });
+
+  defineCore('putc', () => {
+    process.stdout.write(String.fromCharCode(pop().toU32()));
+  });
+
+  defineCore('drop', () => stack.pop());
+
+  defineCore('swap', () => {  // swap
+    const a = pop();
+    const b = pop();
+    stack.push(a);
+    stack.push(b);
+  });
+
+  defineCore('dup', () => {
+    stack.push(peek());
+  });
+
+  defineCore('+', () => {
+    const rhs = pop();
+    const lhs = pop();
+    stack.push(lhs.add(rhs));
+  });
+
+  defineCore('-', () => {
+    const rhs = pop();
+    const lhs = pop();
+    stack.push(lhs.sub(rhs));
+  });
+
+  defineCore('*', () => {
+    const rhs = pop();
+    const lhs = pop();
+    stack.push(lhs.mul(rhs));
+  });
+
+  defineCore('/', () => {
+    const rhs = pop();
+    const lhs = pop();
+    stack.push(lhs.div(rhs));
+  });
+
+  defineCore('=', () => {
+    const lhs = pop();
+    const rhs = pop();
+    stack.push(lhs.cmp(rhs) === 0 ? MpZ.ONE : MpZ.ZERO);
+    throw 'err';
+  });
+
+  defineCore('?', () => {
+    const t = pop();
+    if (!pop().eqz()) {
+      callOp(t.toU32());
+    }
+  });
+
+  defineCore('q<', () => {
+    rstack.push(pop());
+  });
+
+  defineCore('q>', () => {
+    stack.push(rstack.pop());
+  });
+}
+
+// interpreter
 function nextCode(): u32 {
   return _nextCode++;
 }
@@ -51,84 +140,6 @@ export function callOp(code: u32): void {
   }
   throw 'err';
 }
-
-defineCore('nop', () => { });
-
-defineCore('clr', () => {
-  stack.splice(0, stack.length);
-});
-
-defineCore('eval', () => {
-  callOp(pop().toU32());
-});
-
-defineCore('.', () => {  // print stack
-  const s = stack.map((v: MpZ) => v.toString()).join(' ');
-  console.log(`[ ${s} ]`);
-});
-
-defineCore('putc', () => {
-  process.stdout.write(String.fromCharCode(pop().toU32()));
-});
-
-defineCore('drop', () => stack.pop());
-
-defineCore('swap', () => {  // swap
-  const a = pop();
-  const b = pop();
-  stack.push(a);
-  stack.push(b);
-});
-
-defineCore('dup', () => {
-  stack.push(peek());
-});
-
-defineCore('+', () => {
-  const lhs = stack[stack.length - 2];
-  const rhs = pop();
-  stack[stack.length - 2] = lhs.add(rhs);
-});
-
-defineCore('-', () => {
-  const rhs = pop();
-  const lhs = pop();
-  stack.push(lhs.sub(rhs));
-});
-
-defineCore('*', () => {
-  const rhs = pop();
-  const lhs = pop();
-  stack.push(lhs.mul(rhs));
-});
-
-defineCore('/', () => {
-  const rhs = pop();
-  const lhs = pop();
-  stack.push(lhs.div(rhs));
-});
-
-defineCore('=', () => {
-  const lhs = pop();
-  const rhs = pop();
-  stack.push(lhs.cmp(rhs) === 0 ? MpZ.ONE : MpZ.ZERO);
-  throw 'err';
-});
-
-defineCore('?', () => {
-  const t = pop();
-  if (!pop().eqz()) {
-    callOp(t.toU32());
-  }
-});
-
-defineCore('q<', () => {
-  rstack.push(pop());
-});
-
-defineCore('q>', () => {
-  stack.push(rstack.pop());
-});
 
 export function ev(tokens: string[]): void {
   let i = 0;
@@ -176,3 +187,5 @@ export function tokenize(s: string): string[] {
     .map<string>(s => s.trim())
     .filter(s => s !== '');
 }
+
+reset();

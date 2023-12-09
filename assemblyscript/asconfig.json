@@ -14,11 +14,12 @@
       "sourceMap": false,
       "optimizeLevel": 3,
       "shrinkLevel": 2,
-      "converge": true,
-      "noAssert": true,
-      "bindings": true,
-      "exportRuntime": true,
-      "maxMemory": true
+      "converge": false,
+      "noAssert": false,
+      "bindings": false,
+      "exportRuntime": false,
+      "maxMemory": true,
+      "exportStart": false
     }
   },
   "extends": "./node_modules/@assemblyscript/wasi-shim/asconfig.json"

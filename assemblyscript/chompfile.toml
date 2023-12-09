@@ -33,9 +33,9 @@ deps = [':build:./src/test-exports', './tests/*.js', ':tap', ':bats']
 
 [[task]]
 name = 'tap'
-deps = [':build:./src/test-exports', './tests/*.js']
+deps = [':build:./src/test-exports', ':build:./src/plugin', './tests/*.js']
 run = '''
-  tap --node-arg="--require=suppress-experimental-warnings" --allow-empty-coverage run ./tests/*.js
+  tap --node-arg="--no-warnings" --allow-empty-coverage run ./tests/*.js
 '''
 
 [[task]]

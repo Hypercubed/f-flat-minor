@@ -1,6 +1,4 @@
 {
-  "extends": "assemblyscript/std/assembly.json",
-  "include": [
-    "./**/*.ts"
-, "tests/index.js"  ]
+  "extends": "./node_modules/assemblyscript/std/assembly.json",
+  "include": ["./**/*.ts", "tests/MpZ.js"]
 }
