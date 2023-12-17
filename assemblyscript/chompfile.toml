@@ -40,7 +40,7 @@ deps = [':run:src/example']
 [[task]]
 name = 'test'
 serial = true
-deps = [':build:./src/test-exports', './tests/*.js', ':tap', ':bats']
+deps = [':build:./src/test-exports', './tests/*.js', ':tap', ':bats', ':interpret']
 
 [[task]]
 name = 'tap'
@@ -76,9 +76,10 @@ deps = [':build:./src/plugin']
 run = 'cat ../ff/example.ff | node --no-warnings ./run.js'
 template = 'cmp'
 [task.template-options]
-cmp = './example.out'
+cmp = '../ff/example.out'
 
 [[task]]
 name = 'repl'
 deps = [':build:./src/plugin']
 run = 'node --no-warnings ./repl.js'
+

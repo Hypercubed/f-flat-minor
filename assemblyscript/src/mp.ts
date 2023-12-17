@@ -499,14 +499,45 @@ export class MpZ {
     return new MpZ(this._data, !this._neg);
   }
 
-  toString(): string {
+  private _uhex(): string {
     let r = '';
 
     for (let i: i32 = this._data.length - 1; i >= 0; --i) {
       r += u32ToHex(unchecked(this._data[i]), i !== this._data.length - 1);
     }
 
+    return r;
+  }
+
+  toString(): string {
+    const r = this._uhex();
     return this._neg ? `-0x${r}` : `0x${r}`;
+  }
+
+  toDecimal(): string {
+    const hex = this._uhex();
+
+    const len = hex.length;
+    const dec: u32[] = [];
+
+    for (let i = 0; i < len; ++i) {
+      const code = hex.charCodeAt(i);
+      let carry = codeToU32(code);
+
+      for (let j = 0; j < dec.length; ++j) {
+        const val = unchecked(dec[j]) * 16 + carry;
+        carry = val / 10;
+        dec[j] = val % 10;
+      }
+
+      while (carry > 0) {
+        dec.push(carry % 10);
+        carry = carry / 10;
+      }
+    }
+
+    const s = dec.reverse().join('')
+    return this._neg ? `-` : '' + s;
   }
 
   toU32(): u32 {

@@ -29,6 +29,10 @@ run_ts() {
   run_ts mul
 }
 
+@test "inv using mp" {
+  run_ts inv
+}
+
 @test "factorial using mp" {
   run_ts fact
 }

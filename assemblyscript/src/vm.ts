@@ -36,6 +36,31 @@ function pop(): MpZ {
   return stack.pop();
 }
 
+@inline
+function push(v: MpZ): void {
+  stack.push(v);
+}
+
+function poke(v: MpZ): void {
+  if (stack.length === 0) {
+    state = State.ERROR_UNDERFLOW;
+    return;
+  }
+  stack[stack.length - 1] = v;
+}
+
+function call(code: u32): void {
+  if (core_defs.has(code)) {
+    return core_defs.get(code)();
+  }
+  if (user_defs.has(code)) {
+    return runBC(user_defs.get(code));
+  }
+  state = State.ERROR_UNDEFINED;
+  return;
+}
+
+@inline
 function nop(): void { }
 
 function clr(): void {
@@ -47,8 +72,8 @@ function eval(): void {
 }
 
 export function dump(): void {
-  const s = stack.map((v: MpZ) => v.toString()).join(' ');
-  console.log(`[ ${s} ]`);
+  const s = stack.map((v: MpZ) => v.toDecimal()).join(' ');
+  process.stdout.write(`[ ${s} ]\n`);
 }
 
 function putc(): void {
@@ -62,30 +87,30 @@ function drop(): void {
 function swap(): void {
   const a = pop();
   const b = pop();
-  stack.push(a);
-  stack.push(b);
+  push(a);
+  push(b);
 }
 
 function dup(): void {
-  stack.push(peek());
+  push(peek());
 }
 
 function add(): void {
   const rhs = pop();
   const lhs = pop();
-  stack.push(lhs.add(rhs));
+  push(lhs.add(rhs));
 }
 
 function sub(): void {
   const rhs = pop();
   const lhs = pop();
-  stack.push(lhs.sub(rhs));
+  push(lhs.sub(rhs));
 }
 
 function mul(): void {
   const rhs = pop();
   const lhs = pop();
-  stack.push(lhs.mul(rhs));
+  push(lhs.mul(rhs));
 }
 
 function div(): void {
@@ -95,7 +120,7 @@ function div(): void {
     state = State.ERROR_DIV_BY_ZERO;
     return;
   }
-  stack.push(lhs.div(rhs));
+  push(lhs.div(rhs));
 }
 
 function pushr(): void {
@@ -103,7 +128,7 @@ function pushr(): void {
 }
 
 function pullr(): void {
-  stack.push(rstack.pop());
+  push(rstack.pop());
 }
 
 function when(): void {
@@ -115,7 +140,7 @@ function when(): void {
 
 function mark(): void {
   _enqueue++;
-  stack.push(MpZ.from(Op.MARK));
+  push(MpZ.from(Op.MARK));
 }
 
 function _def(): MpZ {
@@ -142,7 +167,7 @@ function def(): void {
 
 function bra(): void {
   const code = _nextCode++;
-  stack.push(MpZ.from(code));
+  push(MpZ.from(code));
   mark();
 }
 
@@ -151,28 +176,30 @@ function ket(): void {
 }
 
 function depth(): void {
-  stack.push(MpZ.from(stack.length));
+  push(MpZ.from(stack.length));
 }
 
 function gt(): void {
   const rhs = pop();
   const lhs = pop();
-  stack.push(lhs.cmp(rhs) > 0 ? MpZ.ONE : MpZ.ZERO);
+  push(lhs.cmp(rhs) > 0 ? MpZ.ONE : MpZ.ZERO);
 }
 
 function eq(): void {
   const rhs = pop();
   const lhs = pop();
-  stack.push(lhs.cmp(rhs) === 0 ? MpZ.ONE : MpZ.ZERO);
+  push(lhs.cmp(rhs) === 0 ? MpZ.ONE : MpZ.ZERO);
 }
 
 function lt(): void {
   const rhs = pop();
   const lhs = pop();
-  stack.push(lhs.cmp(rhs) < 0 ? MpZ.ONE : MpZ.ZERO);
+  push(lhs.cmp(rhs) < 0 ? MpZ.ONE : MpZ.ZERO);
 }
 
 export function reset(): void {
+  state = State.IDLE;
+
   stack.splice(0, stack.length);
   rstack.splice(0, rstack.length);
 
@@ -207,30 +234,18 @@ export function reset(): void {
 }
 
 // interpreter
-function call(code: u32): void {
-  if (core_defs.has(code)) {
-    return core_defs.get(code)();
-  }
-  if (user_defs.has(code)) {
-    return runBC(user_defs.get(code));
-  }
-  state = State.ERROR_UNDEFINED;
-  return;
-}
-
 export function PUSH(v: MpZ): void {
+  push(v);
+
   if (_enqueue > 0) {
-    stack.push(v);
-    stack.push(MpZ.ZERO);
-  } else {
-    stack.push(v);
+    push(MpZ.ZERO);
   }
 }
 
 export function CALL(v: u32): void {
   if (_enqueue > 0 && v !== Op.MARK && v !== Op.DEF && v !== Op.BRA && v !== Op.KET) {
-    stack.push(MpZ.from(v));
-    stack.push(MpZ.ONE);
+    push(MpZ.from(v));
+    push(MpZ.ONE);
   } else {
     call(v);
   }
@@ -264,15 +279,15 @@ function runBC(bc: MpZ[]): void {
 
   for (let i = 0; i < l; i++) {
     const v = bc[i++];
-    const op = bc[i].toU32();
+    const op = bc[i];
 
-    if (op === 0) {
-      stack.push(v);
-    } else if (op === 1) {
+    if (op.eqz()) {
+      push(v);
+    } else if (op.eq(MpZ.ONE)) {
       call(v.toU32());
     } else {
-      stack.push(v);
-      call(op);
+      push(v);
+      call(op.toU32());
     }
 
     if (inError()) {

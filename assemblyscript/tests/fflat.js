@@ -82,6 +82,11 @@ t.test("div", async (t) => {
     await run('0xDEADBEEF 16 /'),
     0xdeadbee
   );
+
+  t.same(
+    await run('0xDEADBEEF 0 /'),
+    0
+  );
 });
 
 t.test("fact", async (t) => {
