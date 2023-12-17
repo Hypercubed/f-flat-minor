@@ -83,3 +83,10 @@ name = 'repl'
 deps = [':build:./src/plugin']
 run = 'node --no-warnings ./repl.js'
 
+[[task]]
+name = 'build-cli'
+deps = [':build:./src/run']
+run = '''
+sh ./hermit.com -f Hermitfile -o ./build/cli.com
+chmod +x ./build/cli.com
+'''

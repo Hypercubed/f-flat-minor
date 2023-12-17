@@ -509,7 +509,17 @@ export class MpZ {
     return r;
   }
 
-  toString(): string {
+  toString(radix: i32 = 10): string {
+    if (radix === 10) {
+      return this.toDecimal();
+    } else if (radix === 16) {
+      return this.toHex();
+    } else {
+      throw new RangeError("MpZ only supports radix 10 and 16");
+    }
+  }
+
+  toHex(): string {
     const r = this._uhex();
     return this._neg ? `-0x${r}` : `0x${r}`;
   }
@@ -536,8 +546,7 @@ export class MpZ {
       }
     }
 
-    const s = dec.reverse().join('')
-    return this._neg ? `-` : '' + s;
+    return (this._neg ? `-` : '') + dec.reverse().join('');
   }
 
   toU32(): u32 {
