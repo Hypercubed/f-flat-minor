@@ -1,3 +1,5 @@
+#!/usr/bin/env -S node --no-warnings
+
 import repl from 'node:repl';
 import createPlugin from "@extism/extism";
 
@@ -11,7 +13,8 @@ async function start() {
 
 async function myEval(cmd, _ctx, _fn, callback) {
   try {
-    await plugin.call("run", cmd + " .");
+    await plugin.call("run", cmd);
+    await plugin.call("dump");
   } catch (e) {
     console.error(e);
     plugin = await start();

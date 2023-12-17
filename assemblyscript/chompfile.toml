@@ -1,6 +1,8 @@
 version = 0.1
 default-task = 'build'
 
+extensions = ['../cmp-extension.js']
+
 [[task]]
 name = 'build'
 deps = ['build:src/mp']
@@ -33,7 +35,7 @@ run = '''
 
 [[task]]
 name = 'example'
-deps = [':run:src/interp-mp']
+deps = [':run:src/example']
 
 [[task]]
 name = 'test'
@@ -67,3 +69,16 @@ name = 'clean'
 run = '''
   rm -rf ./build
 '''
+
+[[task]]
+name = 'interpret'
+deps = [':build:./src/plugin']
+run = 'cat ../ff/example.ff | node --no-warnings ./run.js'
+template = 'cmp'
+[task.template-options]
+cmp = './example.out'
+
+[[task]]
+name = 'repl'
+deps = [':build:./src/plugin']
+run = 'node --no-warnings ./repl.js'

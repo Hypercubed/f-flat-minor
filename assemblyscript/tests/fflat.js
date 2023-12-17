@@ -88,8 +88,7 @@ t.test("fact", async (t) => {
   t.same(
     await run(`
         /* define factorial */
-        (fact): dup 1 - fact * ;
-        fact: dup 1 - &(fact) ? ;
+        fact: dup 1 > [ dup 1 - fact * ] ? ;
       
         100 fact
     `),

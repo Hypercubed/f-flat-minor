@@ -38,7 +38,7 @@ run_ts() {
 }
 
 @test "interp mp" {
-  chomp build:./src/interp-mp
-  run wasmtime ./build/src/interp-mp.wasm
+  chomp build:./src/interp
+  run wasmtime ./build/src/interp.wasm
   assert_output - < "./bats/fixtures/interp-mp.out"
 }
