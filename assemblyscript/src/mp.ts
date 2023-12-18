@@ -520,11 +520,15 @@ export class MpZ {
   }
 
   toHex(): string {
+    if (this.eqz()) return '0x0';
+
     const r = this._uhex();
     return this._neg ? `-0x${r}` : `0x${r}`;
   }
 
   toDecimal(): string {
+    if (this.eqz()) return '0';
+
     const hex = this._uhex();
 
     const len = hex.length;
@@ -551,6 +555,10 @@ export class MpZ {
 
   toU32(): u32 {
     return unchecked(this._data[0]);
+  }
+
+  toI32(): u32 {
+    return unchecked(<i32>this._data[0]);
   }
   
   eq<T>(rhs: T): boolean {

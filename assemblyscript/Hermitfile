@@ -1,2 +1,2 @@
 # cat hermitfile
-FROM ./build/src/run.wasm
+FROM ./build/src/run-release.wasm
