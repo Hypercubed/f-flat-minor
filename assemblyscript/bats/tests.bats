@@ -29,6 +29,10 @@ run_ts() {
   run_ts mul
 }
 
+@test "inv using mp" {
+  run_ts inv
+}
+
 @test "factorial using mp" {
   run_ts fact
 }
@@ -38,7 +42,7 @@ run_ts() {
 }
 
 @test "interp mp" {
-  chomp build:./src/interp-mp
-  run wasmtime ./build/src/interp-mp.wasm
+  chomp build:./src/interp
+  run wasmtime ./build/src/interp.wasm
   assert_output - < "./bats/fixtures/interp-mp.out"
 }

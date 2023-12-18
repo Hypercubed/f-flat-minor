@@ -1,191 +1,111 @@
 import { MpZ } from "./mp";
+import { Op } from "./consts";
+import * as vm from "./vm";
 
-export const stack: MpZ[] = [];
-export const rstack: MpZ[] = [];
+let _nextCode = -1;
 
-export const symbols = new Map<string, u32>();
-export const core_defs = new Map<u32, () => void>();
-export const user_defs = new Map<u32, string[]>();
+const symbols = new Map<string, u32>();
 
-let _nextCode = 0;
-
-export function peek(): MpZ {
-  if (stack.length === 0) {
-    throw 'err';
-  }
-  return stack[stack.length - 1];
-}
-
-function pop(): MpZ {
-  if (stack.length === 0) {
-    throw 'err';
-  }
-  return stack.pop();
-}
-
-export function reset(): void {
-  stack.splice(0, stack.length);
-  rstack.splice(0, rstack.length);
-
-  symbols.clear();
-  core_defs.clear();
-  user_defs.clear();
-
-  _nextCode = 0;
-
-  defineCore('nop', () => { });
-
-  defineCore('clr', () => {
-    stack.splice(0, stack.length);
-  });
-
-  defineCore('eval', () => {
-    callOp(pop().toU32());
-  });
-
-  defineCore('.', () => {  // print stack
-    const s = stack.map((v: MpZ) => v.toString()).join(' ');
-    console.log(`[ ${s} ]`);
-  });
-
-  defineCore('putc', () => {
-    process.stdout.write(String.fromCharCode(pop().toU32()));
-  });
-
-  defineCore('drop', () => stack.pop());
-
-  defineCore('swap', () => {  // swap
-    const a = pop();
-    const b = pop();
-    stack.push(a);
-    stack.push(b);
-  });
-
-  defineCore('dup', () => {
-    stack.push(peek());
-  });
-
-  defineCore('+', () => {
-    const rhs = pop();
-    const lhs = pop();
-    stack.push(lhs.add(rhs));
-  });
-
-  defineCore('-', () => {
-    const rhs = pop();
-    const lhs = pop();
-    stack.push(lhs.sub(rhs));
-  });
-
-  defineCore('*', () => {
-    const rhs = pop();
-    const lhs = pop();
-    stack.push(lhs.mul(rhs));
-  });
-
-  defineCore('/', () => {
-    const rhs = pop();
-    const lhs = pop();
-    stack.push(lhs.div(rhs));
-  });
-
-  defineCore('=', () => {
-    const lhs = pop();
-    const rhs = pop();
-    stack.push(lhs.cmp(rhs) === 0 ? MpZ.ONE : MpZ.ZERO);
-    throw 'err';
-  });
-
-  defineCore('?', () => {
-    const t = pop();
-    if (!pop().eqz()) {
-      callOp(t.toU32());
-    }
-  });
-
-  defineCore('q<', () => {
-    rstack.push(pop());
-  });
-
-  defineCore('q>', () => {
-    stack.push(rstack.pop());
-  });
-}
-
-// interpreter
-function nextCode(): u32 {
-  return _nextCode++;
-}
-
-export function getSymbol(name: string): u32 {
+function getSymbol(name: string): u32 {
   name = name.toLowerCase();
   if (!symbols.has(name)) {
-    const code = nextCode();
+    const code = _nextCode--;
     symbols.set(name, code);
   }
   return symbols.get(name);
 }
 
-export function defineCore(name: string, fn: () => void): void {
-  const code = getSymbol(name);
-  core_defs.set(code, fn);
+export function reset(): void {
+  vm.reset();
+
+  _nextCode = -1;
+  symbols.clear();
+
+  symbols.set('nop', Op.NOP);
+  symbols.set('eval', Op.CALL);
+  symbols.set('putc', Op.PUTC);
+  symbols.set('putn', Op.PUTN);
+  symbols.set('drop', Op.DROP);
+  symbols.set('q<', Op.PUSHR);
+  symbols.set('q>', Op.PULLR);
+  symbols.set('dup', Op.DUP);
+  symbols.set('clr', Op.CLR);
+  symbols.set('exit', Op.EXIT);
+  symbols.set('depth', Op.DEPTH);
+  symbols.set('swap', Op.SWAP);
+  symbols.set('*', Op.MUL);
+  symbols.set('+', Op.ADD);
+  symbols.set('-', Op.SUB);
+  symbols.set('.', Op.DUMP);
+  symbols.set('/', Op.DIV);
+  symbols.set(':', Op.MARK);
+  symbols.set(';', Op.DEF);
+  symbols.set('<', Op.LT);
+  symbols.set('=', Op.EQ);
+  symbols.set('>', Op.GT);
+  symbols.set('?', Op.WHEN);
+  symbols.set('[', Op.BRA);
+  symbols.set(']', Op.KET);
 }
 
-export function callOp(code: u32): void {
-  if (core_defs.has(code)) {
-    return core_defs.get(code)();
-  }
-  if (user_defs.has(code)) {
-    return ev(user_defs.get(code));
-  }
-  throw 'err';
-}
-
-export function ev(tokens: string[]): void {
-  let i = 0;
-  const l = tokens.length;
-  let token = '';
-  while (i < l) {
-    token = tokens[i++];
-
-    if (!isNaN(parseInt(token))) {
-      stack.push(MpZ.from(token));
-    } else if (token.startsWith('\'')) { // String
-      token.replaceAll('\'', '')
-        .split('')
-        .forEach(c => stack.push(MpZ.from(c.charCodeAt(0))));
-    } else if (token.startsWith('&')) { // Symbol
-      const name = token.replace('&', '');
-      stack.push(MpZ.from(getSymbol(name)));
-    } else if (symbols.has(token)) {  // Definition
-      const code = symbols.get(token);
-      callOp(code);
-    } else if (token.endsWith(':')) { // Definition
-      const name = token.replace(':', '');
-      let code = getSymbol(name);
-      token = tokens[i++];
-      let def: string[] = [];
-      while (token != ';' && i < l) {
-        def.push(token);
-        token = tokens[i++];
-      }
-      user_defs.set(code, def);
-    } else if (token.startsWith('/*')) {  // Comment
-      while (!token.endsWith('*/') && i < tokens.length && token !== '*/') {
-        token = tokens[i++];
-      }
-    } else {
-      throw new Error(`Undefined ${token}`);
-    }
-  }
-}
-
-export function tokenize(s: string): string[] {
-  s = s.replaceAll('\n', ' ').replaceAll('\r', ' ');
-
+function tokenize(s: string): string[] {
   return s.split(' ')
     .map<string>(s => s.trim())
     .filter(s => s !== '');
 }
 
-reset();
+export function run(s: string): void {
+  s = s.replaceAll('\r', '\n');
+  const lines = s.split('\n');
+
+  for (let i = 0; i < lines.length; i++) {
+    const line = lines[i];
+    const tokens = tokenize(line);
+
+    for (let j = 0; j < tokens.length; j++) {
+      const token = tokens[j];
+
+      if (!isNaN(parseInt(token))) {
+        vm.PUSH(MpZ.from(token));
+      } else if (token.startsWith('.') && token.length > 1) { // compile-time command
+        continue;
+      } else if (token.startsWith('\'')) { // String
+        token.replaceAll('\'', '')
+          .split('')
+          .forEach(c => vm.PUSH(MpZ.from(c.charCodeAt(0))));
+      } else if (token.startsWith('/*')) {  // Comment
+        let t = tokens[j++];
+        while (!t.endsWith('*/') && j < tokens.length) {
+          t = tokens[j++];
+        }
+      } else if (token.endsWith(':') && token.length > 1) { // Definition
+        const name = token.substring(0, token.length - 1);
+        const code = getSymbol(name);
+        vm.PUSH(MpZ.from(code));
+        vm.CALL(Op.MARK);
+      } else if (token.startsWith('[') && token.endsWith(']')) {  // Pointer
+        const name = token.substring(1, token.length - 1);
+        const code = getSymbol(name);
+        vm.PUSH(MpZ.from(code));
+      } else {
+        const code = getSymbol(token);
+        vm.CALL(code);
+      }
+
+      if (vm.inError()) {
+        process.stderr.write(`Error at line ${i + 1}, token ${j}: ${vm.getError()}\n`);
+        process.stderr.write(`*** ${line} *** \n`);
+        vm.clearError();
+        break;
+      }
+    }
+  }
+}
+
+export function dump(): void {
+  return vm.dump();
+}
+
+export function peek(): MpZ {
+  return vm.peek();
+}

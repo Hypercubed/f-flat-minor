@@ -82,14 +82,18 @@ t.test("div", async (t) => {
     await run('0xDEADBEEF 16 /'),
     0xdeadbee
   );
+
+  t.same(
+    await run('0xDEADBEEF 0 /'),
+    0
+  );
 });
 
 t.test("fact", async (t) => {
   t.same(
     await run(`
         /* define factorial */
-        (fact): dup 1 - fact * ;
-        fact: dup 1 - &(fact) ? ;
+        fact: dup 1 > [ dup 1 - fact * ] ? ;
       
         100 fact
     `),

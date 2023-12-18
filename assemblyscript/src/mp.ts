@@ -499,18 +499,66 @@ export class MpZ {
     return new MpZ(this._data, !this._neg);
   }
 
-  toString(): string {
+  private _uhex(): string {
     let r = '';
 
     for (let i: i32 = this._data.length - 1; i >= 0; --i) {
       r += u32ToHex(unchecked(this._data[i]), i !== this._data.length - 1);
     }
 
+    return r;
+  }
+
+  toString(radix: i32 = 16): string {
+    if (radix === 10) {
+      return this.toDecimal();
+    } else if (radix === 16) {
+      return this.toHex();
+    } else {
+      throw new RangeError("MpZ only supports radix 10 and 16");
+    }
+  }
+
+  toHex(): string {
+    if (this.eqz()) return '0x0';
+
+    const r = this._uhex();
     return this._neg ? `-0x${r}` : `0x${r}`;
+  }
+
+  toDecimal(): string {
+    if (this.eqz()) return '0';
+
+    const hex = this._uhex();
+
+    const len = hex.length;
+    const dec: u32[] = [];
+
+    for (let i = 0; i < len; ++i) {
+      const code = hex.charCodeAt(i);
+      let carry = codeToU32(code);
+
+      for (let j = 0; j < dec.length; ++j) {
+        const val = unchecked(dec[j]) * 16 + carry;
+        carry = val / 10;
+        dec[j] = val % 10;
+      }
+
+      while (carry > 0) {
+        dec.push(carry % 10);
+        carry = carry / 10;
+      }
+    }
+
+    return (this._neg ? `-` : '') + dec.reverse().join('');
   }
 
   toU32(): u32 {
     return unchecked(this._data[0]);
+  }
+
+  toI32(): u32 {
+    return unchecked(<i32>this._data[0]);
   }
   
   eq<T>(rhs: T): boolean {

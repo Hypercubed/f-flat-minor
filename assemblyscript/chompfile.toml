@@ -1,6 +1,8 @@
 version = 0.1
 default-task = 'build'
 
+extensions = ['../cmp-extension.js']
+
 [[task]]
 name = 'build'
 deps = ['build:src/mp']
@@ -32,13 +34,21 @@ run = '''
 '''
 
 [[task]]
+name = 'run-release:#'
+deps = ['##.ts']
+run = '''
+  chomp build-release:$MATCH
+  wasmtime ./build/$MATCH-release.wasm
+'''
+
+[[task]]
 name = 'example'
-deps = [':run:src/interp-mp']
+deps = [':run:src/example-interp']
 
 [[task]]
 name = 'test'
 serial = true
-deps = [':build:./src/test-exports', './tests/*.js', ':tap', ':bats']
+deps = [':build:./src/test-exports', './tests/*.js', ':tap', ':bats', ':interpret']
 
 [[task]]
 name = 'tap'
@@ -66,4 +76,41 @@ run = '''
 name = 'clean'
 run = '''
   rm -rf ./build
+'''
+
+[[task]]
+name = 'interpret'
+deps = [':build:./src/plugin']
+run = 'cat ../ff/example.ff | node --no-warnings ./run.js'
+template = 'cmp'
+[task.template-options]
+cmp = '../ff/example.out'
+
+[[task]]
+name = 'repl'
+deps = [':run-release:src/repl']
+
+[[task]]
+name = 'wasmer-repl'
+deps = [':build-release:src/repl']
+run = '''
+  wasmer .
+'''
+
+[[task]]
+name = 'build-cli'
+deps = [':build-release:./src/repl']
+run = '''
+sh ./hermit.com -f Hermitfile -o ./build/cli.com
+chmod +x ./build/cli.com
+'''
+
+[[task]]
+name = 'pp:#'
+deps = ['##', ':build-cli']
+serial = true
+invalidation = 'always'
+validation = 'none'
+run = '''
+  ../deno/bin/ff compile $MATCH --opt --disassemble | ./build/cli.com --silent
 '''

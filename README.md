@@ -24,12 +24,13 @@ For each target language first implement a proof-of-concept interpreter either i
 | Python                | F♭m                                                                    | ✓           |
 | Ruby                  | F♭m                                                                    | ✓           |
 | Dart                  | F♭m                                                                    | ✓           |
-| AssemblyScript        | F♭m<sup>o</sup>                                                        | ✓           |
+| AssemblyScript        | F♭m                                                                    | ✓           |            | ✓    |
 | C++                   | F♭m<sup>o</sup>                                                        | ✓           |
 | Rust                  | F♭m<sup>o</sup>                                                        | ✓           |
 | Swift                 | [ F♭m<sup>-</sup> ](https://replit.com/@Hypercubed/f-flat-minor-Swift) | ✓           |
 | Wolfram Language      | F♭m<sup>-</sup>                                                        |
 | Haskell               | F♭m<sup>-</sup>                                                        |
+| WASM (wat)            | F♭m<sup>-</sup>                                                        |
 | Julia                 |
 | LLVM                  |
 | F#                    |
