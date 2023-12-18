@@ -4,9 +4,9 @@ import * as vm from "./vm";
 
 let _nextCode = -1;
 
-export const symbols = new Map<string, u32>();
+const symbols = new Map<string, u32>();
 
-export function getSymbol(name: string): u32 {
+function getSymbol(name: string): u32 {
   name = name.toLowerCase();
   if (!symbols.has(name)) {
     const code = _nextCode--;
@@ -24,11 +24,13 @@ export function reset(): void {
   symbols.set('nop', Op.NOP);
   symbols.set('eval', Op.CALL);
   symbols.set('putc', Op.PUTC);
+  symbols.set('putn', Op.PUTN);
   symbols.set('drop', Op.DROP);
   symbols.set('q<', Op.PUSHR);
   symbols.set('q>', Op.PULLR);
   symbols.set('dup', Op.DUP);
   symbols.set('clr', Op.CLR);
+  symbols.set('exit', Op.EXIT);
   symbols.set('depth', Op.DEPTH);
   symbols.set('swap', Op.SWAP);
   symbols.set('*', Op.MUL);
@@ -46,7 +48,7 @@ export function reset(): void {
   symbols.set(']', Op.KET);
 }
 
-export function tokenize(s: string): string[] {
+function tokenize(s: string): string[] {
   return s.split(' ')
     .map<string>(s => s.trim())
     .filter(s => s !== '');
@@ -65,6 +67,8 @@ export function run(s: string): void {
 
       if (!isNaN(parseInt(token))) {
         vm.PUSH(MpZ.from(token));
+      } else if (token.startsWith('.') && token.length > 1) { // compile-time command
+        continue;
       } else if (token.startsWith('\'')) { // String
         token.replaceAll('\'', '')
           .split('')
@@ -89,8 +93,8 @@ export function run(s: string): void {
       }
 
       if (vm.inError()) {
-        const err = `Error at line ${i + 1}, token ${token}: ${vm.getError()}\n`;
-        process.stderr.write(err);
+        process.stderr.write(`Error at line ${i + 1}, token ${j}: ${vm.getError()}\n`);
+        process.stderr.write(`*** ${line} *** \n`);
         vm.clearError();
         break;
       }

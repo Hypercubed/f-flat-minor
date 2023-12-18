@@ -7,6 +7,7 @@ export enum Op {
   PUSHR = 14,
   PULLR = 15,
   CLR = 24,
+  EXIT = 27,
   DUP = "!".charCodeAt(0),
   DEPTH = "#".charCodeAt(0),
   SWAP = "$".charCodeAt(0),

@@ -509,7 +509,7 @@ export class MpZ {
     return r;
   }
 
-  toString(radix: i32 = 10): string {
+  toString(radix: i32 = 16): string {
     if (radix === 10) {
       return this.toDecimal();
     } else if (radix === 16) {

@@ -34,6 +34,14 @@ run = '''
 '''
 
 [[task]]
+name = 'run-release:#'
+deps = ['##.ts']
+run = '''
+  chomp build-release:$MATCH
+  wasmtime ./build/$MATCH-release.wasm
+'''
+
+[[task]]
 name = 'example'
 deps = [':run:src/example-interp']
 
@@ -80,13 +88,29 @@ cmp = '../ff/example.out'
 
 [[task]]
 name = 'repl'
-deps = [':build:./src/plugin']
-run = 'node --no-warnings ./repl.js'
+deps = [':run-release:src/repl']
+
+[[task]]
+name = 'wasmer-repl'
+deps = [':build-release:src/repl']
+run = '''
+  wasmer .
+'''
 
 [[task]]
 name = 'build-cli'
-deps = [':build-release:./src/run']
+deps = [':build-release:./src/repl']
 run = '''
 sh ./hermit.com -f Hermitfile -o ./build/cli.com
 chmod +x ./build/cli.com
+'''
+
+[[task]]
+name = 'pp:#'
+deps = ['##', ':build-cli']
+serial = true
+invalidation = 'always'
+validation = 'none'
+run = '''
+  ../deno/bin/ff compile $MATCH --opt --disassemble | ./build/cli.com --silent
 '''

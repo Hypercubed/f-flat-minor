@@ -197,6 +197,15 @@ function lt(): void {
   push(lhs.cmp(rhs) < 0 ? MpZ.ONE : MpZ.ZERO);
 }
 
+function exit(): void {
+  const code = pop();
+  process.exit(code.toU32());
+}
+
+function putn(): void {
+  process.stdout.write(pop().toDecimal());
+}
+
 export function reset(): void {
   state = State.IDLE;
 
@@ -211,11 +220,13 @@ export function reset(): void {
   core_defs.set(Op.NOP, nop);
   core_defs.set(Op.CALL, eval);
   core_defs.set(Op.PUTC, putc);
+  core_defs.set(Op.PUTN, putn);
   core_defs.set(Op.DROP, drop);
   core_defs.set(Op.PUSHR, pushr);
   core_defs.set(Op.PULLR, pullr);
   core_defs.set(Op.DUP, dup);
   core_defs.set(Op.CLR, clr);
+  core_defs.set(Op.EXIT, exit);
   core_defs.set(Op.DEPTH, depth);
   core_defs.set(Op.SWAP, swap);
   core_defs.set(Op.MUL, mul);
@@ -291,7 +302,7 @@ function runBC(bc: MpZ[]): void {
     }
 
     if (inError()) {
-      break;
+      return;
     }
   }
 

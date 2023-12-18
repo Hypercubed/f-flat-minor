@@ -1,0 +1,18 @@
+[package]
+name = 'hypercubed/f-flat-minor'
+version = '0.0.0'
+description = 'Interactive f-flat-minor'
+repository = "https://github.com/Hypercubed/f-flat-minor"
+
+[[module]]
+name = 'f-flat-minor'
+source = './build/src/repl-release.wasm'
+abi = 'wasi'
+
+[module.interfaces]
+wasi = '0.1.0-unstable'
+
+[[command]]
+name = 'f-flat-minor'
+module = 'f-flat-minor'
+runner = 'wasi'
