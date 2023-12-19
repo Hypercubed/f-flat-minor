@@ -93,7 +93,7 @@ export function run(s: string): void {
       }
 
       if (vm.inError()) {
-        process.stderr.write(`Error at line ${i + 1}, token ${j}: ${vm.getError()}\n`);
+        process.stderr.write(`Error at line ${i + 1}, token ${j} "${token}": ${vm.getError()}\n`);
         process.stderr.write(`*** ${line} *** \n`);
         vm.clearError();
         break;

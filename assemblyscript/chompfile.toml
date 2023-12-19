@@ -105,12 +105,22 @@ sh ./hermit.com -f Hermitfile -o ./build/cli.com
 chmod +x ./build/cli.com
 '''
 
+# [[task]]
+# name = 'pp:#'
+# deps = ['##', ':build-cli']
+# serial = true
+# invalidation = 'always'
+# validation = 'none'
+# run = '''
+#   ../deno/bin/ff compile $MATCH --opt --disassemble | ./build/cli.com --silent
+# '''
+
 [[task]]
 name = 'pp:#'
-deps = ['##', ':build-cli']
+deps = ['##', ':build:src/plugin']
 serial = true
 invalidation = 'always'
 validation = 'none'
 run = '''
-  ../deno/bin/ff compile $MATCH --opt --disassemble | ./build/cli.com --silent
+  ../deno/bin/ff compile $MATCH --opt --disassemble | ./run.js
 '''
