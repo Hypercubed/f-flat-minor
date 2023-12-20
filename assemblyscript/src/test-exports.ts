@@ -4,6 +4,10 @@ export function __int(_a: string): string {
   return MpZ.from(_a).toString();
 }
 
+export function __dec(_a: string): string {
+  return MpZ.from(_a).toDecimal();
+}
+
 export function __shl(_a: string, _b: u32): string {
   const a = MpZ.from(_a);
   return a._shl(_b).toString();
