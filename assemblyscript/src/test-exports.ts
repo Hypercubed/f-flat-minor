@@ -29,6 +29,14 @@ export function __div(_a: string, _b: string): string {
   return c.toString();
 }
 
+export function __pow(_a: string, _b: string): string {
+  const a = MpZ.from(_a);
+  const b = MpZ.from(_b);
+  const c = a.pow(b);
+
+  return c.toString();
+}
+
 export function __sub(_a: string, _b: string): string {
   const a = MpZ.from(_a);
   const b = MpZ.from(_b);

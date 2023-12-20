@@ -492,6 +492,29 @@ export class MpZ {
     return this.sub(rhs.mul(q));
   }
 
+  pow<T>(_rhs: T): MpZ {
+    const rhs = MpZ.from(_rhs);
+    if (rhs.isNeg) throw new Error("Negative exponent");
+    return this._pow(rhs);
+  }
+
+  _pow(rhs: MpZ): MpZ {
+    if (rhs.eqz()) return MpZ.ONE;
+    if (rhs.eq(MpZ.ONE)) return this;
+
+    let pow = this._pow(rhs._shr(1));
+    pow = pow.mul(pow);
+    return rhs.isOdd() ? pow.mul(this) : pow;
+  }
+
+  isOdd(): boolean {
+    return (unchecked(this._data[0]) & 1) === 1;
+  }
+
+  isEven(): boolean {
+    return !this.isOdd();
+  }
+
 
   @operator.prefix('-')
   neg(): MpZ {
@@ -690,6 +713,11 @@ export class MpZ {
   @inline @operator('%')
   static mod(lhs: MpZ, rhs: MpZ): MpZ {
     return lhs.mod(rhs);
+  }
+
+  @inline @operator('**')
+  static pow(lhs: MpZ, rhs: MpZ): MpZ {
+    return lhs.pow(rhs);
   }
 
   static A: MpZ = MpZ.from(48/17);

@@ -67,6 +67,7 @@ function clr(): void {
   stack.splice(0, stack.length);
 }
 
+// @ts-ignore
 function eval(): void {
   call(pop().toU32());
 }
@@ -111,6 +112,18 @@ function mul(): void {
   const rhs = pop();
   const lhs = pop();
   push(lhs.mul(rhs));
+}
+
+function mod(): void {
+  const rhs = pop();
+  const lhs = pop();
+  push(lhs.mod(rhs));
+}
+
+function pow(): void {
+  const rhs = pop();
+  const lhs = pop();
+  push(lhs.pow(rhs));
 }
 
 function div(): void {
@@ -197,6 +210,18 @@ function lt(): void {
   push(lhs.cmp(rhs) < 0 ? MpZ.ONE : MpZ.ZERO);
 }
 
+function lshift(): void {
+  const rhs = pop().toU32();;
+  const lhs = pop();
+  push(lhs.shl(rhs));
+}
+
+function rshift(): void {
+  const rhs = pop().toU32();
+  const lhs = pop();
+  push(lhs.shr(rhs));
+}
+
 function exit(): void {
   const code = pop();
   process.exit(code.toU32());
@@ -204,6 +229,17 @@ function exit(): void {
 
 function putn(): void {
   process.stdout.write(pop().toDecimal());
+}
+
+function clock(): void {
+  push(MpZ.from(Date.now()));
+}
+
+function rand(): void {
+  const max = pop();
+  const f = max.toU32();
+  const r = Math.floor(Math.random() * f);
+  push(MpZ.from(<u32>r));
 }
 
 export function reset(): void {
@@ -221,14 +257,19 @@ export function reset(): void {
   core_defs.set(Op.CALL, eval);
   core_defs.set(Op.PUTC, putc);
   core_defs.set(Op.PUTN, putn);
+  core_defs.set(Op.CLOCK, clock);
   core_defs.set(Op.DROP, drop);
   core_defs.set(Op.PUSHR, pushr);
   core_defs.set(Op.PULLR, pullr);
+  core_defs.set(Op.SHIFTL, lshift);
+  core_defs.set(Op.SHIFTR, rshift);
   core_defs.set(Op.DUP, dup);
   core_defs.set(Op.CLR, clr);
+  core_defs.set(Op.RAND, rand);
   core_defs.set(Op.EXIT, exit);
   core_defs.set(Op.DEPTH, depth);
   core_defs.set(Op.SWAP, swap);
+  core_defs.set(Op.MOD, mod);
   core_defs.set(Op.MUL, mul);
   core_defs.set(Op.ADD, add);
   core_defs.set(Op.SUB, sub);
@@ -242,6 +283,7 @@ export function reset(): void {
   core_defs.set(Op.WHEN, when);
   core_defs.set(Op.BRA, bra);
   core_defs.set(Op.KET, ket);
+  core_defs.set(Op.POW, pow);
 }
 
 // interpreter

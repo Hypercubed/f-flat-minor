@@ -24,13 +24,16 @@ replCommands.set('.peek', () => {
   const v = core.peek();
   process.stdout.write(v.toString() + '\n');
 });
+replCommands.set('.exit', () => {
+  process.exit(0);
+});
 
 if (!silent) {
   console.log(GREETINGS);
   console.log();
 }
 
-const CHUNK_SIZE = 0x100000;
+const CHUNK_SIZE = 0x100;
 
 function readLine(cb: (s: string) => void): boolean {
   let chunk = '';
@@ -38,22 +41,23 @@ function readLine(cb: (s: string) => void): boolean {
   while (true) {
     const buf = new ArrayBuffer(CHUNK_SIZE);
     const read = process.stdin.read(buf);
-    if (read === 0) return false;
+
+    if (read === 0) {
+      cb(chunk);
+      return true;
+    }
 
     chunk += String.UTF8.decode(buf.slice(0, read));
+
     const lines = chunk.split('\n');
-    if (lines.length === 1) continue;
+    const endsWithNL = chunk.charCodeAt(chunk.length - 1) === 10;
+    chunk = !endsWithNL ? lines.pop() : '';
 
     for (let i = 0; i < lines.length - 1; i++) {
       cb(lines[i]);
     }
 
-    chunk = lines[lines.length - 1];
-    
-    if (read < CHUNK_SIZE) {
-      cb(chunk);
-      return true;
-    }
+    if (chunk === '') return false;
   }
 }
 
@@ -68,5 +72,5 @@ while (true) {
     core.run(line);
   });
 
-  if (!r) break;
+  if (r) break;
 }

@@ -3,14 +3,19 @@ export enum Op {
   CALL = 1,
   PUTC = 2,
   PUTN = 5,
+  CLOCK = 6,
   DROP = 8,
   PUSHR = 14,
   PULLR = 15,
+  SHIFTL = 16,
+  SHIFTR = 17,
   CLR = 24,
+  RAND = 26,
   EXIT = 27,
   DUP = "!".charCodeAt(0),
   DEPTH = "#".charCodeAt(0),
   SWAP = "$".charCodeAt(0),
+  MOD = "%".charCodeAt(0),
   MUL = "*".charCodeAt(0),
   ADD = "+".charCodeAt(0),
   SUB = "-".charCodeAt(0),
@@ -23,14 +28,12 @@ export enum Op {
   GT = ">".charCodeAt(0),
   WHEN = "?".charCodeAt(0),
   BRA = "[".charCodeAt(0),
-  KET = "]".charCodeAt(0)
+  KET = "]".charCodeAt(0),
+  POW = "^".charCodeAt(0),
   // TODO:
   // AND
   // OR
-  // MOD
-  // POW
   // NOT
-  // EXIT
   // RAND
   // CLOCK
 }

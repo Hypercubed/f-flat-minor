@@ -21,6 +21,7 @@ let {
   __int,
   __cmp,
   __div,
+  __pow,
   __collect,
   __fact,
   __factDiv,
@@ -52,6 +53,7 @@ async function reset() {
   __factDiv = lib.exports.__factDiv;
   __shl = lib.exports.__shl;
   __inv = lib.exports.__inv;
+  __pow = lib.exports.__pow;
 }
 
 const int = (a) => {
@@ -104,6 +106,19 @@ const div = (a, b) => {
   let r;
   try {
     r = __getString(__div(__newString(String(a)), __newString(String(b))));
+    __collect();
+  } catch (e) {
+    console.error(`Error: div(${a}, ${b}) = ${r}`, e);
+    return `Error: div(${a}, ${b}) = ${r}`;
+  }
+  if (VERBOSE) console.log(`div(${a}, ${b}) = ${r}`);
+  return r;
+};
+
+const pow = (a, b) => {
+  let r;
+  try {
+    r = __getString(__pow(__newString(String(a)), __newString(String(b))));
     __collect();
   } catch (e) {
     console.error(`Error: div(${a}, ${b}) = ${r}`, e);
@@ -591,4 +606,8 @@ t.test("shl", (t) => {
   t.same(shl("0xDEADBEEF", 32), "0xDEADBEEF00000000");
   t.same(shl("0xDEADBEEF", 64), "0xDEADBEEF0000000000000000");
   t.end();
+});
+
+t.test("pow", t => {
+  t.same(pow(0x1, 1), "0x2");
 });

@@ -25,14 +25,19 @@ export function reset(): void {
   symbols.set('eval', Op.CALL);
   symbols.set('putc', Op.PUTC);
   symbols.set('putn', Op.PUTN);
+  symbols.set('clock', Op.CLOCK);
   symbols.set('drop', Op.DROP);
   symbols.set('q<', Op.PUSHR);
   symbols.set('q>', Op.PULLR);
+  symbols.set('<<', Op.SHIFTL);
+  symbols.set('>>', Op.SHIFTR);
   symbols.set('dup', Op.DUP);
   symbols.set('clr', Op.CLR);
+  symbols.set('rand', Op.RAND);
   symbols.set('exit', Op.EXIT);
   symbols.set('depth', Op.DEPTH);
   symbols.set('swap', Op.SWAP);
+  symbols.set('%', Op.MOD);
   symbols.set('*', Op.MUL);
   symbols.set('+', Op.ADD);
   symbols.set('-', Op.SUB);
@@ -46,6 +51,7 @@ export function reset(): void {
   symbols.set('?', Op.WHEN);
   symbols.set('[', Op.BRA);
   symbols.set(']', Op.KET);
+  symbols.set('^', Op.POW);
 }
 
 function tokenize(s: string): string[] {

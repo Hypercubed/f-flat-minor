@@ -41,8 +41,6 @@ run_ts() {
   run_ts shift
 }
 
-@test "interp mp" {
-  chomp build:./src/interp
-  run wasmtime ./build/src/interp.wasm
-  assert_output - < "./bats/fixtures/interp-mp.out"
+@test "pow using mp" {
+  run_ts pow
 }
