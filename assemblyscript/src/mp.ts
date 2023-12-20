@@ -114,6 +114,10 @@ function fromString(value: string): MpZ {
 // TODO: fused arithmetic
 // TODO: bitwise operators
 
+const TO_DECIMAL_M = 9;
+const TO_DECIMAL_N = 10**TO_DECIMAL_M;
+const TO_DECIMAL_P = '0'.repeat(TO_DECIMAL_M);
+
 @final
 export class MpZ {
   constructor(protected readonly _data: StaticArray<u32>, protected readonly _neg: boolean = false) {
@@ -551,30 +555,57 @@ export class MpZ {
 
   toDecimal(): string {
     if (this.eqz()) return '0';
+    return (this._neg ? `-` : '') + this._uitoa();
+  }
 
-    const hex = this._uhex();
+  private _uitoa(): string {
+    // if (this.size === 1) return unchecked(this._data[0]).toString(10);
 
-    const len = hex.length;
-    const dec: u32[] = [];
+    const dec = new Array<string>();
 
-    for (let i = 0; i < len; ++i) {
-      const code = hex.charCodeAt(i);
-      let carry = codeToU32(code);
+    let n = this.abs();
+    while (n.cmp(TO_DECIMAL_N) === 1) {
+      const q = n._udivU32(TO_DECIMAL_N);
+      const m = n._usub(q._umulU32(TO_DECIMAL_N));
+      n = q;
 
-      for (let j = 0; j < dec.length; ++j) {
-        const val = unchecked(dec[j]) * 16 + carry;
-        carry = val / 10;
-        dec[j] = val % 10;
-      }
-
-      while (carry > 0) {
-        dec.push(carry % 10);
-        carry = carry / 10;
-      }
+      const s = TO_DECIMAL_P + `${m.toU32()}`;
+      dec.unshift(s.slice(-TO_DECIMAL_M));
     }
 
-    return (this._neg ? `-` : '') + dec.reverse().join('');
+    if (!n.eqz()) {
+      dec.unshift(`${n.toU32()}`);
+    }
+
+    return dec.join('');
   }
+
+  // toDecimal(): string {
+  //   if (this.eqz()) return '0';
+
+  //   const hex = this._uhex();
+
+  //   const len = hex.length;
+  //   const dec: u32[] = [];
+
+  //   for (let i = 0; i < len; ++i) {
+  //     const code = hex.charCodeAt(i);
+  //     let carry = codeToU32(code);
+
+  //     for (let j = 0; j < dec.length; ++j) {
+  //       const val = unchecked(dec[j]) * 16 + carry;
+  //       carry = val / 10;
+  //       dec[j] = val % 10;
+  //     }
+
+  //     while (carry > 0) {
+  //       dec.push(carry % 10);
+  //       carry = carry / 10;
+  //     }
+  //   }
+
+  //   return (this._neg ? `-` : '') + dec.reverse().join('');
+  // }
 
   toU32(): u32 {
     return unchecked(this._data[0]);

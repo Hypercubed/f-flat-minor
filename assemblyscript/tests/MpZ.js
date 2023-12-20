@@ -19,6 +19,7 @@ let {
   __sub,
   __mul,
   __int,
+  __dec,
   __cmp,
   __div,
   __pow,
@@ -42,13 +43,14 @@ async function reset() {
 
   __getString = lib.exports.__getString;
   __newString = lib.exports.__newString;
+  __collect = lib.exports.__collect;
   __add = lib.exports.__add;
   __sub = lib.exports.__sub;
   __mul = lib.exports.__mul;
   __int = lib.exports.__int;
+  __dec = lib.exports.__dec;
   __cmp = lib.exports.__cmp;
   __div = lib.exports.__div;
-  __collect = lib.exports.__collect;
   __fact = lib.exports.__fact;
   __factDiv = lib.exports.__factDiv;
   __shl = lib.exports.__shl;
@@ -59,7 +61,14 @@ async function reset() {
 const int = (a) => {
   const r = __getString(__int(__newString(String(a))));
   __collect();
-  if (VERBOSE) console.log(`int(${a}) = ${r}`);
+  if (VERBOSE) console.log(`MpZ.from(${a}) = ${r}`);
+  return r;
+};
+
+const dec = (a) => {
+  const r = __getString(__dec(__newString(String(a))));
+  __collect();
+  if (VERBOSE) console.log(`MpZ.from(${a}).toDecimal() = ${r}`);
   return r;
 };
 
@@ -121,10 +130,10 @@ const pow = (a, b) => {
     r = __getString(__pow(__newString(String(a)), __newString(String(b))));
     __collect();
   } catch (e) {
-    console.error(`Error: div(${a}, ${b}) = ${r}`, e);
-    return `Error: div(${a}, ${b}) = ${r}`;
+    console.error(`Error: pow(${a}, ${b}) = ${r}`, e);
+    return `Error: pow(${a}, ${b}) = ${r}`;
   }
-  if (VERBOSE) console.log(`div(${a}, ${b}) = ${r}`);
+  if (VERBOSE) console.log(`pow(${a}, ${b}) = ${r}`);
   return r;
 };
 
@@ -193,30 +202,30 @@ t.beforeEach(async () => {
   await reset();
 });
 
-t.test("create", (t) => {
+t.test("toString", (t) => {
   t.test("convert strings to mp integers", (t) => {
-    t.same(int(0), 0);
-    t.same(int(0x3), 3);
-    t.same(int(0xdeadbeef), 0xdeadbeef);
-    t.same(int(3735928559), 0xdeadbeef);
-    t.same(int(0xdeadbeefdeadbeefn), 0xdeadbeefdeadbeefn);
-    t.same(
+    t.equal(int(0), '0x0');
+    t.equal(int(0x3), '0x3');
+    t.equal(int(0xdeadbeef), '0xDEADBEEF');
+    t.equal(int(3735928559), '0xDEADBEEF');
+    t.equal(int(0xdeadbeefdeadbeefn), '0xDEADBEEFDEADBEEF');
+    t.equal(
       int(0xdeadbeefdeadbeefdeadbeefdeadbeefn),
-      0xdeadbeefdeadbeefdeadbeefdeadbeefn
+      '0xDEADBEEFDEADBEEFDEADBEEFDEADBEEF'
     );
 
-    t.same(int(-0x3), "-0x3");
-    t.same(int(-0xdeadbeef), "-0xDEADBEEF");
-    t.same(int(-3735928559), "-0xDEADBEEF");
-    t.same(int(-0xdeadbeefdeadbeefn), "-0xDEADBEEFDEADBEEF");
-    t.same(
+    t.equal(int(-0x3), "-0x3");
+    t.equal(int(-0xdeadbeef), "-0xDEADBEEF");
+    t.equal(int(-3735928559), "-0xDEADBEEF");
+    t.equal(int(-0xdeadbeefdeadbeefn), "-0xDEADBEEFDEADBEEF");
+    t.equal(
       int(-0xdeadbeefdeadbeefdeadbeefdeadbeefn),
       "-0xDEADBEEFDEADBEEFDEADBEEFDEADBEEF"
     );
 
-    t.same(
+    t.equal(
       int(3735928559373592855937359285593735928559n),
-      3735928559373592855937359285593735928559n
+      toHex(3735928559373592855937359285593735928559n)
     );
 
     t.end();
@@ -225,17 +234,67 @@ t.test("create", (t) => {
   t.test("convert random strings to mp integers", async (t) => {
     for (let i = 1; i < N; i++) {
       __collect();
-      t.same(int(i), "0x" + i.toString(16).toUpperCase());
-      t.same(int(-i), "-0x" + i.toString(16).toUpperCase());
+      t.equal(int(i), "0x" + i.toString(16).toUpperCase());
+      t.equal(int(-i), "-0x" + i.toString(16).toUpperCase());
 
       const n = random();
-      t.same(int(n), toHex(n));
-      t.same(int(-n), toHex(-n));
+      t.equal(int(n), toHex(n));
+      t.equal(int(-n), toHex(-n));
 
       const m = random();
       const v = n + m * 2n ** 53n;
-      t.same(int(v), toHex(v));
-      t.same(int(-v), toHex(-v));
+      t.equal(int(v), toHex(v));
+      t.equal(int(-v), toHex(-v));
+    }
+    t.end();
+  });
+
+  t.end();
+});
+
+t.test("toDecimal", (t) => {
+  t.test("convert strings to mp integers", (t) => {
+    t.equal(dec(0), '0');
+    t.equal(dec(0x3), '3');
+    t.equal(dec(0xdeadbeef), '3735928559');
+    t.equal(dec(3735928559), '3735928559');
+    t.equal(dec(0xdeadbeefdeadbeefn), '16045690984833335023');
+    t.equal(
+      dec('0xdeadbeefdeadbeefdeadbeefdeadbeef'),
+      '295990755083049101712519384020072382191'
+    );
+
+    t.equal(dec(-0x3), "-3");
+    t.equal(dec(-0xdeadbeef), "-3735928559");
+    t.equal(dec(-3735928559), "-3735928559");
+    t.equal(dec(-16045690984833335023n), "-16045690984833335023");
+    t.equal(
+      dec(-0xdeadbeefdeadbeefdeadbeefdeadbeefn),
+      "-295990755083049101712519384020072382191"
+    );
+
+    t.equal(
+      dec(3735928559373592855937359285593735928559n),
+      '3735928559373592855937359285593735928559'
+    );
+
+    t.end();
+  });
+
+  t.test("convert random strings to mp integers", async (t) => {
+    for (let i = 1; i < N; i++) {
+      __collect();
+      t.equal(dec(i), "" + i);
+      t.equal(dec(-i), "" + -i);
+
+      const n = random();
+      t.equal(dec(n), "" + n);
+      t.equal(dec(-n), "" + -n);
+
+      const m = random();
+      const v = n + m * 2n ** 53n;
+      t.equal(dec(v), "" + v);
+      t.equal(dec(-v), "" + -v);
     }
     t.end();
   });
@@ -609,5 +668,9 @@ t.test("shl", (t) => {
 });
 
 t.test("pow", t => {
-  t.same(pow(0x1, 1), "0x2");
+  t.same(pow(1, 1), "0x1");
+  t.same(pow(1, 2), "0x1");
+  t.same(pow(2, 2), "0x4");
+  t.same(pow("0xDEADBEEF", 1), "0xDEADBEEF");
+  t.end();
 });
