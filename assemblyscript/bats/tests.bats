@@ -7,40 +7,39 @@ setup() {
   export PATH="$PWD:$PATH"
 }
 
-run_ts() {
+run_wasm() {
   chomp build:./bats/$1
-  run wasmtime ./build/bats/$1.wasm
-  assert_output - < ./bats/fixtures/$1.out
+  wasmtime ./build/bats/$1.wasm
 }
 
-@test "integers using mp" {
-  run_ts int
+@test "to-string" {
+  run_wasm to-string
 }
 
-@test "addition using mp" {
-  run_ts add
-}
-
-@test "subtraction using mp" {
-  run_ts sub
+@test "addition/subtraction using mp" {
+  run_wasm add-sub
 }
 
 @test "multiplication using mp" {
-  run_ts mul
+  run_wasm mul-div
 }
 
 @test "inv using mp" {
-  run_ts inv
+  run_wasm inv
+}
+
+@test "mod using mp" {
+  run_wasm mod
 }
 
 @test "factorial using mp" {
-  run_ts fact
+  run_wasm fact
 }
 
 @test "shift using mp" {
-  run_ts shift
+  run_wasm shift
 }
 
 @test "pow using mp" {
-  run_ts pow
+  run_wasm pow
 }

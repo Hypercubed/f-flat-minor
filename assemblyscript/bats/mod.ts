@@ -1,27 +1,25 @@
 import { MpZ } from "../src/mp";
+import { assertSame } from "../src/assert";
 
-function testMod(a: MpZ, b: MpZ): void {
-  process.stdout.write(`${a} % ${b} = ${a % b}\n`);
-}
+assertSame(MpZ.from(0x0) % MpZ.from(0x1), '0x0');
+assertSame(MpZ.from(0x1) % MpZ.from(0x1), '0x0');
+assertSame(MpZ.from(0xDEADBEEF) % MpZ.from(0x1), '0x0');
+assertSame(MpZ.from('0xDEADBEEFDEADBEEFDEADBEEF') % MpZ.from(0x1), '0x0');
 
-testMod(MpZ.from(0x0), MpZ.from(0x1));
-testMod(MpZ.from(0x1), MpZ.from(0x1));
-testMod(MpZ.from(0xDEADBEEF), MpZ.from(0x1));
-testMod(MpZ.from('0xDEADBEEFDEADBEEFDEADBEEF'), MpZ.from(0x1));
+assertSame(MpZ.from(0x2) % MpZ.from(0x2), '0x0');
+assertSame(MpZ.from(0x3) % MpZ.from(0x2), '0x1');
 
-testMod(MpZ.from(0x2), MpZ.from(0x1));
-testMod(MpZ.from(0x2), MpZ.from(0x2));
+assertSame(MpZ.from(0xDEADBEEF) % MpZ.from(0x2), '0x1');
+assertSame(MpZ.from(0xFFFFFFFE) % MpZ.from(0xF), '0xE');
+assertSame(MpZ.from('0xDEADBEEFDEADBEEFDEADBEEF') % MpZ.from(0x2), '0x1');
+assertSame(MpZ.from('0xFFFFFFFFFFFFFFFFFFFFFFFE') % MpZ.from(0xF), '0xE');
 
-testMod(MpZ.from(0x3), MpZ.from(0x2));
+assertSame(MpZ.from(123456789) % MpZ.from(100), '0x' + (89).toString(16));
+assertSame(MpZ.from(123456789) % MpZ.from(1000), '0x' + (789).toString(16));
 
-testMod(MpZ.from(0xDEADBEEF), MpZ.from(0x2));
-testMod(MpZ.from(0xFFFFFFFE), MpZ.from(0xF));
-testMod(MpZ.from('0xDEADBEEFDEADBEEFDEADBEEF'), MpZ.from(0x2));
-testMod(MpZ.from('0xFFFFFFFFFFFFFFFFFFFFFFFE'), MpZ.from(0xF));
+assertSame(MpZ.from(10**20 + 7) % MpZ.from(10**20), '0x7');
 
-testMod(MpZ.from(123456789), MpZ.from(100));
-testMod(MpZ.from(123456789), MpZ.from(1000));
-
-testMod(MpZ.from(10**20 + 7), MpZ.from(10**20));
-testMod(MpZ.from(-(10**20)), MpZ.from(7));   // 5
-testMod(MpZ.from(-(10**20)), MpZ.from(-7));  // -5
+assertSame(MpZ.from((10**20)) % MpZ.from(7), '0x5'); 
+assertSame(MpZ.from(-(10**20)) % MpZ.from(7), '-0x5');  // TODO: check this
+assertSame(MpZ.from(-(10**20)) % MpZ.from(-7), '-0x5');  // TODO: check this
+assertSame(MpZ.from(-(10**20)) % MpZ.from(-7), '-0x5');

@@ -118,6 +118,11 @@ const TO_DECIMAL_M = 9;
 const TO_DECIMAL_N = 10**TO_DECIMAL_M;
 const TO_DECIMAL_P = '0'.repeat(TO_DECIMAL_M);
 
+export class DivRem<R> {
+  div!: MpZ;
+  rem!: R;
+}
+
 @final
 export class MpZ {
   constructor(protected readonly _data: StaticArray<u32>, protected readonly _neg: boolean = false) {
@@ -449,36 +454,22 @@ export class MpZ {
 
     return new MpZ(toStaticArray(result));
   }
+
+  private _udivRemU32(rhs: u32): DivRem<u32> {
+    const result: u32[] = [0];
+
+    let rem: u64 = 0;
+    for (let i: i32 = this._data.length - 1; i >= 0; --i) {
+      rem = u64(unchecked(this._data[i])) + (rem << 32);
+      result[i] = low32(rem / rhs);
+      rem %= rhs;
+    }
+
+    const d = new MpZ(toStaticArray(result));
+    const r = low32(rem);
+    return { div: d, rem: r };
+  }
   
-  // unsigned div
-  // Modified long division
-  // private _udiv(rhs: MpZ): MpZ {
-  //   assert(this >= rhs, "_udiv: lhs must be greater than rhs");
-  //   assert(rhs > MpZ.ZERO, "_udiv: lhs must be greater than rhs");
-
-  //   let x = MpZ.ZERO;
-  //   const m: u32 = rhs._bits();
-  //   let e = this;
-
-  //   let s0 = 0;
-  //   let de = rhs;
-  //   let so = MpZ.ONE;
-
-  //   do {
-  //     const n: u32 = e._bits();
-  //     const s: u32 = (n > m) ? n - m - 1 : 0;  // shift amount to get a decent quotient
-  //     if (s !== s0) {  // avoid repeated shifts by caching results
-  //       s0 = s;
-  //       de = rhs._shl(s);
-  //       so = MpZ.ONE._shl(s);
-  //     }
-  //     e = e.__usub(de);
-  //     x = x._uadd(so);
-  //   } while (e._ucmp(rhs) >= 0);
-
-  //   return x;
-  // }
-
   // modulus
 
   mod<T>(_rhs: T): MpZ {
@@ -555,7 +546,7 @@ export class MpZ {
 
   toDecimal(): string {
     if (this.eqz()) return '0';
-    return (this._neg ? `-` : '') + this._uitoa();
+    return (this._neg ? `-` : '') + this.abs()._uitoa();
   }
 
   private _uitoa(): string {
@@ -563,18 +554,17 @@ export class MpZ {
 
     const dec = new Array<string>();
 
-    let n = this.abs();
+    let n: MpZ = this;
     while (n.cmp(TO_DECIMAL_N) === 1) {
-      const q = n._udivU32(TO_DECIMAL_N);
-      const m = n._usub(q._umulU32(TO_DECIMAL_N));
-      n = q;
+      const d = n._udivRemU32(TO_DECIMAL_N);
+      n = d.div;
 
-      const s = TO_DECIMAL_P + `${m.toU32()}`;
+      const s = TO_DECIMAL_P + d.rem.toString(10);
       dec.unshift(s.slice(-TO_DECIMAL_M));
     }
 
     if (!n.eqz()) {
-      dec.unshift(`${n.toU32()}`);
+      dec.unshift(n.toU32().toString(10));
     }
 
     return dec.join('');

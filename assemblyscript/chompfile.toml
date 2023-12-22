@@ -80,18 +80,14 @@ run = '''
 
 [[task]]
 name = 'interpret'
-deps = [':build:./src/plugin']
-run = 'cat ../ff/example.ff | node --no-warnings ./run.js'
+deps = [':build:src/plugin']
+run = 'cat ../ff/example.ff | node --no-warnings ./js/run.js'
 template = 'cmp'
 [task.template-options]
 cmp = '../ff/example.out'
 
 [[task]]
 name = 'repl'
-deps = [':run-release:src/repl']
-
-[[task]]
-name = 'wasmer-repl'
 deps = [':build-release:src/repl']
 run = '''
   wasmer .

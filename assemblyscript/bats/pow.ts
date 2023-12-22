@@ -1,21 +1,16 @@
 import { MpZ } from "../src/mp";
+import { assertSame } from "../src/assert";
 
-function testPow(a: MpZ, b: MpZ): void {
-  process.stdout.write(`${a} ^ ${b} = ${a ** b}\n`);
-}
+assertSame(MpZ.from(0x0) ** MpZ.from(0x1), '0x0');
+assertSame(MpZ.from(0x1) ** MpZ.from(0x1), '0x1');
+assertSame(MpZ.from(0xDEADBEEF) ** MpZ.ONE, '0xDEADBEEF');
 
-testPow(MpZ.from(0x0), MpZ.from(0x1));
-testPow(MpZ.from(0x1), MpZ.from(0x1));
-testPow(MpZ.from(0xDEADBEEF), MpZ.ONE);
+assertSame(MpZ.from(0x0) ** MpZ.from(0x2), '0x0');
+assertSame(MpZ.from(0x1) ** MpZ.from(0x2), '0x1');
+assertSame(MpZ.from(0xDEADBEEF) ** MpZ.from(0x2), '0xC1B1CD12216DA321');
 
-testPow(MpZ.from(0x0), MpZ.from(0x2));
-testPow(MpZ.from(0x1), MpZ.from(0x2));
-testPow(MpZ.from(0xDEADBEEF), MpZ.from(0x2));
+assertSame(MpZ.from(5).pow(4).pow(3).pow(2).pow(1), '0xD3C21BCECCEDA1');
 
-process.stdout.write(`(((5^4)^3)^2)^1 = ${MpZ.from(5).pow(4).pow(3).pow(2).pow(1)}\n`);
-
-const p = MpZ.from(5) ** MpZ.from(4) ** MpZ.from(3) ** MpZ.from(2) ** MpZ.from(1);
-const s = p.toString();
-const f = s.substring(0, 10);
-const e = s.substring(s.length - 10);
-process.stdout.write(`5^4^3^2^1 = ${f}...${e}\n`);
+const p = (MpZ.from(5) ** MpZ.from(4) ** MpZ.from(3) ** MpZ.from(2) ** MpZ.from(1)).toString();
+assertSame(p.substring(0, 10), '0xB75B3786');
+assertSame(p.substring(p.length - 10), '4899F00001');
