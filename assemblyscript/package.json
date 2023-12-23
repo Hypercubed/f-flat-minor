@@ -5,7 +5,7 @@
   "main": "index.js",
   "scripts": {
     "test": "chomp test",
-    "format": "prettier ."
+    "fix": "prettier . --write"
   },
   "author": "",
   "license": "ISC",
