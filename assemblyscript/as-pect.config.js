@@ -2,11 +2,11 @@ export default {
   /**
    * A set of globs passed to the glob package that qualify typescript files for testing.
    */
-  entries: ["assembly/__tests__/**/*.spec.ts"],
+  entries: ['assembly/__tests__/**/*.spec.ts'],
   /**
    * A set of globs passed to the glob package that quality files to be added to each test.
    */
-  include: ["assembly/__tests__/**/*.include.ts"],
+  include: ['assembly/__tests__/**/*.include.ts'],
   /**
    * A set of regexp that will disclude source files from testing.
    */
@@ -17,7 +17,7 @@ export default {
   async instantiate(memory, createImports, instantiate, binary) {
     let instance; // Imports can reference this
     const myImports = {
-      env: { memory }
+      env: { memory },
       // put your web assembly imports here, and return the module promise
     };
     instance = instantiate(binary, createImports(myImports));

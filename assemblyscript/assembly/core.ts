@@ -1,6 +1,6 @@
-import { MpZ } from "./mp";
-import { Op } from "./consts";
-import * as vm from "./vm";
+import { MpZ } from './mp';
+import { Op } from './consts';
+import * as vm from './vm';
 
 let _nextCode = -1;
 
@@ -55,9 +55,10 @@ export function reset(): void {
 }
 
 function tokenize(s: string): string[] {
-  return s.split(' ')
-    .map<string>(s => s.trim())
-    .filter(s => s !== '');
+  return s
+    .split(' ')
+    .map<string>((s) => s.trim())
+    .filter((s) => s !== '');
 }
 
 export function run(s: string): void {
@@ -73,23 +74,29 @@ export function run(s: string): void {
 
       if (!isNaN(parseInt(token))) {
         vm.PUSH(MpZ.from(token));
-      } else if (token.startsWith('.') && token.length > 1) { // compile-time command
+      } else if (token.startsWith('.') && token.length > 1) {
+        // compile-time command
         continue;
-      } else if (token.startsWith('\'')) { // String
-        token.replaceAll('\'', '')
+      } else if (token.startsWith("'")) {
+        // String
+        token
+          .replaceAll("'", '')
           .split('')
-          .forEach(c => vm.PUSH(MpZ.from(c.charCodeAt(0))));
-      } else if (token.startsWith('/*')) {  // Comment
+          .forEach((c) => vm.PUSH(MpZ.from(c.charCodeAt(0))));
+      } else if (token.startsWith('/*')) {
+        // Comment
         let t = tokens[j++];
         while (!t.endsWith('*/') && j < tokens.length) {
           t = tokens[j++];
         }
-      } else if (token.endsWith(':') && token.length > 1) { // Definition
+      } else if (token.endsWith(':') && token.length > 1) {
+        // Definition
         const name = token.substring(0, token.length - 1);
         const code = getSymbol(name);
         vm.PUSH(MpZ.from(code));
         vm.CALL(Op.MARK);
-      } else if (token.startsWith('[') && token.endsWith(']')) {  // Pointer
+      } else if (token.startsWith('[') && token.endsWith(']')) {
+        // Pointer
         const name = token.substring(1, token.length - 1);
         const code = getSymbol(name);
         vm.PUSH(MpZ.from(code));
@@ -99,7 +106,9 @@ export function run(s: string): void {
       }
 
       if (vm.inError()) {
-        process.stderr.write(`Error at line ${i + 1}, token ${j} "${token}": ${vm.getError()}\n`);
+        process.stderr.write(
+          `Error at line ${i + 1}, token ${j} "${token}": ${vm.getError()}\n`,
+        );
         process.stderr.write(`*** ${line} *** \n`);
         vm.clearError();
         break;

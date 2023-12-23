@@ -1,8 +1,9 @@
 import { reset, PUSH, CALL } from './vm';
-import { Op } from "./consts";
-import { MpZ } from "./mp";
+import { Op } from './consts';
+import { MpZ } from './mp';
 
 reset();
+
 
 @inline
 const FACT = u32(-1);

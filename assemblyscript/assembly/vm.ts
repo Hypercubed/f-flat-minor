@@ -1,12 +1,12 @@
-import { MpZ } from "./mp";
-import { Op } from "./consts";
+import { MpZ } from './mp';
+import { Op } from './consts';
 
 enum State {
   IDLE,
   RUNNING,
   ERROR_UNDERFLOW,
   ERROR_UNDEFINED,
-  ERROR_DIV_BY_ZERO
+  ERROR_DIV_BY_ZERO,
 }
 
 export const stack: MpZ[] = [];
@@ -36,6 +36,7 @@ function pop(): MpZ {
   return stack.pop();
 }
 
+
 @inline
 function push(v: MpZ): void {
   stack.push(v);
@@ -60,8 +61,9 @@ function call(code: u32): void {
   return;
 }
 
+
 @inline
-function nop(): void { }
+function nop(): void {}
 
 function clr(): void {
   stack.splice(0, stack.length);
@@ -211,7 +213,7 @@ function lt(): void {
 }
 
 function lshift(): void {
-  const rhs = pop().toU32();;
+  const rhs = pop().toU32();
   const lhs = pop();
   push(lhs.shl(rhs));
 }
@@ -296,7 +298,13 @@ export function PUSH(v: MpZ): void {
 }
 
 export function CALL(v: u32): void {
-  if (_enqueue > 0 && v !== Op.MARK && v !== Op.DEF && v !== Op.BRA && v !== Op.KET) {
+  if (
+    _enqueue > 0 &&
+    v !== Op.MARK &&
+    v !== Op.DEF &&
+    v !== Op.BRA &&
+    v !== Op.KET
+  ) {
     push(MpZ.from(v));
     push(MpZ.ONE);
   } else {

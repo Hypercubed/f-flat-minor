@@ -1,0 +1,4 @@
+{
+  "plugins": ["assemblyscript-prettier"],
+  "singleQuote": true
+}

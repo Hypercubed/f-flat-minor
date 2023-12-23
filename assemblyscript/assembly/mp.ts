@@ -1,22 +1,26 @@
+
 @inline
-const LOW_MASK: u32 = 0xFFFFFFFF;
+const LOW_MASK: u32 = 0xffffffff;
+
 
 @inline
 const LIMB_BITS: u32 = 32;
+
 
 @inline
 function low32(value: u64): u32 {
   return u32(value & LOW_MASK);
 }
 
+
 @inline
 function high32(value: u64): u32 {
-  return u32(value >> LIMB_BITS & LOW_MASK);
+  return u32((value >> LIMB_BITS) & LOW_MASK);
 }
 
 function toStaticArray<T>(data: T[]): StaticArray<u32> {
   while (data.length > 1 && data[data.length - 1] === 0) {
-    data = data.slice(0, data.length - 1)
+    data = data.slice(0, data.length - 1);
   }
   return StaticArray.fromArray(data);
 }
@@ -51,7 +55,7 @@ function fromU64(value: u64): MpZ {
   if (hi === 0) {
     return new MpZ([lo] as StaticArray<u32>, false);
   }
-  return new MpZ([low32(value), high32(value)]  as StaticArray<u32>, false);
+  return new MpZ([low32(value), high32(value)] as StaticArray<u32>, false);
 }
 
 function codeToU32(code: u32): u32 {
@@ -115,7 +119,7 @@ function fromString(value: string): MpZ {
 // TODO: bitwise operators
 
 const TO_DECIMAL_M = 9;
-const TO_DECIMAL_N = 10**TO_DECIMAL_M;
+const TO_DECIMAL_N = 10 ** TO_DECIMAL_M;
 const TO_DECIMAL_P = '0'.repeat(TO_DECIMAL_M);
 
 export class DivRem<R> {
@@ -123,9 +127,13 @@ export class DivRem<R> {
   rem!: R;
 }
 
+
 @final
 export class MpZ {
-  constructor(protected readonly _data: StaticArray<u32>, protected readonly _neg: boolean = false) {
+  constructor(
+    protected readonly _data: StaticArray<u32>,
+    protected readonly _neg: boolean = false,
+  ) {
     if (_data.length === 1 && _data[0] === 0) {
       this._neg = false;
     }
@@ -157,7 +165,7 @@ export class MpZ {
 
   // unsigned add
   private _uadd(rhs: MpZ): MpZ {
-    return (this.size < rhs.size) ? rhs.__uadd(this) : this.__uadd(rhs);
+    return this.size < rhs.size ? rhs.__uadd(this) : this.__uadd(rhs);
   }
 
   // unsigned add
@@ -253,7 +261,9 @@ export class MpZ {
       let carry: u64 = 0;
       for (let j: i32 = 0; j < p; ++j) {
         const k = i + j;
-        carry += u64(unchecked(this._data[i])) * u64(unchecked(rhs._data[j])) + u64(unchecked(result[k]));
+        carry +=
+          u64(unchecked(this._data[i])) * u64(unchecked(rhs._data[j])) +
+          u64(unchecked(result[k]));
         result[k] = low32(carry);
         carry = high32(carry);
       }
@@ -279,7 +289,7 @@ export class MpZ {
   }
 
   private _umul2powU32(rhs: u32): MpZ {
-    assert(rhs < LIMB_BITS, "_umul2powU32: rhs must be less than LIMB_BITS");
+    assert(rhs < LIMB_BITS, '_umul2powU32: rhs must be less than LIMB_BITS');
 
     const q = this._data.length;
     const result = new Array<u32>(q + 1);
@@ -321,15 +331,15 @@ export class MpZ {
   }
 
   private _bitShiftLeft(n: u32): MpZ {
-    assert(n < LIMB_BITS, "_bitShiftLeft: n must be less than LIMB_BITS");
+    assert(n < LIMB_BITS, '_bitShiftLeft: n must be less than LIMB_BITS');
     if (n === 0) return this;
     return this._umul2powU32(n);
   }
 
   private _bitShiftRight(n: u32): MpZ {
-    assert(n < LIMB_BITS, "_bitShiftRight: n must be less than LIMB_BITS");
+    assert(n < LIMB_BITS, '_bitShiftRight: n must be less than LIMB_BITS');
     if (n === 0) return this;
-    return this._udivU32(2**n);
+    return this._udivU32(2 ** n);
   }
 
   private _shl(n: u32): MpZ {
@@ -342,6 +352,7 @@ export class MpZ {
     return this._limbShiftRight(n / LIMB_BITS)._bitShiftRight(n % LIMB_BITS);
   }
 
+
   @operator('<<')
   shl(n: u32): MpZ {
     if (n === 0) return this;
@@ -349,6 +360,7 @@ export class MpZ {
     if (n < 0) return this._shr(-n);
     return this._shl(n);
   }
+
 
   @operator('>>')
   shr(n: u32): MpZ {
@@ -365,7 +377,7 @@ export class MpZ {
 
     const rhs = MpZ.from(_rhs);
 
-    if (rhs.eqz()) throw new Error("Divide by zero");
+    if (rhs.eqz()) throw new Error('Divide by zero');
     if (rhs.eq(MpZ.ONE)) return this;
     if (this.eq(rhs)) return MpZ.ONE;
 
@@ -376,20 +388,22 @@ export class MpZ {
     const divisor = rhs.abs();
 
     if (dividend.lt(divisor)) return MpZ.ZERO;
-    
+
     if (divisor.size === 1) {
       const r = dividend._udivU32(unchecked(divisor._data[0]));
       return s_lhs !== s_rhs ? r.neg() : r;
     }
 
-    return s_lhs !== s_rhs ? dividend._udiv(divisor).neg() : dividend._udiv(divisor);
+    return s_lhs !== s_rhs
+      ? dividend._udiv(divisor).neg()
+      : dividend._udiv(divisor);
   }
 
   // unsigned div
   // Using Netwon-Raphson inversion
   private _udiv(rhs: MpZ): MpZ {
-    assert(this >= rhs, "_udiv: lhs must be greater than rhs");
-    assert(!rhs.isNeg, "_udiv: lhs must positive");
+    assert(this >= rhs, '_udiv: lhs must be greater than rhs');
+    assert(!rhs.isNeg, '_udiv: lhs must positive');
 
     const k = this._bits() + rhs._bits();
     const d = rhs._inv(k);
@@ -404,29 +418,34 @@ export class MpZ {
 
   // Calculate trunc(2**k/x)
   inv(k: u32): MpZ {
-    if (this.eqz()) throw new Error("Divide by zero");
+    if (this.eqz()) throw new Error('Divide by zero');
     if (this.eq(MpZ.ONE)) return this._shl(k);
 
     const n = this._bits();
     if (k < n) return MpZ.ZERO;
 
-    const q = (k <= 2*n) ? this._inv(2*n)._shr(2*n - k) : this._inv(k);
+    const q = k <= 2 * n ? this._inv(2 * n)._shr(2 * n - k) : this._inv(k);
     return this._neg ? q.neg() : q;
   }
 
   // Calculate trunc(2**k/x) using Newton-Raphson method
   private _inv(k: u32): MpZ {
-    assert(!this.isNeg, "_inv: lhs must be positive");
-    assert(this._bits() <= k, "_inv: k must be greater than the number of bits in x");
+    assert(!this.isNeg, '_inv: lhs must be positive');
+    assert(
+      this._bits() <= k,
+      '_inv: k must be greater than the number of bits in x',
+    );
 
     const n = this._bits();
 
-    const k2 = MpZ.ONE._shl(k);  // 2^k
+    const k2 = MpZ.ONE._shl(k); // 2^k
     const pow2 = k2._umul2powU32(1); // 2^(k+1)
 
     // initial guess for convergence (0 < x < 2**(k+1)/b)
-    const T1 = MpZ.from(48)._shl(k - n);  // 48 * 2^k / 2^n
-    const T2 = MpZ.from(32)._shl(k - n - n)._umul(this);  // 32 * 2^(k-n) * x / 2^n
+    const T1 = MpZ.from(48)._shl(k - n); // 48 * 2^k / 2^n
+    const T2 = MpZ.from(32)
+      ._shl(k - n - n)
+      ._umul(this); // 32 * 2^(k-n) * x / 2^n
     let q = T1._usub(T2)._udivU32(17); // 48/17 - 32/17 * x ~= 1/D
 
     // let q = this._shl(k - n - n);
@@ -469,12 +488,12 @@ export class MpZ {
     const r = low32(rem);
     return { div: d, rem: r };
   }
-  
+
   // modulus
 
   mod<T>(_rhs: T): MpZ {
     const rhs = MpZ.from(_rhs);
-    if (rhs.eqz()) throw new Error("Divide by zero");
+    if (rhs.eqz()) throw new Error('Divide by zero');
     const q = this.div(rhs);
     const m = this._usub(rhs._umul(q));
     return this.isNeg ? m.neg() : m;
@@ -482,14 +501,14 @@ export class MpZ {
 
   rem<T>(_rhs: T): MpZ {
     const rhs = MpZ.from(_rhs);
-    if (rhs.eqz()) throw new Error("Divide by zero");
+    if (rhs.eqz()) throw new Error('Divide by zero');
     const q = this.div(rhs);
     return this.sub(rhs.mul(q));
   }
 
   pow<T>(_rhs: T): MpZ {
     const rhs = MpZ.from(_rhs);
-    if (rhs.isNeg) throw new Error("Negative exponent");
+    if (rhs.isNeg) throw new Error('Negative exponent');
     return this._pow(rhs);
   }
 
@@ -533,7 +552,7 @@ export class MpZ {
     } else if (radix === 16) {
       return this.toHex();
     } else {
-      throw new RangeError("MpZ only supports radix 10 and 16");
+      throw new RangeError('MpZ only supports radix 10 and 16');
     }
   }
 
@@ -604,7 +623,7 @@ export class MpZ {
   toI32(): u32 {
     return unchecked(<i32>this._data[0]);
   }
-  
+
   eq<T>(rhs: T): boolean {
     return this.cmp<T>(MpZ.from(rhs)) === 0;
   }
@@ -667,82 +686,97 @@ export class MpZ {
     if (val instanceof u32) return fromU32(val as u32);
     if (val instanceof i64) return fromI64(val as i64);
     if (val instanceof u64) return fromU64(val as u64);
-    if (typeof val === 'string') return fromString(val)
+    if (typeof val === 'string') return fromString(val);
 
-    throw new TypeError("Unsupported generic type " + nameof<T>(val));
+    throw new TypeError('Unsupported generic type ' + nameof<T>(val));
   }
+
 
   @lazy
   static ZERO: MpZ = new MpZ([0]);
 
+
   @lazy
   static ONE: MpZ = new MpZ([1]);
 
+
   @lazy
   static TWO: MpZ = new MpZ([2]);
+
 
   @inline @operator('*')
   static mul(lhs: MpZ, rhs: MpZ): MpZ {
     return lhs.mul(rhs);
   }
 
+
   @inline @operator('/')
   static div(lhs: MpZ, rhs: MpZ): MpZ {
     return lhs.div(rhs);
   }
+
 
   @inline @operator('+')
   static add(lhs: MpZ, rhs: MpZ): MpZ {
     return lhs.add(rhs);
   }
 
+
   @inline @operator('-')
   static sub(lhs: MpZ, rhs: MpZ): MpZ {
     return lhs.sub(rhs);
   }
+
 
   @inline @operator('==')
   static eq(lhs: MpZ, rhs: MpZ): boolean {
     return lhs.eq(rhs);
   }
 
+
   @inline @operator('>')
   static gt(lhs: MpZ, rhs: MpZ): boolean {
     return lhs.gt(rhs);
   }
+
 
   @inline @operator('>=')
   static gte(lhs: MpZ, rhs: MpZ): boolean {
     return lhs.gte(rhs);
   }
 
+
   @inline @operator('<')
   static lt(lhs: MpZ, rhs: MpZ): boolean {
     return lhs.lt(rhs);
   }
+
 
   @inline @operator('<=')
   static lte(lhs: MpZ, rhs: MpZ): boolean {
     return lhs.lte(rhs);
   }
 
+
   @inline @operator('!=')
   static neq(lhs: MpZ, rhs: MpZ): boolean {
     return !lhs.eq(rhs);
   }
+
 
   @inline @operator('%')
   static mod(lhs: MpZ, rhs: MpZ): MpZ {
     return lhs.mod(rhs);
   }
 
+
   @inline @operator('**')
   static pow(lhs: MpZ, rhs: MpZ): MpZ {
     return lhs.pow(rhs);
   }
 
-  static A: MpZ = MpZ.from(48/17);
-  static B: MpZ = MpZ.from(32/17);
+  static A: MpZ = MpZ.from(48 / 17);
+  static B: MpZ = MpZ.from(32 / 17);
 }
 
 function u32ToHex(value: u32, pad: boolean = true): string {

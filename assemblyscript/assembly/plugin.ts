@@ -22,5 +22,3 @@ export function reset(): i32 {
   core.reset();
   return 0;
 }
-
-

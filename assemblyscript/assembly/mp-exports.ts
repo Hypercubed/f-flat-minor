@@ -1,4 +1,4 @@
-import { MpZ } from "./mp";
+import { MpZ } from './mp';
 
 export function int(_a: string): string {
   return MpZ.from(_a).toString();

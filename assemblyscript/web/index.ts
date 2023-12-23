@@ -1,10 +1,10 @@
-import "xterm/css/xterm.css";
+import 'xterm/css/xterm.css';
 
-import type { Instance } from "@wasmer/sdk";
-import { Terminal } from "xterm";
-import { FitAddon } from "xterm-addon-fit";
+import type { Instance } from '@wasmer/sdk';
+import { Terminal } from 'xterm';
+import { FitAddon } from 'xterm-addon-fit';
 
-import { Wasmer, init }  from "@wasmer/sdk";
+import { Wasmer, init } from '@wasmer/sdk';
 
 const encoder = new TextEncoder();
 
@@ -16,10 +16,10 @@ async function main() {
   const fit = new FitAddon();
   term.loadAddon(fit);
 
-  term.open(document.getElementById("terminal"));
+  term.open(document.getElementById('terminal'));
   fit.fit();
 
-  const pkg = await Wasmer.fromRegistry("hypercubed/f-flat-minor");
+  const pkg = await Wasmer.fromRegistry('hypercubed/f-flat-minor');
 
   const instance = await pkg.entrypoint.run();
   connectStreams(instance, term);
@@ -27,9 +27,13 @@ async function main() {
 
 function connectStreams(instance: Instance, term: Terminal) {
   const stdin = instance.stdin.getWriter();
-  term.onData(data => stdin?.write(encoder.encode(data)));
-  instance.stdout.pipeTo(new WritableStream({ write: chunk => term.write(chunk) }));
-  instance.stderr.pipeTo(new WritableStream({ write: chunk => term.write(chunk) }));
+  term.onData((data) => stdin?.write(encoder.encode(data)));
+  instance.stdout.pipeTo(
+    new WritableStream({ write: (chunk) => term.write(chunk) }),
+  );
+  instance.stderr.pipeTo(
+    new WritableStream({ write: (chunk) => term.write(chunk) }),
+  );
 }
 
 main();

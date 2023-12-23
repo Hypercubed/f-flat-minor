@@ -1,7 +1,7 @@
 import * as core from './core';
 
-const SHORT = "F♭m";
-const LONG = "F♭A𝄫C♭";
+const SHORT = 'F♭m';
+const LONG = 'F♭A𝄫C♭';
 const GREETINGS = `Welcome to ${LONG}`;
 const PROMPT = `${SHORT}> `;
 
@@ -64,7 +64,7 @@ function readLine(cb: (s: string) => void): boolean {
 while (true) {
   if (!silent) process.stderr.write(PROMPT);
 
-  const r = readLine(line => {
+  const r = readLine((line) => {
     if (replCommands.has(line)) {
       replCommands.get(line)();
       return;
