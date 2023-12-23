@@ -546,13 +546,15 @@ export class MpZ {
     return r;
   }
 
-  toString(radix: i32 = 16): string {
+  toString(radix: i32 = 10): string {
     if (radix === 10) {
       return this.toDecimal();
     } else if (radix === 16) {
-      return this.toHex();
+      return this._neg ? `-${this._uhex()}` : `${this._uhex()}`;
+    } else if (radix >= 2 && radix <= 36) {
+      return this._uitoa(radix);
     } else {
-      throw new RangeError('MpZ only supports radix 10 and 16');
+      throw new Error('toString() radix argument must be between 2 and 36');
     }
   }
 
@@ -565,12 +567,10 @@ export class MpZ {
 
   toDecimal(): string {
     if (this.eqz()) return '0';
-    return (this._neg ? `-` : '') + this.abs()._uitoa();
+    return (this._neg ? `-` : '') + this.abs()._uitoaDecimal();
   }
 
-  private _uitoa(): string {
-    // if (this.size === 1) return unchecked(this._data[0]).toString(10);
-
+  private _uitoaDecimal(): string {
     const dec = new Array<string>();
 
     let n: MpZ = this;
@@ -584,6 +584,23 @@ export class MpZ {
 
     if (!n.eqz()) {
       dec.unshift(n.toU32().toString(10));
+    }
+
+    return dec.join('');
+  }
+
+  private _uitoa(base: u32): string {
+    const dec = new Array<string>();
+
+    let n: MpZ = this;
+    while (n.cmp(base) === 1) {
+      const d = n._udivRemU32(base);
+      n = d.div;
+      dec.unshift(d.rem.toString(base));
+    }
+
+    if (!n.eqz()) {
+      dec.unshift(n.toU32().toString(base));
     }
 
     return dec.join('');

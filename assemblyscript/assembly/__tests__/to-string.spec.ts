@@ -8,13 +8,12 @@ function fact(n: u32): MpZ {
   return a;
 }
 
-describe('toString', () => {
-  it('toString(10)', () => {
-    // toString(10)
-    expect(MpZ.from('0xDEADBEEF').toString(10)).toBe('3735928559');
-    expect(MpZ.from('-0xDEADBEEF').toString(10)).toBe('-3735928559');
+describe('MpZ', () => {
+  it('.toDecimal()', () => {
+    expect(MpZ.from('0xDEADBEEF').toDecimal()).toBe('3735928559');
+    expect(MpZ.from('-0xDEADBEEF').toDecimal()).toBe('-3735928559');
 
-    expect(MpZ.from(10).pow(10).toString(10)).toBe('10000000000');
+    expect(MpZ.from(10).pow(10).toDecimal()).toBe('10000000000');
 
     const f = fact(100).toDecimal();
     expect(f.slice(0, 10)).toBe('9332621544');
@@ -25,21 +24,29 @@ describe('toString', () => {
     expect(p.slice(-10)).toBe('8212890625');
   });
 
-  it('toString(16)', () => {
-    expect(MpZ.from(0xff).toString(16)).toBe('0xFF');
-    expect(MpZ.from(-0xff).toString(16)).toBe('-0xFF');
+  it('.toHex()', () => {
+    expect(MpZ.from(0xff).toHex()).toBe('0xFF');
+    expect(MpZ.from(-0xff).toHex()).toBe('-0xFF');
 
-    expect(MpZ.from(0xffff).toString(16)).toBe('0xFFFF');
-    expect(MpZ.from(-0xffff).toString(16)).toBe('-0xFFFF');
+    expect(MpZ.from(0xffff).toHex()).toBe('0xFFFF');
+    expect(MpZ.from(-0xffff).toHex()).toBe('-0xFFFF');
 
-    expect(MpZ.from(0xdeadbeef).toString(16)).toBe('0xDEADBEEF');
-    expect(MpZ.from(i64(-0xdeadbeef)).toString(16)).toBe('-0xDEADBEEF');
+    expect(MpZ.from(0xdeadbeef).toHex()).toBe('0xDEADBEEF');
+    expect(MpZ.from(i64(-0xdeadbeef)).toHex()).toBe('-0xDEADBEEF');
 
-    expect(MpZ.from('0xDEADBEEFDEADBEEF').toString(16)).toBe(
+    expect(MpZ.from('0xDEADBEEFDEADBEEF').toHex()).toBe(
       '0xDEADBEEFDEADBEEF',
     );
-    expect(MpZ.from('-0xDEADBEEFDEADBEEF').toString(16)).toBe(
+    expect(MpZ.from('-0xDEADBEEFDEADBEEF').toHex()).toBe(
       '-0xDEADBEEFDEADBEEF',
     );
+  });
+
+  it('toString(2)', () => {
+    expect(MpZ.from(0xff).toString(2)).toBe('11111111');
+  });
+
+  it('toString(36)', () => {
+    expect(MpZ.from(0xff).toString(36)).toBe('73');
   });
 });

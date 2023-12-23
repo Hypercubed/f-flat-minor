@@ -1,7 +1,7 @@
 import { MpZ } from './mp';
 
 export function int(_a: string): string {
-  return MpZ.from(_a).toString();
+  return MpZ.from(_a).toHex();
 }
 
 export function dec(_a: string): string {
@@ -10,19 +10,19 @@ export function dec(_a: string): string {
 
 export function shl(_a: string, _b: u32): string {
   const a = MpZ.from(_a);
-  return a._shl(_b).toString();
+  return a._shl(_b).toHex();
 }
 
 export function add(_a: string, _b: string): string {
   const a = MpZ.from(_a);
   const b = MpZ.from(_b);
-  return (a + b).toString();
+  return (a + b).toHex();
 }
 
 export function mul(_a: string, _b: string): string {
   const a = MpZ.from(_a);
   const b = MpZ.from(_b);
-  return (a * b).toString();
+  return (a * b).toHex();
 }
 
 export function div(_a: string, _b: string): string {
@@ -30,7 +30,7 @@ export function div(_a: string, _b: string): string {
   const b = MpZ.from(_b);
   const c = a / b;
 
-  return c.toString();
+  return c.toHex();
 }
 
 export function pow(_a: string, _b: string): string {
@@ -38,13 +38,13 @@ export function pow(_a: string, _b: string): string {
   const b = MpZ.from(_b);
   const c = a.pow(b);
 
-  return c.toString();
+  return c.toHex();
 }
 
 export function sub(_a: string, _b: string): string {
   const a = MpZ.from(_a);
   const b = MpZ.from(_b);
-  return (a - b).toString();
+  return (a - b).toHex();
 }
 
 export function cmp(_a: string, _b: string): i32 {
@@ -55,7 +55,7 @@ export function cmp(_a: string, _b: string): i32 {
 
 export function inv(_a: string, k: u32): string {
   const a = MpZ.from(_a);
-  return a.inv(k).toString();
+  return a.inv(k).toHex();
 }
 
 function __fact(n: u32): MpZ {
@@ -67,11 +67,11 @@ function __fact(n: u32): MpZ {
 }
 
 export function fact(n: u32): string {
-  return __fact(n).toString();
+  return __fact(n).toHex();
 }
 
 export function factDiv(_a: u32, _b: u32): string {
   const a = __fact(_a);
   const b = __fact(_b);
-  return (a / b).toString();
+  return (a / b).toHex();
 }

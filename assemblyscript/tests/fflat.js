@@ -25,7 +25,7 @@ t.beforeEach(async () => {
 t.test('create', async (t) => {
   t.same(await run('0xDEADBEEF'), 0xdeadbeef);
 
-  t.same(await run('-0xDEADBEEF'), '-0xDEADBEEF');
+  t.same(await run('-0xDEADBEEF'), -0xDEADBEEF);
 });
 
 t.test('add', async (t) => {
@@ -33,7 +33,7 @@ t.test('add', async (t) => {
 
   t.same(await run('0x8 0x5 +'), 0xd);
 
-  t.same(await run('-0x8 -0x5 +'), '-0xD');
+  t.same(await run('-0x8 -0x5 +'), -0xD);
 });
 
 t.test('sub', async (t) => {
@@ -41,7 +41,7 @@ t.test('sub', async (t) => {
 
   t.same(await run('0x8 0x5 -'), 0x3);
 
-  t.same(await run('-0x8 -0x5 -'), '-0x3');
+  t.same(await run('-0x8 -0x5 -'), -0x3);
 });
 
 t.test('mul', async (t) => {
