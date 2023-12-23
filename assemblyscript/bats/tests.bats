@@ -7,39 +7,34 @@ setup() {
   export PATH="$PWD:$PATH"
 }
 
-run_wasm() {
-  chomp build:./bats/$1
-  wasmtime ./build/bats/$1.wasm
-}
-
 @test "to-string" {
-  run_wasm to-string
+  wasmtime ./build/bats/to-string.wasm
 }
 
 @test "addition/subtraction using mp" {
-  run_wasm add-sub
+  wasmtime ./build/bats/add-sub.wasm
 }
 
 @test "multiplication using mp" {
-  run_wasm mul-div
+  wasmtime ./build/bats/mul-div.wasm
 }
 
 @test "inv using mp" {
-  run_wasm inv
+  wasmtime ./build/bats/inv.wasm
 }
 
 @test "mod using mp" {
-  run_wasm mod
+  wasmtime ./build/bats/mod.wasm
 }
 
 @test "factorial using mp" {
-  run_wasm fact
+  wasmtime ./build/bats/fact.wasm
 }
 
 @test "shift using mp" {
-  run_wasm shift
+  wasmtime ./build/bats/shift.wasm
 }
 
 @test "pow using mp" {
-  run_wasm pow
+  wasmtime ./build/bats/pow.wasm
 }

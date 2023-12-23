@@ -4,11 +4,7 @@ default-task = 'build'
 extensions = ['../cmp-extension.js']
 
 [[task]]
-name = 'build'
-deps = ['build:src/mp']
-
-[[task]]
-name = 'build:#'
+name = 'asbuild:#'
 targets = ['./build/#.wasm', './build/#.wat']
 deps = ['##.ts', './src/*.ts']
 run = '''
@@ -17,7 +13,16 @@ run = '''
 '''
 
 [[task]]
-name = 'build-release:#'
+name = 'asbuild-wasi:#'
+targets = ['./build/#.wasm', './build/#.wat']
+deps = ['##.ts', './src/*.ts']
+run = '''
+  rm -f ./build/$MATCH.wasm
+  asc $DEP --target debug --outFile ./build/$MATCH.wasm --textFile ./build/$MATCH.wat --bindings raw --config ./asconfig-wasi.json
+'''
+
+[[task]]
+name = 'asbuild-release:#'
 targets = ['./build/#-release.wasm', './build/#-release.wat']
 deps = ['##.ts', './src/*.ts']
 run = '''
@@ -26,10 +31,19 @@ run = '''
 '''
 
 [[task]]
+name = 'asbuild-release-wasi:#'
+targets = ['./build/#-release.wasm', './build/#-release.wat']
+deps = ['##.ts', './src/*.ts']
+run = '''
+  rm -f ./build/$MATCH-release.wasm
+  asc $DEP --target release --outFile ./build/$MATCH-release.wasm --textFile ./build/$MATCH-release.wat --config ./asconfig-wasi.json
+'''
+
+[[task]]
 name = 'run:#'
 deps = ['##.ts']
 run = '''
-  chomp build:$MATCH
+  chomp asbuild-wasi:$MATCH
   wasmtime ./build/$MATCH.wasm
 '''
 
@@ -37,7 +51,7 @@ run = '''
 name = 'run-release:#'
 deps = ['##.ts']
 run = '''
-  chomp build-release:$MATCH
+  chomp asbuild-release-wasi:$MATCH
   wasmtime ./build/$MATCH-release.wasm
 '''
 
@@ -52,15 +66,23 @@ deps = [':tap', ':bats', ':interpret']
 
 [[task]]
 name = 'tap'
-deps = [':build:src/mp-exports', ':build:src/plugin', './tests/*.js']
+deps = [':asbuild:src/mp-exports', ':asbuild-wasi:src/plugin', './tests/*.js']
 invalidation = 'always'
 run = '''
   tap --node-arg="--no-warnings" --allow-empty-coverage --disable-coverage run ./tests/*.js
 '''
 
 [[task]]
+name = 'build-bats'
+deps = ['./bats/##.ts']
+invalidation = 'always'
+run = '''
+  chomp :asbuild-wasi:bats/$MATCH
+'''
+
+[[task]]
 name = 'bats'
-deps = ['./bats/*.bats']
+deps = ['./bats/*.bats', ':build-bats']
 invalidation = 'always'
 run = '''
   bats ./bats/tests.bats
@@ -70,7 +92,7 @@ run = '''
 name = 'bench:#'
 deps = ['##.ts']
 run = '''
-  chomp build-release:$MATCH
+  chomp asbuild-release-wasi:$MATCH
   hyperfine --warmup 10 'wasmtime ./build/$MATCH-release.wasm'
 '''
 
@@ -82,7 +104,7 @@ run = '''
 
 [[task]]
 name = 'interpret'
-deps = [':build:src/plugin']
+deps = [':asbuild-wasi:src/plugin']
 run = 'cat ../ff/example.ff | node --no-warnings ./js/run.js'
 template = 'cmp'
 [task.template-options]
@@ -90,14 +112,14 @@ cmp = '../ff/example.out'
 
 [[task]]
 name = 'repl'
-deps = [':build-release:src/repl']
+deps = [':asbuild-release-wasi:src/repl']
 run = '''
   wasmer .
 '''
 
 [[task]]
 name = 'build-cli'
-deps = [':build-release:./src/repl']
+deps = [':asbuild-release-wasi:./src/repl']
 run = '''
 sh ./hermit.com -f Hermitfile -o ./build/cli.com
 chmod +x ./build/cli.com
@@ -105,7 +127,7 @@ chmod +x ./build/cli.com
 
 [[task]]
 name = 'pp:#'
-deps = ['##', ':build:src/repl']
+deps = ['##', ':asbuild-wasi:src/repl']
 serial = true
 invalidation = 'always'
 validation = 'none'

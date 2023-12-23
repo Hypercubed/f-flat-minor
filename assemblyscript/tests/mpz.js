@@ -1,16 +1,11 @@
 import { readFileSync } from "node:fs";
 import t from "tap";
 import { instantiate } from "../build/src/mp-exports.js";
-import { WASI } from "wasi";
-
-let wasi = new WASI({
-  version: "preview1",
-});
 
 const wasm = readFileSync("./build/src/mp-exports.wasm");
 const module = await WebAssembly.compile(wasm);
 
-let exports = await instantiate(module, wasi.getImportObject());
+let exports = await instantiate(module, {});
 
 function toHex(a) {
   if (typeof a !== "string") a = a.toString(16);
@@ -36,7 +31,7 @@ const N = 100; // number of random iterations
 
 t.beforeEach(async () => {
   const module = await WebAssembly.compile(wasm);
-  exports = await instantiate(module, wasi.getImportObject());
+  exports = await instantiate(module, {});
 });
 
 t.test("toString", (t) => {
