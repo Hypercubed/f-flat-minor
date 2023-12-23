@@ -3,7 +3,7 @@
 import { createInterface } from 'readline';
 import createPlugin from "@extism/extism";
 
-const plugin = await createPlugin("./build/src/plugin.wasm", { useWasi: true });
+const plugin = await createPlugin("./build/assembly/plugin.wasm", { useWasi: true });
 await plugin.call("_start");
 
 const rl = createInterface({

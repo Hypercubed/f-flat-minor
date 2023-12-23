@@ -6,7 +6,7 @@ repository = "https://github.com/Hypercubed/f-flat-minor"
 
 [[module]]
 name = 'f-flat-minor'
-source = './build/src/repl-release.wasm'
+source = './build/assembly/repl-release.wasm'
 abi = 'wasi'
 
 [module.interfaces]

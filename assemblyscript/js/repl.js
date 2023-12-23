@@ -6,7 +6,7 @@ import createPlugin from "@extism/extism";
 let plugin;
 
 async function start() {
-  const plugin = await createPlugin("./build/src/plugin.wasm", { useWasi: true });
+  const plugin = await createPlugin("./build/assembly/plugin.wasm", { useWasi: true });
   await plugin.call("_start");
   return plugin
 }

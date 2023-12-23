@@ -1,8 +1,8 @@
 import { readFileSync } from "node:fs";
 import t from "tap";
-import { instantiate } from "../build/src/mp-exports.js";
+import { instantiate } from "../build/assembly/mp-exports.js";
 
-const wasm = readFileSync("./build/src/mp-exports.wasm");
+const wasm = readFileSync("./build/assembly/mp-exports.wasm");
 const module = await WebAssembly.compile(wasm);
 
 let exports = await instantiate(module, {});

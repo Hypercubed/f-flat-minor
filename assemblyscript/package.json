@@ -9,11 +9,9 @@
   "author": "",
   "license": "ISC",
   "devDependencies": {
+    "@as-pect/cli": "^8.1.0",
     "@extism/extism": "^1.0.0-rc7",
     "assemblyscript": "^0.27.22",
-    "bats": "^1.10.0",
-    "bats-assert": "^2.0.0",
-    "bats-support": "^0.2.0",
     "tap": "^18.6.1"
   },
   "type": "module",

@@ -6,7 +6,7 @@ extensions = ['../cmp-extension.js']
 [[task]]
 name = 'asbuild:#'
 targets = ['./build/#.wasm', './build/#.wat']
-deps = ['##.ts', './src/*.ts']
+deps = ['##.ts', './assembly/*.ts']
 run = '''
   rm -f ./build/$MATCH.wasm
   asc $DEP --target debug --outFile ./build/$MATCH.wasm --textFile ./build/$MATCH.wat --bindings raw
@@ -15,16 +15,16 @@ run = '''
 [[task]]
 name = 'asbuild-wasi:#'
 targets = ['./build/#.wasm', './build/#.wat']
-deps = ['##.ts', './src/*.ts']
+deps = ['##.ts', './assembly/*.ts']
 run = '''
   rm -f ./build/$MATCH.wasm
-  asc $DEP --target debug --outFile ./build/$MATCH.wasm --textFile ./build/$MATCH.wat --bindings raw --config ./asconfig-wasi.json
+  asc $DEP --target debug --outFile ./build/$MATCH.wasm --textFile ./build/$MATCH.wat --bindings raw --config ./wasi.asconfig.json
 '''
 
 [[task]]
 name = 'asbuild-release:#'
 targets = ['./build/#-release.wasm', './build/#-release.wat']
-deps = ['##.ts', './src/*.ts']
+deps = ['##.ts', './assembly/*.ts']
 run = '''
   rm -f ./build/$MATCH-release.wasm
   asc $DEP --target release --outFile ./build/$MATCH-release.wasm --textFile ./build/$MATCH-release.wat
@@ -33,10 +33,10 @@ run = '''
 [[task]]
 name = 'asbuild-release-wasi:#'
 targets = ['./build/#-release.wasm', './build/#-release.wat']
-deps = ['##.ts', './src/*.ts']
+deps = ['##.ts', './assembly/*.ts']
 run = '''
   rm -f ./build/$MATCH-release.wasm
-  asc $DEP --target release --outFile ./build/$MATCH-release.wasm --textFile ./build/$MATCH-release.wat --config ./asconfig-wasi.json
+  asc $DEP --target release --outFile ./build/$MATCH-release.wasm --textFile ./build/$MATCH-release.wat --config ./wasi.asconfig.json
 '''
 
 [[task]]
@@ -57,35 +57,26 @@ run = '''
 
 [[task]]
 name = 'example'
-deps = [':run:src/example-interp']
+deps = [':run:assembly/example-interp']
 
 [[task]]
 name = 'test'
 serial = true
-deps = [':tap', ':bats', ':interpret']
+deps = [':tap', ':as-pect', ':interpret']
 
 [[task]]
 name = 'tap'
-deps = [':asbuild:src/mp-exports', ':asbuild-wasi:src/plugin', './tests/*.js']
+deps = [':asbuild:assembly/mp-exports', ':asbuild-wasi:assembly/plugin', './tests/*.js']
 invalidation = 'always'
 run = '''
   tap --node-arg="--no-warnings" --allow-empty-coverage --disable-coverage run ./tests/*.js
 '''
 
 [[task]]
-name = 'build-bats'
-deps = ['./bats/##.ts']
+name = 'as-pect'
 invalidation = 'always'
 run = '''
-  chomp :asbuild-wasi:bats/$MATCH
-'''
-
-[[task]]
-name = 'bats'
-deps = ['./bats/*.bats', ':build-bats']
-invalidation = 'always'
-run = '''
-  bats ./bats/tests.bats
+  asp
 '''
 
 [[task]]
@@ -104,7 +95,7 @@ run = '''
 
 [[task]]
 name = 'interpret'
-deps = [':asbuild-wasi:src/plugin']
+deps = [':asbuild-wasi:assembly/plugin']
 run = 'cat ../ff/example.ff | node --no-warnings ./js/run.js'
 template = 'cmp'
 [task.template-options]
@@ -112,14 +103,14 @@ cmp = '../ff/example.out'
 
 [[task]]
 name = 'repl'
-deps = [':asbuild-release-wasi:src/repl']
+deps = [':asbuild-release-wasi:assembly/repl']
 run = '''
   wasmer .
 '''
 
 [[task]]
 name = 'build-cli'
-deps = [':asbuild-release-wasi:./src/repl']
+deps = [':asbuild-release-wasi:./assembly/repl']
 run = '''
 sh ./hermit.com -f Hermitfile -o ./build/cli.com
 chmod +x ./build/cli.com
@@ -127,10 +118,10 @@ chmod +x ./build/cli.com
 
 [[task]]
 name = 'pp:#'
-deps = ['##', ':asbuild-wasi:src/repl']
+deps = ['##', ':asbuild-wasi:assembly/repl']
 serial = true
 invalidation = 'always'
 validation = 'none'
 run = '''
-  ../deno/bin/ff compile $MATCH --opt --disassemble | wasmtime ./build/src/repl.wasm --silent
+  ../deno/bin/ff compile $MATCH --opt --disassemble | wasmtime ./build/assembly/repl.wasm --silent
 '''

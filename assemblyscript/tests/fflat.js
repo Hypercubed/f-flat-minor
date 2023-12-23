@@ -1,7 +1,7 @@
 import t from "tap";
 import createPlugin from "@extism/extism";
 
-const plugin = await createPlugin("./build/src/plugin.wasm", { useWasi: true, runInWorker: false });
+const plugin = await createPlugin("./build/assembly/plugin.wasm", { useWasi: true, runInWorker: false });
 
 async function run(input) {
   try {
