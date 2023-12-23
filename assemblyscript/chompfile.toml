@@ -13,7 +13,7 @@ targets = ['./build/#.wasm', './build/#.wat']
 deps = ['##.ts', './src/*.ts']
 run = '''
   rm -f ./build/$MATCH.wasm
-  asc $DEP --target debug --outFile ./build/$MATCH.wasm --textFile ./build/$MATCH.wat
+  asc $DEP --target debug --outFile ./build/$MATCH.wasm --textFile ./build/$MATCH.wat --bindings raw
 '''
 
 [[task]]
@@ -48,18 +48,20 @@ deps = [':run:src/example-interp']
 [[task]]
 name = 'test'
 serial = true
-deps = [':build:./src/test-exports', './tests/*.js', ':tap', ':bats', ':interpret']
+deps = [':tap', ':bats', ':interpret']
 
 [[task]]
 name = 'tap'
-deps = [':build:./src/test-exports', ':build:./src/plugin', './tests/*.js']
+deps = [':build:src/mp-exports', ':build:src/plugin', './tests/*.js']
+invalidation = 'always'
 run = '''
-  tap --node-arg="--no-warnings" --allow-empty-coverage run ./tests/*.js
+  tap --node-arg="--no-warnings" --allow-empty-coverage --disable-coverage run ./tests/*.js
 '''
 
 [[task]]
 name = 'bats'
-deps = [':build:./src/test-exports', './bats/*.bats']
+deps = ['./bats/*.bats']
+invalidation = 'always'
 run = '''
   bats ./bats/tests.bats
 '''

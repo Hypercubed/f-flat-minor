@@ -9,7 +9,6 @@
   "author": "",
   "license": "ISC",
   "devDependencies": {
-    "@assemblyscript/loader": "^0.27.22",
     "@extism/extism": "^1.0.0-rc7",
     "assemblyscript": "^0.27.22",
     "bats": "^1.10.0",
