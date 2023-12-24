@@ -13,15 +13,6 @@ run = '''
 '''
 
 [[task]]
-name = 'asbuild-wasi:#'
-targets = ['./build/#.wasm', './build/#.wat']
-deps = ['##.ts', './assembly/*.ts']
-run = '''
-  rm -f ./build/$MATCH.wasm
-  asc $DEP --target debug --outFile ./build/$MATCH.wasm --textFile ./build/$MATCH.wat --bindings raw --config ./wasi.asconfig.json
-'''
-
-[[task]]
 name = 'asbuild-release:#'
 targets = ['./build/#-release.wasm', './build/#-release.wat']
 deps = ['##.ts', './assembly/*.ts']
@@ -31,19 +22,10 @@ run = '''
 '''
 
 [[task]]
-name = 'asbuild-release-wasi:#'
-targets = ['./build/#-release.wasm', './build/#-release.wat']
-deps = ['##.ts', './assembly/*.ts']
-run = '''
-  rm -f ./build/$MATCH-release.wasm
-  asc $DEP --target release --outFile ./build/$MATCH-release.wasm --textFile ./build/$MATCH-release.wat --config ./wasi.asconfig.json
-'''
-
-[[task]]
 name = 'run:#'
 deps = ['##.ts']
 run = '''
-  chomp asbuild-wasi:$MATCH
+  chomp asbuild:$MATCH
   wasmtime ./build/$MATCH.wasm
 '''
 
@@ -51,7 +33,7 @@ run = '''
 name = 'run-release:#'
 deps = ['##.ts']
 run = '''
-  chomp asbuild-release-wasi:$MATCH
+  chomp asbuild-release:$MATCH
   wasmtime ./build/$MATCH-release.wasm
 '''
 
@@ -62,11 +44,11 @@ deps = [':run:assembly/example-interp']
 [[task]]
 name = 'test'
 serial = true
-deps = [':tap', ':as-pect', ':interpret']
+deps = [':tap', ':interpret']
 
 [[task]]
 name = 'tap'
-deps = [':asbuild:assembly/mp-exports', ':asbuild-wasi:assembly/plugin', './tests/*.js']
+deps = [':asbuild:assembly/plugin', './tests/*.js']
 invalidation = 'always'
 run = '''
   tap --node-arg="--no-warnings" --allow-empty-coverage --disable-coverage run ./tests/*.js
@@ -83,7 +65,7 @@ run = '''
 name = 'bench:#'
 deps = ['##.ts']
 run = '''
-  chomp asbuild-release-wasi:$MATCH
+  chomp asbuild-release:$MATCH
   hyperfine --warmup 10 'wasmtime ./build/$MATCH-release.wasm'
 '''
 
@@ -95,7 +77,7 @@ run = '''
 
 [[task]]
 name = 'interpret'
-deps = [':asbuild-wasi:assembly/plugin']
+deps = [':asbuild:assembly/plugin']
 run = 'cat ../ff/example.ff | node --no-warnings ./js/run.js'
 template = 'cmp'
 [task.template-options]
@@ -103,14 +85,14 @@ cmp = '../ff/example.out'
 
 [[task]]
 name = 'repl'
-deps = [':asbuild-release-wasi:assembly/repl']
+deps = [':asbuild-release:assembly/repl']
 run = '''
   wasmer .
 '''
 
 [[task]]
 name = 'build-cli'
-deps = [':asbuild-release-wasi:./assembly/repl']
+deps = [':asbuild-release:./assembly/repl']
 run = '''
 sh ./hermit.com -f Hermitfile -o ./build/cli.com
 chmod +x ./build/cli.com
@@ -118,7 +100,7 @@ chmod +x ./build/cli.com
 
 [[task]]
 name = 'pp:#'
-deps = ['##', ':asbuild-wasi:assembly/repl']
+deps = ['##', ':asbuild:assembly/repl']
 serial = true
 invalidation = 'always'
 validation = 'none'

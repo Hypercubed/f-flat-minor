@@ -1,4 +1,5 @@
-import { MpZ } from './mp';
+import { MpZ } from '@hypercubed/as-mpz/assembly/mp';
+
 import { Op } from './consts';
 
 enum State {

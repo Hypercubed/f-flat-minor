@@ -29,6 +29,7 @@
   },
   "dependencies": {
     "@assemblyscript/wasi-shim": "^0.1.0",
-    "@extism/as-pdk": "^1.0.0-rc1"
+    "@extism/as-pdk": "^1.0.0-rc1",
+    "@hypercubed/as-mpz": "^0.0.0"
   }
 }

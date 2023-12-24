@@ -1,9 +1,9 @@
+import { MpZ } from '@hypercubed/as-mpz/assembly/mp';
+
 import { reset, PUSH, CALL } from './vm';
 import { Op } from './consts';
-import { MpZ } from './mp';
 
 reset();
-
 
 @inline
 const FACT = u32(-1);
