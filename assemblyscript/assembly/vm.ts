@@ -1,4 +1,4 @@
-import { MpZ } from '@hypercubed/as-mpz/assembly/mp';
+import { MpZ } from '@hypercubed/as-mpz';
 
 import { Op } from './consts';
 
