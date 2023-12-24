@@ -5,7 +5,8 @@
   "main": "index.js",
   "scripts": {
     "test": "chomp test",
-    "fix": "prettier . --write"
+    "fix": "prettier . --write",
+    "bench": "astral"
   },
   "author": "",
   "license": "ISC",
@@ -13,6 +14,7 @@
     "@as-pect/cli": "^8.1.0",
     "@as-tral/cli": "^2.0.1",
     "@extism/extism": "^1.0.0-rc7",
+    "as-bigint": "^0.5.3",
     "assemblyscript": "^0.27.22",
     "assemblyscript-prettier": "^3.0.1",
     "prettier": "^3.0.0",

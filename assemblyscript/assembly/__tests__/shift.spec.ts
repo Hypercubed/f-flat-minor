@@ -4,9 +4,18 @@ import { assertSame } from './assertions';
 describe('shift', () => {
   it('left shift', () => {
     assertSame(MpZ.from('0x1') << 1, 2);
-    assertSame(MpZ.from('0x1234567890ABCDEF') << 0, MpZ.from('0x1234567890ABCDEF'));
-    assertSame(MpZ.from('0x1234567890ABCDEF') << 4, MpZ.from('0x1234567890ABCDEF0'));
-    assertSame(MpZ.from('0x1234567890ABCDEF') << 8, MpZ.from('0x1234567890ABCDEF00'));
+    assertSame(
+      MpZ.from('0x1234567890ABCDEF') << 0,
+      MpZ.from('0x1234567890ABCDEF'),
+    );
+    assertSame(
+      MpZ.from('0x1234567890ABCDEF') << 4,
+      MpZ.from('0x1234567890ABCDEF0'),
+    );
+    assertSame(
+      MpZ.from('0x1234567890ABCDEF') << 8,
+      MpZ.from('0x1234567890ABCDEF00'),
+    );
     assertSame(
       MpZ.from('0x1234567890ABCDEF') << 32,
       MpZ.from('0x1234567890ABCDEF00000000'),
@@ -23,9 +32,9 @@ describe('shift', () => {
 
   it('right shift', () => {
     assertSame(MpZ.from('0x2') >> 0x1, 1);
-    assertSame(MpZ.from('0x1234567890ABCDEF') >> 0, 0x1234567890ABCDEF);
-    assertSame(MpZ.from('0x1234567890ABCDEF') >> 4, 0x1234567890ABCDE);
-    assertSame(MpZ.from('0x1234567890ABCDEF') >> 8, 0x1234567890ABCD);
+    assertSame(MpZ.from('0x1234567890ABCDEF') >> 0, 0x1234567890abcdef);
+    assertSame(MpZ.from('0x1234567890ABCDEF') >> 4, 0x1234567890abcde);
+    assertSame(MpZ.from('0x1234567890ABCDEF') >> 8, 0x1234567890abcd);
     assertSame(MpZ.from('0x1234567890ABCDEF') >> 32, 0x12345678);
     assertSame(MpZ.from('0x1234567890ABCDEF') >> 64, 0);
 
@@ -51,7 +60,7 @@ describe('shift', () => {
     );
     assertSame(
       MpZ.from('0x1234567890ABCDEF00000000000000000000000000000000') >> 128,
-      0x1234567890ABCDEF,
+      0x1234567890abcdef,
     );
   });
 });

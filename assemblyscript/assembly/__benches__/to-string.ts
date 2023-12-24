@@ -1,10 +1,22 @@
 import { MpZ } from '../mp';
-const input = blackbox(MpZ.from('0xDEADBEEFDEADBEEFDEADBEEFDEADBEEFDEADBEEFDEADBEEFDEADBEEFDEADBEEF'));
+import { BigInt } from '../../node_modules/as-bigint/assembly/BigInt';
 
-bench("toDecimal", () => {
-    blackbox(input.toDecimal());
+const s = '0xDEADBEEFDEADBEEFDEADBEEFDEADBEEFDEADBEEFDEADBEEFDEADBEEFDEADBEEF';
+const mpz = blackbox(MpZ.from(s));
+const bigInt = blackbox(BigInt.from(s));
+
+bench('MpZ#toDecimal', () => {
+  blackbox(mpz.toDecimal());
 });
 
-bench("toHex", () => {
-    blackbox(input.toHex());
+bench('MpZ#toHex', () => {
+  blackbox(mpz.toHex());
+});
+
+bench('BigInt#toString()', () => {
+  blackbox(bigInt.toString());
+});
+
+bench('BigInt#toString(16)', () => {
+  blackbox(bigInt.toString(16));
 });

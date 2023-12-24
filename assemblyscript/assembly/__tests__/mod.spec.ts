@@ -12,9 +12,9 @@ describe('mod', () => {
     assertSame(MpZ.from(0x3) % MpZ.from(0x2), 1);
 
     assertSame(MpZ.from(0xdeadbeef) % MpZ.from(0x2), 1);
-    assertSame(MpZ.from(0xfffffffe) % MpZ.from(0xf), 0xE);
+    assertSame(MpZ.from(0xfffffffe) % MpZ.from(0xf), 0xe);
     assertSame(MpZ.from('0xDEADBEEFDEADBEEFDEADBEEF') % MpZ.from(0x2), 1);
-    assertSame(MpZ.from('0xFFFFFFFFFFFFFFFFFFFFFFFE') % MpZ.from(0xf), 0xE);
+    assertSame(MpZ.from('0xFFFFFFFFFFFFFFFFFFFFFFFE') % MpZ.from(0xf), 0xe);
 
     assertSame(MpZ.from(123456789) % MpZ.from(100), 89);
     assertSame(MpZ.from(123456789) % MpZ.from(1000), 789);

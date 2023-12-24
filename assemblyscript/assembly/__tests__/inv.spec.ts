@@ -12,11 +12,11 @@ describe('inv', () => {
     assertSame(MpZ.from(0x1).inv(64), '18446744073709551616');
 
     assertSame(MpZ.from(0xbeef).inv(16), 0x1);
-    assertSame(MpZ.from(0xbeef).inv(32), 0x1573D);
-    assertSame(MpZ.from(0xbeef).inv(64), 0x1573D609AB149);
+    assertSame(MpZ.from(0xbeef).inv(32), 0x1573d);
+    assertSame(MpZ.from(0xbeef).inv(64), 0x1573d609ab149);
 
     assertSame(MpZ.from(0xdeadbeef).inv(16), 0x0);
     assertSame(MpZ.from(0xdeadbeef).inv(32), 0x1);
-    assertSame(MpZ.from(0xdeadbeef).inv(64), 0x1264EB565);
+    assertSame(MpZ.from(0xdeadbeef).inv(64), 0x1264eb565);
   });
 });

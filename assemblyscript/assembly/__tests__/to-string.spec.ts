@@ -34,12 +34,8 @@ describe('MpZ', () => {
     expect(MpZ.from(0xdeadbeef).toHex()).toBe('0xDEADBEEF');
     expect(MpZ.from(i64(-0xdeadbeef)).toHex()).toBe('-0xDEADBEEF');
 
-    expect(MpZ.from('0xDEADBEEFDEADBEEF').toHex()).toBe(
-      '0xDEADBEEFDEADBEEF',
-    );
-    expect(MpZ.from('-0xDEADBEEFDEADBEEF').toHex()).toBe(
-      '-0xDEADBEEFDEADBEEF',
-    );
+    expect(MpZ.from('0xDEADBEEFDEADBEEF').toHex()).toBe('0xDEADBEEFDEADBEEF');
+    expect(MpZ.from('-0xDEADBEEFDEADBEEF').toHex()).toBe('-0xDEADBEEFDEADBEEF');
   });
 
   it('toString(2)', () => {
