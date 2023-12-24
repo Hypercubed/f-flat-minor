@@ -547,6 +547,10 @@ export class MpZ {
   }
 
   toString(radix: i32 = 10): string {
+    if (radix < -2) {
+      return this.toString(-radix).toUpperCase();
+    }
+
     if (radix === 10) {
       return this.toDecimal();
     } else if (radix === 16) {
@@ -797,7 +801,7 @@ export class MpZ {
 }
 
 function u32ToHex(value: u32, pad: boolean = true): string {
-  let r = value.toString(16).toUpperCase();
+  let r = value.toString(16);
   if (!pad) return r;
   return ('00000000' + r).substr(r.length);
 }

@@ -1,11 +1,19 @@
 import { MpZ } from './mp';
 
-export function int(_a: string): string {
-  return MpZ.from(_a).toHex();
+export function from(a: string): MpZ {
+  return MpZ.from(a);
 }
 
-export function dec(_a: string): string {
-  return MpZ.from(_a).toDecimal();
+export function toString(a: MpZ, base: u32): string {
+  return a.toString(base);
+}
+
+export function toHex(a: MpZ): string {
+  return a.toHex();
+}
+
+export function int(a: string): string {
+  return MpZ.from(a).toHex();
 }
 
 export function shl(_a: string, _b: u32): string {

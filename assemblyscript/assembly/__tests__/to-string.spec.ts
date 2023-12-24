@@ -25,17 +25,17 @@ describe('MpZ', () => {
   });
 
   it('.toHex()', () => {
-    expect(MpZ.from(0xff).toHex()).toBe('0xFF');
-    expect(MpZ.from(-0xff).toHex()).toBe('-0xFF');
+    expect(MpZ.from(0xff).toHex()).toBe('0xff');
+    expect(MpZ.from(-0xff).toHex()).toBe('-0xff');
 
-    expect(MpZ.from(0xffff).toHex()).toBe('0xFFFF');
-    expect(MpZ.from(-0xffff).toHex()).toBe('-0xFFFF');
+    expect(MpZ.from(0xffff).toHex()).toBe('0xffff');
+    expect(MpZ.from(-0xffff).toHex()).toBe('-0xffff');
 
-    expect(MpZ.from(0xdeadbeef).toHex()).toBe('0xDEADBEEF');
-    expect(MpZ.from(i64(-0xdeadbeef)).toHex()).toBe('-0xDEADBEEF');
+    expect(MpZ.from(0xdeadbeef).toHex()).toBe('0xdeadbeef');
+    expect(MpZ.from(i64(-0xdeadbeef)).toHex()).toBe('-0xdeadbeef');
 
-    expect(MpZ.from('0xDEADBEEFDEADBEEF').toHex()).toBe('0xDEADBEEFDEADBEEF');
-    expect(MpZ.from('-0xDEADBEEFDEADBEEF').toHex()).toBe('-0xDEADBEEFDEADBEEF');
+    expect(MpZ.from('0xDEADBEEFDEADBEEF').toHex()).toBe('0xdeadbeefdeadbeef');
+    expect(MpZ.from('-0xDEADBEEFDEADBEEF').toHex()).toBe('-0xdeadbeefdeadbeef');
   });
 
   it('toString(2)', () => {
