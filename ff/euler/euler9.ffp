@@ -1,0 +1,29 @@
+.load ../lib/core.ff
+
+/* http://projecteuler.net/index.php?section=problems&id=9 */
+
+_check_pythagoras:
+  sqr over sqr + rot sqr = 
+;
+
+_check_b:
+  dup 500 > [ drop false ] [
+    1000 swap - swap -
+    over over _check_pythagoras [
+      * * . true
+    ] [
+      dup ++ _check_b
+    ] branch
+  ] branch
+;
+
+_check_a:
+  dup 333 > [ drop false ] [
+    dup ++ _check_b
+    [ true ] [ dup ++ _check_a ] branch
+  ] branch
+;
+
+1 _check_a drop
+
+/* 31875000 */

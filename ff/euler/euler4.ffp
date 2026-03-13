@@ -1,0 +1,30 @@
+.load ../lib/core.ff
+
+/* http://projecteuler.net/index.php?section=problems&id=4 */
+
+_digits: dup [ 10 [ % ] [ / ] bi2 _digits ] ? ;
+digits: _digits filter! nz? ;
+
+palindrome?: digits dup reverse! = ;
+
+_check_pal:
+  dup 99 > [
+    * dup palindrome? [ max ] [ drop ] branch
+    dup -- _check_pal
+  ] [
+    drop
+  ] branch
+;
+
+_check_a:
+  dup 99 > [
+    999 100 _check_pal
+    dup -- _check_a
+  ] [
+    drop
+  ] branch
+;
+
+0 999 _check_a .
+
+/* 906609 */
