@@ -21,9 +21,22 @@ For example, to run the factorial example:
 cat ff/example_v0.ff | python3 python/execute.py
 ```
 
+### Running .ffp Files (with preprocessor)
+
+The Python interpreter doesn't support `.ffp` files (which require preprocessing). Use Deno instead:
+
+```bash
+deno run --allow-read --allow-env deno/bin/ff-run.ts <file>.ffp
+```
+
+For example:
+```bash
+deno run --allow-read --allow-env deno/bin/ff-run.ts ff/hello.ffp
+```
+
 ### File Types
-- `.ff` - Basic f-flat-minor source files
-- `.ffp` - Source files requiring preprocessor (use Deno for these)
+- `.ff` - Basic f-flat-minor source files (works with Python or Deno)
+- `.ffp` - Source files requiring preprocessor (use Deno)
 - `.ffb` - Compiled bytecode files
 
 ### Other Implementations
