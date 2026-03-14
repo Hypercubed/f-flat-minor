@@ -3,7 +3,7 @@
 /* http://projecteuler.net/index.php?section=problems&id=4 */
 
 _digits: dup [ 10 [ % ] [ / ] bi2 _digits ] ? ;
-digits: _digits filter! nz? ;
+digits: dup [ 10 [ % ] [ / ] bi2 digits ] ? ;
 
 palindrome?: digits dup reverse! = ;
 
