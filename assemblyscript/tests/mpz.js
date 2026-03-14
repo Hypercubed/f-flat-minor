@@ -86,17 +86,17 @@ t.test('toString', (t) => {
 
   t.test('convert random strings to mp integers', async (t) => {
     for (let i = 1; i < N; i++) {
-      t.equal(mpz.int(String(i)), toHex(i));
-      t.equal(mpz.int(String(-i)), toHex(-i));
+      t.equal(mpz.toHex(mpz.from(String(i))), toHex(i));
+      t.equal(mpz.toHex(mpz.from(String(-i))), toHex(-i));
 
       const n = random();
-      t.equal(mpz.int(String(n)), toHex(n));
-      t.equal(mpz.int(String(-n)), toHex(-n));
+      t.equal(mpz.toHex(mpz.from(String(n))), toHex(n));
+      t.equal(mpz.toHex(mpz.from(String(-n))), toHex(-n));
 
       const m = random();
       const v = n + m * 2n ** 53n;
-      t.equal(mpz.int(String(v)), toHex(v));
-      t.equal(mpz.int(String(-v)), toHex(-v));
+      t.equal(mpz.toHex(mpz.from(String(v))), toHex(v));
+      t.equal(mpz.toHex(mpz.from(String(-v))), toHex(-v));
     }
     t.end();
   });

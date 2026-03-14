@@ -1,5 +1,5 @@
 #!/usr/bin/env -S deno run --allow-read --unstable --allow-env --allow-hrtime
-import { red } from "https://deno.land/std@0.139.0/fmt/colors.ts";
+import { red } from "https://deno.land/std@0.101.0/fmt/colors.ts";
 import yargs from "https://deno.land/x/yargs@v17.5.1-deno/deno.ts";
 import { Arguments } from "https://deno.land/x/yargs@v17.5.1-deno/deno-types.ts";
 
