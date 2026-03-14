@@ -1,5 +1,5 @@
 #!/usr/bin/env deno
-import { blue, green, cyan } from "https://deno.land/std@0.101.0/fmt/colors.ts";
+import { blue, green, cyan } from "https://deno.land/std@0.224.0/fmt/colors.ts";
 
 import { IrInstruction, IROp } from "./ir.ts";
 import { OpCodes, systemWords } from "./opcodes.ts";

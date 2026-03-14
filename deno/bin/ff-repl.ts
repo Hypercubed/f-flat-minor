@@ -1,9 +1,40 @@
-#!/usr/bin/env -S deno run --allow-read --unstable --allow-env
+#!/usr/bin/env -S deno run --allow-read --allow-env --no-check
 
-import yargs from "https://deno.land/x/yargs@v17.5.1-deno/deno.ts";
-import { Arguments } from "https://deno.land/x/yargs@v17.5.1-deno/deno_types.ts";
-import { readLines } from "https://deno.land/std@0.92.0/io/bufio.ts";
-import * as path from "https://deno.land/std@0.57.0/path/mod.ts";
+import { parseArgs } from "https://deno.land/std@0.224.0/cli/parse_args.ts";
+import * as path from "https://deno.land/std@0.224.0/path/mod.ts";
+
+// Simple readLines implementation (std/io/read_lines was removed in newer std)
+async function* readLines(reader: Deno.Reader): AsyncIterableIterator<string> {
+  const decoder = new TextDecoder();
+  let buffer = "";
+  
+  while (true) {
+    const chunk = new Uint8Array(1024);
+    const n = await reader.read(chunk);
+    
+    if (n === null) {
+      if (buffer.length > 0) {
+        yield buffer;
+      }
+      break;
+    }
+    
+    const text = decoder.decode(chunk.subarray(0, n), { stream: n === 0 });
+    buffer += text;
+    
+    const lines = buffer.split("\n");
+    buffer = lines.pop() || "";
+    
+    for (const line of lines) {
+      yield line;
+    }
+  }
+}
+
+interface Arguments {
+  core?: boolean;
+  [key: string]: unknown;
+}
 
 import { Compiler } from "../src/compiler.ts";
 import { Engine } from "../src/engine.ts";
@@ -71,7 +102,16 @@ export async function run(args: Arguments) {
 }
 
 if (import.meta.main) {
-  // @ts-ignore error
-  const argv = yargs(Deno.args).argv;
-  await run(argv);
+  const argv = parseArgs(Deno.args, {
+    boolean: ["core", "no-core"],
+    default: { core: true },
+    alias: {
+      "no-core": ["nc"],
+    },
+  });
+  // Handle --no-core by setting core to false
+  if (argv["no-core"]) {
+    argv.core = false;
+  }
+  await run(argv as Arguments);
 }

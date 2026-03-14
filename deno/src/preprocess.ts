@@ -1,8 +1,17 @@
-import * as fs from "https://deno.land/std@0.101.0/fs/mod.ts";
-import * as path from "https://deno.land/std@0.101.0/path/mod.ts";
+import * as path from "https://deno.land/std@0.224.0/path/mod.ts";
 
 import { Compiler } from "./compiler.ts";
 import { Engine } from "./engine.ts";
+
+// Helper function to check if file exists (replaces deprecated fs.existsSync)
+function fileExists(filepath: string): boolean {
+  try {
+    Deno.statSync(filepath);
+    return true;
+  } catch {
+    return false;
+  }
+}
 
 export class Preprocessor {
   static tokenize(s: string) {
@@ -58,12 +67,12 @@ export class Preprocessor {
     if (source && source !== "-" && !path.isAbsolute(filename)) {
       const dir = path.dirname(source);
       const relative = path.resolve(dir, filename);
-      if (fs.existsSync(relative)) {
+      if (fileExists(relative)) {
         return relative;
       }
     }
 
-    if (fs.existsSync(filename)) {
+    if (fileExists(filename)) {
       return filename;
     }
 

@@ -1,8 +1,24 @@
-#!/usr/bin/env -S deno run --allow-net --allow-read --unstable --allow-env
+#!/usr/bin/env -S deno run --allow-net --allow-read --allow-env --no-check
 
-import { red } from "https://deno.land/std@0.101.0/fmt/colors.ts";
-import yargs from "https://deno.land/x/yargs@v17.5.1-deno/deno.ts";
-import { Arguments } from "https://deno.land/x/yargs@v17.5.1-deno/deno-types.ts";
+import { red } from "https://deno.land/std@0.224.0/fmt/colors.ts";
+import { parseArgs } from "https://deno.land/std@0.224.0/cli/parse_args.ts";
+import * as path from "https://deno.land/std@0.224.0/path/mod.ts";
+
+interface Arguments {
+  file?: string;
+  preprocess?: boolean;
+  stats?: boolean;
+  validate?: boolean;
+  hlir?: boolean;
+  opt?: boolean;
+  ir?: boolean;
+  llir?: boolean;
+  d?: boolean;
+  disassemble?: boolean;
+  dc?: boolean;
+  bc?: boolean;
+  [key: string]: unknown;
+}
 
 import { base64ToArrayBuffer, dumpByteArray } from "../src/dump.ts";
 
@@ -12,7 +28,6 @@ import { Compiler } from "../src/compiler.ts";
 import { HEADER } from "../src/constants.ts";
 import { Optimizer } from "../src/optimizer.ts";
 import { Preprocessor } from "../src/preprocess.ts";
-import { normalize } from "https://deno.land/std@0.57.0/path/posix.ts";
 import { dec2hex } from "../src/strings.ts";
 
 export function run(argv: Arguments) {
@@ -111,10 +126,30 @@ export function run(argv: Arguments) {
 }
 
 if (import.meta.main) {
-  // @ts-ignore error
-  const argv = yargs(Deno.args).argv;
-  argv.file = argv._[0] || "-";
-  run(argv);
+  const argv = parseArgs(Deno.args, {
+    string: ["file"],
+    boolean: ["preprocess", "stats", "validate", "hlir", "opt", "ir", "llir", "d", "disassemble", "dc", "bc"],
+    default: { file: "-", preprocess: true },
+    alias: {
+      file: ["f"],
+      preprocess: ["E"],
+      stats: ["s"],
+      validate: ["V"],
+      hlir: ["h"],
+      opt: ["O", "opt"],
+      ir: ["i"],
+      llir: ["l"],
+      d: ["d"],
+      disassemble: ["d"],
+      dc: ["c"],
+      bc: ["b"],
+    },
+  });
+  // Map first positional argument to file (parseArgs puts them in _)
+  if (argv._ && argv._.length > 0 && typeof argv._[0] === "string") {
+    argv.file = argv._[0] as string;
+  }
+  run(argv as Arguments);
 }
 
 function decimalToHexString(n: number) {

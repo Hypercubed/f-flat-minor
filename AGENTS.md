@@ -50,3 +50,38 @@ To use other implementations, install the respective runtime and use the `chomp`
 chomp build   # Build all projects
 chomp test    # Run tests
 ```
+
+## Deno Implementation Notes
+
+### Current Version
+The Deno implementation has been migrated to Deno 1.46.3. The original code used Deno 1.12.0.
+
+### Running Deno Code
+
+The recommended command to run `.ffp` files:
+```bash
+cd deno
+deno run --no-check --allow-read --allow-env --allow-hrtime bin/ff-run.ts <file>.ffp
+```
+
+Key flags:
+- `--no-check` - Skip TypeScript type checking (faster startup)
+- `--allow-read` - Required to read source files
+- `--allow-env` - Required for environment variables
+- `--allow-hrtime` - Required for high-resolution timing (used in benchmarks)
+
+### Known Issues / Future Work
+
+1. **Deno 2.x Migration**: The code needs further updates for Deno 2.x:
+   - Remove `--allow-hrtime` flag (deprecated in Deno 2)
+   - Remove `allowJs` from `deno/deno.json` compilerOptions
+   - May need to update `Deno.stdin.readSync` to async version in `deno/src/read.ts`
+
+2. **ff-repl.ts**: The REPL has a custom `readLines` implementation since `std/io/read_lines` was removed from std library
+
+3. **Positional Arguments**: When using `std/cli/parseArgs`, positional arguments are stored in `argv._` array, not in the named parameter. Code like this is needed:
+   ```typescript
+   if (argv._ && argv._.length > 0 && typeof argv._[0] === "string") {
+     argv.file = argv._[0] as string;
+   }
+   ```

@@ -1,7 +1,21 @@
-#!/usr/bin/env -S deno run --allow-read --unstable --allow-env --allow-hrtime
-import { red } from "https://deno.land/std@0.101.0/fmt/colors.ts";
-import yargs from "https://deno.land/x/yargs@v17.5.1-deno/deno.ts";
-import { Arguments } from "https://deno.land/x/yargs@v17.5.1-deno/deno-types.ts";
+#!/usr/bin/env -S deno run --allow-read --allow-env --allow-hrtime --no-check
+import { red } from "https://deno.land/std@0.224.0/fmt/colors.ts";
+import { parseArgs } from "https://deno.land/std@0.224.0/cli/parse_args.ts";
+
+interface Arguments {
+  file?: string;
+  stats?: boolean;
+  validate?: boolean;
+  hlir?: boolean;
+  opt?: boolean;
+  ir?: boolean;
+  disassemble?: boolean;
+  enc?: boolean;
+  trace?: boolean;
+  base?: number;
+  profile?: boolean;
+  [key: string]: unknown;
+}
 
 import { Compiler } from "../src/compiler.ts";
 import { Engine } from "../src/engine.ts";
@@ -114,9 +128,27 @@ export function run(argv: Arguments) {
 }
 
 if (import.meta.main) {
-  // @ts-ignore error
-  const argv = yargs(Deno.args).argv;
-  argv.file = argv._[0] || "-";
-  run(argv);
+  const argv = parseArgs(Deno.args, {
+    string: ["file", "base"],
+    boolean: ["stats", "validate", "hlir", "opt", "ir", "disassemble", "enc", "trace", "profile"],
+    default: { file: "-" },
+    alias: {
+      file: ["f"],
+      stats: ["s"],
+      validate: ["V"],
+      hlir: ["h"],
+      opt: ["O", "opt"],
+      ir: ["i"],
+      disassemble: ["d"],
+      enc: ["e"],
+      trace: ["t"],
+      profile: ["p"],
+    },
+  });
+  // Map first positional argument to file (parseArgs puts them in _)
+  if (argv._ && argv._.length > 0 && typeof argv._[0] === "string") {
+    argv.file = argv._[0] as string;
+  }
+  run(argv as Arguments);
 }
 
