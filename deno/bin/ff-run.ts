@@ -1,4 +1,4 @@
-#!/usr/bin/env -S deno run --allow-read --allow-env --allow-hrtime --no-check
+#!/usr/bin/env -S deno run --allow-read --allow-env --no-check
 import { red } from "https://deno.land/std@0.224.0/fmt/colors.ts";
 import { parseArgs } from "https://deno.land/std@0.224.0/cli/parse_args.ts";
 
