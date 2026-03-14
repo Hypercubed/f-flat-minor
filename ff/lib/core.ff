@@ -114,7 +114,7 @@ reduce!: depth 2 - times ;
 
 sum!: depth 1 > [ + sum! ] ? ;
 product!: depth 1 > [ * product! ] ? ;
-reverse!: depth 1 > [ q< reverse q> pushtop ] ? ;
+reverse!: depth 1 > [ q< reverse! q> pushtop ] ? ;
 
 /* math */
 negitive?: 0 < ;

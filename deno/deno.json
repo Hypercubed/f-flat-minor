@@ -1,0 +1,28 @@
+{
+  "compilerOptions": {
+    "strict": true
+  },
+  "imports": {
+    "std/": "https://deno.land/std@0.224.0/"
+  },
+  "tasks": {
+    "run": "deno run --no-check --allow-read --allow-env bin/ff-run.ts",
+    "compile": "deno run --no-check --allow-read bin/ff-compile.ts",
+    "execute": "deno run --no-check --allow-read --allow-env bin/ff-execute.ts",
+    "preprocess": "deno run --no-check --allow-read bin/ff-preprocess.ts",
+    "repl": "deno run --no-check --allow-read --allow-env bin/ff-repl.ts",
+    "test": "deno test --allow-read --allow-env"
+  },
+  "lint": {
+    "include": ["src/", "bin/"]
+  },
+  "fmt": {
+    "useTabs": false,
+    "lineWidth": 100,
+    "indentWidth": 2,
+    "semiColons": true,
+    "singleQuote": false,
+    "proseWrap": "preserve",
+    "include": ["src/", "bin/"]
+  }
+}

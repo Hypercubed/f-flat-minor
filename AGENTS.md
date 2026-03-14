@@ -26,12 +26,27 @@ cat ff/example_v0.ff | python3 python/execute.py
 The Python interpreter doesn't support `.ffp` files (which require preprocessing). Use Deno instead:
 
 ```bash
-deno run --allow-read --allow-env deno/bin/ff-run.ts <file>.ffp
+cd deno
+deno task run <file>.ffp
 ```
 
 For example:
 ```bash
-deno run --allow-read --allow-env deno/bin/ff-run.ts ff/hello.ffp
+cd deno
+deno task run ../ff/hello.ffp
+```
+
+### Using deno task Commands
+
+The project includes several npm-like scripts defined in `deno/deno.json`:
+
+```bash
+cd deno
+deno task run <file.ffp>   # Run a source file (preprocesses + executes)
+deno task compile <file.ffp> # Compile to bytecode
+deno task execute <file.ffb> # Execute compiled bytecode
+deno task preprocess <file.ffp> # Only preprocess (show macros expanded)
+deno task repl              # Start interactive REPL
 ```
 
 ### File Types
@@ -50,3 +65,22 @@ To use other implementations, install the respective runtime and use the `chomp`
 chomp build   # Build all projects
 chomp test    # Run tests
 ```
+
+## Deno Implementation Notes
+
+### Current Version
+The Deno implementation has been migrated to Deno 2.x (latest stable). The original code used Deno 1.12.0.
+
+### Running Deno Code
+
+The recommended command to run `.ffp` files:
+```bash
+cd deno
+deno run --no-check --allow-read --allow-env bin/ff-run.ts <file>.ffp
+```
+
+Key flags:
+- `--no-check` - Skip TypeScript type checking (faster startup)
+- `--allow-read` - Required to read source files
+- `--allow-env` - Required for environment variables
+- Note: `--allow-hrtime` is no longer needed (deprecated in Deno 2)
