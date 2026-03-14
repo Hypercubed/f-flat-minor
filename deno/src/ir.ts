@@ -1,4 +1,4 @@
-import { blue, green, red, cyan } from "https://deno.land/std@0.139.0/fmt/colors.ts";
+import { blue, green, red, cyan } from "https://deno.land/std@0.101.0/fmt/colors.ts";
 import { OpCodes, systemWords } from "./opcodes.ts";
 
 interface Meta {
