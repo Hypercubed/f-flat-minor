@@ -1,5 +1,13 @@
 import coreLib from "../../ff/lib/core.ff?raw";
 import helloExample from "../../ff/hello.ffp?raw";
+import factExample from "../../ff/fact.ffp?raw";
+import fizzbuzzExample from "../../ff/fizzbuzz.ffp?raw";
+import bottlesExample from "../../ff/99bottles.ffp?raw";
+import pascalExample from "../../ff/pascal.ffp?raw";
+import euler1Example from "../../ff/euler/euler1.ffp?raw";
+import euler7Example from "../../ff/euler/euler7.ffp?raw";
+import primesLib from "../../ff/lib/primes.ffp?raw";
+import primesEncoded from "../../ff/lib/primes-encoded.ff?raw";
 import { Compiler, Engine, Optimizer, Preprocessor } from "../../typescript/core/src/mod.ts";
 
 import { createBrowserPlatform, createPreprocessHost, type VirtualFiles } from "./runtime.ts";
@@ -25,6 +33,12 @@ interface ReplResult {
 
 const EXAMPLES: Record<string, string> = {
   "/examples/hello.ffp": helloExample,
+  "/examples/fact.ffp": factExample,
+  "/examples/fizzbuzz.ffp": fizzbuzzExample,
+  "/examples/99bottles.ffp": bottlesExample,
+  "/examples/pascal.ffp": pascalExample,
+  "/examples/euler1.ffp": euler1Example,
+  "/examples/euler7.ffp": euler7Example,
 };
 
 const DEFAULT_SOURCE = helloExample;
@@ -40,6 +54,8 @@ function createVirtualFiles(source: string, filename = "/main.ffp"): VirtualFile
   return {
     [filename]: source,
     "/lib/core.ff": coreLib,
+    "/lib/primes.ffp": primesLib,
+    "/lib/primes-encoded.ff": primesEncoded,
     ...EXAMPLES,
   };
 }
@@ -366,8 +382,14 @@ export function mountApp(root: HTMLElement) {
               <label class="field">
                 <span>Example</span>
                 <select id="example">
-                  <option value="/examples/hello.ffp">hello.ffp</option>
-                </select>
+                <option value="/examples/hello.ffp">hello.ffp</option>
+                <option value="/examples/fact.ffp">fact.ffp</option>
+                <option value="/examples/fizzbuzz.ffp">fizzbuzz.ffp</option>
+                <option value="/examples/99bottles.ffp">99bottles.ffp</option>
+                <option value="/examples/pascal.ffp">pascal.ffp</option>
+                <option value="/examples/euler1.ffp">euler1.ffp</option>
+                <option value="/examples/euler7.ffp">euler7.ffp</option>
+              </select>
               </label>
               <label class="field">
                 <span>stdin</span>

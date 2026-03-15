@@ -3,7 +3,7 @@
 /* FizzBuzz */
 /* source https://rosettacode.org/wiki/FizzBuzz#the_unrolled_approach */
 
-n: dup print printcr ++ ;
+n: dup putn cr ++ ;
 f: 0 'Fizz' println ++ ;
 b: 0 'Buzz' println ++ ;
 fb: 0 'FizzBuzz' println ++ ;
