@@ -1,0 +1,68 @@
+Deno
+    filter rm_comments_in_strings " /* */
+    filter rm_comments_in_strings " // 
+    filter call_regexp_common C++
+    extension ts
+    3rd_gen_scale 2.00
+    end_of_line_continuation \\$
+Go
+    filter rm_comments_in_strings " /* */
+    filter rm_comments_in_strings " // 
+    filter call_regexp_common C++
+    filter remove_inline //.*$
+    extension go
+    3rd_gen_scale 2.50
+    end_of_line_continuation \\$
+Racket
+    filter remove_matches ^\s*;
+    filter remove_inline ;.*$
+    extension rkt
+    3rd_gen_scale 1.50
+C++
+    filter rm_comments_in_strings " /* */
+    filter rm_comments_in_strings " // 
+    filter call_regexp_common C++
+    extension cpp
+    3rd_gen_scale 1.51
+    end_of_line_continuation \\$
+Python
+    filter remove_matches /\*
+    filter remove_matches \*/
+    filter remove_matches ^\s*#
+    filter docstring_to_C
+    filter call_regexp_common C
+    filter remove_inline #.*$
+    extension py
+    script_exe python
+    script_exe python2.6
+    script_exe python2.7
+    script_exe python3
+    script_exe python3.3
+    script_exe python3.4
+    script_exe python3.5
+    script_exe python3.6
+    script_exe python3.7
+    script_exe python3.8
+    3rd_gen_scale 4.20
+    end_of_line_continuation \\$
+Ruby
+    filter remove_matches ^\s*#
+    filter remove_below_above ^=begin ^=end
+    filter remove_inline #.*$
+    extension rb
+    script_exe ruby
+    3rd_gen_scale 4.20
+    end_of_line_continuation \\$
+Dart
+    filter rm_comments_in_strings " /* */
+    filter rm_comments_in_strings " // 
+    filter call_regexp_common C++
+    extension dart
+    3rd_gen_scale 2.00
+    end_of_line_continuation \\$
+FFlat
+    filter remove_between_general /* */
+    extension ff
+    extension ffp
+    3rd_gen_scale 1
+    end_of_line_continuation \\$
