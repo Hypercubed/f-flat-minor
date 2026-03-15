@@ -47,6 +47,33 @@ textarea {
   padding: 1rem 0 1.5rem;
 }
 
+.mode-tabs {
+  display: flex;
+  gap: 0.65rem;
+  margin-bottom: 1rem;
+  flex-wrap: wrap;
+}
+
+.mode-tab {
+  background: rgba(255, 250, 244, 0.72);
+  border: 1px solid rgba(32, 22, 17, 0.12);
+  color: var(--muted);
+}
+
+.mode-tab.is-active {
+  background: var(--ink);
+  color: #fff8ef;
+  box-shadow: 0 12px 24px rgba(32, 22, 17, 0.16);
+}
+
+.tab-panel {
+  display: none;
+}
+
+.tab-panel.is-active {
+  display: block;
+}
+
 .eyebrow,
 .panel-label,
 .summary-k {
@@ -77,6 +104,29 @@ textarea {
   font-size: 1.05rem;
 }
 
+.hero-links {
+  margin: 1rem 0 0;
+}
+
+.repo-link {
+  display: inline-flex;
+  align-items: center;
+  min-height: 44px;
+  padding: 0.7rem 1rem;
+  border-radius: 999px;
+  border: 1px solid rgba(32, 22, 17, 0.14);
+  background: rgba(255, 250, 244, 0.74);
+  color: var(--ink);
+  text-decoration: none;
+  transition: transform 160ms ease, box-shadow 160ms ease, background 160ms ease;
+}
+
+.repo-link:hover {
+  transform: translateY(-1px);
+  box-shadow: 0 12px 24px rgba(32, 22, 17, 0.12);
+  background: rgba(255, 250, 244, 0.96);
+}
+
 .workspace {
   display: grid;
   grid-template-columns: minmax(340px, 1.1fr) minmax(320px, 0.9fr);
@@ -87,6 +137,10 @@ textarea {
 .results {
   display: grid;
   gap: 1rem;
+}
+
+.repl-workspace {
+  grid-template-columns: minmax(340px, 0.95fr) minmax(320px, 1.05fr);
 }
 
 .panel {
@@ -126,6 +180,14 @@ textarea {
   grid-template-columns: 1fr 1fr auto;
   gap: 0.85rem;
   padding: 0 1rem 1rem;
+}
+
+.repl-controls {
+  grid-template-columns: 1fr auto;
+}
+
+.repl-field {
+  grid-column: 1;
 }
 
 .field {
@@ -218,6 +280,70 @@ button:hover {
   font-size: 0.92rem;
 }
 
+.help-grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 1rem;
+}
+
+.help-panel {
+  min-height: 100%;
+}
+
+.help-copy {
+  padding: 0.8rem 1.2rem 1.2rem;
+  color: var(--muted);
+}
+
+.help-copy p {
+  margin: 0 0 0.85rem;
+}
+
+.help-copy p:last-child {
+  margin-bottom: 0;
+}
+
+.help-list {
+  margin: 0;
+  padding-left: 1.2rem;
+}
+
+.help-list li + li {
+  margin-top: 0.45rem;
+}
+
+.help-defs {
+  margin: 0;
+  display: grid;
+  gap: 0.65rem;
+}
+
+.help-defs dt {
+  color: var(--ink);
+  font-weight: 600;
+}
+
+.help-defs dd {
+  margin: -0.4rem 0 0;
+}
+
+.word-grid {
+  display: grid;
+  grid-template-columns: auto 1fr;
+  gap: 0.55rem 1rem;
+  align-items: baseline;
+}
+
+.word-grid code {
+  color: var(--accent);
+  font-weight: 700;
+}
+
+.help-code {
+  min-height: 0;
+  margin-top: 0.25rem;
+}
+
 .console {
   background:
     linear-gradient(180deg, rgba(32, 22, 17, 0.98), rgba(42, 28, 21, 0.95));
@@ -233,6 +359,10 @@ button:hover {
   .workspace {
     grid-template-columns: 1fr;
   }
+
+  .help-grid {
+    grid-template-columns: 1fr;
+  }
 }
 
 @media (max-width: 720px) {
@@ -242,6 +372,10 @@ button:hover {
   }
 
   .controls {
+    grid-template-columns: 1fr;
+  }
+
+  .repl-controls {
     grid-template-columns: 1fr;
   }
 

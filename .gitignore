@@ -5,6 +5,7 @@
 .packages
 
 **/build/*
+**/dist/*
 **/compiled/*
 **/.tap/*
 dart/bin/*.exe
