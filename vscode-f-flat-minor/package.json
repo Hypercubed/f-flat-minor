@@ -1,0 +1,41 @@
+{
+  "name": "vscode-f-flat-minor",
+  "displayName": "F♭m (f-flat-minor) Language Support",
+  "description": "Syntax highlighting and language support for f-flat-minor, a minimal stack-oriented programming language",
+  "version": "0.0.1",
+  "publisher": "hypercubed",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/Hypercubed/f-flat-minor"
+  },
+  "engines": {
+    "vscode": "^1.0.0"
+  },
+  "categories": [
+    "Programming Languages"
+  ],
+  "scripts": {
+    "package": "vsce package",
+    "publish": "vsce publish"
+  },
+  "devDependencies": {
+    "vsce": "^2.0.0"
+  },
+  "contributes": {
+    "languages": [
+      {
+        "id": "f-flat-minor",
+        "aliases": ["F♭m", "f-flat-minor", "ff", "ffp"],
+        "extensions": [".ff", ".ffp"],
+        "configuration": "./language-configuration.json"
+      }
+    ],
+    "grammars": [
+      {
+        "language": "f-flat-minor",
+        "scopeName": "source.f-flat-minor",
+        "path": "./syntaxes/ff.tmLanguage.json"
+      }
+    ]
+  }
+}

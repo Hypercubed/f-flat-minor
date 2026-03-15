@@ -1,4 +1,9 @@
-.vscode/*
+# .vscode - Only ignore local settings, keep language config
+.vscode/settings.local.json
+.vscode/launch.json
+.vscode/tasks.json
+.vscode/ff-minor/node_modules
+
 */.vscode
 
 */.dart_tool/
@@ -13,3 +18,4 @@ dart/bin/*.exe
 rust/target/*
 
 */node_modules/*
+*.vsix
