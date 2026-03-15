@@ -3,6 +3,7 @@
 
 */.dart_tool/
 .packages
+.notes/*
 
 **/build/*
 **/dist/*

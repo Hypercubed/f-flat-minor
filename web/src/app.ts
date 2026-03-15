@@ -44,13 +44,53 @@ const EXAMPLES: Record<string, string> = {
 };
 
 const DEFAULT_SOURCE = helloExample;
-const URL_SYNC_DELAY_MS = 400;
+const CODE_PARAM_PREFIX = "b64.";
 
 function escapeHtml(value: string): string {
   return value
     .replaceAll("&", "&amp;")
     .replaceAll("<", "&lt;")
     .replaceAll(">", "&gt;");
+}
+
+function encodeBase64Url(value: string): string {
+  const bytes = new TextEncoder().encode(value);
+  let binary = "";
+
+  for (const byte of bytes) {
+    binary += String.fromCharCode(byte);
+  }
+
+  return btoa(binary)
+    .replaceAll("+", "-")
+    .replaceAll("/", "_")
+    .replace(/=+$/g, "");
+}
+
+function decodeBase64Url(value: string): string {
+  const base64 = value.replaceAll("-", "+").replaceAll("_", "/");
+  const padded = base64.padEnd(Math.ceil(base64.length / 4) * 4, "=");
+  const binary = atob(padded);
+  const bytes = Uint8Array.from(binary, (char) => char.charCodeAt(0));
+  return new TextDecoder().decode(bytes);
+}
+
+function encodeCodeForUrlParam(source: string): string {
+  return `${CODE_PARAM_PREFIX}${encodeBase64Url(source)}`;
+}
+
+function decodeCodeFromUrlParam(paramValue: string | null): string | null {
+  if (paramValue === null || !paramValue.startsWith(CODE_PARAM_PREFIX)) {
+    return null;
+  }
+
+  const encoded = paramValue.slice(CODE_PARAM_PREFIX.length);
+
+  try {
+    return decodeBase64Url(encoded);
+  } catch {
+    return null;
+  }
 }
 
 function createVirtualFiles(source: string, filename = "/main.ffp"): VirtualFiles {
@@ -562,29 +602,21 @@ export function mountApp(root: HTMLElement) {
   }
 
   const searchParams = new URLSearchParams(window.location.search);
-  const sourceFromUrl = searchParams.get("code");
+  const sourceFromUrl = decodeCodeFromUrlParam(searchParams.get("code"));
   source.value = sourceFromUrl ?? DEFAULT_SOURCE;
 
-  let syncUrlTimeout: ReturnType<typeof setTimeout> | undefined;
-
   function syncCodeParamToUrl() {
-    if (syncUrlTimeout) {
-      clearTimeout(syncUrlTimeout);
+    const params = new URLSearchParams(window.location.search);
+
+    if (source.value) {
+      params.set("code", encodeCodeForUrlParam(source.value));
+    } else {
+      params.delete("code");
     }
 
-    syncUrlTimeout = setTimeout(() => {
-      const params = new URLSearchParams(window.location.search);
-
-      if (source.value) {
-        params.set("code", source.value);
-      } else {
-        params.delete("code");
-      }
-
-      const query = params.toString();
-      const nextUrl = `${window.location.pathname}${query ? `?${query}` : ""}${window.location.hash}`;
-      window.history.replaceState(window.history.state, "", nextUrl);
-    }, URL_SYNC_DELAY_MS);
+    const query = params.toString();
+    const nextUrl = `${window.location.pathname}${query ? `?${query}` : ""}${window.location.hash}`;
+    window.history.replaceState(window.history.state, "", nextUrl);
   }
 
   function setTab(name: string) {
@@ -739,12 +771,13 @@ export function mountApp(root: HTMLElement) {
   });
 
   run.addEventListener("click", () => {
+    syncCodeParamToUrl();
     void renderPlayground();
   });
   optimize.addEventListener("change", () => {
+    syncCodeParamToUrl();
     void renderPlayground();
   });
-  source.addEventListener("input", syncCodeParamToUrl);
 
   replRun.addEventListener("click", runReplLine);
   replReset.addEventListener("click", () => {
