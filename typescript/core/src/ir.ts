@@ -22,10 +22,12 @@ export interface IrInstruction {
   meta?: Partial<Meta>;
 }
 
-export enum IROp {
-  call = "call",
-  push = "push",
-}
+export const IROp = {
+  call: "call",
+  push: "push",
+} as const;
+
+export type IROp = (typeof IROp)[keyof typeof IROp];
 
 const OP_WIDTH = 6;
 const VALUE_WIDTH = 10;

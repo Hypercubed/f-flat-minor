@@ -1,11 +1,11 @@
-#!/usr/bin/env deno
-import { blue, green, cyan } from "https://deno.land/std@0.224.0/fmt/colors.ts";
+import { blue, green, cyan } from "./colors.ts";
 
-import { IrInstruction, IROp } from "./ir.ts";
+import { IROp } from "./ir.ts";
+import type { IrInstruction } from "./ir.ts";
 import { OpCodes, systemWords } from "./opcodes.ts";
 import { unescapeString } from "./strings.ts";
 import { encode } from "./vlq.ts";
-import { CompilerHost } from "./platform.ts";
+import type { CompilerHost } from "./platform.ts";
 
 const COMMENT_START = "/*";
 const COMMENT_END = "*/";

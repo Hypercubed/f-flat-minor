@@ -1,4 +1,5 @@
-import { IrInstruction, IROp } from "./ir.ts";
+import { IROp } from "./ir.ts";
+import type { IrInstruction } from "./ir.ts";
 import { MAX_SYSTEM_OP_CODE, OpCodes } from "./opcodes.ts";
 
 const DEF = BigInt(OpCodes.DEF);

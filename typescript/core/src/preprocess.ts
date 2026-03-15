@@ -1,6 +1,6 @@
 import { Compiler } from "./compiler.ts";
 import { Engine } from "./engine.ts";
-import { PreprocessHost } from "./platform.ts";
+import type { PreprocessHost } from "./platform.ts";
 
 export class Preprocessor {
   static tokenize(s: string) {

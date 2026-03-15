@@ -1,8 +1,9 @@
 import { MAX_SYSTEM_OP_CODE, OpCodes, systemWords } from "./opcodes.ts";
-import { IrInstruction, IROp } from "./ir.ts";
-import { SourceMap } from "./source-maps.ts";
+import { IROp } from "./ir.ts";
+import type { IrInstruction } from "./ir.ts";
+import type { SourceMap } from "./source-maps.ts";
 import { decode } from "./vlq.ts";
-import { CorePlatform } from "./platform.ts";
+import type { CorePlatform } from "./platform.ts";
 
 const IMMEDIATE_WORDS = [
   BigInt(OpCodes.DEF),

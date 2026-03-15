@@ -1,3 +1,4 @@
+export * from "./colors.ts";
 export * from "./compiler.ts";
 export * from "./constants.ts";
 export * from "./engine.ts";

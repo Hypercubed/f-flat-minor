@@ -1,6 +1,6 @@
 import * as path from "https://deno.land/std@0.224.0/path/mod.ts";
 
-import { CorePlatform, PreprocessHost, CompilerHost } from "../../typescript/core/src/platform.ts";
+import type { CorePlatform, PreprocessHost, CompilerHost } from "../../typescript/core/src/platform.ts";
 
 export function createDenoPlatform(): CorePlatform {
   return {
