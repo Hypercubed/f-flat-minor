@@ -23,39 +23,20 @@ cat ff/example_v0.ff | python3 python/execute.py
 
 ### Running .ffp Files (with preprocessor)
 
-The Python interpreter doesn't support `.ffp` files (which require preprocessing). Use Deno instead:
+The Python interpreter doesn't support `.ffp` files (which require preprocessing).
 
-```bash
-cd deno
-deno task run <file>.ffp
-```
-
-For example:
-```bash
-cd deno
-deno task run ../ff/hello.ffp
-```
-
-### Using deno task Commands
-
-The project includes several npm-like scripts defined in `deno/deno.json`:
-
-```bash
-cd deno
-deno task run <file.ffp>   # Run a source file (preprocesses + executes)
-deno task compile <file.ffp> # Compile to bytecode
-deno task execute <file.ffb> # Execute compiled bytecode
-deno task preprocess <file.ffp> # Only preprocess (show macros expanded)
-deno task repl              # Start interactive REPL
-```
+Use one of the TypeScript implementations instead:
+- `deno/README.md` for the Deno implementation
+- `node/README.md` for the Node implementation
 
 ### File Types
-- `.ff` - Basic f-flat-minor source files (works with Python or Deno)
-- `.ffp` - Source files requiring preprocessor (use Deno)
+- `.ff` - Basic f-flat-minor source files (works with Python, Deno, or Node)
+- `.ffp` - Source files requiring preprocessor (use Deno or Node)
 - `.ffb` - Compiled bytecode files
 
 ### Other Implementations
 - **Deno/TypeScript**: Most complete implementation with preprocessor support
+- **Node/TypeScript**: Shared-core implementation with `ff-run`
 - **Go**: Full implementation with compiler
 - **Ruby**: Basic interpreter
 - **Racket**: Full implementation
@@ -66,21 +47,17 @@ chomp build   # Build all projects
 chomp test    # Run tests
 ```
 
-## Deno Implementation Notes
+## Testing
 
-### Current Version
-The Deno implementation has been migrated to Deno 2.x (latest stable). The original code used Deno 1.12.0.
-
-### Running Deno Code
-
-The recommended command to run `.ffp` files:
+The most complete test set is the deno tests. To run the deno tests you can run:
 ```bash
-cd deno
-deno run --no-check --allow-read --allow-env bin/ff-run.ts <file>.ffp
+chomp test:deno
 ```
 
-Key flags:
-- `--no-check` - Skip TypeScript type checking (faster startup)
-- `--allow-read` - Required to read source files
-- `--allow-env` - Required for environment variables
-- Note: `--allow-hrtime` is no longer needed (deprecated in Deno 2)
+## Deno Implementation Notes
+
+For Deno-specific usage, tasks, CLI entrypoints, and implementation notes, see `deno/README.md`.
+
+## Node Implementation Notes
+
+For Node-specific usage, entrypoints, and implementation notes, see `node/README.md`.

@@ -18,7 +18,7 @@ deps = [
   './src/**/*.ts'
 ]
 run = '''
-  deno compile --unstable --allow-env --allow-read -o $TARGET $DEP
+  deno compile --allow-env --allow-read -o $TARGET $DEP
 '''
 
 [[task]]

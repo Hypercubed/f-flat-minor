@@ -1,13 +1,13 @@
 import { Preprocessor as CorePreprocessor } from "../../typescript/core/src/preprocess.ts";
-import { createDenoPreprocessHost } from "./runtime.ts";
 import { Compiler } from "./compiler.ts";
 import { Engine } from "./engine.ts";
+import { createNodePreprocessHost } from "./runtime.ts";
 
 export class Preprocessor extends CorePreprocessor {
   constructor() {
-    super(createDenoPreprocessHost(), {
+    super(createNodePreprocessHost(), {
       engine: new Engine(),
-      compiler: new Compiler()
+      compiler: new Compiler(),
     });
   }
 }

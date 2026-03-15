@@ -1,0 +1,8 @@
+{
+  "name": "f-flat-minor-node",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "run": "node bin/ff-run.ts"
+  }
+}

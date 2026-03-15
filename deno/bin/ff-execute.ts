@@ -66,7 +66,7 @@ export function run(args: Arguments) {
   }
 
   interpreter.loadBigIntCode(bigCode);
-  interpreter.traceOn = args.trace;
+  interpreter.traceOn = !!args.trace;
   interpreter.base = args.base || 10;
   interpreter.statsOn = args.stats || false;
   interpreter.profileOn = args.profile || false;

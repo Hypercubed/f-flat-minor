@@ -3,8 +3,10 @@
 
 */.dart_tool/
 .packages
+.notes/*
 
 **/build/*
+**/dist/*
 **/compiled/*
 **/.tap/*
 dart/bin/*.exe
