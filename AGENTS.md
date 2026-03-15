@@ -61,3 +61,18 @@ For Deno-specific usage, tasks, CLI entrypoints, and implementation notes, see `
 ## Node Implementation Notes
 
 For Node-specific usage, entrypoints, and implementation notes, see `node/README.md`.
+
+## Project Skills
+
+Reusable agent workflows have been extracted into local skills:
+
+- `.agent/skills/ff-code-authoring/SKILL.md`
+- `.agent/skills/ff-euler-ffp/SKILL.md`
+- `.agent/skills/ff-library-web-refactor/SKILL.md`
+
+Use these when the task involves:
+
+- Project Euler work in `ff/euler/*.ffp`
+- General f-flat-minor coding in `.ff` and `.ffp` files
+- Refactoring reusable words into `ff/lib/*.ffp`
+- Wiring examples/libs into the web playground

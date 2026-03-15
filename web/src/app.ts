@@ -1,8 +1,22 @@
 import coreLib from "../../ff/lib/core.ff?raw";
+import atanLib from "../../ff/lib/atan.ffp?raw";
+import cbrtLib from "../../ff/lib/cbrt.ffp?raw";
+import sqrtLib from "../../ff/lib/sqrt.ffp?raw";
+import gcdLib from "../../ff/lib/gcd.ffp?raw";
+import ackLib from "../../ff/lib/ack.ffp?raw";
 import factExample from "../../ff/fact.ffp?raw";
 import fizzbuzzExample from "../../ff/fizzbuzz.ffp?raw";
 import bottlesExample from "../../ff/99bottles.ffp?raw";
 import pascalExample from "../../ff/pascal.ffp?raw";
+import cbrtExample from "../../ff/cbrt.ffp?raw";
+import sqrtExample from "../../ff/sqrt.ffp?raw";
+import gcdExample from "../../ff/gcd.ffp?raw";
+import ackExample from "../../ff/ack.ffp?raw";
+import piExample from "../../ff/pi.ffp?raw";
+import fibExample from "../../ff/fib.ffp?raw";
+import catalanExample from "../../ff/catalan.ffp?raw";
+import collatzExample from "../../ff/collatz.ffp?raw";
+import hanoiExample from "../../ff/hanoi.ffp?raw";
 import euler1Example from "../../ff/euler/euler1.ffp?raw";
 import euler7Example from "../../ff/euler/euler7.ffp?raw";
 import primesLib from "../../ff/lib/primes.ffp?raw";
@@ -37,6 +51,15 @@ const EXAMPLES: Record<string, string> = {
   "/examples/fizzbuzz.ffp": fizzbuzzExample,
   "/examples/99bottles.ffp": bottlesExample,
   "/examples/pascal.ffp": pascalExample,
+  "/examples/cbrt.ffp": cbrtExample,
+  "/examples/sqrt.ffp": sqrtExample,
+  "/examples/gcd.ffp": gcdExample,
+  "/examples/ack.ffp": ackExample,
+  "/examples/pi.ffp": piExample,
+  "/examples/fib.ffp": fibExample,
+  "/examples/catalan.ffp": catalanExample,
+  "/examples/collatz.ffp": collatzExample,
+  "/examples/hanoi.ffp": hanoiExample,
   "/examples/euler1.ffp": euler1Example,
   "/examples/euler7.ffp": euler7Example,
 };
@@ -95,6 +118,11 @@ function createVirtualFiles(source: string, filename = "/main.ffp"): VirtualFile
   return {
     [filename]: source,
     "/lib/core.ff": coreLib,
+    "/lib/atan.ffp": atanLib,
+    "/lib/cbrt.ffp": cbrtLib,
+    "/lib/sqrt.ffp": sqrtLib,
+    "/lib/gcd.ffp": gcdLib,
+    "/lib/ack.ffp": ackLib,
     "/lib/primes.ffp": primesLib,
     "/lib/primes-encoded.ff": primesEncoded,
     ...EXAMPLES,
@@ -439,6 +467,15 @@ export function mountApp(root: HTMLElement) {
                 <option value="/examples/fizzbuzz.ffp">fizzbuzz.ffp</option>
                 <option value="/examples/99bottles.ffp">99bottles.ffp</option>
                 <option value="/examples/pascal.ffp">pascal.ffp</option>
+                <option value="/examples/cbrt.ffp">cbrt.ffp</option>
+                <option value="/examples/sqrt.ffp">sqrt.ffp</option>
+                <option value="/examples/gcd.ffp">gcd.ffp</option>
+                <option value="/examples/ack.ffp">ack.ffp</option>
+                <option value="/examples/pi.ffp">pi.ffp</option>
+                <option value="/examples/fib.ffp">fib.ffp</option>
+                <option value="/examples/catalan.ffp">catalan.ffp</option>
+                <option value="/examples/collatz.ffp">collatz.ffp</option>
+                <option value="/examples/hanoi.ffp">hanoi.ffp</option>
                 <option value="/examples/euler1.ffp">euler1.ffp</option>
                 <option value="/examples/euler7.ffp">euler7.ffp</option>
               </select>

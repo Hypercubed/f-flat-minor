@@ -1,0 +1,242 @@
+.load ./lib/core.ff
+
+/*
+ * Pi digit spigot using the classic LFT state machine:
+ *   q, r, t, k, n, l
+ *
+ * Safe condition:
+ *   4*q + r - t < n*t
+ *
+ * Output:
+ *   n pi-digits-spigot -> floor(pi * 10^n)
+ */
+
+/* pickn: duplicate Nth value from top (0 = top) */
+(pickn):
+  dup zero? [
+    drop dup
+  ] [
+    swap q< -- (pickn) q> swap
+  ] branch
+; .unsafe
+
+/* Deep dup helpers for state stack: q r t k n l */
+dup-q: 5 (pickn) ;
+dup-r: 4 (pickn) ;
+dup-t: 3 (pickn) ;
+dup-k: 2 (pickn) ;
+dup-n: 1 (pickn) ;
+dup-l: 0 (pickn) ;
+
+/* floor division for positive denominator */
+fdiv:
+  divrem
+  dup zero? [
+    drop
+  ] [
+    dup 0 < [ drop -- ] [ drop ] branch
+  ] branch
+;
+
+/* Stack: rem acc q r t k n l -> rem acc q r t k n l flag */
+(spigot-safe?):
+  dup-q 4 * q<
+  dup-r q> + q<
+  dup-t q> swap - q<
+  dup-n q<
+  dup-t q> *
+  q> swap <
+;
+
+/* Stack: rem acc q r t k n l -> rem-1 acc' ; queue := q' r' t' k' n' l' */
+(spigot-safe):
+  /* l' = l */
+  dup-l q<
+
+  /* n' = floor((10*(3*q + r))/t) - 10*n */
+  dup-q 3 * q<
+  dup-r q> + 10 * q<
+  dup-t q> swap fdiv q<
+  dup-n 10 *
+  q> swap - q<
+
+  /* k' = k */
+  dup-k q<
+
+  /* t' = t */
+  dup-t q<
+
+  /* r' = 10*(r - n*t) */
+  dup-n q<
+  dup-t q> * q<
+  dup-r q> - 10 * q<
+
+  /* q' = 10*q */
+  dup-q 10 * q<
+
+  /* emitted digit = n */
+  dup-n q<
+
+  /* drop old state */
+  drop2 drop2 drop2
+
+  /* rem acc digit -> rem-1 acc' */
+  q> swap 10 * + swap -- swap
+; .unsafe
+
+/* Stack: rem acc q r t k n l -> rem acc ; queue := q' r' t' k' n' l' */
+(spigot-unsafe):
+  /* l' = l + 2 */
+  dup-l 2 + q<
+
+  /* n' = floor((q*(7*k+2) + r*l) / (t*l)) */
+  dup-k 7 * 2 + q<
+  dup-q q> * q<
+  dup-r q<
+  dup-l q> * q<
+  q> q> + q<
+  dup-t q<
+  dup-l q> *
+  q> swap fdiv q<
+
+  /* k' = k + 1 */
+  dup-k ++ q<
+
+  /* t' = t * l */
+  dup-t q<
+  dup-l q> * q<
+
+  /* r' = (2*q + r) * l */
+  dup-q 2 * q<
+  dup-r q> + q<
+  dup-l q> * q<
+
+  /* q' = q * k */
+  dup-q q<
+  dup-k q> * q<
+
+  /* drop old state */
+  drop2 drop2 drop2
+; .unsafe
+
+/* Stack: rem acc ; queue: q r t k n l -> rem acc ; queue: next state */
+(spigot-step):
+  q> q> q> q> q> q>
+  (spigot-safe?)
+  [ (spigot-safe) ]
+  [ (spigot-unsafe) ]
+  branch
+; .unsafe
+
+/* Stack: rem acc ; queue: state -> acc */
+(spigot-loop):
+  over zero?
+  [ nip ]
+  [ (spigot-step) (spigot-loop) ]
+  branch
+;
+
+/* Stack: rem q r t k n l -> rem-1 ; queue := q' r' t' k' n' l' and prints digit */
+(spigot-safe-print):
+  /* l' = l */
+  dup-l q<
+
+  /* n' = floor((10*(3*q + r))/t) - 10*n */
+  dup-q 3 * q<
+  dup-r q> + 10 * q<
+  dup-t q> swap fdiv q<
+  dup-n 10 *
+  q> swap - q<
+
+  /* k' = k */
+  dup-k q<
+
+  /* t' = t */
+  dup-t q<
+
+  /* r' = 10*(r - n*t) */
+  dup-n q<
+  dup-t q> * q<
+  dup-r q> - 10 * q<
+
+  /* q' = 10*q */
+  dup-q 10 * q<
+
+  /* emitted digit = n */
+  dup-n 48 + putc
+
+  /* drop old state */
+  drop2 drop2 drop2
+
+  /* decrement remaining digits to print */
+  --
+; .unsafe
+
+/* Stack: rem ; queue: q r t k n l -> rem ; queue: next state */
+(spigot-step-print):
+  q> q> q> q> q> q>
+  (spigot-safe?)
+  [ (spigot-safe-print) ]
+  [ (spigot-unsafe) ]
+  branch
+; .unsafe
+
+/* Stack: rem ; queue: state -> () */
+(spigot-loop-print):
+  dup zero?
+  [ drop ]
+  [ (spigot-step-print) (spigot-loop-print) ]
+  branch
+;
+
+/* n -> floor(pi * 10^n) */
+pi-digits-spigot:
+  /* Include integer digit before decimal digits. */
+  ++
+
+  /* Initialize LFT state in queue: q=1 r=0 t=1 k=1 n=3 l=3 */
+  0
+  1 0 1 1 3 3
+  q< q< q< q< q< q<
+
+  /* run loop */
+  (spigot-loop)
+
+  /* cleanup queued state */
+  q> q> q> q> q> q>
+  drop2 drop2 drop2
+;
+
+/* n -> prints pi with n digits after decimal point, e.g. n=6 => 3.141592 */
+pi-digits-spigot-stream:
+  /* Run one emitted digit to get the integer part ("3"). */
+  1 0
+
+  /* Initialize LFT state in queue: q=1 r=0 t=1 k=1 n=3 l=3 */
+  1 0 1 1 3 3
+  q< q< q< q< q< q<
+
+  (spigot-loop)
+  dup 48 + putc
+  '.' putc
+  drop
+
+  /* print n fractional digits */
+  (spigot-loop-print)
+
+  /* cleanup queued state */
+  q> q> q> q> q> q>
+  drop2 drop2 drop2
+;
+
+/* n -> prints floor(pi * 10^n) as continuous digits (no dot) */
+pi-digits-spigot-stream-raw:
+  ++
+  1 0 1 1 3 3
+  q< q< q< q< q< q<
+  (spigot-loop-print)
+  q> q> q> q> q> q>
+  drop2 drop2 drop2
+;
+
+50 pi-digits-spigot-stream-raw

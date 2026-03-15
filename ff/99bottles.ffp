@@ -1,5 +1,7 @@
 .load ./lib/core.ff
 
+/* 99 Bottles of Beer lyrics printer. */
+
 bottles: dup putn 0 '\sbottles' ;
 beer: bottles '\sof\sbeer' ;
 wall: beer '\son\sthe\swall\n' ;

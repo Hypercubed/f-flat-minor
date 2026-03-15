@@ -1,6 +1,7 @@
 .import ../lib/core.ff
 .import ../lib/primes.ffp
 
+/* Project Euler #7: find the 10001st prime. */
 /* http://projecteuler.net/index.php?section=problems&id=7 */
 
 10001 th-prime . /* 104743 */

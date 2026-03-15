@@ -1,0 +1,4 @@
+interface:
+  display_name: "F-flat-minor Euler FFP"
+  short_description: "Build and debug f-flat-minor Euler .ffp solutions"
+  default_prompt: "Use $ff-euler-ffp to implement or debug an ff/euler/*.ffp solution algorithmically and verify stack behavior with trace runs."

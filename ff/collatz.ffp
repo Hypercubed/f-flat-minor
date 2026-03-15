@@ -1,5 +1,7 @@
 .load ./lib/core.ff
 
+/* Collatz sequence printer for a starting value, ending at 1. */
+
 c: q< ++ q> ;
 
 next: dup even? [ 2 / ] [ 3 * 1 + ] branch ;

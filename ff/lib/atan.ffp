@@ -1,0 +1,201 @@
+.import ./core.ff
+
+/*
+ * Arctan utilities using Taylor series and fixed-point integer arithmetic.
+ *
+ * Words:
+ *   n num den atan2                   -> floor(10^n * arctan(num/den))
+ *   n x atan                          -> floor(10^n * arctan(x))
+ *   n x atan-inv                      -> floor(10^n * arctan(1/x))
+ */
+
+/*
+ * Recursive Taylor loop for ratio form where |num/den| <= 1
+ * state: sum term odd sign num2 den2
+ */
+(_atan2-loop):
+  /* addend = term / odd while preserving state */
+  q< q<
+  q<
+  dup q<
+  over swap /
+  q> q> q> q>
+
+  /* duplicate addend and move condition to top */
+  q< q< q< q<
+  dup
+  q> swap
+  q> swap
+  q> swap
+  q> swap
+
+  [
+    /* state in: sum term addend odd sign num2 den2 */
+    q< q<
+    swap q<
+
+    /* sum' = sum + sign*addend, while preserving sign */
+    dup
+    rot
+    *
+    swap
+    q<
+    swap
+    q<
+    +
+    q>
+    q>
+    q>
+
+    /* restore num2/den2 for term update */
+    q> q>
+
+    /* term' = floor(term * num2 / den2), preserve num2/den2 */
+    dup2
+    q< q<
+    rot
+    q<
+    rot
+    q<
+    q<
+    *
+    q>
+    /
+    q>
+    q>
+    q>
+    q>
+
+    /* sign' = -sign */
+    q< q<
+    swap
+    -1 *
+    q> q>
+
+    /* odd' = odd + 2 */
+    q< q< q<
+    2 +
+    q> q> q>
+
+    (_atan2-loop)
+  ]
+  [
+    /* addend is zero: return sum */
+    drop
+    drop
+    drop
+    drop
+    drop
+    drop
+  ]
+  branch
+;
+
+/* scale num den (num,den >= 0, num <= den) -> floor(scale * arctan(num/den)) */
+_atan2-core:
+  /* term0 = floor(scale * num / den) */
+  dup q<
+  over q<
+  q<
+  *
+  q>
+  /
+
+  /* num2 = num*num, den2 = den*den */
+  q> dup *
+  q> dup *
+
+  /* init: sum=0 term=term0 odd=1 sign=1 num2 den2 */
+  q< q<
+  0 swap
+  1 1
+  q> q>
+
+  (_atan2-loop)
+;
+
+/* scale -> floor(scale * pi) */
+_pi-scaled:
+  dup 1 5 _atan2-core
+  swap 1 239 _atan2-core
+  swap 4 * swap -
+  4 *
+;
+
+/* scale num den (num == 0) -> 0 */
+_atan2-num-zero:
+  drop
+  drop
+  drop
+  0
+;
+
+/* scale num den (den == 0) -> sign(num) * pi/2 */
+_atan2-den-zero:
+  drop
+  dup sgn q<
+  drop
+  _pi-scaled 2 /
+  q> *
+;
+
+/* scale num den (num,den > 0) -> floor(scale * arctan(num/den)) */
+_atan2-abs:
+  dup2 <=
+  [
+    _atan2-core
+  ]
+  [
+    q< q<
+    dup q<
+    dup _pi-scaled 2 /
+    swap drop
+    q> q> q> swap
+    _atan2-core
+    -
+  ]
+  branch
+;
+
+/* scale num den (num,den != 0) -> floor(scale * arctan(num/den)) */
+_atan2-finite:
+  over sgn q<
+  dup sgn q<
+  abs swap abs swap
+  q> q> * q<
+  _atan2-abs
+  q> *
+;
+
+/* scale num den -> floor(scale * arctan(num/den)) */
+_atan2-scaled:
+  over zero?
+  [
+    _atan2-num-zero
+  ]
+  [
+    dup zero?
+    [
+      _atan2-den-zero
+    ]
+    [
+      _atan2-finite
+    ]
+    branch
+  ]
+  branch
+;
+
+/* n num den -> floor(10^n * arctan(num/den)) */
+atan2:
+  q< q<
+  10 swap ^
+  q> q>
+  _atan2-scaled
+;
+
+/* n x -> floor(10^n * arctan(x)) */
+atan: 1 atan2 ;
+
+/* n x -> floor(10^n * arctan(1/x)) */
+atan-inv: 1 swap atan2 ;

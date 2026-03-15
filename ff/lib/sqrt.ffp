@@ -1,0 +1,58 @@
+.import ./core.ff
+
+/*
+ * Naming note: the `i` prefix means integer.
+ * `isqrt` returns floor(sqrt(n)) for n >= 0.
+ * `isqrtrem` returns: n -> isqrt(n) (n - isqrt(n)^2).
+ */
+
+(_isqrt_newton):
+  dup2 / over + 1 >> /* update guess */
+  dup2 > [ /* continue? */
+    nip (_isqrt_newton)
+  ] ? ;
+
+/* newton's method with initial guess of x/2 */
+isqrt_newton:
+  dup 1 >> /* initial guess of x/2 */
+  (_isqrt_newton)
+  drop nip ;
+
+(_isqrt_jarvis): /* b a */
+  dup2 <
+  [
+    over - /* b a-b */
+    [ 10 + ] dip /* b+10 a-b */
+    (_isqrt_jarvis)
+  ]
+  ?
+;
+
+/* Jarvis (2006): a very strange method to work out square roots, using only subtraction */
+isqrt_jarvis:
+  5 *
+  0 swap
+  (_isqrt_jarvis)
+  drop 10 /
+;
+
+/* recursive digit-by-digit algorithm */
+isqrt_recur:
+  dup 1 > [ /* n if n < 2 */
+    dup /* n n */
+    2 >> isqrt_recur 1 << /* n 2*sqrt(n/4)+1 */
+    dup ++ dup * /* n 2*sqrt(n/4) (2*sqrt(n/4)+1)^2 */
+    dig /* 2*sqrt(n/4) (2*sqrt(n/4)+1)^2 n */
+    <=
+    [ ++ ] /* 2*sqrt(n/4)+1 */
+    ? /* 2*sqrt(n/4) else */
+  ] ?
+;
+
+isqrt:
+  dup 0 < [ 1 0 / ] ? /* error */
+  dup 1 > [
+    isqrt_recur
+  ] ? ;
+
+isqrtrem: dup isqrt dup bury 2 ^ - ;

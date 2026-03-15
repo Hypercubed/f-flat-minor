@@ -1,28 +1,6 @@
-.load ./lib/core.ff
+.load ./lib/ack.ffp
 
-/* Kunth operators */
-^^: -- dup [ [ dup ] swap times [ ^ ] ] dip times ;
-^^^: -- dup [ [ dup ] swap times [ ^^ ] ] dip times ;
-
-/* Buck's functions used for m <= 5 */
-F:  over 0 = [ nip 1 + ] [
-    over 1 = [ nip 2 + ] [ 
-    over 2 = [ nip 2 * ] [
-    over 3 = [ nip 2 swap ^ ] [
-    over 4 = [ nip 2 swap ^^ ]
-             [ nip 2 swap ^^^ ] branch
-  ] branch
-  ] branch
-  ] branch
-  ] branch ;
-
-/* Recursive function for m > 5 */
-_ackn: over [ dup
-  [ [ dup -- swap ] dip -- ack ack ]
-  [ drop -- 1 ack ] branch ] [ nip ++ ] branch ;
-
-/*  Ackermann Function */
-ack: over 6 < [ 3 + F 3 - ] [ _ackn ] branch ;
+/* Ackermann function demo over several (m, n) pairs. */
 
 0 0 . ack . cr clr /* 1 */
 0 4 . ack . cr clr /* 5 */

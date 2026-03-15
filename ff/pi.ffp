@@ -1,0 +1,29 @@
+.load ./lib/atan.ffp
+
+/*
+ * Pi using Machin's formula and Taylor series:
+ *   pi/4 = 4*arctan(1/5) - arctan(1/239)
+ *
+ * Uses fixed-point integer arithmetic with guard digits.
+ * Usage:
+ *   n pi-digits -> floor(pi * 10^n)
+ */
+
+guard-digits: 20 ;
+
+/* n -> floor(pi * 10^n) */
+pi-digits:
+  /* use n+guard directly with atan2 (10^N-scaled API) */
+  guard-digits +
+
+  dup 1 5 atan2
+  swap 1 239 atan2
+
+  swap 4 * swap -
+  4 *
+
+  guard-digits 10 swap ^ /
+;
+
+/* Change 50 to any N you want. */
+50 pi-digits .

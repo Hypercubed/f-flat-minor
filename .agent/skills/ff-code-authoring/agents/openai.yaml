@@ -1,0 +1,4 @@
+interface:
+  display_name: "F-flat-minor Code Authoring"
+  short_description: "Write and debug f-flat-minor code"
+  default_prompt: "Use $ff-code-authoring to write or fix a .ff/.ffp program with clear stack effects and runtime-appropriate validation."

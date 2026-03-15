@@ -1,0 +1,4 @@
+interface:
+  display_name: "F-flat-minor Library and Web Refactor"
+  short_description: "Refactor f-flat-minor libs and wire web examples"
+  default_prompt: "Use $ff-library-web-refactor to extract reusable words into ff/lib, update web/src/app.ts mappings, and verify the web build."

@@ -1,10 +1,6 @@
-.load ./lib/core.ff
+.load ./lib/cbrt.ffp
 
-_icbrt-closer: dup2 2 ^ / over 2 * + 3 / ;
-_icbrt-loop: _icbrt-closer dup2 > [ nip _icbrt-loop ] ? ;
-_icbrtn: dup 3 / _icbrt-loop drop nip ;
-
-icbrt: dup sgn swap over * dup 1 > [ _icbrtn ] ? * ;
+/* Integer cube root demo using `icbrt`. */
 
 0 icbrt . clr
 1 icbrt . clr
