@@ -44,6 +44,7 @@ const EXAMPLES: Record<string, string> = {
 };
 
 const DEFAULT_SOURCE = helloExample;
+const URL_SYNC_DELAY_MS = 400;
 
 function escapeHtml(value: string): string {
   return value
@@ -448,6 +449,7 @@ export function mountApp(root: HTMLElement) {
               </div>
               <div class="detail-panels">
                 <pre id="output" class="console detail-panel is-active" data-detail-panel="output"></pre>
+                <pre id="error" class="console detail-panel is-active" data-detail-panel="output"></pre>
                 <pre id="preprocessed" class="code-block detail-panel" data-detail-panel="preprocessed"></pre>
                 <pre id="ir" class="code-block detail-panel" data-detail-panel="ir"></pre>
                 <pre id="bytecode" class="code-block detail-panel" data-detail-panel="bytecode"></pre>
@@ -520,6 +522,7 @@ export function mountApp(root: HTMLElement) {
   const run = root.querySelector<HTMLButtonElement>("#run");
   const summary = root.querySelector<HTMLDivElement>("#summary");
   const output = root.querySelector<HTMLElement>("#output");
+  const errorOutput = root.querySelector<HTMLElement>("#error");
   const preprocessed = root.querySelector<HTMLElement>("#preprocessed");
   const ir = root.querySelector<HTMLElement>("#ir");
   const bytecode = root.querySelector<HTMLElement>("#bytecode");
@@ -544,6 +547,7 @@ export function mountApp(root: HTMLElement) {
     !run ||
     !summary ||
     !output ||
+    !errorOutput ||
     !preprocessed ||
     !ir ||
     !bytecode ||
@@ -557,7 +561,31 @@ export function mountApp(root: HTMLElement) {
     throw new Error("App failed to mount");
   }
 
-  source.value = DEFAULT_SOURCE;
+  const searchParams = new URLSearchParams(window.location.search);
+  const sourceFromUrl = searchParams.get("code");
+  source.value = sourceFromUrl ?? DEFAULT_SOURCE;
+
+  let syncUrlTimeout: ReturnType<typeof setTimeout> | undefined;
+
+  function syncCodeParamToUrl() {
+    if (syncUrlTimeout) {
+      clearTimeout(syncUrlTimeout);
+    }
+
+    syncUrlTimeout = setTimeout(() => {
+      const params = new URLSearchParams(window.location.search);
+
+      if (source.value) {
+        params.set("code", source.value);
+      } else {
+        params.delete("code");
+      }
+
+      const query = params.toString();
+      const nextUrl = `${window.location.pathname}${query ? `?${query}` : ""}${window.location.hash}`;
+      window.history.replaceState(window.history.state, "", nextUrl);
+    }, URL_SYNC_DELAY_MS);
+  }
 
   function setTab(name: string) {
     tabs.forEach((tab) => {
@@ -597,7 +625,9 @@ export function mountApp(root: HTMLElement) {
     });
   });
 
-  function renderPlayground() {
+  async function renderPlayground() {
+    document.body.dataset.ready = "false";
+
     try {
       const result = runProgram(source.value, stdin.value, optimize.checked);
       const issueCount = result.issues.length;
@@ -627,6 +657,7 @@ export function mountApp(root: HTMLElement) {
       `;
 
       output.innerHTML = escapeHtml(diagnostics);
+      errorOutput.textContent = "";
       preprocessed.innerHTML = escapeHtml(result.preprocessed);
       ir.innerHTML = escapeHtml(result.ir);
       bytecode.innerHTML = escapeHtml(result.bytecode);
@@ -639,10 +670,13 @@ export function mountApp(root: HTMLElement) {
           <strong>run failed</strong>
         </article>
       `;
-      output.innerHTML = escapeHtml(message);
+      output.innerHTML = "";
+      errorOutput.innerHTML = escapeHtml(message);
       preprocessed.innerHTML = "";
       ir.innerHTML = "";
       bytecode.innerHTML = "";
+    } finally {
+      document.body.dataset.ready = "true";
     }
   }
 
@@ -700,11 +734,17 @@ export function mountApp(root: HTMLElement) {
 
   loadExample.addEventListener("click", () => {
     source.value = EXAMPLES[example.value] ?? DEFAULT_SOURCE;
-    renderPlayground();
+    syncCodeParamToUrl();
+    void renderPlayground();
   });
 
-  run.addEventListener("click", renderPlayground);
-  optimize.addEventListener("change", renderPlayground);
+  run.addEventListener("click", () => {
+    void renderPlayground();
+  });
+  optimize.addEventListener("change", () => {
+    void renderPlayground();
+  });
+  source.addEventListener("input", syncCodeParamToUrl);
 
   replRun.addEventListener("click", runReplLine);
   replReset.addEventListener("click", () => {
@@ -720,7 +760,7 @@ export function mountApp(root: HTMLElement) {
     }
   });
 
-  renderPlayground();
+  void renderPlayground();
   renderReplStack([]);
   renderReplTranscript();
 }

@@ -381,6 +381,11 @@ button:hover {
   color: var(--ink);
 }
 
+
+#error:empty {
+  display: none;
+}
+
 .detail-panel {
   display: none;
 }
