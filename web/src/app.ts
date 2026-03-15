@@ -1,5 +1,4 @@
 import coreLib from "../../ff/lib/core.ff?raw";
-import helloExample from "../../ff/hello.ffp?raw";
 import factExample from "../../ff/fact.ffp?raw";
 import fizzbuzzExample from "../../ff/fizzbuzz.ffp?raw";
 import bottlesExample from "../../ff/99bottles.ffp?raw";
@@ -35,7 +34,6 @@ interface ReplResult {
 
 const EXAMPLES: Record<string, string> = {
   "/examples/fact.ffp": factExample,
-  // "/examples/hello.ffp": helloExample,
   "/examples/fizzbuzz.ffp": fizzbuzzExample,
   "/examples/99bottles.ffp": bottlesExample,
   "/examples/pascal.ffp": pascalExample,
@@ -43,7 +41,7 @@ const EXAMPLES: Record<string, string> = {
   "/examples/euler7.ffp": euler7Example,
 };
 
-const DEFAULT_SOURCE = helloExample;
+const DEFAULT_SOURCE = factExample;
 const CODE_PARAM_PREFIX = "b64.";
 
 function escapeHtml(value: string): string {
@@ -437,7 +435,6 @@ export function mountApp(root: HTMLElement) {
               <label class="field">
                 <span>Example</span>
                 <select id="example">
-                <option value="/examples/hello.ffp">hello.ffp</option>
                 <option value="/examples/fact.ffp">fact.ffp</option>
                 <option value="/examples/fizzbuzz.ffp">fizzbuzz.ffp</option>
                 <option value="/examples/99bottles.ffp">99bottles.ffp</option>
@@ -451,7 +448,6 @@ export function mountApp(root: HTMLElement) {
                 <input id="stdin" type="text" placeholder="Optional input for getc" />
               </label>
               <div class="actions">
-                <button id="load-example" class="ghost">Load Example</button>
                 <button id="run" class="primary">Run Program</button>
               </div>
             </div>
@@ -558,7 +554,6 @@ export function mountApp(root: HTMLElement) {
   const stdin = root.querySelector<HTMLInputElement>("#stdin");
   const optimize = root.querySelector<HTMLInputElement>("#optimize");
   const example = root.querySelector<HTMLSelectElement>("#example");
-  const loadExample = root.querySelector<HTMLButtonElement>("#load-example");
   const run = root.querySelector<HTMLButtonElement>("#run");
   const summary = root.querySelector<HTMLDivElement>("#summary");
   const output = root.querySelector<HTMLElement>("#output");
@@ -583,7 +578,6 @@ export function mountApp(root: HTMLElement) {
     !stdin ||
     !optimize ||
     !example ||
-    !loadExample ||
     !run ||
     !summary ||
     !output ||
@@ -764,7 +758,7 @@ export function mountApp(root: HTMLElement) {
     replInput.focus();
   }
 
-  loadExample.addEventListener("click", () => {
+  example.addEventListener("change", () => {
     source.value = EXAMPLES[example.value] ?? DEFAULT_SOURCE;
     syncCodeParamToUrl();
     void renderPlayground();
