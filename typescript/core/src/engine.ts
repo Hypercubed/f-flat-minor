@@ -12,17 +12,16 @@ const IMMEDIATE_WORDS = [
   BigInt(OpCodes.BRA)
 ];
 
+const Q_LITERAL = 0n;
+const Q_CALL = 1n;
+
 export class Engine {
   static fromBase64(encoded: string): bigint[] {
     return decode(encoded)
       .flatMap((value) => {
-        const op = value & 1n;
+        const tag = value & 1n;
         const val = value >> 1n;
-        if (op) {
-          return [val];
-        } else {
-          return [0n, val];
-        }
+        return [tag, val];
       });
   }
 
@@ -89,6 +88,24 @@ export class Engine {
 
   clear(): void {
     this.stack.splice(0, this.stack.length);
+  }
+
+  private queuePush(tag: bigint, value: bigint) {
+    this.queue.push(tag, value);
+  }
+
+  private queueUnshift(tag: bigint, value: bigint) {
+    this.queue.unshift(tag, value);
+  }
+
+  private queueShift(): [bigint, bigint] {
+    return [this.queue.shift() ?? 0n, this.queue.shift() ?? 0n];
+  }
+
+  private queuePop(): [bigint, bigint] {
+    const value = this.queue.pop() ?? 0n;
+    const tag = this.queue.pop() ?? 0n;
+    return [tag, value];
   }
 
   private defineSystem(fn: () => void, code: number) {
@@ -175,10 +192,9 @@ export class Engine {
           this.symbols.set(i.value, i.meta?.name);
         }
 
-        this.queue.push(i.value);
+        this.queuePush(Q_CALL, i.value);
       } else {
-        this.queue.push(0n);
-        this.queue.push(i.value);
+        this.queuePush(Q_LITERAL, i.value);
       }
     }
     return this.stack;
@@ -189,29 +205,34 @@ export class Engine {
     let immediate = false;
 
     while (queue.length > 0) {
-      const op = queue.shift() || 0n;
+      const [tag, value] = this.queueShift();
+      const isCall = tag === Q_CALL;
 
-      immediate = !this.depth || IMMEDIATE_WORDS.includes(op);
-      this.traceOn && this.trace(op, immediate);
+      immediate = !this.depth || (isCall && IMMEDIATE_WORDS.includes(value));
+      this.traceOn && this.trace(tag, value, immediate);
 
-      if (op === 0n) {
-        if (!immediate) this.push(op);
-        this.push(queue.shift() || 0n);
+      if (isCall) {
+        if (!immediate) {
+          this.push(tag);
+          this.push(value);
+        } else {
+          this.callOp(value);
+        }
       } else {
-        if (!immediate) this.push(op);
-        if (immediate) this.callOp(op);
+        if (!immediate) this.push(tag);
+        this.push(value);
       }
 
       if (this.statsOn) {
         this.stats.max_stack_depth = Math.max(this.stats.max_stack_depth, this.stack.length);
-        this.stats.max_queue_depth = Math.max(this.stats.max_queue_depth, queue.length);
+        this.stats.max_queue_depth = Math.max(this.stats.max_queue_depth, queue.length / 2);
       }
     }
     return this.stack;
   }
 
-  trace(op: bigint, immediate: boolean) {
-    let name = this.getName(op);
+  trace(tag: bigint, value: bigint, immediate: boolean) {
+    let name = tag === Q_CALL ? this.getName(value) : String(value);
     if (immediate) {
       name = `*${name}*`;
     }
@@ -251,19 +272,19 @@ export class Engine {
 
     this.defineSystem(() => {
       const x = this.pop();
-      this.queue.unshift(x);
+      this.callOp(x);
     }, OpCodes.CALL);
 
     this.defineSystem(() => {
       this.depth--;
-      const m = this.queue.pop();
+      const [, m] = this.queuePop();
       const s: bigint[] = this.stack.splice(Number(m || 0)) || [];
       this.defineUser(s, this.pop());
     }, OpCodes.DEF);
 
     this.defineSystem(() => {
       this.depth--;
-      const m = this.queue.pop();
+      const [, m] = this.queuePop();
       const s: bigint[] = this.stack.splice(Number(m || 0)) || [];
       const op = BigInt(this.nextAnonOp++);
       this.defineUser(s, op);
@@ -276,13 +297,13 @@ export class Engine {
     this.defineSystem(() => {
       this.depth++;
       const m = this.stack.length;
-      this.queue.push(BigInt(m));
+      this.queuePush(Q_LITERAL, BigInt(m));
     }, OpCodes.BRA);
 
     this.defineSystem(() => {
       this.depth++;
       const m = this.stack.length;
-      this.queue.push(BigInt(m));
+      this.queuePush(Q_LITERAL, BigInt(m));
     }, OpCodes.MARK);
 
     this.defineSystem(() => this.clear(), OpCodes.CLR);
@@ -413,16 +434,16 @@ export class Engine {
     this.defineSystem(() => {
       const t = this.pop();
       if (this.pop() !== 0n) {
-        this.queue.unshift(t);
+        this.queueUnshift(Q_CALL, t);
       }
     }, OpCodes.IF);
 
     this.defineSystem(() => {
-      this.queue.push(this.pop());
+      this.queuePush(Q_LITERAL, this.pop());
     }, OpCodes.PUSHR);
 
     this.defineSystem(() => {
-      const a = this.queue.pop() || 0n;
+      const [, a] = this.queuePop();
       this.push(a);
     }, OpCodes.PULLR);
 
@@ -432,13 +453,20 @@ export class Engine {
 
     this.defineSystem(() => {
       const len = this.stack.length;
-      this.queue.push(...this.stack.splice(0, len));
-      this.queue.push(BigInt(len));
+      const stash = this.stack.splice(0, len);
+      stash.forEach((value) => this.queuePush(Q_LITERAL, value));
+      this.queuePush(Q_LITERAL, BigInt(len));
     }, OpCodes.STASH);
 
     this.defineSystem(() => {
-      const len = Number(this.queue.pop());
-      this.stack.unshift(...this.queue.splice(-len));
+      const [, lenRaw] = this.queuePop();
+      const len = Number(lenRaw);
+      const fetch: bigint[] = [];
+      for (let i = 0; i < len; i++) {
+        const [, value] = this.queuePop();
+        fetch.unshift(value);
+      }
+      this.stack.unshift(...fetch);
     }, OpCodes.FETCH);
 
     this.defineSystem(() => {

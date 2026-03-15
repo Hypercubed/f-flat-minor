@@ -8,13 +8,14 @@ import euler1Example from "../../ff/euler/euler1.ffp?raw";
 import euler7Example from "../../ff/euler/euler7.ffp?raw";
 import primesLib from "../../ff/lib/primes.ffp?raw";
 import primesEncoded from "../../ff/lib/primes-encoded.ff?raw";
-import { Compiler, Engine, Optimizer, Preprocessor } from "../../typescript/core/src/mod.ts";
+import { Compiler, Engine, Optimizer, Preprocessor, printLowLevelIr } from "../../typescript/core/src/mod.ts";
 
 import { createBrowserPlatform, createPreprocessHost, type VirtualFiles } from "./runtime.ts";
 
 interface RunResult {
   output: string;
   preprocessed: string;
+  ir: string;
   bytecode: string;
   issues: string[];
   stack: string[];
@@ -29,6 +30,7 @@ interface ReplResult {
   logs: string[];
   stack: string[];
   error?: string;
+  clearTranscript?: boolean;
 }
 
 const EXAMPLES: Record<string, string> = {
@@ -114,6 +116,11 @@ function runProgram(source: string, stdin: string, optimize: boolean): RunResult
       ir = new Optimizer().optimize(ir);
     }
 
+    const irLines: string[] = [];
+    withCapturedConsole((message) => irLines.push(message), () => {
+      printLowLevelIr(ir);
+    });
+
     engine.loadIR(ir);
 
     const executeStart = performance.now();
@@ -123,6 +130,7 @@ function runProgram(source: string, stdin: string, optimize: boolean): RunResult
     return {
       output,
       preprocessed,
+      ir: irLines.join("\n"),
       bytecode: Compiler.compileToBase64(ir),
       issues,
       stack: engine.getStack().map(String),
@@ -181,6 +189,16 @@ class ReplSession {
       this.reset();
       return {
         output: "Session reset. Core library reloaded.",
+        clearTranscript: true,
+        logs,
+        stack: this.engine.getStack().map(String),
+      };
+    }
+
+    if (trimmed === ".clear") {
+      return {
+        output: "Transcript cleared.",
+        clearTranscript: true,
         logs,
         stack: this.engine.getStack().map(String),
       };
@@ -372,10 +390,6 @@ export function mountApp(root: HTMLElement) {
                 <p class="panel-label">Editor</p>
                 <h2>Main source</h2>
               </div>
-              <label class="toggle">
-                <input id="optimize" type="checkbox" checked />
-                <span>Optimize</span>
-              </label>
             </div>
             <textarea id="source" spellcheck="false"></textarea>
             <div class="controls">
@@ -416,31 +430,28 @@ export function mountApp(root: HTMLElement) {
             <div class="panel">
               <div class="panel-header">
                 <div>
-                  <p class="panel-label">Output</p>
-                  <h2>stdout and diagnostics</h2>
+                  <p class="panel-label">Inspect</p>
+                  <h2>Program details</h2>
                 </div>
               </div>
-              <pre id="output" class="console"></pre>
-            </div>
-
-            <div class="panel">
-              <div class="panel-header">
-                <div>
-                  <p class="panel-label">Preprocess</p>
-                  <h2>Expanded source</h2>
-                </div>
+              <div class="subtabs" aria-label="Program details">
+                <button class="subtab is-active" data-detail-tab="output">Output</button>
+                <button class="subtab" data-detail-tab="preprocessed">Expanded Source</button>
+                <button class="subtab" data-detail-tab="ir">IR</button>
+                <button class="subtab" data-detail-tab="bytecode">Bytecode</button>
               </div>
-              <pre id="preprocessed" class="code-block"></pre>
-            </div>
-
-            <div class="panel">
-              <div class="panel-header">
-                <div>
-                  <p class="panel-label">Compile</p>
-                  <h2>Bytecode</h2>
-                </div>
+              <div id="detail-tools" class="detail-tools" hidden>
+                <label class="toggle">
+                  <input id="optimize" type="checkbox" checked />
+                  <span>Optimize</span>
+                </label>
               </div>
-              <pre id="bytecode" class="code-block"></pre>
+              <div class="detail-panels">
+                <pre id="output" class="console detail-panel is-active" data-detail-panel="output"></pre>
+                <pre id="preprocessed" class="code-block detail-panel" data-detail-panel="preprocessed"></pre>
+                <pre id="ir" class="code-block detail-panel" data-detail-panel="ir"></pre>
+                <pre id="bytecode" class="code-block detail-panel" data-detail-panel="bytecode"></pre>
+              </div>
             </div>
           </div>
         </section>
@@ -457,7 +468,7 @@ export function mountApp(root: HTMLElement) {
             </div>
             <div class="help-copy">
               <p>The REPL keeps your definitions and stack between lines. It preloads <code>/lib/core.ff</code>.</p>
-              <p>Special commands: <code>.reset</code>, <code>.exit</code>, <code>.quit</code>.</p>
+              <p>Special commands: <code>.reset</code>, <code>.clear</code>, <code>.exit</code>, <code>.quit</code>.</p>
             </div>
             <div class="controls repl-controls">
               <label class="field repl-field">
@@ -510,9 +521,13 @@ export function mountApp(root: HTMLElement) {
   const summary = root.querySelector<HTMLDivElement>("#summary");
   const output = root.querySelector<HTMLElement>("#output");
   const preprocessed = root.querySelector<HTMLElement>("#preprocessed");
+  const ir = root.querySelector<HTMLElement>("#ir");
   const bytecode = root.querySelector<HTMLElement>("#bytecode");
   const tabs = Array.from(root.querySelectorAll<HTMLButtonElement>(".mode-tab"));
   const panels = Array.from(root.querySelectorAll<HTMLElement>(".tab-panel"));
+  const detailTabs = Array.from(root.querySelectorAll<HTMLButtonElement>(".subtab"));
+  const detailPanels = Array.from(root.querySelectorAll<HTMLElement>(".detail-panel"));
+  const detailTools = root.querySelector<HTMLElement>("#detail-tools");
 
   const replInput = root.querySelector<HTMLInputElement>("#repl-input");
   const replRun = root.querySelector<HTMLButtonElement>("#repl-run");
@@ -530,7 +545,9 @@ export function mountApp(root: HTMLElement) {
     !summary ||
     !output ||
     !preprocessed ||
+    !ir ||
     !bytecode ||
+    !detailTools ||
     !replInput ||
     !replRun ||
     !replReset ||
@@ -557,6 +574,26 @@ export function mountApp(root: HTMLElement) {
   tabs.forEach((tab) => {
     tab.addEventListener("click", () => {
       setTab(tab.dataset.tab ?? "playground");
+    });
+  });
+
+  function setDetailTab(name: string) {
+    detailTabs.forEach((tab) => {
+      const active = tab.dataset.detailTab === name;
+      tab.classList.toggle("is-active", active);
+    });
+
+    detailPanels.forEach((panel) => {
+      const active = panel.dataset.detailPanel === name;
+      panel.classList.toggle("is-active", active);
+    });
+
+    detailTools.hidden = !(name === "ir" || name === "bytecode");
+  }
+
+  detailTabs.forEach((tab) => {
+    tab.addEventListener("click", () => {
+      setDetailTab(tab.dataset.detailTab ?? "output");
     });
   });
 
@@ -591,6 +628,7 @@ export function mountApp(root: HTMLElement) {
 
       output.innerHTML = escapeHtml(diagnostics);
       preprocessed.innerHTML = escapeHtml(result.preprocessed);
+      ir.innerHTML = escapeHtml(result.ir);
       bytecode.innerHTML = escapeHtml(result.bytecode);
     } catch (error) {
       const message = error instanceof Error ? error.message : String(error);
@@ -603,6 +641,7 @@ export function mountApp(root: HTMLElement) {
       `;
       output.innerHTML = escapeHtml(message);
       preprocessed.innerHTML = "";
+      ir.innerHTML = "";
       bytecode.innerHTML = "";
     }
   }
@@ -633,6 +672,10 @@ export function mountApp(root: HTMLElement) {
     const line = replInput.value;
     const result = replSession.execute(line);
 
+    if (result.clearTranscript) {
+      replTranscript.splice(0, replTranscript.length);
+    }
+
     replTranscript.push(`ff> ${line}`);
 
     if (result.output.trim()) {
@@ -661,6 +704,7 @@ export function mountApp(root: HTMLElement) {
   });
 
   run.addEventListener("click", renderPlayground);
+  optimize.addEventListener("change", renderPlayground);
 
   replRun.addEventListener("click", runReplLine);
   replReset.addEventListener("click", () => {

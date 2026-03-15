@@ -47,6 +47,13 @@ chomp build   # Build all projects
 chomp test    # Run tests
 ```
 
+## Testing
+
+The most complete test set is the deno tests. To run the deno tests you can run:
+```bash
+chomp test:deno
+```
+
 ## Deno Implementation Notes
 
 For Deno-specific usage, tasks, CLI entrypoints, and implementation notes, see `deno/README.md`.

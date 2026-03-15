@@ -156,9 +156,10 @@ export function bigCodeToIr(bc: Array<bigint>): Array<IrInstruction> {
   const ir: Array<IrInstruction> = [];
   let ip = 0;
   while (ip < bc.length) {
-    const value = bc[ip++];
-    if (value === 0n) {
-      ir.push({ op: IROp.push, value: bc[ip++] });
+    const tag = bc[ip++] ?? 0n;
+    const value = bc[ip++] ?? 0n;
+    if (tag === 0n) {
+      ir.push({ op: IROp.push, value });
     } else {
       ir.push({ op: IROp.call, value });
     }

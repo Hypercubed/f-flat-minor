@@ -66,6 +66,28 @@ textarea {
   box-shadow: 0 12px 24px rgba(32, 22, 17, 0.16);
 }
 
+.subtabs {
+  display: flex;
+  gap: 0.5rem;
+  padding: 0.8rem 1.2rem 0;
+  flex-wrap: wrap;
+  margin-bottom: 0.75rem;
+}
+
+.subtab {
+  min-height: 38px;
+  padding: 0.55rem 0.9rem;
+  border-radius: 999px;
+  border: 1px solid rgba(32, 22, 17, 0.12);
+  background: rgba(255, 250, 244, 0.72);
+  color: var(--muted);
+}
+
+.subtab.is-active {
+  background: rgba(32, 22, 17, 0.92);
+  color: #fff8ef;
+}
+
 .tab-panel {
   display: none;
 }
@@ -247,6 +269,10 @@ button:hover {
   color: var(--muted);
 }
 
+.detail-tools {
+  padding: 0 1.2rem 0.35rem 1.35rem;
+}
+
 .summary-grid {
   display: grid;
   grid-template-columns: repeat(2, minmax(0, 1fr));
@@ -353,6 +379,14 @@ button:hover {
 .code-block {
   background: rgba(255, 250, 244, 0.66);
   color: var(--ink);
+}
+
+.detail-panel {
+  display: none;
+}
+
+.detail-panel.is-active {
+  display: block;
 }
 
 @media (max-width: 1080px) {
