@@ -26,6 +26,13 @@ cd web
 npm run build
 ```
 
+Run web-specific tests:
+
+```bash
+cd web
+npm run test
+```
+
 ## Notes
 
 - The app currently ships with `ff/hello.ffp` as the starter example.
@@ -33,3 +40,4 @@ npm run build
 - stdout is captured in the output panel.
 - Some engine diagnostics that use `console.log` are also captured and shown in the output area.
 - The REPL keeps compiler symbols, engine state, and imported files until you use `.reset`.
+- Shared URLs support `txt.`, `b64.`, and `c64.` code payloads.

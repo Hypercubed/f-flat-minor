@@ -25,6 +25,7 @@ import { Compiler, Engine, Optimizer, Preprocessor, printLowLevelIr } from "../.
 
 import { mountReadonlySourceViewer, mountReplEditor, mountSourceEditor } from "./editor.ts";
 import { createBrowserPlatform, createPreprocessHost, type VirtualFiles } from "./runtime.ts";
+import { decodeCodeFromUrlParam, encodeCodeForUrlParam } from "./url-codec.ts";
 
 interface RunResult {
   output: string;
@@ -66,53 +67,12 @@ const EXAMPLES: Record<string, string> = {
 };
 
 const DEFAULT_SOURCE = factExample;
-const CODE_PARAM_PREFIX = "b64.";
 
 function escapeHtml(value: string): string {
   return value
     .replaceAll("&", "&amp;")
     .replaceAll("<", "&lt;")
     .replaceAll(">", "&gt;");
-}
-
-function encodeBase64Url(value: string): string {
-  const bytes = new TextEncoder().encode(value);
-  let binary = "";
-
-  for (const byte of bytes) {
-    binary += String.fromCharCode(byte);
-  }
-
-  return btoa(binary)
-    .replaceAll("+", "-")
-    .replaceAll("/", "_")
-    .replace(/=+$/g, "");
-}
-
-function decodeBase64Url(value: string): string {
-  const base64 = value.replaceAll("-", "+").replaceAll("_", "/");
-  const padded = base64.padEnd(Math.ceil(base64.length / 4) * 4, "=");
-  const binary = atob(padded);
-  const bytes = Uint8Array.from(binary, (char) => char.charCodeAt(0));
-  return new TextDecoder().decode(bytes);
-}
-
-function encodeCodeForUrlParam(source: string): string {
-  return `${CODE_PARAM_PREFIX}${encodeBase64Url(source)}`;
-}
-
-function decodeCodeFromUrlParam(paramValue: string | null): string | null {
-  if (paramValue === null || !paramValue.startsWith(CODE_PARAM_PREFIX)) {
-    return null;
-  }
-
-  const encoded = paramValue.slice(CODE_PARAM_PREFIX.length);
-
-  try {
-    return decodeBase64Url(encoded);
-  } catch {
-    return null;
-  }
 }
 
 function createVirtualFiles(source: string, filename = "/main.ffp"): VirtualFiles {
@@ -643,7 +603,14 @@ export function mountApp(root: HTMLElement) {
     const sourceValue = sourceEditor.getValue();
 
     if (sourceValue) {
-      params.set("code", encodeCodeForUrlParam(sourceValue));
+      const encodedSource = encodeCodeForUrlParam(sourceValue);
+
+      // If all URL encodings fail, keep the existing URL unchanged.
+      if (encodedSource === null) {
+        return;
+      }
+
+      params.set("code", encodedSource);
     } else {
       params.delete("code");
     }
