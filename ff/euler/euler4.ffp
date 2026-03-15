@@ -2,29 +2,40 @@
 
 /* http://projecteuler.net/index.php?section=problems&id=4 */
 
-_digits: dup [ 10 [ % ] [ / ] bi2 _digits ] ? ;
-digits: dup [ 10 [ % ] [ / ] bi2 digits ] ? ;
-
-palindrome?: digits dup reverse! = ;
-
-_check_pal:
-  dup 99 > [
-    * dup palindrome? [ max ] [ drop ] branch
-    dup -- _check_pal
+_rev:
+  over [
+    swap 10 [ % ] [ / ] bi2
+    rot 10 * +
+    _rev
   ] [
-    drop
+    nip
+  ] branch
+;
+
+rev: 0 _rev ;
+palindrome?: dup rev = ;
+
+_check_b:
+  dup 99 > [
+    over over * dup palindrome?
+    [ rot drop2 ]
+    [ drop -- _check_b ]
+    branch
+  ] [
+    drop2 0
   ] branch
 ;
 
 _check_a:
   dup 99 > [
-    999 100 _check_pal
-    dup -- _check_a
+    dup 999 _check_b
+    swap -- _check_a
+    max
   ] [
-    drop
+    drop 0
   ] branch
 ;
 
-0 999 _check_a .
+999 _check_a .
 
 /* 906609 */

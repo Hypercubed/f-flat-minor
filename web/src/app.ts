@@ -34,8 +34,8 @@ interface ReplResult {
 }
 
 const EXAMPLES: Record<string, string> = {
-  "/examples/hello.ffp": helloExample,
   "/examples/fact.ffp": factExample,
+  // "/examples/hello.ffp": helloExample,
   "/examples/fizzbuzz.ffp": fizzbuzzExample,
   "/examples/99bottles.ffp": bottlesExample,
   "/examples/pascal.ffp": pascalExample,
