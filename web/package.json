@@ -2,6 +2,14 @@
   "name": "f-flat-minor-web",
   "private": true,
   "type": "module",
+  "dependencies": {
+    "@codemirror/commands": "^6.8.1",
+    "@codemirror/language": "^6.11.3",
+    "@codemirror/state": "^6.5.2",
+    "@codemirror/stream-parser": "^0.19.9",
+    "@codemirror/view": "^6.38.6",
+    "@lezer/highlight": "^1.2.3"
+  },
   "scripts": {
     "dev": "vite",
     "build": "vite build",

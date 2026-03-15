@@ -23,6 +23,7 @@ import primesLib from "../../ff/lib/primes.ffp?raw";
 import primesEncoded from "../../ff/lib/primes-encoded.ff?raw";
 import { Compiler, Engine, Optimizer, Preprocessor, printLowLevelIr } from "../../typescript/core/src/mod.ts";
 
+import { mountReadonlySourceViewer, mountReplEditor, mountSourceEditor } from "./editor.ts";
 import { createBrowserPlatform, createPreprocessHost, type VirtualFiles } from "./runtime.ts";
 
 interface RunResult {
@@ -458,7 +459,7 @@ export function mountApp(root: HTMLElement) {
                 <h2>Main source</h2>
               </div>
             </div>
-            <textarea id="source" spellcheck="false"></textarea>
+            <div id="source" aria-label="Main source editor"></div>
             <div class="controls">
               <label class="field">
                 <span>Example</span>
@@ -523,7 +524,7 @@ export function mountApp(root: HTMLElement) {
               <div class="detail-panels">
                 <pre id="output" class="console detail-panel is-active" data-detail-panel="output"></pre>
                 <pre id="error" class="console detail-panel is-active" data-detail-panel="output"></pre>
-                <pre id="preprocessed" class="code-block detail-panel" data-detail-panel="preprocessed"></pre>
+                <div id="preprocessed" class="code-block detail-panel" data-detail-panel="preprocessed"></div>
                 <pre id="ir" class="code-block detail-panel" data-detail-panel="ir"></pre>
                 <pre id="bytecode" class="code-block detail-panel" data-detail-panel="bytecode"></pre>
               </div>
@@ -548,7 +549,7 @@ export function mountApp(root: HTMLElement) {
             <div class="controls repl-controls">
               <label class="field repl-field">
                 <span>Line</span>
-                <input id="repl-input" type="text" placeholder="Try: 2 3 + putn 10 putc" />
+                <div id="repl-input" aria-label="REPL line input"></div>
               </label>
               <div class="actions">
                 <button id="repl-reset" class="ghost">Reset Session</button>
@@ -587,7 +588,7 @@ export function mountApp(root: HTMLElement) {
     </main>
   `;
 
-  const source = root.querySelector<HTMLTextAreaElement>("#source");
+  const source = root.querySelector<HTMLElement>("#source");
   const stdin = root.querySelector<HTMLInputElement>("#stdin");
   const optimize = root.querySelector<HTMLInputElement>("#optimize");
   const example = root.querySelector<HTMLSelectElement>("#example");
@@ -604,7 +605,7 @@ export function mountApp(root: HTMLElement) {
   const detailPanels = Array.from(root.querySelectorAll<HTMLElement>(".detail-panel"));
   const detailTools = root.querySelector<HTMLElement>("#detail-tools");
 
-  const replInput = root.querySelector<HTMLInputElement>("#repl-input");
+  const replInput = root.querySelector<HTMLElement>("#repl-input");
   const replRun = root.querySelector<HTMLButtonElement>("#repl-run");
   const replReset = root.querySelector<HTMLButtonElement>("#repl-reset");
   const replOutput = root.querySelector<HTMLElement>("#repl-output");
@@ -634,13 +635,15 @@ export function mountApp(root: HTMLElement) {
 
   const searchParams = new URLSearchParams(window.location.search);
   const sourceFromUrl = decodeCodeFromUrlParam(searchParams.get("code"));
-  source.value = sourceFromUrl ?? DEFAULT_SOURCE;
+  const sourceEditor = mountSourceEditor(source, sourceFromUrl ?? DEFAULT_SOURCE);
+  const preprocessedViewer = mountReadonlySourceViewer(preprocessed, "");
 
   function syncCodeParamToUrl() {
     const params = new URLSearchParams(window.location.search);
+    const sourceValue = sourceEditor.getValue();
 
-    if (source.value) {
-      params.set("code", encodeCodeForUrlParam(source.value));
+    if (sourceValue) {
+      params.set("code", encodeCodeForUrlParam(sourceValue));
     } else {
       params.delete("code");
     }
@@ -692,7 +695,7 @@ export function mountApp(root: HTMLElement) {
     document.body.dataset.ready = "false";
 
     try {
-      const result = runProgram(source.value, stdin.value, optimize.checked);
+      const result = runProgram(sourceEditor.getValue(), stdin.value, optimize.checked);
       const issueCount = result.issues.length;
       const diagnostics = [
         result.output ? result.output.trimEnd() : "(no stdout)",
@@ -721,7 +724,7 @@ export function mountApp(root: HTMLElement) {
 
       output.innerHTML = escapeHtml(diagnostics);
       errorOutput.textContent = "";
-      preprocessed.innerHTML = escapeHtml(result.preprocessed);
+      preprocessedViewer.setValue(result.preprocessed);
       ir.innerHTML = escapeHtml(result.ir);
       bytecode.innerHTML = escapeHtml(result.bytecode);
     } catch (error) {
@@ -735,7 +738,7 @@ export function mountApp(root: HTMLElement) {
       `;
       output.innerHTML = "";
       errorOutput.innerHTML = escapeHtml(message);
-      preprocessed.innerHTML = "";
+      preprocessedViewer.setValue("");
       ir.innerHTML = "";
       bytecode.innerHTML = "";
     } finally {
@@ -744,6 +747,9 @@ export function mountApp(root: HTMLElement) {
   }
 
   const replSession = new ReplSession();
+  const replEditor = mountReplEditor(replInput, "", () => {
+    runReplLine();
+  });
   const replTranscript: string[] = [
     "Core library loaded. Try defining words, evaluating quotes, or printing values.",
   ];
@@ -766,7 +772,7 @@ export function mountApp(root: HTMLElement) {
   }
 
   function runReplLine() {
-    const line = replInput.value;
+    const line = replEditor.getValue();
     const result = replSession.execute(line);
 
     if (result.clearTranscript) {
@@ -791,12 +797,12 @@ export function mountApp(root: HTMLElement) {
 
     renderReplStack(result.stack);
     renderReplTranscript();
-    replInput.value = "";
-    replInput.focus();
+    replEditor.setValue("");
+    replEditor.focus();
   }
 
   example.addEventListener("change", () => {
-    source.value = EXAMPLES[example.value] ?? DEFAULT_SOURCE;
+    sourceEditor.setValue(EXAMPLES[example.value] ?? DEFAULT_SOURCE);
     syncCodeParamToUrl();
     void renderPlayground();
   });
@@ -816,12 +822,8 @@ export function mountApp(root: HTMLElement) {
     replTranscript.splice(0, replTranscript.length, "Session reset. Core library reloaded.");
     renderReplStack([]);
     renderReplTranscript();
-  });
-  replInput.addEventListener("keydown", (event) => {
-    if (event.key === "Enter") {
-      event.preventDefault();
-      runReplLine();
-    }
+    replEditor.setValue("");
+    replEditor.focus();
   });
 
   void renderPlayground();

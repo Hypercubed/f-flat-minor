@@ -182,16 +182,20 @@ textarea {
   padding: 1.1rem 1.2rem 0;
 }
 
-.editor-panel textarea {
+.editor-panel #source {
   width: calc(100% - 2rem);
-  min-height: 520px;
   margin: 1rem;
-  padding: 1rem;
+}
+
+.editor-panel .cm-editor {
+  min-height: 520px;
   border: 1px solid rgba(32, 22, 17, 0.15);
   border-radius: 18px;
   background: rgba(255, 250, 244, 0.88);
   color: var(--ink);
-  resize: vertical;
+}
+
+.editor-panel .cm-scroller {
   font-family: "Iosevka", "Cascadia Code", "SFMono-Regular", monospace;
   font-size: 0.95rem;
   line-height: 1.55;
@@ -205,11 +209,30 @@ textarea {
 }
 
 .repl-controls {
-  grid-template-columns: 1fr auto;
+  grid-template-columns: minmax(0, 1fr);
+  align-items: end;
 }
 
 .repl-field {
   grid-column: 1;
+  min-width: 0;
+  max-width: 100%;
+}
+
+.repl-controls .actions {
+  grid-column: 1;
+  justify-content: flex-end;
+}
+
+#repl-input {
+  width: 100%;
+  max-width: 100%;
+  overflow: hidden;
+}
+
+#repl-input .cm-editor {
+  width: 100%;
+  max-width: 100%;
 }
 
 .field {
@@ -217,7 +240,7 @@ textarea {
   gap: 0.35rem;
 }
 
-.field span {
+.field > span {
   font-size: 0.85rem;
   color: var(--muted);
 }
@@ -379,6 +402,16 @@ button:hover {
 .code-block {
   background: rgba(255, 250, 244, 0.66);
   color: var(--ink);
+}
+
+#preprocessed {
+  padding: 0;
+  overflow: hidden;
+}
+
+#preprocessed .cm-editor {
+  height: 100%;
+  background: transparent;
 }
 
 
