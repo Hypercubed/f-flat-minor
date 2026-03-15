@@ -23,15 +23,20 @@ cat ff/example_v0.ff | python3 python/execute.py
 
 ### Running .ffp Files (with preprocessor)
 
-The Python interpreter doesn't support `.ffp` files (which require preprocessing). Use the Deno implementation instead. See `deno/README.md` for the current commands, tasks, and CLI entrypoints.
+The Python interpreter doesn't support `.ffp` files (which require preprocessing).
+
+Use one of the TypeScript implementations instead:
+- `deno/README.md` for the Deno implementation
+- `node/README.md` for the Node implementation
 
 ### File Types
-- `.ff` - Basic f-flat-minor source files (works with Python or Deno)
-- `.ffp` - Source files requiring preprocessor (use Deno)
+- `.ff` - Basic f-flat-minor source files (works with Python, Deno, or Node)
+- `.ffp` - Source files requiring preprocessor (use Deno or Node)
 - `.ffb` - Compiled bytecode files
 
 ### Other Implementations
 - **Deno/TypeScript**: Most complete implementation with preprocessor support
+- **Node/TypeScript**: Shared-core implementation with `ff-run`
 - **Go**: Full implementation with compiler
 - **Ruby**: Basic interpreter
 - **Racket**: Full implementation
@@ -45,3 +50,7 @@ chomp test    # Run tests
 ## Deno Implementation Notes
 
 For Deno-specific usage, tasks, CLI entrypoints, and implementation notes, see `deno/README.md`.
+
+## Node Implementation Notes
+
+For Node-specific usage, entrypoints, and implementation notes, see `node/README.md`.
