@@ -188,7 +188,9 @@ textarea {
 }
 
 .editor-panel .cm-editor {
-  min-height: 520px;
+  min-height: 200px;
+  max-height: 60vh;
+  overflow: auto;
   border: 1px solid rgba(32, 22, 17, 0.15);
   border-radius: 18px;
   background: rgba(255, 250, 244, 0.88);
@@ -407,20 +409,26 @@ button:hover {
 #preprocessed {
   padding: 0;
   overflow: hidden;
+  max-height: 80vh;
 }
 
 #ir {
   padding: 0;
   overflow: hidden;
+  max-height: 80vh;
 }
 
 #preprocessed .cm-editor {
   height: 100%;
+  max-height: 80vh;
+  overflow: auto;
   background: transparent;
 }
 
 #ir .cm-editor {
   height: 100%;
+  max-height: 80vh;
+  overflow: auto;
   background: transparent;
 }
 
