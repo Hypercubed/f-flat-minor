@@ -40,4 +40,4 @@ npm run test
 - stdout is captured in the output panel.
 - Some engine diagnostics that use `console.log` are also captured and shown in the output area.
 - The REPL keeps compiler symbols, engine state, and imported files until you use `.reset`.
-- Shared URLs support `txt.`, `b64.`, and `c64.` code payloads.
+- Shared URLs support `txt.`, `b64.`, `c64.`, and `bc.` code payloads.

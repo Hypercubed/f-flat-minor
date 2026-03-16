@@ -1,4 +1,6 @@
-import { describe, expect, it } from "vitest";
+import { describe, expect, it, vi } from "vitest";
+import { Compiler, Engine, formatFfCompatibleIr, printFfCompatibleIr } from "../../typescript/core/src/mod.ts";
+import type { CorePlatform } from "../../typescript/core/src/platform.ts";
 
 import {
   C64_MIN,
@@ -6,6 +8,32 @@ import {
   decodeCodeFromUrlParam,
   encodeCodeForUrlParam,
 } from "./url-codec.ts";
+
+function createTestPlatform(): CorePlatform {
+  return {
+    io: {
+      write(_data) {
+        // noop
+      },
+      readByte() {
+        return null;
+      },
+    },
+    exit(_code) {
+      // noop
+    },
+    now() {
+      return Date.now();
+    },
+  };
+}
+
+function runEncodedBytecode(bytecode: string): bigint[] {
+  const engine = new Engine(createTestPlatform());
+  engine.loadBigIntCode(Engine.fromBase64(bytecode));
+  engine.run();
+  return engine.getStack();
+}
 
 describe("url-codec", () => {
   it("uses the expected heuristic boundaries", () => {
@@ -97,7 +125,53 @@ describe("url-codec", () => {
     expect(decodeCodeFromUrlParam(legacy)).toBe(source);
   });
 
+  it("decodes bc payloads into behaviorally equivalent source", () => {
+    const source = "2 3 +";
+    const bytecode = Compiler.compileToBase64(
+      new Compiler().compileToIR(Compiler.tokenize(source), "/main.ffp"),
+    );
+
+    const decoded = decodeCodeFromUrlParam(`bc.${bytecode}`);
+    expect(decoded).not.toBeNull();
+
+    const recompiled = Compiler.compileToBase64(
+      new Compiler().compileToIR(Compiler.tokenize(decoded ?? ""), "/main.ffp"),
+    );
+    expect(runEncodedBytecode(recompiled)).toEqual(runEncodedBytecode(bytecode));
+  });
+
+  it("preserves pointer notation for likely pointer pushes in bc payloads", () => {
+    const source = "foo: 65 putc ; 1 [foo] ?";
+    const bytecode = Compiler.compileToBase64(
+      new Compiler().compileToIR(Compiler.tokenize(source), "/main.ffp"),
+    );
+
+    const decoded = decodeCodeFromUrlParam(`bc.${bytecode}`);
+
+    expect(decoded).not.toBeNull();
+    expect(decoded).toMatch(/\[-\d+\]/);
+  });
+
+  it("keeps formatFfCompatibleIr parity with printFfCompatibleIr output", () => {
+    const source = "foo: 1 ; [ 2 ] [+] +";
+    const ir = new Compiler().compileToIR(Compiler.tokenize(source), "/main.ffp");
+    const spy = vi.spyOn(console, "log").mockImplementation(() => {
+      // noop for parity capture
+    });
+
+    try {
+      printFfCompatibleIr(ir);
+      const printed = spy.mock.calls
+        .map((args) => args.map(String).join(" "))
+        .join("\n");
+      expect(formatFfCompatibleIr(ir)).toBe(printed);
+    } finally {
+      spy.mockRestore();
+    }
+  });
+
   it("returns null for invalid or unsupported payloads", () => {
+    expect(decodeCodeFromUrlParam("bc.not*valid")).toBeNull();
     expect(decodeCodeFromUrlParam("c64.this-is-not-valid")).toBeNull();
     expect(decodeCodeFromUrlParam("xyz.value")).toBeNull();
     expect(decodeCodeFromUrlParam(null)).toBeNull();

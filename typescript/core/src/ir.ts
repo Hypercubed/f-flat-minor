@@ -89,6 +89,18 @@ function formatBlockComment(comment: string) {
   return comment.trim() ? `/* ${comment} */` : "";
 }
 
+function formatFfCompatibleIrLine(i: IrInstruction): string {
+  const n = getName(i)?.toUpperCase() || "";
+  const immediateWord = i.op === IROp.call
+    ? IMMEDIATE_CALL_WORDS.get(i.value)
+    : undefined;
+  const suppressRedundantAutoComment = immediateWord !== undefined;
+  const v = formatLowLevelValue(i, immediateWord);
+  const c = i.meta?.comment?.trim() || (i.op === IROp.call && !suppressRedundantAutoComment ? n : "");
+  const o = (i.op === IROp.call && !immediateWord ? "EVAL" : "").padEnd(OP_WIDTH, " ");
+  return [cyan(v), blue(o), formatBlockComment(c)].join(" ");
+}
+
 export function printHighLevelIr(ir: Array<IrInstruction>) {
   ir.forEach((i) => {
     const c = formatComment(i);
@@ -165,16 +177,12 @@ export function printLowLevelIr(ir: Array<IrInstruction>) {
 
 export function printFfCompatibleIr(ir: Array<IrInstruction>) {
   ir.forEach((i) => {
-    const n = getName(i)?.toUpperCase() || "";
-    const immediateWord = i.op === IROp.call
-      ? IMMEDIATE_CALL_WORDS.get(i.value)
-      : undefined;
-    const suppressRedundantAutoComment = immediateWord !== undefined;
-    const v = formatLowLevelValue(i, immediateWord);
-    const c = i.meta?.comment?.trim() || (i.op === IROp.call && !suppressRedundantAutoComment ? n : "");
-    const o = (i.op === IROp.call && !immediateWord ? "EVAL" : "").padEnd(OP_WIDTH, " ");
-    console.log(cyan(v), blue(o), formatBlockComment(c));
+    console.log(formatFfCompatibleIrLine(i));
   });
+}
+
+export function formatFfCompatibleIr(ir: Array<IrInstruction>) {
+  return ir.map(formatFfCompatibleIrLine).join("\n");
 }
 
 export function printDecimalCode(ir: Array<IrInstruction>) {
