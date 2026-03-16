@@ -31,6 +31,12 @@ export type IROp = (typeof IROp)[keyof typeof IROp];
 
 const OP_WIDTH = 6;
 const VALUE_WIDTH = 10;
+const IMMEDIATE_CALL_WORDS = new Map<bigint, string>([
+  [BigInt(OpCodes.MARK), ":"],
+  [BigInt(OpCodes.DEF), ";"],
+  [BigInt(OpCodes.BRA), "["],
+  [BigInt(OpCodes.KET), "]"],
+]);
 
 export type IrWriter = (text: string) => void;
 
@@ -63,8 +69,24 @@ function formatValue(i: IrInstruction) {
   return ("" + i.value).padEnd(VALUE_WIDTH, " ");
 }
 
+function formatLowLevelValue(i: IrInstruction, immediateWord?: string) {
+  if (immediateWord) {
+    return immediateWord.padEnd(VALUE_WIDTH, " ");
+  }
+
+  if (i.op === IROp.push && i.meta?.pointer) {
+    return `[${i.value}]`.padEnd(VALUE_WIDTH, " ");
+  }
+
+  return formatValue(i);
+}
+
 function formatComment(i: IrInstruction) {
   return i.meta?.comment?.trim() ? `; ${i.meta?.comment}` : "";
+}
+
+function formatBlockComment(comment: string) {
+  return comment.trim() ? `/* ${comment} */` : "";
 }
 
 export function printHighLevelIr(ir: Array<IrInstruction>) {
@@ -141,6 +163,19 @@ export function printLowLevelIr(ir: Array<IrInstruction>) {
   });
 }
 
+export function printFfCompatibleIr(ir: Array<IrInstruction>) {
+  ir.forEach((i) => {
+    const n = getName(i)?.toUpperCase() || "";
+    const immediateWord = i.op === IROp.call
+      ? IMMEDIATE_CALL_WORDS.get(i.value)
+      : undefined;
+    const v = formatLowLevelValue(i, immediateWord);
+    const c = i.meta?.comment?.trim() || (i.op === IROp.call ? n : "");
+    const o = (i.op === IROp.call && !immediateWord ? "EVAL" : "").padEnd(OP_WIDTH, " ");
+    console.log(cyan(v), blue(o), formatBlockComment(c));
+  });
+}
+
 export function printDecimalCode(ir: Array<IrInstruction>) {
   const bc = ir.map(i => {
     const o = i.op === IROp.call ? OpCodes.CALL : OpCodes.NOP;
@@ -168,5 +203,5 @@ export function bigCodeToIr(bc: Array<bigint>): Array<IrInstruction> {
 }
 
 export function printBigCodeIr(bc: Array<bigint>) {
-  printLowLevelIr(bigCodeToIr(bc));
+  printFfCompatibleIr(bigCodeToIr(bc));
 }

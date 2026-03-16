@@ -152,7 +152,12 @@ export class Compiler {
         call(0n, { comment: comment.join(" ") });
       } else if (ss.startsWith("[") && ss.endsWith("]")) { // Symbol
         const name = ss.replace(/^\[/, "").replace(/\]$/, "");
-        push(this.getSymbol(name), { name, pointer: true });
+        const value = toNumber(name);
+        if (value !== undefined) {
+          push(value, { name, pointer: true });
+        } else {
+          push(this.getSymbol(name), { name, pointer: true });
+        }
       } else {
         call(this.getSymbol(ss), { name: ss });
       }

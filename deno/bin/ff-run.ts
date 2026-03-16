@@ -7,6 +7,7 @@ interface Arguments {
   stats?: boolean;
   validate?: boolean;
   hlir?: boolean;
+  llir?: boolean;
   opt?: boolean;
   ir?: boolean;
   disassemble?: boolean;
@@ -21,7 +22,7 @@ import { Compiler } from "../src/compiler.ts";
 import { Engine } from "../src/engine.ts";
 import { Preprocessor } from "../src/preprocess.ts";
 import { readStdin } from "../src/read.ts";
-import { disassembleIr, printHighLevelIr, printLowLevelIr } from "../src/ir.ts";
+import { disassembleIr, printFfCompatibleIr, printHighLevelIr, printLowLevelIr } from "../src/ir.ts";
 import { Optimizer } from "../src/optimizer.ts";
 import { HEADER } from "../src/constants.ts";
 
@@ -84,8 +85,13 @@ export function run(argv: Arguments) {
     }
   }
   
-  if (argv.hlir || argv.ir) {
+  if (argv.llir) {
     printLowLevelIr(ir);
+    Deno.exit();
+  }
+
+  if (argv.ir) {
+    printFfCompatibleIr(ir);
     Deno.exit();
   }
 
@@ -130,13 +136,14 @@ export function run(argv: Arguments) {
 if (import.meta.main) {
   const argv = parseArgs(Deno.args, {
     string: ["file", "base"],
-    boolean: ["stats", "validate", "hlir", "opt", "ir", "disassemble", "enc", "trace", "profile"],
+    boolean: ["stats", "validate", "hlir", "llir", "opt", "ir", "disassemble", "enc", "trace", "profile"],
     default: { file: "-" },
     alias: {
       file: ["f"],
       stats: ["s"],
       validate: ["V"],
       hlir: ["h"],
+      llir: ["l"],
       opt: ["O", "opt"],
       ir: ["i"],
       disassemble: ["d"],
@@ -151,4 +158,3 @@ if (import.meta.main) {
   }
   run(argv as Arguments);
 }
-

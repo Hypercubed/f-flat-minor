@@ -21,7 +21,7 @@ import euler1Example from "../../ff/euler/euler1.ffp?raw";
 import euler7Example from "../../ff/euler/euler7.ffp?raw";
 import primesLib from "../../ff/lib/primes.ffp?raw";
 import primesEncoded from "../../ff/lib/primes-encoded.ff?raw";
-import { Compiler, Engine, Optimizer, Preprocessor, printLowLevelIr } from "../../typescript/core/src/mod.ts";
+import { Compiler, Engine, Optimizer, Preprocessor, printFfCompatibleIr } from "../../typescript/core/src/mod.ts";
 
 import { mountReadonlySourceViewer, mountReplEditor, mountSourceEditor } from "./editor.ts";
 import { createBrowserPlatform, createPreprocessHost, type VirtualFiles } from "./runtime.ts";
@@ -146,7 +146,7 @@ function runProgram(source: string, stdin: string, optimize: boolean): RunResult
 
     const irLines: string[] = [];
     withCapturedConsole((message) => irLines.push(message), () => {
-      printLowLevelIr(ir);
+      printFfCompatibleIr(ir);
     });
 
     engine.loadIR(ir);

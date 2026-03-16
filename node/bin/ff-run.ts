@@ -6,7 +6,7 @@ import { parseArgs } from "node:util";
 import { Compiler } from "../src/compiler.ts";
 import { HEADER } from "../src/constants.ts";
 import { Engine } from "../src/engine.ts";
-import { disassembleIr, printHighLevelIr, printLowLevelIr } from "../src/ir.ts";
+import { disassembleIr, printFfCompatibleIr, printHighLevelIr, printLowLevelIr } from "../src/ir.ts";
 import { Optimizer } from "../src/optimizer.ts";
 import { Preprocessor } from "../src/preprocess.ts";
 import { readStdin } from "../src/read.ts";
@@ -16,6 +16,7 @@ interface Arguments {
   stats?: boolean;
   validate?: boolean;
   hlir?: boolean;
+  llir?: boolean;
   opt?: boolean;
   ir?: boolean;
   disassemble?: boolean;
@@ -88,8 +89,13 @@ export function run(argv: Arguments) {
     }
   }
 
-  if (argv.ir) {
+  if (argv.llir) {
     printLowLevelIr(ir);
+    process.exit(0);
+  }
+
+  if (argv.ir) {
+    printFfCompatibleIr(ir);
     process.exit(0);
   }
 
@@ -143,6 +149,7 @@ if (import.meta.main) {
       stats: { type: "boolean", short: "s", default: false },
       validate: { type: "boolean", short: "V", default: true },
       hlir: { type: "boolean", short: "h", default: false },
+      llir: { type: "boolean", short: "l", default: false },
       opt: { type: "boolean", short: "O", default: false },
       ir: { type: "boolean", short: "i", default: false },
       disassemble: { type: "boolean", short: "d", default: false },

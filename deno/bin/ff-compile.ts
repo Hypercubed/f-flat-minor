@@ -23,7 +23,7 @@ interface Arguments {
 import { base64ToArrayBuffer, dumpByteArray } from "../src/dump.ts";
 
 import { readStdin } from "../src/read.ts";
-import { disassembleIr, printDecimalCode, printHighLevelIr, printLowLevelIr } from "../src/ir.ts";
+import { disassembleIr, printDecimalCode, printFfCompatibleIr, printHighLevelIr, printLowLevelIr } from "../src/ir.ts";
 import { Compiler } from "../src/compiler.ts";
 import { HEADER } from "../src/constants.ts";
 import { Optimizer } from "../src/optimizer.ts";
@@ -89,8 +89,13 @@ export function run(argv: Arguments) {
     }
   }
 
-  if (argv.ir || argv.llir) {
+  if (argv.llir) {
     printLowLevelIr(ir);
+    Deno.exit();
+  }
+
+  if (argv.ir) {
+    printFfCompatibleIr(ir);
     Deno.exit();
   }
 

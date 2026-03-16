@@ -417,6 +417,9 @@ export class Optimizer {
       while (ip < _ir.length) {
         for (const rule of rules) {
           const {pattern, replacement} = rule;
+          if (ip + pattern.length > _ir.length) {
+            continue;
+          }
           const match = pattern.every((fn, i) => fn(_ir[ip + i]));
           if (match) {
             this.stats.peephole_optimizations++;
@@ -430,7 +433,7 @@ export class Optimizer {
         ip++;
       }
 
-      if (this.stats.peephole_optimizations >= startCount) {
+      if (this.stats.peephole_optimizations === startCount) {
         break;
       }
     }

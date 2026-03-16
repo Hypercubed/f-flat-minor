@@ -42,7 +42,8 @@ Common flags:
 - `-V, --validate` / `--no-validate`
 - `-O, --opt`
 - `-h, --hlir`
-- `-i, --ir`
+- `-l, --llir`
+- `-i, --ir` (FF-compatible IR text)
 - `-d, --disassemble`
 - `-e, --enc`
 - `-t, --trace`

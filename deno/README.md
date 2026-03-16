@@ -47,7 +47,8 @@ Common flags:
 - `-V, --validate` / `--no-validate`
 - `-O, --opt`
 - `-h, --hlir`
-- `-i, --ir`
+- `-l, --llir`
+- `-i, --ir` (FF-compatible IR text)
 - `-d, --disassemble`
 - `-e, --enc` (emit encoded bytecode with header instead of executing)
 - `-t, --trace`
@@ -72,7 +73,8 @@ Common flags:
 - `-V, --validate` / `--no-validate`
 - `-O, --opt`
 - `-h, --hlir`
-- `-i, --ir`
+- `-l, --llir`
+- `-i, --ir` (FF-compatible IR text)
 - `-l, --llir`
 - `-d, --disassemble`
 - `-c, --dc` (print decimal code)
@@ -94,7 +96,7 @@ Common flags:
 - `-f, --file`
 - `--dump`
 - `-h, --hlir`
-- `-i, --ir`
+- `-i, --ir` (FF-compatible IR text)
 - `-d, --disassemble`
 - `-t, --trace`
 - `-s, --stats`
