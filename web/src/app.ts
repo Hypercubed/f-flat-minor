@@ -23,7 +23,7 @@ import primesLib from "../../ff/lib/primes.ffp?raw";
 import primesEncoded from "../../ff/lib/primes-encoded.ff?raw";
 import { Compiler, Engine, Optimizer, Preprocessor, formatFfCompatibleIr } from "../../typescript/core/src/mod.ts";
 
-import { mountReadonlySourceViewer, mountReplEditor, mountSourceEditor } from "./editor.ts";
+import { mountReadonlySourceViewer, mountSourceEditor } from "./editor.ts";
 import { createBrowserPlatform, createPreprocessHost, type VirtualFiles } from "./runtime.ts";
 import { decodeCodeFromUrlParam, encodeCodeForUrlParam } from "./url-codec.ts";
 
@@ -480,50 +480,43 @@ export function mountApp(root: HTMLElement) {
       </section>
 
       <section class="tab-panel" data-panel="repl">
-        <section class="workspace repl-workspace">
-          <div class="panel">
-            <div class="panel-header">
+        <section class="repl-layout">
+          <div class="panel repl-pane">
+            <div class="panel-header repl-pane-header">
               <div>
                 <p class="panel-label">REPL</p>
                 <h2>Persistent session</h2>
               </div>
+              <button id="repl-reset" class="ghost">Reset Session</button>
             </div>
-            <div class="help-copy">
+            <div class="help-copy repl-help-copy">
               <p>The REPL keeps your definitions and stack between lines. It preloads <code>/lib/core.ff</code>.</p>
               <p>Special commands: <code>.reset</code>, <code>.clear</code>, <code>.exit</code>, <code>.quit</code>.</p>
             </div>
-            <div class="controls repl-controls">
-              <label class="field repl-field">
-                <span>Line</span>
-                <div id="repl-input" aria-label="REPL line input"></div>
+            <div class="repl-left-body">
+              <section class="repl-stack-panel" aria-live="polite">
+                <div class="repl-stack-head">
+                  <span>Stack monitor</span>
+                  <span id="repl-depth">0 item(s)</span>
+                </div>
+                <ol id="repl-stack" class="repl-stack-list" aria-label="Current stack values"></ol>
+              </section>
+              <label class="field repl-input-field" for="repl-command">
+                <span>Command</span>
+                <input id="repl-command" type="text" autocomplete="off" placeholder="Type code and press Enter" />
               </label>
-              <div class="actions">
-                <button id="repl-reset" class="ghost">Reset Session</button>
-                <button id="repl-run" class="primary">Run Line</button>
-              </div>
+              <div class="repl-hint">Tip: use ↑ and ↓ for command history.</div>
             </div>
           </div>
 
-          <div class="results">
-            <div class="panel summary-panel">
-              <div class="panel-header">
-                <div>
-                  <p class="panel-label">State</p>
-                  <h2>Current stack</h2>
-                </div>
+          <div class="panel repl-pane">
+            <div class="panel-header">
+              <div>
+                <p class="panel-label">Console</p>
+                <h2>Output & logs</h2>
               </div>
-              <div id="repl-stack" class="summary-grid"></div>
             </div>
-
-            <div class="panel">
-              <div class="panel-header">
-                <div>
-                  <p class="panel-label">Transcript</p>
-                  <h2>REPL output</h2>
-                </div>
-              </div>
-              <pre id="repl-output" class="console"></pre>
-            </div>
+            <pre id="repl-output" class="console repl-console"></pre>
           </div>
         </section>
       </section>
@@ -551,11 +544,11 @@ export function mountApp(root: HTMLElement) {
   const detailPanels = Array.from(root.querySelectorAll<HTMLElement>(".detail-panel"));
   const detailTools = root.querySelector<HTMLElement>("#detail-tools");
 
-  const replInput = root.querySelector<HTMLElement>("#repl-input");
-  const replRun = root.querySelector<HTMLButtonElement>("#repl-run");
+  const replCommand = root.querySelector<HTMLInputElement>("#repl-command");
   const replReset = root.querySelector<HTMLButtonElement>("#repl-reset");
   const replOutput = root.querySelector<HTMLElement>("#repl-output");
   const replStack = root.querySelector<HTMLElement>("#repl-stack");
+  const replDepth = root.querySelector<HTMLElement>("#repl-depth");
 
   if (
     !source ||
@@ -570,11 +563,11 @@ export function mountApp(root: HTMLElement) {
     !ir ||
     !bytecode ||
     !detailTools ||
-    !replInput ||
-    !replRun ||
+    !replCommand ||
     !replReset ||
     !replOutput ||
-    !replStack
+    !replStack ||
+    !replDepth
   ) {
     throw new Error("App failed to mount");
   }
@@ -704,24 +697,33 @@ export function mountApp(root: HTMLElement) {
   }
 
   const replSession = new ReplSession();
-  const replEditor = mountReplEditor(replInput, "", () => {
-    runReplLine();
-  });
   const replTranscript: string[] = [
     "Core library loaded. Try defining words, evaluating quotes, or printing values.",
   ];
+  const replHistory: string[] = [];
+  let replHistoryIndex = -1;
+  let stackErrorTimer: number | undefined;
 
   function renderReplStack(stack: string[]) {
-    replStack.innerHTML = `
-      <article class="summary-card">
-        <span class="summary-k">depth</span>
-        <strong>${stack.length}</strong>
-      </article>
-      <article class="summary-card">
-        <span class="summary-k">stack</span>
-        <strong>${stack.length ? escapeHtml(stack.join(" ")) : "(empty)"}</strong>
-      </article>
-    `;
+    replDepth.textContent = `${stack.length} item(s)`;
+
+    if (!stack.length) {
+      replStack.innerHTML = '<li class="repl-stack-empty">(empty stack)</li>';
+      replStack.scrollTop = 0;
+      return;
+    }
+
+    replStack.innerHTML = stack
+      .map(
+        (value, depth) => `
+          <li class="repl-stack-row">
+            <span class="repl-stack-index">${depth}:</span>
+            <code class="repl-stack-value">${escapeHtml(value)}</code>
+          </li>
+        `,
+      )
+      .join("");
+    replStack.scrollTop = 0;
   }
 
   function renderReplTranscript() {
@@ -729,11 +731,16 @@ export function mountApp(root: HTMLElement) {
   }
 
   function runReplLine() {
-    const line = replEditor.getValue();
+    const line = replCommand.value;
     const result = replSession.execute(line);
 
     if (result.clearTranscript) {
       replTranscript.splice(0, replTranscript.length);
+    }
+
+    if (line.trim()) {
+      replHistory.push(line);
+      replHistoryIndex = replHistory.length;
     }
 
     replTranscript.push(`ff> ${line}`);
@@ -748,14 +755,21 @@ export function mountApp(root: HTMLElement) {
 
     if (result.error) {
       replTranscript.push(`Error: ${result.error}`);
+      replStack.classList.add("is-error");
+      if (stackErrorTimer !== undefined) {
+        window.clearTimeout(stackErrorTimer);
+      }
+      stackErrorTimer = window.setTimeout(() => {
+        replStack.classList.remove("is-error");
+      }, 500);
     }
 
     replTranscript.push(`[ ${result.stack.join(" ")} ]`);
 
     renderReplStack(result.stack);
     renderReplTranscript();
-    replEditor.setValue("");
-    replEditor.focus();
+    replCommand.value = "";
+    replCommand.focus();
   }
 
   example.addEventListener("change", () => {
@@ -773,17 +787,50 @@ export function mountApp(root: HTMLElement) {
     void renderPlayground();
   });
 
-  replRun.addEventListener("click", runReplLine);
+  replCommand.addEventListener("keydown", (event) => {
+    if (event.key === "Enter") {
+      event.preventDefault();
+      runReplLine();
+      return;
+    }
+
+    if (event.key === "ArrowUp") {
+      event.preventDefault();
+      if (!replHistory.length) {
+        return;
+      }
+
+      replHistoryIndex = Math.max(0, replHistoryIndex - 1);
+      replCommand.value = replHistory[replHistoryIndex] ?? "";
+      replCommand.setSelectionRange(replCommand.value.length, replCommand.value.length);
+      return;
+    }
+
+    if (event.key === "ArrowDown") {
+      event.preventDefault();
+      if (!replHistory.length) {
+        return;
+      }
+
+      replHistoryIndex = Math.min(replHistory.length, replHistoryIndex + 1);
+      replCommand.value = replHistory[replHistoryIndex] ?? "";
+      replCommand.setSelectionRange(replCommand.value.length, replCommand.value.length);
+    }
+  });
+
   replReset.addEventListener("click", () => {
     replSession.reset();
     replTranscript.splice(0, replTranscript.length, "Session reset. Core library reloaded.");
+    replHistory.splice(0, replHistory.length);
+    replHistoryIndex = 0;
     renderReplStack([]);
     renderReplTranscript();
-    replEditor.setValue("");
-    replEditor.focus();
+    replCommand.value = "";
+    replCommand.focus();
   });
 
   void renderPlayground();
   renderReplStack([]);
   renderReplTranscript();
+  replCommand.focus();
 }
