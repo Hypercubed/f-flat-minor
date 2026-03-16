@@ -152,8 +152,13 @@ textarea {
 .workspace {
   display: grid;
   grid-template-columns: minmax(340px, 1.1fr) minmax(320px, 0.9fr);
+  grid-template-rows: 1fr;
   gap: 1rem;
-  align-items: start;
+  align-items: stretch;
+}
+
+.workspace > .panel {
+  min-height: 100%;
 }
 
 .results {
@@ -296,6 +301,43 @@ button:hover {
 
 .detail-tools {
   padding: 0 1.2rem 0.35rem 1.35rem;
+}
+
+.summary-bar {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.75rem 1.25rem;
+  padding: 0.65rem 1.2rem 0.8rem;
+  background: linear-gradient(180deg, rgba(255, 252, 247, 0.95), rgba(239, 225, 207, 0.72));
+  border-bottom: 1px solid rgba(32, 22, 17, 0.08);
+}
+
+.summary-bar-item {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.35rem;
+  font-size: 0.85rem;
+}
+
+.summary-bar-item .label {
+  color: var(--muted);
+  text-transform: uppercase;
+  letter-spacing: 0.1em;
+  font-size: 0.7rem;
+}
+
+.summary-bar-item .value {
+  color: var(--ink);
+  font-weight: 500;
+  font-family: "Iosevka", "Cascadia Code", "SFMono-Regular", monospace;
+}
+
+.summary-bar-item .value.success {
+  color: var(--accent-2);
+}
+
+.summary-bar-item .value.error {
+  color: var(--accent);
 }
 
 .summary-grid {

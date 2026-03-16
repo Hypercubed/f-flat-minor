@@ -247,7 +247,7 @@ export class Engine {
 
   print() {
     const s = this.stack.map(x => x.toString(this.base)).join(" ");
-    console.log(`[ ${s} ]`);
+    this.platform.io.write(new TextEncoder().encode(`[ ${s} ]\n`));
   }
 
 /**

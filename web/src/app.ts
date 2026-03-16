@@ -448,43 +448,32 @@ export function mountApp(root: HTMLElement) {
             </div>
           </div>
 
-          <div class="results">
-            <div class="panel summary-panel">
-              <div class="panel-header">
-                <div>
-                  <p class="panel-label">Status</p>
-                  <h2>Run summary</h2>
-                </div>
+          <div class="panel">
+            <div class="panel-header">
+              <div>
+                <p class="panel-label">Inspect</p>
+                <h2>Program details</h2>
               </div>
-              <div id="summary" class="summary-grid"></div>
             </div>
-
-            <div class="panel">
-              <div class="panel-header">
-                <div>
-                  <p class="panel-label">Inspect</p>
-                  <h2>Program details</h2>
-                </div>
-              </div>
-              <div class="subtabs" aria-label="Program details">
-                <button class="subtab is-active" data-detail-tab="output">Output</button>
-                <button class="subtab" data-detail-tab="preprocessed">Expanded Source</button>
-                <button class="subtab" data-detail-tab="ir">IR</button>
-                <button class="subtab" data-detail-tab="bytecode">Bytecode</button>
-              </div>
-              <div id="detail-tools" class="detail-tools" hidden>
-                <label class="toggle">
-                  <input id="optimize" type="checkbox" checked />
-                  <span>Optimize</span>
-                </label>
-              </div>
-              <div class="detail-panels">
-                <pre id="output" class="console detail-panel is-active" data-detail-panel="output"></pre>
-                <pre id="error" class="console detail-panel is-active" data-detail-panel="output"></pre>
-                <div id="preprocessed" class="code-block detail-panel" data-detail-panel="preprocessed"></div>
-                <div id="ir" class="code-block detail-panel" data-detail-panel="ir"></div>
-                <pre id="bytecode" class="code-block detail-panel" data-detail-panel="bytecode"></pre>
-              </div>
+            <div id="summary" class="summary-bar"></div>
+            <div class="subtabs" aria-label="Program details">
+              <button class="subtab is-active" data-detail-tab="output">Output</button>
+              <button class="subtab" data-detail-tab="preprocessed">Expanded Source</button>
+              <button class="subtab" data-detail-tab="ir">IR</button>
+              <button class="subtab" data-detail-tab="bytecode">Bytecode</button>
+            </div>
+            <div id="detail-tools" class="detail-tools" hidden>
+              <label class="toggle">
+                <input id="optimize" type="checkbox" checked />
+                <span>Optimize</span>
+              </label>
+            </div>
+            <div class="detail-panels">
+              <pre id="output" class="console detail-panel is-active" data-detail-panel="output"></pre>
+              <pre id="error" class="console detail-panel is-active" data-detail-panel="output"></pre>
+              <div id="preprocessed" class="code-block detail-panel" data-detail-panel="preprocessed"></div>
+              <div id="ir" class="code-block detail-panel" data-detail-panel="ir"></div>
+              <pre id="bytecode" class="code-block detail-panel" data-detail-panel="bytecode"></pre>
             </div>
           </div>
         </section>
@@ -662,29 +651,32 @@ export function mountApp(root: HTMLElement) {
     try {
       const result = runProgram(sourceEditor.getValue(), stdin.value, optimize.checked);
       const issueCount = result.issues.length;
+      const stdoutParts: string[] = [];
+      if (result.output) {
+        stdoutParts.push(result.output.trimEnd());
+      }
+      if (result.logs.length) {
+        stdoutParts.push(result.logs.join("\n"));
+      }
+      const stdoutContent = stdoutParts.length ? stdoutParts.join("\n") : "(no output)";
       const diagnostics = [
-        result.output ? result.output.trimEnd() : "(no stdout)",
+        stdoutContent,
         issueCount ? `\n\n${issueCount} compiler issue(s):\n${result.issues.join("\n")}` : "",
-        result.logs.length ? `\n\nconsole log:\n${result.logs.join("\n")}` : "",
       ].join("");
 
       summary.innerHTML = `
-        <article class="summary-card">
-          <span class="summary-k">compile</span>
-          <strong>${result.compileMs.toFixed(2)} ms</strong>
-        </article>
-        <article class="summary-card">
-          <span class="summary-k">execute</span>
-          <strong>${result.executeMs.toFixed(2)} ms</strong>
-        </article>
-        <article class="summary-card">
-          <span class="summary-k">stack</span>
-          <strong>${result.stack.length ? escapeHtml(result.stack.join(" ")) : "(empty)"}</strong>
-        </article>
-        <article class="summary-card">
-          <span class="summary-k">exit</span>
-          <strong>${result.exitCode}</strong>
-        </article>
+        <span class="summary-bar-item">
+          <span class="label">compile</span>
+          <span class="value">${result.compileMs.toFixed(2)} ms</span>
+        </span>
+        <span class="summary-bar-item">
+          <span class="label">execute</span>
+          <span class="value">${result.executeMs.toFixed(2)} ms</span>
+        </span>
+        <span class="summary-bar-item">
+          <span class="label">exit</span>
+          <span class="value ${result.exitCode === 0 ? "success" : "error"}">${result.exitCode}</span>
+        </span>
       `;
 
       output.innerHTML = escapeHtml(diagnostics);
@@ -696,10 +688,10 @@ export function mountApp(root: HTMLElement) {
       const message = error instanceof Error ? error.message : String(error);
 
       summary.innerHTML = `
-        <article class="summary-card">
-          <span class="summary-k">status</span>
-          <strong>run failed</strong>
-        </article>
+        <span class="summary-bar-item">
+          <span class="label">status</span>
+          <span class="value error">failed</span>
+        </span>
       `;
       output.innerHTML = "";
       errorOutput.innerHTML = escapeHtml(message);
