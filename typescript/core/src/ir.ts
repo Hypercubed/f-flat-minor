@@ -169,8 +169,9 @@ export function printFfCompatibleIr(ir: Array<IrInstruction>) {
     const immediateWord = i.op === IROp.call
       ? IMMEDIATE_CALL_WORDS.get(i.value)
       : undefined;
+    const suppressRedundantAutoComment = immediateWord !== undefined;
     const v = formatLowLevelValue(i, immediateWord);
-    const c = i.meta?.comment?.trim() || (i.op === IROp.call ? n : "");
+    const c = i.meta?.comment?.trim() || (i.op === IROp.call && !suppressRedundantAutoComment ? n : "");
     const o = (i.op === IROp.call && !immediateWord ? "EVAL" : "").padEnd(OP_WIDTH, " ");
     console.log(cyan(v), blue(o), formatBlockComment(c));
   });

@@ -409,7 +409,17 @@ button:hover {
   overflow: hidden;
 }
 
+#ir {
+  padding: 0;
+  overflow: hidden;
+}
+
 #preprocessed .cm-editor {
+  height: 100%;
+  background: transparent;
+}
+
+#ir .cm-editor {
   height: 100%;
   background: transparent;
 }

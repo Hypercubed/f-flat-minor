@@ -485,7 +485,7 @@ export function mountApp(root: HTMLElement) {
                 <pre id="output" class="console detail-panel is-active" data-detail-panel="output"></pre>
                 <pre id="error" class="console detail-panel is-active" data-detail-panel="output"></pre>
                 <div id="preprocessed" class="code-block detail-panel" data-detail-panel="preprocessed"></div>
-                <pre id="ir" class="code-block detail-panel" data-detail-panel="ir"></pre>
+                <div id="ir" class="code-block detail-panel" data-detail-panel="ir"></div>
                 <pre id="bytecode" class="code-block detail-panel" data-detail-panel="bytecode"></pre>
               </div>
             </div>
@@ -597,6 +597,7 @@ export function mountApp(root: HTMLElement) {
   const sourceFromUrl = decodeCodeFromUrlParam(searchParams.get("code"));
   const sourceEditor = mountSourceEditor(source, sourceFromUrl ?? DEFAULT_SOURCE);
   const preprocessedViewer = mountReadonlySourceViewer(preprocessed, "");
+  const irViewer = mountReadonlySourceViewer(ir, "");
 
   function syncCodeParamToUrl() {
     const params = new URLSearchParams(window.location.search);
@@ -692,7 +693,7 @@ export function mountApp(root: HTMLElement) {
       output.innerHTML = escapeHtml(diagnostics);
       errorOutput.textContent = "";
       preprocessedViewer.setValue(result.preprocessed);
-      ir.innerHTML = escapeHtml(result.ir);
+      irViewer.setValue(result.ir);
       bytecode.innerHTML = escapeHtml(result.bytecode);
     } catch (error) {
       const message = error instanceof Error ? error.message : String(error);
@@ -706,7 +707,7 @@ export function mountApp(root: HTMLElement) {
       output.innerHTML = "";
       errorOutput.innerHTML = escapeHtml(message);
       preprocessedViewer.setValue("");
-      ir.innerHTML = "";
+      irViewer.setValue("");
       bytecode.innerHTML = "";
     } finally {
       document.body.dataset.ready = "true";
