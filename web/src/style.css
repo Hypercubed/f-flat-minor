@@ -10,6 +10,7 @@
   --accent-2: #17695d;
   --line: rgba(32, 22, 17, 0.12);
   --shadow: 0 24px 60px rgba(70, 39, 24, 0.12);
+  --playground-pane-max-height: 60vh;
   --repl-pane-max-height: min(72vh, 840px);
   font-family: "Avenir Next", "Trebuchet MS", "Segoe UI", sans-serif;
   line-height: 1.4;
@@ -328,7 +329,7 @@ textarea {
 
 .editor-panel .cm-editor {
   min-height: 200px;
-  max-height: 60vh;
+  max-height: var(--playground-pane-max-height);
   overflow: auto;
   border: 1px solid rgba(32, 22, 17, 0.15);
   border-radius: 18px;
@@ -507,6 +508,10 @@ button:hover {
   font-size: 0.92rem;
 }
 
+.detail-panels {
+  max-height: var(--playground-pane-max-height);
+}
+
 .help-grid {
   display: grid;
   grid-template-columns: repeat(2, minmax(0, 1fr));
@@ -619,6 +624,8 @@ button:hover {
 
 .detail-panel.is-active {
   display: block;
+  max-height: var(--playground-pane-max-height);
+  overflow-y: auto;
 }
 
 @media (max-width: 1080px) {

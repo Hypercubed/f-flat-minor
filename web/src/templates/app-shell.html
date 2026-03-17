@@ -1,0 +1,126 @@
+<main class="shell">
+  <section class="hero">
+    <p class="eyebrow">f-flat-minor / web</p>
+    <h1>Run F-flat-minor in the browser.</h1>
+    <p class="lede">
+      Playground, REPL, and language help powered by the shared TypeScript core.
+    </p>
+    <p class="hero-links">
+      <a
+        class="repo-link"
+        href="https://github.com/Hypercubed/f-flat-minor"
+        target="_blank"
+        rel="noreferrer"
+      >View the GitHub repository</a>
+    </p>
+  </section>
+
+  <nav class="mode-tabs" aria-label="Application modes">
+    <button class="mode-tab is-active" data-tab="playground">Playground</button>
+    <button class="mode-tab" data-tab="repl">REPL</button>
+    <button class="mode-tab" data-tab="help">Help</button>
+  </nav>
+
+  <section class="tab-panel is-active" data-panel="playground">
+    <section class="workspace">
+      <div class="panel editor-panel">
+        <div class="panel-header">
+          <div>
+            <p class="panel-label">Editor</p>
+            <h2>Main source</h2>
+          </div>
+        </div>
+        <div id="source" aria-label="Main source editor"></div>
+        <div class="controls">
+          <label class="field">
+            <span>Example</span>
+            <select id="example">
+              {{EXAMPLE_OPTIONS}}
+            </select>
+          </label>
+          <label class="field">
+            <span>stdin</span>
+            <input id="stdin" type="text" placeholder="Optional input for getc" />
+          </label>
+          <div class="actions">
+            <button id="run" class="primary">Run Program</button>
+          </div>
+        </div>
+      </div>
+
+      <div class="panel">
+        <div class="panel-header">
+          <div>
+            <p class="panel-label">Inspect</p>
+            <h2>Program details</h2>
+          </div>
+        </div>
+        <div id="summary" class="summary-bar"></div>
+        <div class="subtabs" aria-label="Program details">
+          <button class="subtab is-active" data-detail-tab="output">Output</button>
+          <button class="subtab" data-detail-tab="preprocessed">Expanded Source</button>
+          <button class="subtab" data-detail-tab="ir">IR</button>
+          <button class="subtab" data-detail-tab="bytecode">Bytecode</button>
+        </div>
+        <div id="detail-tools" class="detail-tools" hidden>
+          <label class="toggle">
+            <input id="optimize" type="checkbox" checked />
+            <span>Optimize</span>
+          </label>
+        </div>
+        <div class="detail-panels">
+          <pre id="output" class="console detail-panel is-active" data-detail-panel="output"></pre>
+          <pre id="error" class="console detail-panel is-active" data-detail-panel="output"></pre>
+          <div id="preprocessed" class="code-block detail-panel" data-detail-panel="preprocessed"></div>
+          <div id="ir" class="code-block detail-panel" data-detail-panel="ir"></div>
+          <pre id="bytecode" class="code-block detail-panel" data-detail-panel="bytecode"></pre>
+        </div>
+      </div>
+    </section>
+  </section>
+
+  <section class="tab-panel" data-panel="repl">
+    <section class="repl-layout">
+      <div class="panel repl-pane">
+        <div class="panel-header repl-pane-header">
+          <div>
+            <p class="panel-label">REPL</p>
+            <h2>Persistent session</h2>
+          </div>
+          <button id="repl-reset" class="ghost">Reset Session</button>
+        </div>
+        <div class="help-copy repl-help-copy">
+          <p>The REPL keeps your definitions and stack between lines. It preloads <code>/lib/core.ff</code>.</p>
+          <p>Special commands: <code>.reset</code>, <code>.clear</code>, <code>.exit</code>, <code>.quit</code>.</p>
+        </div>
+        <div class="repl-left-body">
+          <section class="repl-stack-panel" aria-live="polite">
+            <div class="repl-stack-head">
+              <span>Stack monitor</span>
+              <span id="repl-depth">depth: 0</span>
+            </div>
+            <ol id="repl-stack" class="repl-stack-list" aria-label="Current stack values"></ol>
+          </section>
+          <label class="field repl-input-field" for="repl-command">
+            <input id="repl-command" type="text" autocomplete="off" placeholder="Type code and press Enter" />
+          </label>
+          <div class="repl-hint">Tip: use ↑ and ↓ for command history.</div>
+        </div>
+      </div>
+
+      <div class="panel repl-pane">
+        <div class="panel-header">
+          <div>
+            <p class="panel-label">Console</p>
+            <h2>Output & logs</h2>
+          </div>
+        </div>
+        <pre id="repl-output" class="console repl-console"></pre>
+      </div>
+    </section>
+  </section>
+
+  <section class="tab-panel" data-panel="help">
+    {{HELP_HTML}}
+  </section>
+</main>
