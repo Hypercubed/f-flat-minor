@@ -518,6 +518,198 @@ button:hover {
   gap: 1rem;
 }
 
+.tutorial-page {
+  display: grid;
+  gap: 1rem;
+}
+
+.tutorial-intro {
+  overflow: visible;
+}
+
+.tutorial-intro-body {
+  padding: 1.1rem 1.2rem 1.2rem;
+  color: var(--muted);
+}
+
+.tutorial-intro-body h2 {
+  max-width: 22ch;
+}
+
+.tutorial-intro-body p {
+  margin: 0.85rem 0 0;
+}
+
+.tutorial-list {
+  display: grid;
+  gap: 1rem;
+}
+
+.tutorial-card {
+  overflow: visible;
+}
+
+.tutorial-card-body {
+  display: grid;
+  gap: 0.9rem;
+  padding: 1.1rem 1.2rem 1.2rem;
+}
+
+.tutorial-card-header {
+  display: grid;
+  gap: 0.55rem;
+}
+
+.tutorial-goal {
+  margin: 0;
+  color: var(--ink);
+  font-size: 0.98rem;
+}
+
+.tutorial-concepts {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.45rem;
+}
+
+.tutorial-concept {
+  display: inline-flex;
+  align-items: center;
+  min-height: 30px;
+  padding: 0.3rem 0.65rem;
+  border-radius: 999px;
+  background: rgba(255, 248, 239, 0.95);
+  border: 1px solid rgba(32, 22, 17, 0.12);
+  color: var(--muted);
+  font-size: 0.8rem;
+}
+
+.tutorial-editor-shell {
+  border: 1px solid rgba(32, 22, 17, 0.12);
+  border-radius: 18px;
+  background: rgba(255, 250, 244, 0.88);
+  overflow: hidden;
+}
+
+.tutorial-workbench {
+  display: grid;
+  grid-template-columns: minmax(0, 1.15fr) minmax(280px, 0.85fr);
+  gap: 0.9rem;
+  align-items: start;
+}
+
+.tutorial-editor-pane {
+  display: grid;
+  gap: 0.8rem;
+  min-width: 0;
+}
+
+.tutorial-editor .cm-editor {
+  min-height: 0;
+  max-height: 320px;
+  overflow: auto;
+  background: transparent;
+  color: var(--ink);
+}
+
+.tutorial-editor .cm-content {
+  min-height: 220px;
+}
+
+.tutorial-editor .cm-scroller {
+  font-family: "Iosevka", "Cascadia Code", "SFMono-Regular", monospace;
+  font-size: 0.92rem;
+  line-height: 1.5;
+}
+
+.tutorial-controls {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: space-between;
+  gap: 0.8rem;
+  align-items: end;
+}
+
+.tutorial-stdin-field {
+  min-width: min(280px, 100%);
+  flex: 1 1 280px;
+}
+
+.tutorial-actions {
+  margin-left: auto;
+}
+
+.tutorial-result {
+  display: grid;
+  gap: 0.55rem;
+  min-width: 0;
+}
+
+.tutorial-run-summary {
+  color: var(--muted);
+  font-size: 0.82rem;
+  letter-spacing: 0.04em;
+}
+
+.tutorial-console,
+.tutorial-diagnostics,
+.tutorial-error {
+  margin: 0;
+  min-height: 0;
+  padding: 0.8rem 0.95rem;
+  border-radius: 16px;
+  overflow-x: auto;
+  white-space: pre-wrap;
+  overflow-wrap: anywhere;
+  font-family: "Iosevka", "Cascadia Code", "SFMono-Regular", monospace;
+  font-size: 0.88rem;
+  line-height: 1.5;
+}
+
+.tutorial-console {
+  min-height: 72px;
+}
+
+.tutorial-diagnostics {
+  background: rgba(255, 244, 226, 0.92);
+  border: 1px solid rgba(187, 77, 29, 0.2);
+  color: var(--ink);
+}
+
+.tutorial-error {
+  background: rgba(122, 28, 28, 0.08);
+  border: 1px solid rgba(160, 37, 37, 0.22);
+  color: #7a1c1c;
+}
+
+.tutorial-guidance {
+  display: grid;
+  gap: 0.7rem;
+}
+
+.tutorial-guidance-block {
+  padding: 0.85rem 0.95rem;
+  border-radius: 16px;
+  background: linear-gradient(180deg, rgba(255, 252, 247, 0.95), rgba(239, 225, 207, 0.72));
+  border: 1px solid rgba(32, 22, 17, 0.08);
+}
+
+.tutorial-guidance-label {
+  margin: 0 0 0.35rem;
+  text-transform: uppercase;
+  letter-spacing: 0.12em;
+  font-size: 0.72rem;
+  color: var(--muted);
+}
+
+.tutorial-guidance-value,
+.tutorial-note {
+  margin: 0;
+  color: var(--ink);
+  white-space: pre-wrap;
+  overflow-wrap: anywhere;
+}
+
 .help-panel {
   min-height: 100%;
 }
@@ -670,5 +862,19 @@ button:hover {
 
   .summary-grid {
     grid-template-columns: 1fr;
+  }
+
+  .tutorial-controls {
+    flex-direction: column;
+    align-items: stretch;
+  }
+
+  .tutorial-workbench {
+    grid-template-columns: 1fr;
+  }
+
+  .tutorial-actions {
+    margin-left: 0;
+    width: 100%;
   }
 }

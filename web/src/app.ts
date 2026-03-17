@@ -4,6 +4,7 @@ import { runProgram } from "./program-runner.ts";
 import { ReplSession } from "./repl-session.ts";
 import appShellTemplate from "./templates/app-shell.html?raw";
 import helpTemplate from "./templates/help.html?raw";
+import { mountTutorial } from "./tutorial.ts";
 import { decodeCodeFromUrlParam, encodeCodeForUrlParam } from "./url-codec.ts";
 
 function escapeHtml(value: string): string {
@@ -53,6 +54,7 @@ export function mountApp(root: HTMLElement) {
   const replOutput = requireElement<HTMLElement>(root, "#repl-output");
   const replStack = requireElement<HTMLElement>(root, "#repl-stack");
   const replDepth = requireElement<HTMLElement>(root, "#repl-depth");
+  const tutorialRoot = requireElement<HTMLElement>(root, "#tutorial-root");
 
   const tabs = Array.from(root.querySelectorAll<HTMLButtonElement>(".mode-tab"));
   const panels = Array.from(root.querySelectorAll<HTMLElement>(".tab-panel"));
@@ -322,6 +324,7 @@ export function mountApp(root: HTMLElement) {
   });
 
   void renderPlayground();
+  mountTutorial(tutorialRoot);
   renderReplStack([]);
   renderReplTranscript();
   replCommand.focus();
