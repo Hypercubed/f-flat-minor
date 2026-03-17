@@ -497,12 +497,11 @@ export function mountApp(root: HTMLElement) {
               <section class="repl-stack-panel" aria-live="polite">
                 <div class="repl-stack-head">
                   <span>Stack monitor</span>
-                  <span id="repl-depth">0 item(s)</span>
+                  <span id="repl-depth">depth: 0</span>
                 </div>
                 <ol id="repl-stack" class="repl-stack-list" aria-label="Current stack values"></ol>
               </section>
               <label class="field repl-input-field" for="repl-command">
-                <span>Command</span>
                 <input id="repl-command" type="text" autocomplete="off" placeholder="Type code and press Enter" />
               </label>
               <div class="repl-hint">Tip: use ↑ and ↓ for command history.</div>
@@ -704,12 +703,16 @@ export function mountApp(root: HTMLElement) {
   let replHistoryIndex = -1;
   let stackErrorTimer: number | undefined;
 
+  function scrollToBottom(element: HTMLElement) {
+    element.scrollTop = element.scrollHeight;
+  }
+
   function renderReplStack(stack: string[]) {
-    replDepth.textContent = `${stack.length} item(s)`;
+    replDepth.textContent = `depth: ${stack.length}`;
 
     if (!stack.length) {
       replStack.innerHTML = '<li class="repl-stack-empty">(empty stack)</li>';
-      replStack.scrollTop = 0;
+      scrollToBottom(replStack);
       return;
     }
 
@@ -717,17 +720,18 @@ export function mountApp(root: HTMLElement) {
       .map(
         (value, depth) => `
           <li class="repl-stack-row">
-            <span class="repl-stack-index">${depth}:</span>
+            <span class="repl-stack-index">${stack.length - depth - 1}:</span>
             <code class="repl-stack-value">${escapeHtml(value)}</code>
           </li>
         `,
       )
       .join("");
-    replStack.scrollTop = 0;
+    scrollToBottom(replStack);
   }
 
   function renderReplTranscript() {
     replOutput.innerHTML = escapeHtml(replTranscript.join("\n\n"));
+    scrollToBottom(replOutput);
   }
 
   function runReplLine() {
