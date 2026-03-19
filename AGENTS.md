@@ -54,6 +54,11 @@ The most complete test set is the deno tests. To run the deno tests you can run:
 chomp test:deno
 ```
 
+## Documentation
+
+- Language examples and tutorials: `docs/fbm-by-example.md`
+- Stack effect notation standard: `docs/stack-notation.md`
+
 ## Deno Implementation Notes
 
 For Deno-specific usage, tasks, CLI entrypoints, and implementation notes, see `deno/README.md`.
