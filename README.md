@@ -158,6 +158,7 @@ See [F♭m by example](./docs/fbm-by-example.md) for a more detailed explanation
 | FETCH    |   )    |    41 ())     |       F♭m       |
 | MUL      |   \*   |    42 (\*)    | F♭m<sup>o</sup> |
 | ADD      |   +    |    43 (+)     | F♭m<sup>o</sup> |
+| CONS     |  cons  |    44 (,)     |       F♭m       |
 | SUB      |   -    |    45 (-)     | F♭m<sup>o</sup> |
 | DUMP     |   .    |    46 (.)     | F♭m<sup>o</sup> |
 | DIV      |   /    |    47 (/)     | F♭m<sup>o</sup> |
@@ -180,7 +181,7 @@ _F♭m<sup>+</sup>_ adds a preprocessor and compiler commands. A word starting w
 | Command    |                                           Description                                            |       Support       |
 | ---------- | :----------------------------------------------------------------------------------------------: | :-----------------: |
 | `.load`    |                                   loads another file in place                                    | Deno, Go and Racket |
-| `.include` | loads another file in place only once (same as `.load` except a file will not be imported twice) | Deno, Go and Racket |
+| `.import` | loads another file in place only once (same as `.load` except a file will not be imported twice) | Deno, Go and Racket |
 | `.m`       | macro command, the rest of the line will be executed at compile time and included in the output. |      Deno, Go       |
 | `.inline`  |      indicates that a previous definition is safe for inlining (using during optimization)       |        Deno         |
 | `.unsafe`  |    indicates that a previous definition is not safe for inlining (using during optimization)     |        Deno         |

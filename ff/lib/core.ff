@@ -30,7 +30,6 @@ sipd: q< sip q> ; .inline      /* c b [A*] -> c a* c b */
 bi: q< over q< eval q> q> dig q< eval q> swap ; .inline
 bi2: q< q< dup2 q> eval bury q> eval ; .inline
 
-
 /* inquisitive */
 
 not: 0 = ;
@@ -91,30 +90,6 @@ seq: swap times ;
 
 range: dupd swap - [ succ ] seq ;
 count: 0 swap ++ [ succ ] seq drop ;
-
-/* stack reduction */
-tail!: q< clr q> ;
-head!: [ drop ] reduce! ;
-
-_reduce_r: depth 3 > [ dup slip _reduce_r ] ? ;
-reduce_r!: _reduce_r eval ;
-foldr!: pushtop reduce_r! ;
-
-_reduce_l: depth 3 > [ swap q< _reduce_l dup slip q> swap ] ? ;
-reduce_l!: _reduce_l eval ;
-foldl!: pushtop reduce_l! ;
-
-_map: depth 2 > [ swap q< _map dup slip q> swap ] ? ;
-map!: _map eval ;
-
-_filter: depth 2 > [ swap q< _filter over over eval not [ nip ] ? q> swap ] ? ;
-filter!: _filter dupd eval not [ drop ] ? ;
-
-reduce!: depth 2 - times ;
-
-sum!: depth 1 > [ + sum! ] ? ;
-product!: depth 1 > [ * product! ] ? ;
-reverse!: depth 1 > [ q< reverse! q> pushtop ] ? ;
 
 /* math */
 negitive?: 0 < ;

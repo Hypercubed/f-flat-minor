@@ -478,6 +478,18 @@ export class Engine {
       const a = this.pop();
       this.push(~a);
     }, OpCodes.NOT);
+
+    this.defineSystem(() => {
+      const o = this.pop();
+      const n = this.pop();
+      const s: bigint[] = [0n, n, 1n, o];
+      const op = BigInt(this.nextAnonOp++);
+      this.defineUser(s, op);
+      if (this.depth > 0) {
+        this.push(0n);
+      }
+      this.push(op);
+    }, OpCodes.CONS);
   }
 
   printProfile() {
