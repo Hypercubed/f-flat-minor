@@ -9,21 +9,22 @@ compose: [ [eval] dip eval ] cons cons ;
 _map: depth 2 > [ swap q< _map dup slip q> swap ] ? ;
 map!: _map eval ;
 
-reduce!: depth 2 - times ;
-head!: [drop] reduce! ;
-tail!: q< clr q> ;
+reduce!: depth 2 - times ; /* a+ [B] reduce! == r */
+head!: [drop] reduce! ; /* a+ head! == a */
+tail!: q< clr q> ; /* .. a tail! == a */
 
 _reduce_r: depth 3 > [ dup slip _reduce_r ] ? ;
 reduce_r!: _reduce_r eval ;
-foldr!: swap pushtop reduce_r! ;
-
+foldr!: swap pushtop reduce_r! ;  /* a* [B] z foldr! == r */
+ 
 _reduce_l: depth 3 > [ swap q< _reduce_l dup slip q> swap ] ? ;
 reduce_l!: _reduce_l eval ;
-foldl!: swap pushtop reduce_l! ;
+foldl!: swap pushtop reduce_l! ; /* a* [B] z foldl! == r */
+
 reverse!: depth 1 > [ q< reverse! q> pushtop ] ? ;
 
 _filter: depth 2 > [ swap q< _filter over over eval not [nip] ? q> swap ] ? ;
-filter!: _filter dupd eval not [drop] ? ;
+filter!: _filter dupd eval not [drop] ? ; /* a* [B] filter! == a* */
 
 map: [ map! ] cons compose in ;
 first: [ head! ] compose in eval ;
@@ -33,7 +34,8 @@ foldl: [ foldl! ] cons cons compose in eval ;
 reverse: [ reverse! ] compose in ;
 filter: [ filter! ] cons compose in ;
 
-sum!: 0 [+] foldr! ;
+sum!: 0 [+] foldr! ; /* .. sum! == n */
+product!: 1 [*] foldr! ; /* .. product! == n */
 
 sum: 0 [+] foldr ;
 product: 1 [*] foldr ;

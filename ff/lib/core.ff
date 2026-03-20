@@ -1,121 +1,121 @@
 /* constants 1 2 3 */
-true: 1 ;
-false: 0 ;
+true: 1 ; /* true == 1 */
+false: 0 ; /* false == 0 */
 
 /* incrementors */
 
---: 1 - ;
-++: 1 + ;
-pred: dup -- ;
-succ: dup ++ ;
+--: 1 - ; /* n -- == n-1 */
+++: 1 + ; /* n ++ == n+1 */
+pred: dup -- ; /* n pred == n n-1 */
+succ: dup ++ ; /* n succ == n n+1 */
 
 /* shuffle words */
 
-slip: q< eval q> ;
-drop2: drop drop ;
-swapd: q< swap q> ;
-dupd: q< dup q> ;
+slip: q< eval q> ; /* [A] b slip == a* b */
+drop2: drop drop ; /* a b drop2 == */
+swapd: q< swap q> ; /* a b c swapd == b a c */
+dupd: q< dup q> ; /* a b dupd == a a b */
 
-dip: swap slip ; .inline /* [B] [A] dip == A [B] */
-dig: swapd swap ; .inline /* c b a -> b a c */
-bury: swap swapd ; .inline /* c b a -> a c b */
-rot: swap swapd swap ; .inline /* c b a -> a b c */
-over: dupd swap ; .inline
-dup2: over over ; .inline
-run: dup slip ; .inline
-nip: swap drop ; .inline
-tuck: swap over ; .inline
-sip: over slip ; .inline       /* b [A*] -> b a* b    (aka keep) */
-sipd: q< sip q> ; .inline      /* c b [A*] -> c a* c b */
-bi: q< over q< eval q> q> dig q< eval q> swap ; .inline
-bi2: q< q< dup2 q> eval bury q> eval ; .inline
+dip: swap slip ; .inline /* a [B] dip == b* a */
+dig: swapd swap ; .inline /* a b c dig == b c a */
+bury: swap swapd ; .inline /* a b c bury == c a b */
+rot: swap swapd swap ; .inline /* a b c rot == c b a */
+over: dupd swap ; .inline /* a b over == a b a */
+dup2: over over ; .inline /* a b dup2 == a b a b */
+run: dup slip ; .inline /* [A] run == a* [A] */
+nip: swap drop ; .inline /* a b nip == b */
+tuck: swap over ; .inline /* a b tuck == b a b */
+sip: over slip ; .inline /* a [B] sip == a b* a */
+sipd: q< sip q> ; .inline /* a [B] c sipd == a b* a c */
+bi: q< over q< eval q> q> dig q< eval q> swap ; .inline /* a [B] [C] bi == b c */
+bi2: q< q< dup2 q> eval bury q> eval ; .inline /* a b [C] [D] bi2 == c d */
 
 /* inquisitive */
 
-not: 0 = ;
-zero?: 0 = ;
-truthy?: zero? not ; .inline
-falsey?: zero? ; .inline
-!=: = not ; .inline
-nz?: zero? not ; .inline
-divisor?: % zero? ; .inline
-even?: 2 divisor? ; .inline
-odd?: even? not ; .inline
+not: 0 = ; /* flag not == flag' */
+zero?: 0 = ; /* n zero? == flag */
+truthy?: zero? not ; .inline /* n truthy? == flag */
+falsey?: zero? ; .inline /* n falsey? == flag */
+!=: = not ; .inline /* a b != == flag */
+nz?: zero? not ; .inline /* n nz? == flag */
+divisor?: % zero? ; .inline /* n d divisor? == flag */
+even?: 2 divisor? ; .inline /* n even? == flag */
+odd?: even? not ; .inline /* n odd? == flag */
 
 /* comparison */
-<=: > not ; .inline
->=: < not ; .inline
+<=: > not ; .inline /* a b <= == flag */
+>=: < not ; .inline /* a b >= == flag */
 
-sort2: dup2 > [ swap ] ? ; .inline
-min: sort2 drop ; .inline
-max: sort2 nip ; .inline
-clamp: dig max min ; .inline
-between?: [ sort2 ] dip swap dupd < bury < and ; .inline
+sort2: dup2 > [ swap ] ? ; .inline /* a b sort2 == min max */
+min: sort2 drop ; .inline /* a b min == min */
+max: sort2 nip ; .inline /* a b max == max */
+clamp: dig max min ; .inline /* lo hi n clamp == n' */
+between?: [ sort2 ] dip swap dupd < bury < and ; .inline /* lo hi n between? == flag */
 
 /* binary operators */
 
-bxor: dup2 ~ & rot ~ & | ;
+bxor: dup2 ~ & rot ~ & | ; /* a b bxor == n */
 
 /* logical */
 
-and: * truthy? ;
-or: + truthy? ;
-nand: * zero? ;
-nor: + zero? ;
+and: * truthy? ; /* a b and == flag */
+or: + truthy? ; /* a b or == flag */
+nand: * zero? ; /* a b nand == flag */
+nor: + zero? ; /* a b nor == flag */
 
 /* short circuit */
 
-or_else: q< over slip swap q> swap [ drop2 true ] [ eval ] branch ; .inline
-and_also: q< over slip swap q> swap [ eval ] [ drop2 false ] branch ; .inline
+or_else: q< over slip swap q> swap [ drop2 true ] [ eval ] branch ; .inline /* a [B] [C] or_else == flag */
+and_also: q< over slip swap q> swap [ eval ] [ drop2 false ] branch ; .inline /* a [B] [C] and_also == flag */
 
 /* branching */
 
-choose: rot [ swap ] ? drop ;
-branch: choose eval ;
-if: slip ? ;
-ifte: slipd branch ;
+choose: rot [ swap ] ? drop ; /* a b flag choose == a or b */
+branch: choose eval ; /* a flag [B] [C] branch == b* or c* */
+if: slip ? ; /* a flag [B] if == a or b* */
+ifte: slipd branch ; /* a flag [B] [C] ifte == b* or c* */
 
 /* stack */
 
-empty?: depth zero? ;
-pushtop: depth 1 > [ swap q< pushtop q> ] ? ;
+empty?: depth zero? ; /* .. empty? == .. flag */
+pushtop: depth 1 > [ swap q< pushtop q> ] ? ; /* .. a pushtop == a .. */
 
 /* counters */
 
-_loop: dup [ -- q< dup q< eval q> q> _loop ] ? ;
-loop: _loop drop ;
+_loop: dup [ -- q< dup q< eval q> q> _loop ] ? ; /* a [B] n _loop == a b* n */
+loop: _loop drop ; /* a [B] n loop == a b* [B] */
 
-times: loop drop ;
-seq: swap times ;
+times: loop drop ; /* a [B] n times == a b* */
+seq: swap times ; /* a n [B] seq == a b* */
 
-range: dupd swap - [ succ ] seq ;
-count: 0 swap ++ [ succ ] seq drop ;
+range: dupd swap - [ succ ] seq ; /* a b range == a..b */
+count: 0 swap ++ [ succ ] seq drop ; /* n count == 1..n */
 
 /* math */
-negitive?: 0 < ;
-positive?: 0 > ;
-sgn: dup positive? swap negitive? - ; .inline
-abs: dup negitive? [ -1 * ] ? ; .inline
-sqr: dup * ;
-lg: dup 1 > [ 1 >> lg ++ ] [ drop 0 ] branch ;
-!: dup [ dup -- ! * ] [ drop 1 ] branch ;
-nck: dup2 - ! swap ! * [ ! ] dip / ;  /* n choose k */
-divrem: [ / ] [ % ] bi2 ;
+negitive?: 0 < ; /* n negitive? == flag */
+positive?: 0 > ; /* n positive? == flag */
+sgn: dup positive? swap negitive? - ; .inline /* n sgn == -1 or 0 or 1 */
+abs: dup negitive? [ -1 * ] ? ; .inline /* n abs == |n| */
+sqr: dup * ; /* n sqr == n^2 */
+lg: dup 1 > [ 1 >> lg ++ ] [ drop 0 ] branch ; /* n lg == floor(log2(n)) */
+!: dup [ dup -- ! * ] [ drop 1 ] branch ; /* n ! == n! */
+nck: dup2 - ! swap ! * [ ! ] dip / ; /* n k nck == C(n,k) */
+divrem: [ / ] [ % ] bi2 ; /* a b divrem == q r */
 
 /* string printing */
 
-space: 32 ;
-newline: 10 ;
+space: 32 ; /* space == 32 */
+newline: 10 ; /* newline == 10 */
 
-sp: space putc ;
-cr: newline putc ;
+sp: space putc ; /* sp == {prints char(32)} */
+cr: newline putc ; /* cr == {prints char(10)} */
 
-_prints: dup [ q< _prints q> putc ] ? ;
-prints: _prints drop ;
-println: prints cr ;
+_prints: dup [ q< _prints q> putc ] ? ; /* 0 n* _prints == 0 {prints chars} */
+prints: _prints drop ; /* 0 n* prints == {prints chars} */
+println: prints cr ; /* 0 n* println == {prints chars, char(10)} */
 
-ucase?: dup 'a' -- 'z' ++ dig between? ;
-lcase?: dup 'A' -- 'Z' ++ dig between? ;
+ucase?: dup 'a' -- 'z' ++ dig between? ; /* n ucase? == flag */
+lcase?: dup 'A' -- 'Z' ++ dig between? ; /* n lcase? == flag */
 
-ucase: ucase? [ 32 - ] ? ;
-lcase: lcase? [ 32 + ] ? ;
+ucase: ucase? [ 32 - ] ? ; /* n ucase == n' */
+lcase: lcase? [ 32 + ] ? ; /* n lcase == n' */

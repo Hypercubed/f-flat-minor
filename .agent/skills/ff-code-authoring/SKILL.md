@@ -43,9 +43,11 @@ Practical preprocessing pipelines from `README.md`:
 ## Authoring workflow
 
 1. Write the target stack effect before implementing a word.
-- Example style:
+- Use the standard notation from `docs/stack-notation.md`:
 ```ff
-/* n -- fib_n */
+/* n ! == n! */
+/* a [B] dip == b* a */
+/* … sum! == n */
 ```
 
 2. Build small helpers first, then compose.
@@ -97,4 +99,5 @@ node node/bin/ff-run.ts -t <file>.ffp
 
 ## Reference
 
-- Primary language examples: `docs/fbm-by-example.md`.
+- Language examples: `docs/fbm-by-example.md`
+- Stack notation: `docs/stack-notation.md`
