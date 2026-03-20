@@ -1,5 +1,6 @@
 .import ../lib/core.ff
 .import ../lib/primes.ffp
+.import ../lib/seq.ffp
 
 check: /* n i */
   dup * 2 * -

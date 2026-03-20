@@ -161,8 +161,8 @@ const rules: Rule[] = [
     replacement: () => [],
   },
   {
-    name: "Flows-Of-Control Optimizations - n [ ]",
-    pattern: [PushAny, Call(OpCodes.BRA), Call(OpCodes.KET)],
+    name: "Empty List - [ ]",
+    pattern: [Call(OpCodes.BRA), Call(OpCodes.KET)],
     replacement: () => [
       {
         op: IROp.push,
@@ -222,10 +222,6 @@ export class Optimizer {
     this.optimized = ir;
 
     let len;
-
-    // TODO: hoist anon defs first
-    // this.optimized = this.pullDefs(this.optimized, true);
-    // this.optimized = this.addReferencedWords(this.optimized);
 
     do {
       len = this.optimized.length;

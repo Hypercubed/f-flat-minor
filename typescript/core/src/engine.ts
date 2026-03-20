@@ -123,8 +123,8 @@ export class Engine {
       throw new Error(`Define: cannot define system op "${name}"`);
     }
     if (this.defs.has(n)) {
-      if (n > -1) {
-        throw new Error(`Define: cannot redefine system op "${name}"`);
+      if (n > MAX_SYSTEM_OP_CODE) {
+        throw new Error(`Define: cannot redefine anon op "${name}"`);
       }
       throw new Error(`Define: cannot redefine user op "${name}"`);
     }
@@ -260,6 +260,14 @@ export class Engine {
     });
   }
 
+  private getNextAnonOp() {
+    let op = this.nextAnonOp++;
+    while (this.defs.has(BigInt(op))) {
+      op = this.nextAnonOp++;
+    }
+    return BigInt(op);
+  }
+
   private setup() {
     const encoder = new TextEncoder();
 
@@ -286,7 +294,7 @@ export class Engine {
       this.depth--;
       const [, m] = this.queuePop();
       const s: bigint[] = this.stack.splice(Number(m || 0)) || [];
-      const op = BigInt(this.nextAnonOp++);
+      const op = this.getNextAnonOp();
       this.defineUser(s, op);
       if (this.depth > 0) {
         this.push(0n);
@@ -483,7 +491,7 @@ export class Engine {
       const o = this.pop();
       const n = this.pop();
       const s: bigint[] = [0n, n, 1n, o];
-      const op = BigInt(this.nextAnonOp++);
+      const op = this.getNextAnonOp();
       this.defineUser(s, op);
       if (this.depth > 0) {
         this.push(0n);

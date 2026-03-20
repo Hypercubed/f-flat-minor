@@ -1,11 +1,14 @@
-import coreLib from "../../ff/lib/core.ff?raw";
+import ackLib from "../../ff/lib/ack.ffp?raw";
 import atanLib from "../../ff/lib/atan.ffp?raw";
 import cbrtLib from "../../ff/lib/cbrt.ffp?raw";
-import sqrtLib from "../../ff/lib/sqrt.ffp?raw";
+import coreLib from "../../ff/lib/core.ff?raw";
 import gcdLib from "../../ff/lib/gcd.ffp?raw";
-import ackLib from "../../ff/lib/ack.ffp?raw";
-import primesLib from "../../ff/lib/primes.ffp?raw";
 import primesEncoded from "../../ff/lib/primes-encoded.ff?raw";
+import primesLib from "../../ff/lib/primes.ffp?raw";
+import seqLib from "../../ff/lib/seq.ffp?raw";
+import sqrtLib from "../../ff/lib/sqrt.ffp?raw";
+import testingLib from "../../ff/lib/testing.ffp?raw";
+
 import factExample from "../../ff/fact.ffp?raw";
 import fizzbuzzExample from "../../ff/fizzbuzz.ffp?raw";
 import bottlesExample from "../../ff/99bottles.ffp?raw";
@@ -49,14 +52,16 @@ const EXAMPLE_ENTRIES: ExampleEntry[] = [
 ];
 
 const LIBRARY_FILES = {
-  "/lib/core.ff": coreLib,
+  "/lib/ack.ffp": ackLib,
   "/lib/atan.ffp": atanLib,
   "/lib/cbrt.ffp": cbrtLib,
-  "/lib/sqrt.ffp": sqrtLib,
+  "/lib/core.ff": coreLib,
   "/lib/gcd.ffp": gcdLib,
-  "/lib/ack.ffp": ackLib,
-  "/lib/primes.ffp": primesLib,
   "/lib/primes-encoded.ff": primesEncoded,
+  "/lib/primes.ffp": primesLib,
+  "/lib/seq.ffp": seqLib,
+  "/lib/sqrt.ffp": sqrtLib,
+  "/lib/testing.ffp": testingLib
 } satisfies VirtualFiles;
 
 export const EXAMPLES: Record<string, string> = Object.fromEntries(

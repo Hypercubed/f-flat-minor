@@ -4,6 +4,7 @@
 
 0 'cons' prints
   ¶ 0 eval depth 1 assert_eq
+  ¶ 4 [ ] cons eval 4 assert_eq
   ¶ 4 0 cons eval 4 assert_eq
   ¶ 1 [ 2 + ] cons eval 3 assert_eq
   ¶ 4 [ dup * ] cons eval 16 assert_eq
