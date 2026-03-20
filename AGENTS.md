@@ -58,6 +58,7 @@ chomp test:deno
 
 - Language examples and tutorials: `docs/fbm-by-example.md`
 - Stack effect notation standard: `docs/stack-notation.md`
+- Core words and their stack effects: `docs/core-vocabulary.md`
 
 ## Deno Implementation Notes
 
