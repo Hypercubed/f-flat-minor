@@ -17,7 +17,7 @@ export const TUTORIAL_PROBLEMS: TutorialProblem[] = [
     title: "Square",
     goal: "Define `square` and print the square of one number.",
     concepts: ["definitions", "dup", "*", "putn", "cr"],
-    source: String.raw`.load /lib/core.ff
+    source: String.raw`.load /lib/prelude.ffp
 
 square: dup * ;
 
@@ -32,7 +32,7 @@ square: dup * ;
     title: "Print a Message and a Value",
     goal: "Print a short literal message followed by a computed number.",
     concepts: ["strings", "prints", "definitions", "putn", "cr"],
-    source: String.raw`.load /lib/core.ff
+    source: String.raw`.load /lib/prelude.ffp
 
 square: dup * ;
 
@@ -48,7 +48,7 @@ square: dup * ;
     title: "Absolute Value",
     goal: "Build an absolute-value word and show it on a negative input.",
     concepts: ["comparisons", "?", "arithmetic", "small helper words"],
-    source: String.raw`.load /lib/core.ff
+    source: String.raw`.load /lib/prelude.ffp
 
 my-abs: dup 0 < [ -1 * ] ? ;
 
@@ -63,7 +63,7 @@ my-abs: dup 0 < [ -1 * ] ? ;
     title: "Even?",
     goal: "Return `1` for even numbers and `0` for odd ones.",
     concepts: ["%", "=", "booleans", "reusable predicates"],
-    source: String.raw`.load /lib/core.ff
+    source: String.raw`.load /lib/prelude.ffp
 
 my-even?: 2 % 0 = ;
 
@@ -78,7 +78,7 @@ my-even?: 2 % 0 = ;
     title: "Countdown",
     goal: "Print the numbers from `n` down to `0`.",
     concepts: ["recursion", "branch", "output", "base cases"],
-    source: String.raw`.load /lib/core.ff
+    source: String.raw`.load /lib/prelude.ffp
 
 countdown:
   dup putn
@@ -99,7 +99,7 @@ countdown:
     title: "Sum 1..n",
     goal: "Sum every integer from `1` through `n`.",
     concepts: ["recursion", "+", "implicit base cases"],
-    source: String.raw`.load /lib/core.ff
+    source: String.raw`.load /lib/prelude.ffp
 
 sum-to:
   dup
@@ -118,7 +118,7 @@ sum-to:
     title: "Factorial",
     goal: "Compute `n!`.",
     concepts: ["recursion", "branch", "multiplication"],
-    source: String.raw`.load /lib/core.ff
+    source: String.raw`.load /lib/prelude.ffp
 
 fact: dup [ dup -- fact * ] [ drop 1 ] branch ;
 
@@ -133,7 +133,7 @@ fact: dup [ dup -- fact * ] [ drop 1 ] branch ;
     title: "Fibonacci",
     goal: "Compute the nth Fibonacci number.",
     concepts: ["two recursive calls", "base cases", "stack reuse"],
-    source: String.raw`.load /lib/core.ff
+    source: String.raw`.load /lib/prelude.ffp
 
 fib: dup 2 < [ ] [ -- dup fib swap -- fib + ] branch ;
 
@@ -148,7 +148,7 @@ fib: dup 2 < [ ] [ -- dup fib swap -- fib + ] branch ;
     title: "GCD",
     goal: "Find the greatest common divisor of two integers.",
     concepts: ["Euclid's algorithm", "%", "recursion", "tuck"],
-    source: String.raw`.load /lib/core.ff
+    source: String.raw`.load /lib/prelude.ffp
 
 gcd: dup [ tuck % gcd ] [ drop ] branch ;
 
@@ -163,7 +163,7 @@ gcd: dup [ tuck % gcd ] [ drop ] branch ;
     title: "Reverse Digits",
     goal: "Reverse the decimal digits of a positive integer.",
     concepts: ["divrem", "queue helpers", "accumulators", "recursion"],
-    source: String.raw`.load /lib/core.ff
+    source: String.raw`.load /lib/prelude.ffp
 
 rev-step:
   over
@@ -185,7 +185,7 @@ reverse-digits: 0 rev-step ;
     title: "Numeric Palindrome",
     goal: "Test whether a number reads the same forward and backward.",
     concepts: ["helper reuse", "=", "decomposition by digits"],
-    source: String.raw`.load /lib/core.ff
+    source: String.raw`.load /lib/prelude.ffp
 
 rev-step:
   over
@@ -208,7 +208,7 @@ palindrome?: dup reverse-digits = ;
     title: "FizzBuzz",
     goal: "Print the FizzBuzz sequence from `1` to `n`.",
     concepts: ["nested branching", "%", "recursion", "visible output"],
-    source: String.raw`.load /lib/core.ff
+    source: String.raw`.load /lib/prelude.ffp
 
 fizzbuzz-line:
   dup 15 % 0 =
@@ -259,7 +259,7 @@ FizzBuzz`,
     title: "Collatz Step Count",
     goal: "Count how many Collatz steps it takes to reach `1`.",
     concepts: ["helper words", "branching", "recursive counting"],
-    source: String.raw`.load /lib/core.ff
+    source: String.raw`.load /lib/prelude.ffp
 
 next-collatz: dup even? [ 2 / ] [ 3 * 1 + ] branch ;
 collatz-steps: dup 1 > [ next-collatz collatz-steps ++ ] [ drop 0 ] branch ;
@@ -288,7 +288,7 @@ collatz-steps: dup 1 > [ next-collatz collatz-steps ++ ] [ drop 0 ] branch ;
     title: "Pascal Row",
     goal: "Print one row of Pascal's triangle.",
     concepts: ["recursion", "formatting", "nck"],
-    source: String.raw`.load /lib/core.ff
+    source: String.raw`.load /lib/prelude.ffp
 
 print-entry:
   dup 0 > [ sp ] ?

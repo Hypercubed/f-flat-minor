@@ -50,7 +50,6 @@ export function mountApp(root: HTMLElement) {
   const preprocessed = requireElement<HTMLElement>(root, "#preprocessed");
   const ir = requireElement<HTMLElement>(root, "#ir");
   const bytecode = requireElement<HTMLElement>(root, "#bytecode");
-  const detailTools = requireElement<HTMLElement>(root, "#detail-tools");
   const replCommand = requireElement<HTMLInputElement>(root, "#repl-command");
   const replReset = requireElement<HTMLButtonElement>(root, "#repl-reset");
   const replOutput = requireElement<HTMLElement>(root, "#repl-output");
@@ -95,6 +94,8 @@ export function mountApp(root: HTMLElement) {
   }
 
   function setTab(name: string) {
+    document.body.dataset.mode = name;
+
     tabs.forEach((tab) => {
       const active = tab.dataset.tab === name;
       tab.classList.toggle("is-active", active);
@@ -116,8 +117,6 @@ export function mountApp(root: HTMLElement) {
       const active = panel.dataset.detailPanel === name;
       panel.classList.toggle("is-active", active);
     });
-
-    detailTools.hidden = !(name === "ir" || name === "bytecode");
   }
 
   tabs.forEach((tab) => {
@@ -125,6 +124,8 @@ export function mountApp(root: HTMLElement) {
       setTab(tab.dataset.tab ?? "playground");
     });
   });
+
+  setTab("playground");
 
   detailTabs.forEach((tab) => {
     tab.addEventListener("click", () => {

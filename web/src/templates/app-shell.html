@@ -16,10 +16,10 @@
   </section>
 
   <nav class="mode-tabs" aria-label="Application modes">
-    <button class="mode-tab is-active" data-tab="playground">Playground</button>
-    <button class="mode-tab" data-tab="repl">REPL</button>
-    <button class="mode-tab" data-tab="tutorial">Tutorial</button>
-    <button class="mode-tab" data-tab="help">Help</button>
+    <button class="mode-tab mode-tab--playground is-active" data-tab="playground">Playground</button>
+    <button class="mode-tab mode-tab--repl" data-tab="repl">REPL</button>
+    <button class="mode-tab mode-tab--tutorial" data-tab="tutorial">Tutorial</button>
+    <button class="mode-tab mode-tab--help" data-tab="help">Help</button>
   </nav>
 
   <section class="tab-panel is-active" data-panel="playground">
@@ -44,12 +44,16 @@
             <input id="stdin" type="text" placeholder="Optional input for getc" />
           </label>
           <div class="actions">
+            <label class="toggle optimize-toggle">
+              <input id="optimize" type="checkbox" checked />
+              <span>Optimize</span>
+            </label>
             <button id="run" class="primary">Run Program</button>
           </div>
         </div>
       </div>
 
-      <div class="panel">
+      <div class="panel details-panel-shell">
         <div class="panel-header">
           <div>
             <p class="panel-label">Inspect</p>
@@ -62,12 +66,6 @@
           <button class="subtab" data-detail-tab="preprocessed">Expanded Source</button>
           <button class="subtab" data-detail-tab="ir">IR</button>
           <button class="subtab" data-detail-tab="bytecode">Bytecode</button>
-        </div>
-        <div id="detail-tools" class="detail-tools" hidden>
-          <label class="toggle">
-            <input id="optimize" type="checkbox" checked />
-            <span>Optimize</span>
-          </label>
         </div>
         <div class="detail-panels">
           <pre id="output" class="console detail-panel is-active" data-detail-panel="output"></pre>
