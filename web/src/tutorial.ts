@@ -117,7 +117,7 @@ function renderTutorialShell() {
           <p class="eyebrow">Starter Problems</p>
           <h2>Fifteen runnable lessons, already loaded with working code.</h2>
           <p>
-            These cards mirror the completed starter set in <code>docs/ffm-starter-problems.md</code>.
+            These cards mirror the completed starter set in <code>_docs/ffm-starter-problems.md</code>.
             Each one starts with the full solution snippet from the doc, so you can run it immediately,
             edit it safely, and compare the result against the expected output guidance.
           </p>

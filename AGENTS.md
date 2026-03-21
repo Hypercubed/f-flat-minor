@@ -60,10 +60,10 @@ chomp test:deno
 
 ## Documentation
 
-- Language examples and tutorials: `docs/fbm-by-example.md`
-- Stack effect notation standard: `docs/stack-notation.md`
-- Core words and their stack effects: `docs/core-vocabulary.md`
-
+- Language examples and tutorials: `_docs/fbm-by-example.md`
+- Stack effect notation standard: `_docs/stack-notation.md`
+- Core words and their stack effects: `_docs/core-vocabulary.md`
+_
 ## Deno Implementation Notes
 
 For Deno-specific usage, tasks, CLI entrypoints, and implementation notes, see `deno/README.md`.
@@ -86,3 +86,11 @@ Use these when the task involves:
 - General f-flat-minor coding in `.ff` and `.ffp` files
 - Refactoring reusable words into `ff/lib/*.ffp`
 - Wiring examples/libs into the web playground
+
+## Plans
+
+`_plans` contains deferred implementation plans — work that has been scoped and decided but not yet
+implemented. Before starting any implementation task, check whether a relevant
+plan exists here.
+
+See `.agent/skills/plans/SKILL.md` for how to read, create, and update plan files.

@@ -43,7 +43,7 @@ Practical preprocessing pipelines from `README.md`:
 ## Authoring workflow
 
 1. Write the target stack effect before implementing a word.
-- Use the standard notation from `docs/stack-notation.md`:
+- Use the standard notation from `_docs/stack-notation.md`:
 ```ff
 /* n ! == n! */
 /* a [B] dip == b* a */
@@ -99,5 +99,5 @@ node node/bin/ff-run.ts -t <file>.ffp
 
 ## Reference
 
-- Language examples: `docs/fbm-by-example.md`
-- Stack notation: `docs/stack-notation.md`
+- Language examples: `_docs/fbm-by-example.md`
+- Stack notation: `_docs/stack-notation.md`
