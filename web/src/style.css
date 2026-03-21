@@ -878,3 +878,173 @@ button:hover {
     width: 100%;
   }
 }
+
+/* Clickable stack values */
+.repl-stack-row {
+  cursor: pointer;
+  transition: background-color 120ms ease;
+}
+
+.repl-stack-row:hover {
+  background: rgba(187, 77, 29, 0.08);
+}
+
+.repl-stack-row:active {
+  background: rgba(187, 77, 29, 0.15);
+}
+
+/* Inspect panel */
+.repl-inspect-panel {
+  flex: 0 0 auto;
+  max-height: 0;
+  overflow: hidden;
+  border: 1px solid rgba(32, 22, 17, 0.15);
+  border-radius: 12px;
+  background: var(--panel-strong);
+  transition: max-height 250ms ease, padding 250ms ease, margin 250ms ease;
+  margin: 0;
+  padding: 0;
+}
+
+.repl-inspect-panel.is-visible {
+  max-height: 300px;
+  margin-top: 0.5rem;
+  padding: 0.75rem;
+  overflow-y: auto;
+}
+
+.repl-inspect-header {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  margin-bottom: 0.5rem;
+  padding-bottom: 0.5rem;
+  border-bottom: 1px solid rgba(32, 22, 17, 0.1);
+}
+
+.inspect-back {
+  min-height: 28px;
+  padding: 0.3rem 0.7rem;
+  font-size: 0.8rem;
+  border-radius: 6px;
+  background: transparent;
+  border: 1px solid rgba(32, 22, 17, 0.2);
+  color: var(--ink);
+  cursor: pointer;
+}
+
+.inspect-back:disabled {
+  opacity: 0.4;
+  cursor: not-allowed;
+}
+
+.inspect-title {
+  font-size: 0.8rem;
+  font-weight: 600;
+  color: var(--muted);
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+}
+
+.repl-inspect-content {
+  font-family: "Iosevka", "Cascadia Code", "SFMono-Regular", monospace;
+  font-size: 0.9rem;
+}
+
+.inspect-placeholder {
+  color: var(--muted);
+  font-style: italic;
+  padding: 1rem 0;
+  text-align: center;
+}
+
+.inspect-header {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  margin-bottom: 0.5rem;
+}
+
+.inspect-value {
+  font-size: 1.1rem;
+  font-weight: 600;
+  color: var(--accent);
+}
+
+.inspect-name {
+  color: var(--ink);
+  font-weight: 500;
+}
+
+.inspect-tags {
+  margin-bottom: 0.75rem;
+}
+
+.inspect-tag {
+  display: inline-block;
+  padding: 0.2rem 0.6rem;
+  border-radius: 999px;
+  font-size: 0.75rem;
+  font-weight: 500;
+}
+
+.inspect-tag.system {
+  background: rgba(23, 105, 93, 0.15);
+  color: var(--accent-2);
+}
+
+.inspect-tag.user {
+  background: rgba(187, 77, 29, 0.15);
+  color: var(--accent);
+}
+
+.inspect-label {
+  color: var(--muted);
+  font-size: 0.75rem;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  margin-bottom: 0.35rem;
+}
+
+.inspect-note {
+  color: var(--muted);
+  font-size: 0.85rem;
+  font-style: italic;
+  padding: 0.5rem 0;
+}
+
+.inspect-definition {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.35rem;
+  padding: 0.6rem;
+  background: rgba(32, 22, 17, 0.04);
+  border-radius: 8px;
+  line-height: 1.6;
+}
+
+.inspect-token {
+  padding: 0.15rem 0.4rem;
+  border-radius: 4px;
+  transition: background-color 120ms ease;
+}
+
+.inspect-token.token-literal {
+  color: var(--accent);
+  background: rgba(187, 77, 29, 0.08);
+}
+
+.inspect-token.token-call {
+  color: var(--accent-2);
+  background: rgba(23, 105, 93, 0.08);
+}
+
+.inspect-token.token-call.inspectable {
+  cursor: pointer;
+  text-decoration: underline;
+  text-decoration-style: dotted;
+}
+
+.inspect-token.token-call.inspectable:hover {
+  background: rgba(23, 105, 93, 0.18);
+}

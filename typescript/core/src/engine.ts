@@ -15,6 +15,30 @@ const IMMEDIATE_WORDS = [
 const Q_LITERAL = 0n;
 const Q_CALL = 1n;
 
+export interface InspectableToken {
+  /** The bigint value */
+  value: bigint;
+  /** The tag (0 = literal, 1 = call) */
+  tag: bigint;
+  /** Display name if known */
+  name: string | undefined;
+  /** Whether this is a call vs literal */
+  isCall: boolean;
+}
+
+export interface ValueInspection {
+  /** The raw value being inspected */
+  value: bigint;
+  /** The symbol name if known */
+  name: string | undefined;
+  /** Whether this is a system word (opcode 0-255) */
+  isSystem: boolean;
+  /** Whether this value has a definition */
+  isDefined: boolean;
+  /** The definition as inspectable tokens for user words/quotes */
+  definition: InspectableToken[] | undefined;
+}
+
 export class Engine {
   static fromBase64(encoded: string): bigint[] {
     return decode(encoded)
@@ -243,6 +267,47 @@ export class Engine {
 
   getName(op: bigint, def = String(op)): string {
     return this.symbols.has(op) ? this.symbols.get(op)! : String(def);
+  }
+
+  /**
+   * Inspect a value to determine if it's a known word and get its definition.
+   * Definitions are returned as tokens that can be recursively inspected.
+   */
+  inspectValue(value: bigint): ValueInspection {
+    const name = this.symbols.get(value);
+    const isSystem = value >= 0n && value < BigInt(MAX_SYSTEM_OP_CODE);
+    const def = this.defs.get(value);
+    const isDefined = def !== undefined;
+    
+    // Parse definition into inspectable tokens if it's a user-defined word
+    let definition: InspectableToken[] | undefined;
+    if (Array.isArray(def)) {
+      definition = this.parseDefinitionTokens(def);
+    }
+    
+    return { value, name, isSystem, isDefined, definition };
+  }
+  
+  /**
+   * Parse a definition array into inspectable tokens.
+   * Definition arrays are in queue format: [tag, value, tag, value, ...]
+   */
+  private parseDefinitionTokens(def: bigint[]): InspectableToken[] {
+    const tokens: InspectableToken[] = [];
+    for (let i = 0; i < def.length; i += 2) {
+      const tag = def[i] ?? 0n;
+      const value = def[i + 1] ?? 0n;
+      const isCall = tag === Q_CALL;
+      const tokenName = isCall ? this.symbols.get(value) : undefined;
+      
+      tokens.push({
+        value,
+        tag,
+        name: tokenName,
+        isCall,
+      });
+    }
+    return tokens;
   }
 
   print() {

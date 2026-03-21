@@ -102,6 +102,18 @@
             </div>
             <ol id="repl-stack" class="repl-stack-list" aria-label="Current stack values"></ol>
           </section>
+          
+          <!-- Inspect panel for viewing word definitions -->
+          <section class="repl-inspect-panel" id="repl-inspect">
+            <div class="repl-inspect-header">
+              <button id="repl-inspect-back" class="inspect-back" disabled>← Back</button>
+              <span class="inspect-title">Inspector</span>
+            </div>
+            <div id="repl-inspect-content" class="repl-inspect-content">
+              <div class="inspect-placeholder">Click a stack value to inspect</div>
+            </div>
+          </section>
+          
           <label class="field repl-input-field" for="repl-command">
             <input id="repl-command" type="text" autocomplete="off" placeholder="Type code and press Enter" />
           </label>

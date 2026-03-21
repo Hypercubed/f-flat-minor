@@ -6,6 +6,8 @@ import appShellTemplate from "./templates/app-shell.html?raw";
 import helpTemplate from "./templates/help.html?raw";
 import { mountTutorial } from "./tutorial.ts";
 import { decodeCodeFromUrlParam, encodeCodeForUrlParam } from "./url-codec.ts";
+import type { ValueInspection } from "../../typescript/core/src/engine.ts";
+import type { StackItem } from "./repl-session.ts";
 
 function escapeHtml(value: string): string {
   return value
@@ -54,6 +56,9 @@ export function mountApp(root: HTMLElement) {
   const replOutput = requireElement<HTMLElement>(root, "#repl-output");
   const replStack = requireElement<HTMLElement>(root, "#repl-stack");
   const replDepth = requireElement<HTMLElement>(root, "#repl-depth");
+  const replInspect = requireElement<HTMLElement>(root, "#repl-inspect");
+  const replInspectBack = requireElement<HTMLButtonElement>(root, "#repl-inspect-back");
+  const replInspectContent = requireElement<HTMLElement>(root, "#repl-inspect-content");
   const tutorialRoot = requireElement<HTMLElement>(root, "#tutorial-root");
 
   const tabs = Array.from(root.querySelectorAll<HTMLButtonElement>(".mode-tab"));
@@ -194,9 +199,11 @@ export function mountApp(root: HTMLElement) {
   ];
   const replHistory: string[] = [];
   let replHistoryIndex = -1;
+  const inspectHistory: ValueInspection[] = [];
+  let inspectCurrentIndex = -1;
   let stackErrorTimer: number | undefined;
 
-  function renderReplStack(stack: string[]) {
+  function renderReplStack(stack: StackItem[]) {
     replDepth.textContent = `depth: ${stack.length}`;
 
     if (!stack.length) {
@@ -207,10 +214,10 @@ export function mountApp(root: HTMLElement) {
 
     replStack.innerHTML = stack
       .map(
-        (value, depth) => `
-          <li class="repl-stack-row">
-            <span class="repl-stack-index">${stack.length - depth - 1}:</span>
-            <code class="repl-stack-value">${escapeHtml(value)}</code>
+        (item) => `
+          <li class="repl-stack-row" data-value="${escapeHtml(item.value)}">
+            <span class="repl-stack-index">${item.index}:</span>
+            <code class="repl-stack-value">${escapeHtml(item.value)}</code>
           </li>
         `,
       )
@@ -263,6 +270,72 @@ export function mountApp(root: HTMLElement) {
     renderReplTranscript();
     replCommand.value = "";
     replCommand.focus();
+  }
+
+  function renderInspectPanel(info: ValueInspection, showBack: boolean = false) {
+    const parts: string[] = [];
+
+    // Header with value and name
+    parts.push(`<div class="inspect-header">`);
+    parts.push(`<code class="inspect-value">${escapeHtml(String(info.value))}</code>`);
+    if (info.name) {
+      parts.push(`<span class="inspect-name">${escapeHtml(info.name)}</span>`);
+    }
+    parts.push(`</div>`);
+
+    // Tags
+    const tags: string[] = [];
+    if (info.isSystem) tags.push(`<span class="inspect-tag system">system</span>`);
+    else if (info.isDefined) tags.push(`<span class="inspect-tag user">user-defined</span>`);
+
+    if (tags.length) {
+      parts.push(`<div class="inspect-tags">${tags.join("")}</div>`);
+    }
+
+    // Definition with clickable tokens
+    if (info.definition && info.definition.length > 0) {
+      parts.push(`<div class="inspect-label">Definition:</div>`);
+      parts.push(`<div class="inspect-definition">`);
+
+      for (const token of info.definition) {
+        const display = token.name ?? String(token.value);
+        const tokenClass = token.isCall ? "token-call" : "token-literal";
+        const inspectable = token.isCall ? "inspectable" : "";
+
+        parts.push(
+          `<span class="inspect-token ${tokenClass} ${inspectable}" ` +
+            `data-value="${escapeHtml(String(token.value))}" ` +
+            `title="${token.isCall ? "Click to inspect" : "Literal value"}">` +
+            `${escapeHtml(display)}` +
+            `</span>`,
+        );
+      }
+
+      parts.push(`</div>`);
+    } else if (!info.isSystem && !info.isDefined) {
+      parts.push(`<div class="inspect-note">Plain value (not a word)</div>`);
+    }
+
+    replInspectContent.innerHTML = parts.join("");
+    replInspectBack.disabled = !showBack;
+    replInspect.classList.add("is-visible");
+  }
+
+  function pushInspection(info: ValueInspection) {
+    // Truncate forward history if we're not at the end
+    if (inspectCurrentIndex < inspectHistory.length - 1) {
+      inspectHistory.splice(inspectCurrentIndex + 1);
+    }
+    inspectHistory.push(info);
+    inspectCurrentIndex++;
+    renderInspectPanel(info, inspectHistory.length > 1);
+  }
+
+  function goBack() {
+    if (inspectCurrentIndex > 0) {
+      inspectCurrentIndex--;
+      renderInspectPanel(inspectHistory[inspectCurrentIndex], inspectCurrentIndex > 0);
+    }
   }
 
   example.addEventListener("change", () => {
@@ -321,6 +394,37 @@ export function mountApp(root: HTMLElement) {
     renderReplTranscript();
     replCommand.value = "";
     replCommand.focus();
+  });
+
+  // Stack click handler for inspection
+  replStack.addEventListener("click", (event) => {
+    const row = (event.target as HTMLElement).closest(".repl-stack-row");
+    if (!row) return;
+
+    const valueStr = row.getAttribute("data-value");
+    if (!valueStr) return;
+
+    const info = replSession.inspectValue(valueStr);
+    inspectHistory.length = 0; // Clear history on new root inspection
+    inspectCurrentIndex = -1;
+    pushInspection(info);
+  });
+
+  // Definition token click handler for nested inspection
+  replInspectContent.addEventListener("click", (event) => {
+    const token = (event.target as HTMLElement).closest(".inspect-token.inspectable");
+    if (!token) return;
+
+    const valueStr = token.getAttribute("data-value");
+    if (!valueStr) return;
+
+    const info = replSession.inspectValue(valueStr);
+    pushInspection(info);
+  });
+
+  // Back button handler
+  replInspectBack.addEventListener("click", () => {
+    goBack();
   });
 
   void renderPlayground();

@@ -1,12 +1,18 @@
 import { Compiler, Engine, Preprocessor } from "../../typescript/core/src/mod.ts";
+import type { ValueInspection } from "../../typescript/core/src/engine.ts";
 
 import { createVirtualFiles } from "./examples.ts";
 import { createBrowserPlatform, createPreprocessHost, type VirtualFiles } from "./runtime.ts";
 
+export interface StackItem {
+  value: string;
+  index: number;
+}
+
 export interface ReplResult {
   output: string;
   logs: string[];
-  stack: string[];
+  stack: StackItem[];
   error?: string;
   clearTranscript?: boolean;
 }
@@ -58,6 +64,18 @@ export class ReplSession {
     this.execute(".load /lib/core.ff");
   }
 
+  inspectValue(valueStr: string): ValueInspection {
+    const value = BigInt(valueStr);
+    return this.engine.inspectValue(value);
+  }
+
+  private createStackItems(): StackItem[] {
+    return this.engine.getStack().map((value, index) => ({
+      value: String(value),
+      index,
+    }));
+  }
+
   execute(line: string): ReplResult {
     const trimmed = line.trim();
     const logs: string[] = [];
@@ -66,7 +84,7 @@ export class ReplSession {
       return {
         output: "",
         logs,
-        stack: this.engine.getStack().map(String),
+        stack: this.createStackItems(),
       };
     }
 
@@ -76,7 +94,7 @@ export class ReplSession {
         output: "Session reset. Core library reloaded.",
         clearTranscript: true,
         logs,
-        stack: this.engine.getStack().map(String),
+        stack: this.createStackItems(),
       };
     }
 
@@ -85,7 +103,7 @@ export class ReplSession {
         output: "Transcript cleared.",
         clearTranscript: true,
         logs,
-        stack: this.engine.getStack().map(String),
+        stack: this.createStackItems(),
       };
     }
 
@@ -93,7 +111,7 @@ export class ReplSession {
       return {
         output: "Browser REPL sessions stay open. Use .reset to clear state.",
         logs,
-        stack: this.engine.getStack().map(String),
+        stack: this.createStackItems(),
       };
     }
 
@@ -110,13 +128,13 @@ export class ReplSession {
         return {
           output: this.output,
           logs,
-          stack: this.engine.getStack().map(String),
+          stack: this.createStackItems(),
         };
       } catch (error) {
         return {
           output: this.output,
           logs,
-          stack: this.engine.getStack().map(String),
+          stack: this.createStackItems(),
           error: error instanceof Error ? error.message : String(error),
         };
       }
