@@ -30,7 +30,6 @@ sipd: q< sip q> ; .inline /* a [B] c sipd == a b* a c */
 bi: q< over q< eval q> q> dig q< eval q> swap ; .inline /* a [B] [C] bi == b c */
 bi2: q< q< dup2 q> eval bury q> eval ; .inline /* a b [C] [D] bi2 == c d */
 
-
 /* inquisitive */
 
 not: 0 = ; /* flag not == flag' */
@@ -91,30 +90,6 @@ seq: swap times ; /* a n [B] seq == a b* */
 
 range: dupd swap - [ succ ] seq ; /* a b range == a..b */
 count: 0 swap ++ [ succ ] seq drop ; /* n count == 1..n */
-
-/* stack reduction */
-tail!: q< clr q> ; /* .. a tail! == a */
-head!: [ drop ] reduce! ; /* a+ head! == a */
-
-_reduce_r: depth 3 > [ dup slip _reduce_r ] ? ; /* a b+ [C] _reduce_r == a c [C] */
-reduce_r!: _reduce_r eval ; /* a+ [B] reduce_r! == r */
-foldr!: pushtop reduce_r! ; /* a* [B] z foldr! == r */
-
-_reduce_l: depth 3 > [ swap q< _reduce_l dup slip q> swap ] ? ; /* a+ b [C] _reduce_l == c b [C] */
-reduce_l!: _reduce_l eval ; /* a+ [B] reduce_l! == r */
-foldl!: pushtop reduce_l! ; /* a* [B] z foldl! == r */
-
-_map: depth 2 > [ swap q< _map dup slip q> swap ] ? ; /* a* b [C] _map == c* b [C] */
-map!: _map eval ; /* a* [B] map! == b* */
-
-_filter: depth 2 > [ swap q< _filter over over eval not [ nip ] ? q> swap ] ? ; /* a* b [C] _filter == a'* b [C] */
-filter!: _filter dupd eval not [ drop ] ? ; /* a* [B] filter! == a* */
-
-reduce!: depth 2 - times ; /* a+ [B] reduce! == r */
-
-sum!: depth 1 > [ + sum! ] ? ; /* .. sum! == n */
-product!: depth 1 > [ * product! ] ? ; /* .. product! == n */
-reverse!: depth 1 > [ q< reverse! q> pushtop ] ? ; /* .. reverse! == ..' */
 
 /* math */
 negitive?: 0 < ; /* n negitive? == flag */

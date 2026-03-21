@@ -10,7 +10,7 @@ BLUE = '\033[0;34m'
 CHECK = 'printf "  ${GRN}OK${NC} " || printf "  ${RED}FAIL${NC} "'
 BIN = './execute.rb'
 NC = '\033[0m'
-PP = '../deno/build/preprocess'
+PP = '../deno/build/ff-preprocess'
 
 [[task]]
 name = 'build-deno-preprocess'
@@ -36,7 +36,7 @@ display = 'none'
 name = 'ff'
 deps = [
     '../ff/##.out',
-    '../deno/build/preprocess',
+    '../deno/build/ff-preprocess',
 ]
 serial = true
 invalidation = 'always'

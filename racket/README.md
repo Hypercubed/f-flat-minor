@@ -6,7 +6,19 @@ This library implements [f-flat-minor](../README.md) in Racket.
 
 First [install Racket](https://docs.racket-lang.org/getting-started/index.html).
 
-In this directory (./racket) run `raco pkg install`.  After setup finishes, you will be able to use _F♭m_ with `#lang ff`.
+In this directory (`./racket`) run:
+
+```sh
+chomp setup
+```
+
+This installs the Racket package dependencies and links the local `ff` package into your Racket environment. After setup finishes, you will be able to use _F♭m_ with `#lang ff`.
+
+If you prefer to run the underlying Racket command directly, `chomp setup` runs:
+
+```sh
+raco pkg install --auto --skip-installed .
+```
 
 ## Usage as a language
 

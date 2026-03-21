@@ -3,20 +3,19 @@
 0 'Compiled\sAt:\s' prints
 
 .m clock
-prints cr clr
+putn cr clr
 
 0 'Started\sAt:\s' prints
 
-clock dup prints cr
+clock dup putn cr
 
 1000 ! drop
 
 0 'Ended\sAt:\s' prints
 
-clock dup prints cr
+clock dup putn cr
 
 0 'Difference:\s' prints
 
-swap - prints
-
+swap - putn
 0 '\sms' println

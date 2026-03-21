@@ -1,0 +1,16 @@
+[tools]
+"cargo:hyperfine" = "latest"
+"cargo:mdsh" = "latest"
+dart = { version = "latest", url = "https://storage.googleapis.com/dart-archive/channels/stable/release/{{ version }}/sdk/dartsdk-{{ os() }}-{{ arch() }}-release.zip", version_list_url = "https://storage.googleapis.com/storage/v1/b/dart-archive/o?prefix=channels/stable/release/&delimiter=/", version_regex = 'channels/stable/release/(\d+\.\d+\.\d+)/' }
+deno = "2.7.5"
+ghc = "latest"
+go = "latest"
+hyperfine = "latest"
+node = "24.14.0"
+"npm:chomp" = "latest"
+rust = "latest"
+wasmtime = "latest"
+
+[tasks.readme]
+# mise run readme
+run = "mdsh"

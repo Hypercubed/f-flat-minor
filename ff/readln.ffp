@@ -1,8 +1,9 @@
-.load ./lib/core.ff
+.import ./lib/core.ff
+.import ./lib/seq.ffp
 
 readch: getc dup putc dup 13 != [ readch ] ? ;
 readln: readch drop ;
 
-0 'Enter\sYour\sName: ' println
+0 'Enter\sYour\sName:\s' println
 
-0 ( readln reverse ) 'Hello,\s' . println
+0 ( readln reverse! ) 'Hello,\s' . println

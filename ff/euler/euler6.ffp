@@ -1,9 +1,10 @@
-.load ../lib/core.ff
+.import ../lib/core.ff
+.import ../lib/seq.ffp
 
 /* http://projecteuler.net/index.php?section=problems&id=5 */
 
 sum-of-squares: [ sqr + ] 0 foldl! ;
-square-of-sum: sum sqr ;
+square-of-sum: sum! sqr ;
 
 100 count square-of-sum
 ( 100 count sum-of-squares ) - .

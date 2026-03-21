@@ -1,5 +1,6 @@
 .import ../lib/core.ff
 .import ../lib/primes.ffp
+.import ../lib/seq.ffp
 
 _factor_trial_loop: % 0 > [ next-prime _factor_trial_loop ] ? ;
 _factor_trial_by_division: 2 _trial_loop nip ;

@@ -1,0 +1,105 @@
+.import ../lib/core.ff
+.import ../lib/seq.ffp
+.import ../lib/testing.ffp
+
+0 'cons' prints
+  ¶ 0 eval depth 1 assert_eq
+  ¶ 4 [ ] cons eval 4 assert_eq
+  ¶ 4 0 cons eval 4 assert_eq
+  ¶ 1 [ 2 + ] cons eval 3 assert_eq
+  ¶ 4 [ dup * ] cons eval 16 assert_eq
+OK
+
+0 'unit' prints
+  ¶ 5 unit eval 5 assert_eq
+  ¶ 9 unit eval 1 + 10 assert_eq
+OK
+
+0 'stack' prints
+  1 2 3 stack depth 1 assert_eq clr
+  1 2 3 stack eval depth 3 assert_eq clr
+OK
+
+0 'in' prints
+  ¶ [ 2 3 + ] in depth 2 assert_eq clr
+  ¶ [ 2 3 + ] in eval 5 assert_eq clr
+OK
+
+0 'pair' prints
+  ¶ 1 2 pair depth 2 assert_eq clr
+  ¶ 1 2 pair eval + 3 assert_eq clr
+OK
+
+0 'compose' prints
+  ¶ [ 1 2 ] [ 3 4 ] compose depth 2 assert_eq clr
+  ¶ [ 1 2 ] [ 3 5 ] compose eval + + + 11 assert_eq clr
+  ¶ [ 1 ] [ 2 + ] compose depth 2 assert_eq clr
+  ¶ [ 1 ] [ 2 + ] compose eval 3 assert_eq clr
+  ¶ 3 [ 1 ] [ 2 + + ] compose eval 6 assert_eq clr
+OK
+
+0 'first' prints
+  ¶ [ 1 2 ] first 1 assert_eq
+  ¶ [ 3 5 8 ] first 3  assert_eq
+  ¶ [ 13 21 + ] first 34 assert_eq
+OK
+
+0 'last' prints
+  ¶ [ 1 2 ] last 2 assert_eq
+  ¶ [ 3 5 8 ] last 8  assert_eq
+  ¶ [ 13 21 + ] last 34 assert_eq
+OK
+
+0 'map' prints
+  ¶ [ 1 2 4 ] [ 2 * ] map depth 2 assert_eq
+  ¶ [ 1 2 4 ] [ 2 * ] map eval + + 14 assert_eq
+OK
+
+0 'foldr' prints
+  ¶ [ 1 2 3 ] 0 [+] foldr depth 2  assert_eq
+  ¶ [ 1 2 3 ] 0 [+] foldr 6 assert_eq
+OK
+
+0 'foldl' prints
+  ¶ [ 1 2 3 ] 0 [+] foldl depth 2  assert_eq
+  ¶ [ 1 2 3 ] 0 [+] foldl 6 assert_eq
+  ¶ [ 10 20 30 ] 0 [ drop 1 + ] foldl 3  assert_eq
+OK
+
+0 'length' prints
+  ¶ [ 1 2 3 ] length
+    depth 2 assert_eq
+    3 assert_eq
+  ¶ [ 10 20 30 40 ] length 4 assert_eq
+  ¶ [ 1 2 + 3 + 4 ] length 2 assert_eq
+OK
+
+0 'sum/product' prints
+  ¶ [ 1 2 3 ] sum depth 2 assert_eq
+  ¶ [ 5 8 13 21 ] sum 47 assert_eq
+  ¶ [ 1 2 3 ] product depth 2  assert_eq
+  ¶ [ 11 7 5 3 ] product 1155 assert_eq
+OK
+
+0 'reverse' prints
+  ¶ [ 1 2 3 ] reverse
+    depth 2 assert_eq
+    first 3 assert_eq
+  ¶ [ 5 8 13 21 ] reverse
+    dup first 21 assert_eq
+    last 5 assert_eq
+  ¶ [ 5 8 13 21 + ] reverse
+    dup first 34 assert_eq
+    last 5 assert_eq
+OK
+
+0 'filter' prints
+  ¶ [ 1 2 3 4 5 6 ] [even?] filter
+    depth 2 assert_eq
+    dup first 2 assert_eq
+    last 6 assert_eq
+  ¶ [ 1 2 3 4 5 6 ] [odd?] filter
+    depth 2 assert_eq
+    dup first 1 assert_eq
+    last 5 assert_eq
+OK

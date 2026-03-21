@@ -1,4 +1,5 @@
-.load ./lib/core.ff
+.import ./lib/core.ff
+.import ./lib/seq.ffp
 
 r$: q> swap q< ; .unsafe
 ->: q> -- r$ ; .unsafe

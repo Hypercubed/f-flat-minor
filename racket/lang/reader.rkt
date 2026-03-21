@@ -1,7 +1,13 @@
 #lang racket/base
 
-(require syntax/strip-context)
-(require ff/globals ff/private/parser ff/private/tokenizer ff/private/preprocess)
+(require racket/runtime-path
+         syntax/strip-context
+         "../globals.rkt"
+         "../private/parser.rkt"
+         "../private/tokenizer.rkt"
+         "../private/preprocess.rkt")
+
+(define-runtime-path ff-expander-path "../private/expander.rkt")
 
 (define (ff-read in)
   (syntax->datum
@@ -13,13 +19,14 @@
     (set! port (open-input-string code path))
   )
   (define s-exprs (parse port (make-tokenizer port path)))
-  (define module-datum `(module ff-mod ff/private/expander ,s-exprs))
+  (define module-datum
+    `(module ff-mod (file ,(path->string ff-expander-path)) ,s-exprs))
   (strip-context (datum->syntax #f module-datum)))
 
 (define (get-info port mod line col pos)
     (lambda (key default)
       (case key
-        [(module-language) "private/expander.rkt"]
+        [(module-language) (path->string ff-expander-path)]
         [else default])))
 
 (provide (rename-out [ff-read read]

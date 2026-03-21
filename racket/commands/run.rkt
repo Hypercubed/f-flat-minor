@@ -1,6 +1,10 @@
 #lang racket
 
-(require ff/globals ff/lang/runner)
+(require racket/runtime-path
+         "../globals.rkt"
+         "../lang/runner.rkt")
+
+(define-runtime-path globals-path "../globals.rkt")
 
 (define (ff-run-file filename)
   (define ns (make-base-namespace))
@@ -14,7 +18,8 @@
   ;;; eval module form in a namespace with racket/base
   (eval module-syntax ns)
 
-  (eval `(require ff/globals) ns)   
+  (parameterize ([current-namespace ns])
+    (namespace-require `(file ,(path->string globals-path))))
   (eval `(*trace* ',(*trace*)) ns)
 
   ;; require the module in the namespace to run it

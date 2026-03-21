@@ -4,4 +4,6 @@ assert: falsey? [ 0 10 'Failed' println .inline 1 exit ] ? ;
 assert_eq: = assert .inline ;
 assert_false: not assert .inline ;
 
-OK: 0 '\sOK' println ;
+OK: 0 '\sOK' println clr ;
+
+¶: clr 999 ;

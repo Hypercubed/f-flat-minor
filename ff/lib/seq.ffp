@@ -1,0 +1,42 @@
+.import ../lib/core.ff
+
+unit: 0 cons ;
+stack: depth 0 swap [cons] swap times ;
+in: [stack] dip dip [stack] dip dip ;
+pair: unit cons ;
+compose: [ [eval] dip eval ] cons cons ;
+
+_map: depth 2 > [ swap q< _map dup slip q> swap ] ? ;
+map!: _map eval ;
+
+reduce!: depth 2 - times ; /* a+ [B] reduce! == r */
+head!: [drop] reduce! ; /* a+ head! == a */
+tail!: q< clr q> ; /* .. a tail! == a */
+
+_reduce_r: depth 3 > [ dup slip _reduce_r ] ? ;
+reduce_r!: _reduce_r eval ; /* a+ [B] reduce_r! == r */
+foldr!: pushtop reduce_r! ;  /* a* [B] z foldr! == r */
+ 
+_reduce_l: depth 3 > [ swap q< _reduce_l dup slip q> swap ] ? ;
+reduce_l!: _reduce_l eval ; /* a+ [B] reduce_l! == r */
+foldl!: pushtop reduce_l! ; /* a* [B] z foldl! == r */
+
+reverse!: depth 1 > [ q< reverse! q> pushtop ] ? ;
+
+_filter: depth 2 > [ swap q< _filter over over eval not [nip] ? q> swap ] ? ;
+filter!: _filter dupd eval not [drop] ? ; /* a* [B] filter! == a* */
+
+map: [ map! ] cons compose in ;
+first: [ head! ] compose in eval ;
+last: [ tail! ] compose in eval ;
+foldr: [ swap foldr! ] cons cons compose in eval ;
+foldl: [ swap foldl! ] cons cons compose in eval ;
+reverse: [ reverse! ] compose in ;
+filter: [ filter! ] cons compose in ;
+
+sum!: [+] reduce! ; /* .. sum! == n */
+product!: [*] 1 reduce! ; /* .. product! == n */
+
+sum: 0 [+] foldr ; /* [A] sum == n */
+product: 1 [*] foldr ; /* [A] product == n */
+length: 0 [ drop 1 + ] foldl ; /* [A] length == n */

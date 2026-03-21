@@ -1,8 +1,8 @@
 #lang br/quicklang
 
-(require ff/globals ff/private/engine ff/private/ops)
+(require "../globals.rkt" "engine.rkt" "ops.rkt")
 (require (for-syntax racket/list))
-(require (for-syntax ff/globals ff/private/ops))
+(require (for-syntax "../globals.rkt" "ops.rkt"))
 
 (define-macro (module-begin . PARSE-TREE) #`(#%module-begin
   (run . PARSE-TREE)))

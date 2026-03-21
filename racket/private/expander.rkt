@@ -1,7 +1,7 @@
 #lang br/quicklang
 
-(require ff/private/engine ff/private/ops)
-(require (for-syntax ff/private/ops))
+(require "engine.rkt" "ops.rkt")
+(require (for-syntax "ops.rkt"))
 
 (define-macro (module-begin PARSE-TREE ...)
   #'(#%module-begin

@@ -3,7 +3,14 @@
 #lang racket/base
 
 (require racket/string racket/path)
-(require ff/globals ff/private/logger ff/lang/reader ff/private/preprocess ff/commands/run ff/commands/compile ff/commands/repl ff/commands/execute)
+(require "globals.rkt"
+         "private/logger.rkt"
+         "lang/reader.rkt"
+         "private/preprocess.rkt"
+         "commands/run.rkt"
+         "commands/compile.rkt"
+         "commands/repl.rkt"
+         "commands/execute.rkt")
 
 (provide read read-syntax get-info)
 (provide ff-eval ff-run-file ff-run-repl)

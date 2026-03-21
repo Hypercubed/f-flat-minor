@@ -1,6 +1,6 @@
 #lang racket/base
 
-(require ff/lang/runner)
+(require "../lang/runner.rkt")
 
 (define (ff-eval code [ns (make-base-namespace)] [path "."])
   (define port (open-input-string code))

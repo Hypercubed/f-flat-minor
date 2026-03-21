@@ -6,7 +6,7 @@ swap swap
 
 dup drop
 
-&+ eval
+[+] eval
 
 succ .inline
 

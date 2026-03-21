@@ -1,7 +1,3 @@
-# Core Vocabulary
-
-This table mirrors the `README.md` vocabulary reference and adds stack effects using the standard from [stack-notation.md](./stack-notation.md).
-
 | Mnemonic | Syntax | Stack Effect                         | Op (Ascii)    | Version           |
 | -------- | :----: | ------------------------------------ | :-----------: | :---------------: |
 | NOP      |  nop   | `… nop == …`                         |   0 (null)    |        F♭m        |

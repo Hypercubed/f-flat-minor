@@ -131,47 +131,49 @@ Factorial 100:
 
 ### Vocabulary
 
-See [F♭m by example](./docs/fbm-by-example.md) for a more detailed explanation of the vocabulary. A reusable copy of this table also lives in [docs/core-vocabulary.md](./docs/core-vocabulary.md).
-
-| Mnemonic | Syntax | Stack Effect                       | Op (Ascii)    | Version           |
-| -------- | :----: | ---------------------------------- | :-----------: | :---------------: |
-| NOP      |  nop   | `… nop == …`                       |   0 (null)    |        F♭m        |
-| EVAL     |  eval  | `[A] eval == a*`                   |       1       |        F♭m        |
-| PUTC     |  putc  | `n putc == {prints char(n)}`       |       2       |        F♭m        |
-| GETC     |  getc  | `getc == n {reads char}`           |       3       |        F♭m        |
-| PUTN     |  putn  | `n putn == {prints n}`             |       5       |        F♭m        |
-| CLOCK    | clock  | `clock == n {reads clock}`         |       6       |        F♭m        |
-| DROP     |  drop  | `a drop ==`                        | 8 (backspace) |        F♭m        |
-| PUSHR    |   q<   | `a q< == \| …a`                    |      14       |        F♭m        |
-| PULLR    |   q>   | `q> == a \| a…`                    |      15       |        F♭m        |
-| SHIFTL   |   <<   | `a b << == n`                      |      16       |        F♭m        |
-| SHIFTR   |   >>   | `a b >> == n`                      |      17       |        F♭m        |
-| CLR      |  clr   | `… clr ==`                         |      24       |        F♭m        |
-| RAND     |  rand  | `n rand == r {0 <= r < n}`         |      26       |        F♭m        |
-| EXIT     |  exit  | `n exit == {exits with code n}`    |   27 (ESC)    |        F♭m        |
-| DUP      |  dup   | `a dup == a a`                     |    33 (!)     | F♭m<sup>o</sup>   |
-| DEPTH    | depth  | `… depth == … n`                   |    35 (#)     |        F♭m        |
-| SWAP     |  swap  | `a b swap == b a`                  |    36 ($)     |        F♭m        |
-| MOD      |   %    | `a b % == n`                       |    37 (%)     |        F♭m        |
-| AND      |   &    | `a b & == n`                       |    38 (&)     |        F♭m        |
-| STASH    |   (    | `… ( == {moves stack to queue}`    |    40 (()     |        F♭m        |
-| FETCH    |   )    | `) == … {restores stack from queue}` |  41 ())     |        F♭m        |
-| MUL      |   \*   | `a b * == n`                       |    42 (\*)    | F♭m<sup>o</sup>   |
-| ADD      |   +    | `a b + == n`                       |    43 (+)     | F♭m<sup>o</sup>   |
-| SUB      |   -    | `a b - == n`                       |    45 (-)     | F♭m<sup>o</sup>   |
-| DUMP     |   .    | `… . == … {prints stack}`          |    46 (.)     | F♭m<sup>o</sup>   |
-| DIV      |   /    | `a b / == n`                       |    47 (/)     | F♭m<sup>o</sup>   |
-| MARK     |   :    | `n : == {begin definition(n)}`     |    58 (:)     | F♭m<sup>o</sup>   |
-| DEF      |   ;    | `; == {end definition}`            |    59 (;)     | F♭m<sup>o</sup>   |
-| LT       |   <    | `a b < == flag`                    |    60 (<)     |        F♭m        |
-| EQ       |   =    | `a b = == flag`                    |    61 (=)     |        F♭m        |
-| GT       |   >    | `a b > == flag`                    |    62 (>)     |        F♭m        |
-| WHEN     |   ?    | `flag [A] ? == a*`                 |    63 (?)     | F♭m<sup>o</sup>   |
-| BRA      |   [    | `[ == {begin quotation}`           |    91 ([)     |        F♭m        |
-| KET      |   ]    | `] == [A] {end quotation}`         |    93 (])     |        F♭m        |
-| POW      |   ^    | `a b ^ == n`                       |    94 (^)     |        F♭m        |
-| OR       |   \|   | `a b \| == n`                      |   124 (\|)    |        F♭m        |
-| NOT      |   ~    | `a ~ == n'`                        |    126 (~)    |        F♭m        |
+See [F♭m by example](./_docs/fbm-by-example.md) for a more detailed explanation of the vocabulary. A reusable copy of this table also lives in
+[> _docs/core-vocabulary.md](./_docs/core-vocabulary.md)
+<!-- BEGIN mdsh -->
+| Mnemonic | Syntax | Stack Effect                         | Op (Ascii)    | Version           |
+| -------- | :----: | ------------------------------------ | :-----------: | :---------------: |
+| NOP      |  nop   | `… nop == …`                         |   0 (null)    |        F♭m        |
+| EVAL     |  eval  | `[A] eval == a*`                     |       1       |        F♭m        |
+| PUTC     |  putc  | `n putc == {prints char(n)}`         |       2       |        F♭m        |
+| GETC     |  getc  | `getc == n {reads char}`             |       3       |        F♭m        |
+| PUTN     |  putn  | `n putn == {prints n}`               |       5       |        F♭m        |
+| CLOCK    | clock  | `clock == n {reads clock}`           |       6       |        F♭m        |
+| DROP     |  drop  | `a drop ==`                          | 8 (backspace) |        F♭m        |
+| PUSHR    |   q<   | `a q< == \| …a`                      |      14       |        F♭m        |
+| PULLR    |   q>   | `q> == a \| a…`                      |      15       |        F♭m        |
+| SHIFTL   |   <<   | `a b << == n`                        |      16       |        F♭m        |
+| SHIFTR   |   >>   | `a b >> == n`                        |      17       |        F♭m        |
+| CLR      |  clr   | `… clr ==`                           |      24       |        F♭m        |
+| RAND     |  rand  | `n rand == r {0 <= r < n}`           |      26       |        F♭m        |
+| EXIT     |  exit  | `n exit == {exits with code n}`      |   27 (ESC)    |        F♭m        |
+| DUP      |  dup   | `a dup == a a`                       |    33 (!)     | F♭m<sup>o</sup>   |
+| DEPTH    | depth  | `… depth == … n`                     |    35 (#)     |        F♭m        |
+| SWAP     |  swap  | `a b swap == b a`                    |    36 ($)     |        F♭m        |
+| MOD      |   %    | `a b % == n`                         |    37 (%)     |        F♭m        |
+| AND      |   &    | `a b & == n`                         |    38 (&)     |        F♭m        |
+| STASH    |   (    | `… ( == {moves stack to queue}`      |    40 (()     |        F♭m        |
+| FETCH    |   )    | `) == … {restores stack from queue}` |    41 ())     |        F♭m        |
+| MUL      |   \*   | `a b * == n`                         |    42 (\*)    | F♭m<sup>o</sup>   |
+| ADD      |   +    | `a b + == n`                         |    43 (+)     | F♭m<sup>o</sup>   |
+| SUB      |   -    | `a b - == n`                         |    45 (-)     | F♭m<sup>o</sup>   |
+| DUMP     |   .    | `… . == … {prints stack}`            |    46 (.)     | F♭m<sup>o</sup>   |
+| DIV      |   /    | `a b / == n`                         |    47 (/)     | F♭m<sup>o</sup>   |
+| MARK     |   :    | `n : == {begin definition(n)}`       |    58 (:)     | F♭m<sup>o</sup>   |
+| DEF      |   ;    | `; == {end definition}`              |    59 (;)     | F♭m<sup>o</sup>   |
+| LT       |   <    | `a b < == flag`                      |    60 (<)     |        F♭m        |
+| EQ       |   =    | `a b = == flag`                      |    61 (=)     |        F♭m        |
+| GT       |   >    | `a b > == flag`                      |    62 (>)     |        F♭m        |
+| WHEN     |   ?    | `flag [A] ? == a*`                   |    63 (?)     | F♭m<sup>o</sup>   |
+| BRA      |   [    | `[ == {begin quotation}`             |    91 ([)     |        F♭m        |
+| KET      |   ]    | `] == [A] {end quotation}`           |    93 (])     |        F♭m        |
+| POW      |   ^    | `a b ^ == n`                         |    94 (^)     |        F♭m        |
+| OR       |   \|   | `a b \| == n`                        |   124 (\|)    |        F♭m        |
+| NOT      |   ~    | `a ~ == n'`                          |    126 (~)    |        F♭m        |
+<!-- END mdsh -->
 
 ### _F♭m<sup>+</sup>_
 
@@ -180,7 +182,7 @@ _F♭m<sup>+</sup>_ adds a preprocessor and compiler commands. A word starting w
 | Command    |                                           Description                                            |       Support       |
 | ---------- | :----------------------------------------------------------------------------------------------: | :-----------------: |
 | `.load`    |                                   loads another file in place                                    | Deno, Go and Racket |
-| `.include` | loads another file in place only once (same as `.load` except a file will not be imported twice) | Deno, Go and Racket |
+| `.import`  | loads another file in place only once (same as `.load` except a file will not be imported twice) | Deno, Go and Racket |
 | `.m`       | macro command, the rest of the line will be executed at compile time and included in the output. |      Deno, Go       |
 | `.inline`  |      indicates that a previous definition is safe for inlining (using during optimization)       |        Deno         |
 | `.unsafe`  |    indicates that a previous definition is not safe for inlining (using during optimization)     |        Deno         |
@@ -189,13 +191,13 @@ _F♭m<sup>+</sup>_ adds a preprocessor and compiler commands. A word starting w
 
 [core.ff](./ff/lib/core.ff) Contains definitions of commonly used _F♭m_ words. This can be included in other files by using the `.load` or `.import` command in implementations that support _F♭m<sup>+</sup>_ (currently Deno, Go, and Racket). By convention _F♭m_ files that require the preprocessor have the `.ffp` extension. For implementations that don't support _F♭m<sup>+</sup>_ compiler commands, the source file can be preprocessed using Deno or Racket versions. Example:
 
-```
+```sh
 ./deno/build/preprocess my_file.ffp | ./ccp/build/run
 ```
 
 or
 
-```
+```sh
 ./racket/main.rkt --pp-only ./ff/fact.ffp | ./python/execute.py
 ```
 
@@ -203,11 +205,13 @@ or
 
 For build and testing we use [chomp](https://chompbuild.com/). To build all projects run:
 
+This repo also includes a `mise.toml` for development tools. Using `mise` is optional, but it can help keep tool versions aligned across the different implementations.
+
 ```sh
 chomp build:
 ```
 
-> Note: you'll need to setup development tools for each project first.
+> Note: this assumes you have the necessary runtimes and compilers installed for each project. See the details on `mise` above for help with this.
 
 or to build only one project run:
 
@@ -237,4 +241,28 @@ chomp bench
 
 ## License
 
-This project is licensed under the MIT License - see the LICENSE file for details
+[> LICENSE](LICENSE)
+<!-- BEGIN mdsh -->
+(The MIT License)
+
+Copyright (c) 2021 Jayson Harshbarger
+
+Permission is hereby granted, free of charge, to any person obtaining
+a copy of this software and associated documentation files (the
+'Software'), to deal in the Software without restriction, including
+without limitation the rights to use, copy, modify, merge, publish,
+distribute, sublicense, and/or sell copies of the Software, and to
+permit persons to whom the Software is furnished to do so, subject to
+the following conditions:
+
+The above copyright notice and this permission notice shall be
+included in all copies or substantial portions of the Software.
+
+THE SOFTWARE IS PROVIDED 'AS IS', WITHOUT WARRANTY OF ANY KIND,
+EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF
+MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT.
+IN NO EVENT SHALL THE AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY
+CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION OF CONTRACT,
+TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE
+SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
+<!-- END mdsh -->
