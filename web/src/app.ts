@@ -58,6 +58,7 @@ export function mountApp(root: HTMLElement) {
   const replDepth = requireElement<HTMLElement>(root, "#repl-depth");
   const replInspect = requireElement<HTMLElement>(root, "#repl-inspect");
   const replInspectBack = requireElement<HTMLButtonElement>(root, "#repl-inspect-back");
+  const replInspectClose = requireElement<HTMLButtonElement>(root, "#repl-inspect-close");
   const replInspectContent = requireElement<HTMLElement>(root, "#repl-inspect-content");
   const tutorialRoot = requireElement<HTMLElement>(root, "#tutorial-root");
 
@@ -264,7 +265,7 @@ export function mountApp(root: HTMLElement) {
       }, 500);
     }
 
-    replTranscript.push(`[ ${result.stack.join(" ")} ]`);
+    replTranscript.push(`[ ${result.stack.map((item) => item.value).join(" ")} ]`);
 
     renderReplStack(result.stack);
     renderReplTranscript();
@@ -272,25 +273,31 @@ export function mountApp(root: HTMLElement) {
     replCommand.focus();
   }
 
-  function renderInspectPanel(info: ValueInspection, showBack: boolean = false) {
-    const parts: string[] = [];
+  function renderInspectPanel(info: ValueInspection | null) {
+    // If info is null, close the panel
+    if (info === null) {
+      replInspect.classList.remove("is-visible");
+      return;
+    }
 
-    // Header with value and name
+    const parts: string[] = [];
+    const hasHistory = inspectHistory.length > 0;
+    const isNested = inspectCurrentIndex > 0;
+
+    // Header with value, name, and tags all on one line
     parts.push(`<div class="inspect-header">`);
     parts.push(`<code class="inspect-value">${escapeHtml(String(info.value))}</code>`);
     if (info.name) {
-      parts.push(`<span class="inspect-name">${escapeHtml(info.name)}</span>`);
+      parts.push(`<span class="inspect-name-label">KNOWN AS:</span><span class="inspect-name-value">${escapeHtml(info.name)}</span>`);
+    }
+    // Tags on same line
+    if (info.isSystem) parts.push(`<span class="inspect-tag system">system</span>`);
+    else if (info.isDefined) {
+      // Check if it's an anonymous word (quote): defined but no name and value > 255
+      const isQuote = !info.name && info.value > 255n;
+      parts.push(`<span class="inspect-tag ${isQuote ? "quote" : "user"}">${isQuote ? "quote" : "user-defined"}</span>`);
     }
     parts.push(`</div>`);
-
-    // Tags
-    const tags: string[] = [];
-    if (info.isSystem) tags.push(`<span class="inspect-tag system">system</span>`);
-    else if (info.isDefined) tags.push(`<span class="inspect-tag user">user-defined</span>`);
-
-    if (tags.length) {
-      parts.push(`<div class="inspect-tags">${tags.join("")}</div>`);
-    }
 
     // Definition with clickable tokens
     if (info.definition && info.definition.length > 0) {
@@ -300,12 +307,14 @@ export function mountApp(root: HTMLElement) {
       for (const token of info.definition) {
         const display = token.name ?? String(token.value);
         const tokenClass = token.isCall ? "token-call" : "token-literal";
-        const inspectable = token.isCall ? "inspectable" : "";
+        // Make inspectable if it's a call OR if it's a defined word (even if stored as literal)
+        const inspectable = token.isCall || token.isDefined ? "inspectable" : "";
+        const title = token.isCall || token.isDefined ? "Click to inspect" : "Literal value";
 
         parts.push(
           `<span class="inspect-token ${tokenClass} ${inspectable}" ` +
             `data-value="${escapeHtml(String(token.value))}" ` +
-            `title="${token.isCall ? "Click to inspect" : "Literal value"}">` +
+            `title="${title}">` +
             `${escapeHtml(display)}` +
             `</span>`,
         );
@@ -317,7 +326,10 @@ export function mountApp(root: HTMLElement) {
     }
 
     replInspectContent.innerHTML = parts.join("");
-    replInspectBack.disabled = !showBack;
+    // Back button: disabled at root level, enabled when nested
+    replInspectBack.disabled = !isNested;
+    // Close button: always visible when panel is open
+    replInspectClose.style.display = "inline-block";
     replInspect.classList.add("is-visible");
   }
 
@@ -328,13 +340,19 @@ export function mountApp(root: HTMLElement) {
     }
     inspectHistory.push(info);
     inspectCurrentIndex++;
-    renderInspectPanel(info, inspectHistory.length > 1);
+    renderInspectPanel(info);
   }
 
   function goBack() {
     if (inspectCurrentIndex > 0) {
+      // Go back to previous item in history
       inspectCurrentIndex--;
-      renderInspectPanel(inspectHistory[inspectCurrentIndex], inspectCurrentIndex > 0);
+      renderInspectPanel(inspectHistory[inspectCurrentIndex]);
+    } else if (inspectCurrentIndex === 0) {
+      // At top level, close the panel
+      inspectHistory.length = 0;
+      inspectCurrentIndex = -1;
+      renderInspectPanel(null);
     }
   }
 
@@ -425,6 +443,13 @@ export function mountApp(root: HTMLElement) {
   // Back button handler
   replInspectBack.addEventListener("click", () => {
     goBack();
+  });
+
+  // Close button handler - closes the inspector at any level
+  replInspectClose.addEventListener("click", () => {
+    inspectHistory.length = 0;
+    inspectCurrentIndex = -1;
+    replInspect.classList.remove("is-visible");
   });
 
   void renderPlayground();

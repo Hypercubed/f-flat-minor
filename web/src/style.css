@@ -946,6 +946,25 @@ button:hover {
   letter-spacing: 0.08em;
 }
 
+.inspect-close {
+  margin-left: auto;
+  min-height: 28px;
+  min-width: 28px;
+  padding: 0.3rem 0.5rem;
+  font-size: 0.85rem;
+  border-radius: 6px;
+  background: transparent;
+  border: 1px solid rgba(32, 22, 17, 0.2);
+  color: var(--muted);
+  cursor: pointer;
+  display: none;
+}
+
+.inspect-close:hover {
+  background: rgba(32, 22, 17, 0.08);
+  color: var(--ink);
+}
+
 .repl-inspect-content {
   font-family: "Iosevka", "Cascadia Code", "SFMono-Regular", monospace;
   font-size: 0.9rem;
@@ -971,9 +990,16 @@ button:hover {
   color: var(--accent);
 }
 
-.inspect-name {
+.inspect-name-label {
+  color: var(--muted);
+  font-weight: 500;
+  margin-right: 0.25rem;
+}
+
+.inspect-name-value {
   color: var(--ink);
   font-weight: 500;
+  margin-right: 0.5rem;
 }
 
 .inspect-tags {
@@ -996,6 +1022,11 @@ button:hover {
 .inspect-tag.user {
   background: rgba(187, 77, 29, 0.15);
   color: var(--accent);
+}
+
+.inspect-tag.quote {
+  background: rgba(128, 0, 128, 0.15);
+  color: #800080;
 }
 
 .inspect-label {
@@ -1047,4 +1078,14 @@ button:hover {
 
 .inspect-token.token-call.inspectable:hover {
   background: rgba(23, 105, 93, 0.18);
+}
+
+.inspect-token.token-literal.inspectable {
+  cursor: pointer;
+  text-decoration: underline;
+  text-decoration-style: dotted;
+}
+
+.inspect-token.token-literal.inspectable:hover {
+  background: rgba(187, 77, 29, 0.18);
 }

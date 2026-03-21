@@ -24,6 +24,8 @@ export interface InspectableToken {
   name: string | undefined;
   /** Whether this is a call vs literal */
   isCall: boolean;
+  /** Whether this value has a definition */
+  isDefined: boolean;
 }
 
 export interface ValueInspection {
@@ -299,12 +301,14 @@ export class Engine {
       const value = def[i + 1] ?? 0n;
       const isCall = tag === Q_CALL;
       const tokenName = isCall ? this.symbols.get(value) : undefined;
+      const isDefined = this.defs.has(value);
       
       tokens.push({
         value,
         tag,
         name: tokenName,
         isCall,
+        isDefined,
       });
     }
     return tokens;
