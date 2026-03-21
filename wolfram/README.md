@@ -1,0 +1,1 @@
+wolframscript must be installed manually from https://www.wolfram.com/wolframscript/

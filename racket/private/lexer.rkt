@@ -1,7 +1,7 @@
 #lang racket/base
 
 (require racket/string brag/support)
-(require ff/private/ops ff/private/symbols)
+(require "ops.rkt" "symbols.rkt")
 
 (define user_symbols (make-hash))
 

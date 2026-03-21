@@ -182,7 +182,7 @@ _F♭m<sup>+</sup>_ adds a preprocessor and compiler commands. A word starting w
 | Command    |                                           Description                                            |       Support       |
 | ---------- | :----------------------------------------------------------------------------------------------: | :-----------------: |
 | `.load`    |                                   loads another file in place                                    | Deno, Go and Racket |
-| `.import` | loads another file in place only once (same as `.load` except a file will not be imported twice) | Deno, Go and Racket |
+| `.import`  | loads another file in place only once (same as `.load` except a file will not be imported twice) | Deno, Go and Racket |
 | `.m`       | macro command, the rest of the line will be executed at compile time and included in the output. |      Deno, Go       |
 | `.inline`  |      indicates that a previous definition is safe for inlining (using during optimization)       |        Deno         |
 | `.unsafe`  |    indicates that a previous definition is not safe for inlining (using during optimization)     |        Deno         |
@@ -191,13 +191,13 @@ _F♭m<sup>+</sup>_ adds a preprocessor and compiler commands. A word starting w
 
 [core.ff](./ff/lib/core.ff) Contains definitions of commonly used _F♭m_ words. This can be included in other files by using the `.load` or `.import` command in implementations that support _F♭m<sup>+</sup>_ (currently Deno, Go, and Racket). By convention _F♭m_ files that require the preprocessor have the `.ffp` extension. For implementations that don't support _F♭m<sup>+</sup>_ compiler commands, the source file can be preprocessed using Deno or Racket versions. Example:
 
-```
+```sh
 ./deno/build/preprocess my_file.ffp | ./ccp/build/run
 ```
 
 or
 
-```
+```sh
 ./racket/main.rkt --pp-only ./ff/fact.ffp | ./python/execute.py
 ```
 
@@ -205,11 +205,13 @@ or
 
 For build and testing we use [chomp](https://chompbuild.com/). To build all projects run:
 
+This repo also includes a `mise.toml` for development tools. Using `mise` is optional, but it can help keep tool versions aligned across the different implementations.
+
 ```sh
 chomp build:
 ```
 
-> Note: you'll need to setup development tools for each project first.
+> Note: this assumes you have the necessary runtimes and compilers installed for each project. See the details on `mise` above for help with this.
 
 or to build only one project run:
 

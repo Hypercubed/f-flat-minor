@@ -8,6 +8,10 @@ f-flat-minor (F♭m) is a minimal stack-oriented programming language. It featur
 - Compiles to "bytecode" (base64 VLQ encoded big integers)
 - Multiple implementations in different languages (Deno/TypeScript, Go, Python, Ruby, etc.)
 
+## Development Tools
+
+This repo includes a `mise.toml` for managing development tools. Using `mise` is optional, but it helps keep tool versions consistent across the different implementations.
+
 ## Running Code
 
 The simplest way to run f-flat-minor code is using the Python interpreter:

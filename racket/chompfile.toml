@@ -23,6 +23,12 @@ name = 'build'
 deps = [':exe:example', ':make:main']
 
 [[task]]
+name = 'setup'
+run = '''
+  raco pkg install --auto --skip-installed .
+'''
+
+[[task]]
 name = 'make:#'
 target = './compiled/#_rkt.dep'
 deps = ['./#.rkt', './**/*.rkt']

@@ -1,6 +1,6 @@
 #lang racket/base
 
-(require ff/private/ops)
+(require "ops.rkt")
 
 (define system_symbols (hash
   "nop" op_nop

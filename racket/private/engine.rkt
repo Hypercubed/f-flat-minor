@@ -1,7 +1,7 @@
 #lang racket/base
 
 (require br/define racket/list)
-(require ff/globals ff/private/ops)
+(require "../globals.rkt" "ops.rkt")
 (require (for-syntax racket/base syntax/parse))
 
 ;;; helpers

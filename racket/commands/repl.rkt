@@ -1,7 +1,7 @@
 #lang racket/base
 
 (require readline/readline)
-(require ff/private/evaluate)
+(require "../private/evaluate.rkt")
 
 (define (ff-run-repl #:echo [echo #t])
   (define ns (make-base-namespace))

@@ -68,12 +68,12 @@ run = '''
     './rust/build/example0' -n rust\
     'cat ./ff/example_v0.ff | ./dart/bin/dart.exe' -n dart\
     'cat ./ff/example.ff | ./python/execute.py' -n python\
-    './deno/build/execute ./ff/example.ffb' -n deno\
+    './deno/build/ff-execute ./ff/example.ffb' -n deno\
     'cat ./ff/example.ff | ./ruby/execute.rb' -n ruby\
     './racket/build/example' -n racket\
-    './wolfram/example.wls' -n wolfram\
-    './ghc/build/ff' -n ghc\
+    './ghc/build/ff' -n ghc
 '''
+# './wolfram/example.wls' -n wolfram\
 
 [[task]]
 name = 'bench:execute'

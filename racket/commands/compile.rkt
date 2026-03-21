@@ -1,6 +1,6 @@
 #lang racket/base
 
-(require ff/lang/compiler)
+(require "../lang/compiler.rkt")
 
 (define (ff-compile-file filename)
   (define ns (make-base-namespace))
@@ -19,5 +19,4 @@
   (eval `(require ',datum) ns))
 
 (provide ff-compile-file)
-
 

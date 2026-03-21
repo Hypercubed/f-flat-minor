@@ -1,6 +1,6 @@
 #lang racket/base
 
-(require ff/private/lexer brag/support)
+(require "lexer.rkt" brag/support)
 
 (define (make-tokenizer ip [path #f])
   (port-count-lines! ip)

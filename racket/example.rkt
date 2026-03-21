@@ -1,5 +1,5 @@
 #!/usr/bin/env racket
-#lang reader ff
+#lang reader "lang/reader.rkt"
 
 /* factorial */
 
