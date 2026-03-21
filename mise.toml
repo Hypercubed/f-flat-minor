@@ -1,0 +1,9 @@
+[tools]
+"cargo:mdsh" = "latest"
+deno = "2.7.5"
+node = "24.14.0"
+"npm:chomp" = "latest"
+
+[tasks.readme]
+# mise run readme
+run = "mdsh"
