@@ -4,6 +4,7 @@ import type { IrInstruction } from "./ir.ts";
 import type { SourceMap } from "./source-maps.ts";
 import { decode } from "./vlq.ts";
 import type { CorePlatform } from "./platform.ts";
+import { getCoreVocabularyEntry } from "./core-vocabulary.ts";
 
 const IMMEDIATE_WORDS = [
   BigInt(OpCodes.DEF),
@@ -39,6 +40,10 @@ export interface ValueInspection {
   isDefined: boolean;
   /** The definition as inspectable tokens for user words/quotes */
   definition: InspectableToken[] | undefined;
+  /** Stack effect for core words (e.g., "a b + == n") */
+  stackEffect: string | undefined;
+  /** Description for core words */
+  description: string | undefined;
 }
 
 export class Engine {
@@ -277,7 +282,7 @@ export class Engine {
    */
   inspectValue(value: bigint): ValueInspection {
     const name = this.symbols.get(value);
-    const isSystem = value >= 0n && value < BigInt(MAX_SYSTEM_OP_CODE);
+    const isSystem = value >= 0n && value <= BigInt(MAX_SYSTEM_OP_CODE);
     const def = this.defs.get(value);
     const isDefined = def !== undefined;
     
@@ -287,7 +292,18 @@ export class Engine {
       definition = this.parseDefinitionTokens(def);
     }
     
-    return { value, name, isSystem, isDefined, definition };
+    // Look up core vocabulary for system words
+    let stackEffect: string | undefined;
+    let description: string | undefined;
+    if (isSystem) {
+      const vocabEntry = getCoreVocabularyEntry(Number(value));
+      if (vocabEntry) {
+        stackEffect = vocabEntry.stackEffect;
+        description = vocabEntry.description;
+      }
+    }
+    
+    return { value, name, isSystem, isDefined, definition, stackEffect, description };
   }
   
   /**

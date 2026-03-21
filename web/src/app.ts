@@ -281,7 +281,6 @@ export function mountApp(root: HTMLElement) {
     }
 
     const parts: string[] = [];
-    const hasHistory = inspectHistory.length > 0;
     const isNested = inspectCurrentIndex > 0;
 
     // Header with value, name, and tags all on one line
@@ -298,6 +297,18 @@ export function mountApp(root: HTMLElement) {
       parts.push(`<span class="inspect-tag ${isQuote ? "quote" : "user"}">${isQuote ? "quote" : "user-defined"}</span>`);
     }
     parts.push(`</div>`);
+
+    // Stack effect and description for core words (system words)
+    if (info.isSystem && (info.stackEffect || info.description)) {
+      parts.push(`<div class="inspect-vocabulary">`);
+      if (info.stackEffect) {
+        parts.push(`<div class="inspect-stack-effect"><code>${escapeHtml(info.stackEffect)}</code></div>`);
+      }
+      if (info.description) {
+        parts.push(`<div class="inspect-description">${escapeHtml(info.description)}</div>`);
+      }
+      parts.push(`</div>`);
+    }
 
     // Definition with clickable tokens
     if (info.definition && info.definition.length > 0) {
