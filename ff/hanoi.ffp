@@ -1,4 +1,4 @@
-.load ./lib/core.ff
+.import ./lib/prelude.ffp
 
 /* Towers of Hanoi: print moves and total move count for n disks. */
 

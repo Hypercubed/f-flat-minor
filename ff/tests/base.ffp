@@ -1,4 +1,4 @@
-.import ../lib/core.ff
+.import ../lib/core/core.ff
 .import ../lib/testing.ffp
 
 0 'Shuffling' prints 

@@ -1,4 +1,4 @@
-.load ./lib/cbrt.ffp
+.import ./lib/math/cbrt.ffp
 
 /* Integer cube root demo using `icbrt`. */
 

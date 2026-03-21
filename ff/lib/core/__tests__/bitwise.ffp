@@ -1,4 +1,5 @@
-.load ../lib/core.ff
+.import ../core.ff
+.import ../../testing.ffp
 
 0 1 0 1 . clr
 0 0 1 1 . clr
@@ -42,5 +43,3 @@
 0 10 '5\s3\sbxor' println
 
 5 3 bxor . clr
-
-

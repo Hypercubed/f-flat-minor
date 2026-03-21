@@ -1,4 +1,4 @@
-.load ./lib/core.ff
+.import ./lib/math/math.ffp
 
 M:
 .m 10 10 ^

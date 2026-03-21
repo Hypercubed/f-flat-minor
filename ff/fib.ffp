@@ -1,4 +1,4 @@
-.load ./lib/core.ff
+.import ./lib/prelude.ffp
 
 /* Fibonacci number: n fib -> F_n */
 

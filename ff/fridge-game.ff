@@ -1,4 +1,4 @@
-.load lib/core.ff
+.import lib/core.ff
 
 fridge-game:
   0 'You\sare\sin\sa\sfridge.\sWhat\sdo\syou\swant\sto\sdo?' newline

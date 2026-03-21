@@ -1,4 +1,4 @@
-.load ./lib/core.ff
+.import ./lib/prelude.ffp
 
 1 q< 2 q>
 

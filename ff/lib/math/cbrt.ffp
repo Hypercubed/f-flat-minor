@@ -1,4 +1,4 @@
-.import ./core.ff
+.import ./arith.ffp
 
 /*
  * Naming note: the `i` prefix means integer.

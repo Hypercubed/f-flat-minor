@@ -38,18 +38,12 @@ truthy?: zero? not ; .inline /* n truthy? == flag */
 falsey?: zero? ; .inline /* n falsey? == flag */
 !=: = not ; .inline /* a b != == flag */
 nz?: zero? not ; .inline /* n nz? == flag */
-divisor?: % zero? ; .inline /* n d divisor? == flag */
-even?: 2 divisor? ; .inline /* n even? == flag */
-odd?: even? not ; .inline /* n odd? == flag */
 
 /* comparison */
 <=: > not ; .inline /* a b <= == flag */
 >=: < not ; .inline /* a b >= == flag */
 
 sort2: dup2 > [ swap ] ? ; .inline /* a b sort2 == min max */
-min: sort2 drop ; .inline /* a b min == min */
-max: sort2 nip ; .inline /* a b max == max */
-clamp: dig max min ; .inline /* lo hi n clamp == n' */
 between?: [ sort2 ] dip swap dupd < bury < and ; .inline /* lo hi n between? == flag */
 
 /* binary operators */
@@ -90,32 +84,3 @@ seq: swap times ; /* a n [B] seq == a b* */
 
 range: dupd swap - [ succ ] seq ; /* a b range == a..b */
 count: 0 swap ++ [ succ ] seq drop ; /* n count == 1..n */
-
-/* math */
-negitive?: 0 < ; /* n negitive? == flag */
-positive?: 0 > ; /* n positive? == flag */
-sgn: dup positive? swap negitive? - ; .inline /* n sgn == -1 or 0 or 1 */
-abs: dup negitive? [ -1 * ] ? ; .inline /* n abs == |n| */
-sqr: dup * ; /* n sqr == n^2 */
-lg: dup 1 > [ 1 >> lg ++ ] [ drop 0 ] branch ; /* n lg == floor(log2(n)) */
-!: dup [ dup -- ! * ] [ drop 1 ] branch ; /* n ! == n! */
-nck: dup2 - ! swap ! * [ ! ] dip / ; /* n k nck == C(n,k) */
-divrem: [ / ] [ % ] bi2 ; /* a b divrem == q r */
-
-/* string printing */
-
-space: 32 ; /* space == 32 */
-newline: 10 ; /* newline == 10 */
-
-sp: space putc ; /* sp == {prints char(32)} */
-cr: newline putc ; /* cr == {prints char(10)} */
-
-_prints: dup [ q< _prints q> putc ] ? ; /* 0 n* _prints == 0 {prints chars} */
-prints: _prints drop ; /* 0 n* prints == {prints chars} */
-println: prints cr ; /* 0 n* println == {prints chars, char(10)} */
-
-ucase?: dup 'a' -- 'z' ++ dig between? ; /* n ucase? == flag */
-lcase?: dup 'A' -- 'Z' ++ dig between? ; /* n lcase? == flag */
-
-ucase: ucase? [ 32 - ] ? ; /* n ucase == n' */
-lcase: lcase? [ 32 + ] ? ; /* n lcase == n' */

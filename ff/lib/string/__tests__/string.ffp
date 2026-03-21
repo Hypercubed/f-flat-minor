@@ -1,0 +1,10 @@
+.import ../string.ffp
+.import ../../testing.ffp
+
+
+0 'Strings' prints 
+    'a' ucase 'A' assert_eq
+    'A' ucase 'A' assert_eq
+    'Z' lcase 'z' assert_eq
+    'z' lcase 'z' assert_eq
+OK

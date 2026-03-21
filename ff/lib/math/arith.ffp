@@ -1,0 +1,17 @@
+.import ./pred.ffp
+
+/* Unary operations */
+
+sgn: dup positive? swap negitive? - ; .inline /* n sgn == -1 or 0 or 1 */
+abs: dup negitive? [ -1 * ] ? ; .inline /* n abs == |n| */
+sqr: dup * ; /* n sqr == n^2 */
+
+/* Ordering utilities */
+
+min: sort2 drop ; .inline /* a b min == min */
+max: sort2 nip ; .inline /* a b max == max */
+clamp: dig max min ; .inline /* lo hi n clamp == n' */
+
+/* Division utilities */
+
+divrem: [ / ] [ % ] bi2 ; /* a b divrem == q r */

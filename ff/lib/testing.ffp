@@ -1,4 +1,5 @@
-.import ./core.ff
+.import ./core/core.ff
+.import ./string/string.ffp
 
 assert: falsey? [ 0 10 'Failed' println .inline 1 exit ] ? ;
 assert_eq: = assert .inline ;

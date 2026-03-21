@@ -1,4 +1,4 @@
-.load ./lib/core.ff
+.import ./lib/prelude.ffp
 
 /* Collatz sequence printer for a starting value, ending at 1. */
 

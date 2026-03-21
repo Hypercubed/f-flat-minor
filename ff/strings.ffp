@@ -1,4 +1,4 @@
-.load ./lib/core.ff
+.import ./lib/string/string.ffp
 
 0 'αβγδ\s中间来点中文\s🐫\sאבגד' println
 

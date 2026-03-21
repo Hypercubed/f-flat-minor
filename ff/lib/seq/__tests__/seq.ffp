@@ -1,6 +1,7 @@
-.import ../lib/core.ff
-.import ../lib/seq.ffp
-.import ../lib/testing.ffp
+.import ../../core/core.ff
+.import ../seq.ffp
+.import ../../math/math.ffp
+.import ../../testing.ffp
 
 0 'cons' prints
   ¶ 0 eval depth 1 assert_eq

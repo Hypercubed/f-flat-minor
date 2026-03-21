@@ -1,5 +1,6 @@
-.import ../lib/core.ff
-.import ../lib/primes.ffp
+.import ../../core/core.ff
+.import ../primes.ffp
+.import ../../testing.ffp
 
 /* Fermat primality test */
 
@@ -132,5 +133,3 @@ maybe_prime?: dup 4 <
 /* 1000 dup th-prime . clr 7919 */
 /* 10001 dup th-prime . clr 104743 */
 /* 10002 dup th-prime . clr  104759 */
-
-

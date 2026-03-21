@@ -1,8 +1,4 @@
-.import ./core.ff
-
-/* Knuth operators */
-^^: -- dup [ [ dup ] swap times [ ^ ] ] dip times ;
-^^^: -- dup [ [ dup ] swap times [ ^^ ] ] dip times ;
+.import ./num.ffp
 
 /* Buck's functions used for m <= 5 */
 F:  over 0 = [ nip 1 + ] [

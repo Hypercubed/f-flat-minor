@@ -1,4 +1,4 @@
-.load ./lib/core.ff
+.import ./lib/prelude.ffp
 
 0 'Compiled\sAt:\s' prints
 

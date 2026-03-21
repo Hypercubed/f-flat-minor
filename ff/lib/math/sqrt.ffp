@@ -1,4 +1,4 @@
-.import ./core.ff
+.import ../core/core.ff
 
 /*
  * Naming note: the `i` prefix means integer.

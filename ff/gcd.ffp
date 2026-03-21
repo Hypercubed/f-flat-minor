@@ -1,4 +1,4 @@
-.load ./lib/gcd.ffp
+.import ./lib/math/gcd.ffp
 
 /* Greatest common divisor and least common multiple demo. */
 

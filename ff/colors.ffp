@@ -1,4 +1,4 @@
-.load lib/core.ff
+.import lib/core.ff
 
 start: '\u001b[' ;
 end: 'm' ;

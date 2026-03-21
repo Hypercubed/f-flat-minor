@@ -1,5 +1,5 @@
-.import ./lib/core.ff
-.import ./lib/seq.ffp
+.import ./lib/prelude.ffp
+.import ./lib/seq/seq.ffp
 
 I: 1 'I' putc ;
 V: 5 'V' putc ;

@@ -1,4 +1,4 @@
-.load ./lib/core.ff
+.import ./lib/prelude.ffp
 
 /*
  * Pi digit spigot using the classic LFT state machine:

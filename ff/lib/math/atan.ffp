@@ -1,4 +1,4 @@
-.import ./core.ff
+.import ./arith.ffp
 
 /*
  * Arctan utilities using Taylor series and fixed-point integer arithmetic.

@@ -1,4 +1,4 @@
-.import ../lib/core.ff
+.import ../core/core.ff
 
 unit: 0 cons ;
 stack: depth 0 swap [cons] swap times ;

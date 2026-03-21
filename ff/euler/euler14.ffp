@@ -1,4 +1,4 @@
-.load ../lib/core.ff
+.import ../lib/prelude.ffp
 
 /* http://projecteuler.net/index.php?section=problems&id=14 */
 

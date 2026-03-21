@@ -1,4 +1,4 @@
-.load ./lib/core.ff
+.import ./lib/prelude.ffp
 
 /* 99 Bottles of Beer lyrics printer. */
 

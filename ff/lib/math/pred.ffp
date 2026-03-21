@@ -1,0 +1,9 @@
+.import ../core/core.ff
+
+/* Predicates */
+
+negitive?: 0 < ; /* n negitive? == flag */
+positive?: 0 > ; /* n positive? == flag */
+divisor?: % zero? ; .inline /* n d divisor? == flag */
+even?: 2 divisor? ; .inline /* n even? == flag */
+odd?: even? not ; .inline /* n odd? == flag */

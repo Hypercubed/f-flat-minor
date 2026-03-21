@@ -1,5 +1,4 @@
-.import ../lib/core.ff
-.import ../lib/seq.ffp
+.import ../lib/prelude.ffp
 
 /* http://projecteuler.net/index.php?section=problems&id=13 */
 

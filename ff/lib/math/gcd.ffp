@@ -1,4 +1,4 @@
-.import ./core.ff
+.import ../core/core.ff
 
 _gcd_t: dup bury % dup [ _gcd_t ] ? ;
 
