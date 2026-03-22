@@ -1,0 +1,8 @@
+{
+  "name": "f-flat-minor-bun",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "run": "bun run bin/ff-run.ts"
+  }
+}

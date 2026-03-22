@@ -1,0 +1,86 @@
+version = 0.1
+default-task = 'test'
+
+extensions = ['../cmp-extension.js']
+
+[env]
+RED = '\033[0;31m'
+CHECK = 'printf "  ${GRN}OK${NC} " || printf "  ${RED}FAIL${NC} "'
+BLUE = '\033[0;34m'
+NC = '\033[0m'
+GRN = '\033[0;32m'
+
+[[task]]
+name = 'build'
+validation = 'none'
+run = ':'
+
+[[task]]
+name = 'test:interpret'
+deps = [
+  './bin/ff-run.ts',
+  './src/**/*.ts',
+  '../typescript/core/src/**/*.ts'
+]
+template = 'cmp'
+run = 'node ./bin/ff-run.ts ../ff/example.ff'
+[task.template-options]
+cmp = '../ff/example.out'
+
+[[task]]
+name = 'test:ffp'
+deps = [
+  './bin/ff-run.ts',
+  './src/**/*.ts',
+  '../typescript/core/src/**/*.ts'
+]
+template = 'cmp'
+run = 'node ./bin/ff-run.ts ../ff/hello.ffp'
+[task.template-options]
+cmp = '../ff/hello.out'
+
+[[task]]
+name = 'test'
+deps = [
+  ':test:interpret',
+  ':test:ffp',
+  ':test:ff'
+]
+serial = true
+display = 'none'
+
+[[task]]
+name = 'test:ff'
+deps = [
+  '../ff/##.out',
+  './bin/ff-run.ts',
+  './src/**/*.ts',
+  '../typescript/core/src/**/*.ts'
+]
+serial = true
+invalidation = 'always'
+validation = 'none'
+display = 'status-only'
+run = '''
+  shopt -s nullglob
+  shopt -s extglob
+  for i in "${DEP%.*}.ff?(p)"; do
+    node ./bin/ff-run.ts $i | cmp - $DEP -s && ${{CHECK}};
+    node ./bin/ff-run.ts $i --opt | cmp - $DEP -s && ${{CHECK}};
+  done
+'''
+
+[[task]]
+name = 'bench'
+validation = 'none'
+serial = true
+run = '''
+  hyperfine --warmup 3 -N \
+    'node ./bin/ff-run.ts ../ff/example.ff'\
+    'node ./bin/ff-run.ts ../ff/example.ff --opt'
+'''
+
+[[task]]
+name = 'clean'
+validation = 'none'
+run = ':'

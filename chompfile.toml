@@ -56,16 +56,19 @@ run = '''
 
 [[task]]
 name = 'bench'
-deps = ['build:ghc', 'build:deno', 'build:go', 'build:cpp', 'build:dart', 'build:racket', 'build:rust']
+deps = ['build:ghc', 'build:deno', 'build:go', 'build:cpp', 'build:dart', 'build:racket', 'build:rust', 'build:bun']
 validation = 'none'
 serial = true
 run = '''
   hyperfine --warmup 3\
     --export-markdown benchmarks.md\
+    --sort mean-time\
     './cpp/build/fact' -n watermark\
     './go/build/execute --in ./ff/example.ffb' -n go\
     './cpp/build/run ./ff/example.ff' -n cpp\
     './rust/build/example0' -n rust\
+    './bun/build/ff-run ./ff/example.ff' -n bun\
+    'node ./node/bin/ff-run.ts ./ff/example.ff' -n node\
     'cat ./ff/example_v0.ff | ./dart/bin/dart.exe' -n dart\
     'cat ./ff/example.ff | ./python/execute.py' -n python\
     './deno/build/ff-execute ./ff/example.ffb' -n deno\
@@ -89,17 +92,36 @@ run = '''
 '''
 
 [[task]]
-name = 'bench:interp'
-deps = ['build:deno', 'build:go', 'build:cpp', 'build:dart', 'build:racket', 'build:rust']
+name = 'bench:run'
+deps = [':bench:run:compiled', ':bench:run:source']
+validation = 'none'
+serial = true
+display = 'none'
+
+[[task]]
+name = 'bench:run:compiled'
+deps = ['build:deno', 'build:go', 'build:cpp', 'build:rust', 'build:bun', 'build:dart']
 validation = 'none'
 serial = true
 run = '''
   hyperfine --warmup 3 \
-    './deno/build/run ./ff/example.ff'\
-    './go/build/run --in ./ff/example.ff'\
-    './cpp/build/run ./ff/example.ff'\
+    './deno/build/ff-run ./ff/example.ff' -n deno\
+    './go/build/run --in ./ff/example.ff' -n go\
+    './cpp/build/run ./ff/example.ff' -n cpp\
+    './bun/build/ff-run ./ff/example.ff' -n bun\
     './rust/build/example0' -n rust\
-    'cat ./ff/example_v0.ff | ./dart/bin/dart.exe'\
+    'cat ./ff/example_v0.ff | ./dart/bin/dart.exe' -n dart
+'''
+
+[[task]]
+name = 'bench:run:source'
+validation = 'none'
+serial = true
+run = '''
+  hyperfine --warmup 3 \
+    'deno run --no-check --allow-read --allow-env ./deno/bin/ff-run.ts ./ff/example.ff'\
+    'bun run ./bun/bin/ff-run.ts ./ff/example.ff'\
+    'node ./node/bin/ff-run.ts ./ff/example.ff'\
     'cat ./ff/example.ff | ./python/execute.py'\
     'cat ./ff/example.ff | ./ruby/execute.rb'\
     'racket ./racket/main.rkt ./ff/example.ff'
@@ -122,4 +144,3 @@ name = 'loc'
 deps = ['clean']
 validation = 'none'
 run = 'cloc --force-lang-def=.cloc . --quiet --md --hide-rate > loc.md'
-

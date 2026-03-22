@@ -11,6 +11,13 @@ const COMMENT_START = "/*";
 const COMMENT_END = "*/";
 
 function toNumber(str: string) {
+  // A bare "+" or "-" is an operator token in F-flat-minor, not a numeric
+  // literal. This guard also avoids relying on runtime-specific BigInt parsing:
+  // Bun 1.3.11 returns 0n for BigInt("-")/BigInt("+"), while ECMAScript
+  // StringToBigInt requires invalid inputs like these to be rejected.
+  if (str === "-" || str === "+") {
+    return undefined;
+  }
   try {
     let sgn = 1n;
     str = str.replaceAll('_', '');
