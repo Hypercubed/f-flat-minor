@@ -16,30 +16,30 @@ For each target language first implement a proof-of-concept interpreter either i
 
 ## Progress
 
-| Language              | Support                                                                | Interpreter | "ByteCode" | REPL |
-| --------------------- | ---------------------------------------------------------------------- | ----------- | ---------- | ---- |
-| Typescript/Deno       | F♭m<sup>+</sup>                                                        | ✓           | ✓          | ✓    |
-| Go                    | F♭m<sup>+</sup>                                                        | ✓           | ✓          | ✓    |
-| Racket                | F♭m<sup>+</sup>                                                        | ✓           |            | ✓    |
-| Python                | F♭m                                                                    | ✓           |
-| Ruby                  | F♭m                                                                    | ✓           |
-| Dart                  | F♭m                                                                    | ✓           |
-| AssemblyScript        | F♭m                                                                    | ✓           |            | ✓    |
-| C++                   | F♭m<sup>o</sup>                                                        | ✓           |
-| Rust                  | F♭m<sup>o</sup>                                                        | ✓           |
-| Swift                 | [ F♭m<sup>-</sup> ](https://replit.com/@Hypercubed/f-flat-minor-Swift) | ✓           |
-| Wolfram Language      | F♭m<sup>-</sup>                                                        |
-| Haskell               | F♭m<sup>-</sup>                                                        |
-| WASM (wat)            | F♭m<sup>-</sup>                                                        |
-| Julia                 |
-| LLVM                  |
-| F#                    |
-| Lua                   |
-| Erlang/BEAM           |
-| Perl/Raku             |
-| Java/Scala/Kotlin/JVM |
-| Forth/Factor/Cat      |
-| F-flat                |
+| Language                     | Support                                                                | Interpreter | "ByteCode" | REPL |
+| ---------------------------- | ---------------------------------------------------------------------- | ----------- | ---------- | ---- |
+| Typescript (deno, node, bun) | F♭m<sup>+</sup>                                                        | ✓           | ✓          | ✓    |
+| Go                           | F♭m<sup>+</sup>                                                        | ✓           | ✓          | ✓    |
+| Racket                       | F♭m<sup>+</sup>                                                        | ✓           |            | ✓    |
+| Python                       | F♭m                                                                    | ✓           |
+| Ruby                         | F♭m                                                                    | ✓           |
+| Dart                         | F♭m                                                                    | ✓           |
+| AssemblyScript               | F♭m                                                                    | ✓           |            | ✓    |
+| C++                          | F♭m<sup>o</sup>                                                        | ✓           |
+| Rust                         | F♭m<sup>o</sup>                                                        | ✓           |
+| Swift                        | [ F♭m<sup>-</sup> ](https://replit.com/@Hypercubed/f-flat-minor-Swift) | ✓           |
+| Wolfram Language             | F♭m<sup>-</sup>                                                        |
+| Haskell                      | F♭m<sup>-</sup>                                                        |
+| WASM (wat)                   | F♭m<sup>-</sup>                                                        |
+| Julia                        |
+| LLVM                         |
+| F#                           |
+| Lua                          |
+| Erlang/BEAM                  |
+| Perl/Raku                    |
+| Java/Scala/Kotlin/JVM        |
+| Forth/Factor/Cat             |
+| F-flat                       |
 
 ## The Language
 
@@ -132,60 +132,63 @@ Factorial 100:
 ### Vocabulary
 
 See [F♭m by example](./_docs/fbm-by-example.md) for a more detailed explanation of the vocabulary. A reusable copy of this table also lives in
-[> _docs/core-vocabulary.md](./_docs/core-vocabulary.md)
+[> \_docs/core-vocabulary.md](./_docs/core-vocabulary.md)
+
 <!-- BEGIN mdsh -->
-| Mnemonic | Syntax | Stack Effect                         | Op (Ascii)    | Version           |
-| -------- | :----: | ------------------------------------ | :-----------: | :---------------: |
-| NOP      |  nop   | `… nop == …`                         |   0 (null)    |        F♭m        |
-| EVAL     |  eval  | `[A] eval == a*`                     |       1       |        F♭m        |
-| PUTC     |  putc  | `n putc == {prints char(n)}`         |       2       |        F♭m        |
-| GETC     |  getc  | `getc == n {reads char}`             |       3       |        F♭m        |
-| PUTN     |  putn  | `n putn == {prints n}`               |       5       |        F♭m        |
-| CLOCK    | clock  | `clock == n {reads clock}`           |       6       |        F♭m        |
-| DROP     |  drop  | `a drop ==`                          | 8 (backspace) |        F♭m        |
-| PUSHR    |   q<   | `a q< == \| …a`                      |      14       |        F♭m        |
-| PULLR    |   q>   | `q> == a \| a…`                      |      15       |        F♭m        |
-| SHIFTL   |   <<   | `a b << == n`                        |      16       |        F♭m        |
-| SHIFTR   |   >>   | `a b >> == n`                        |      17       |        F♭m        |
-| CLR      |  clr   | `… clr ==`                           |      24       |        F♭m        |
-| RAND     |  rand  | `n rand == r {0 <= r < n}`           |      26       |        F♭m        |
-| EXIT     |  exit  | `n exit == {exits with code n}`      |   27 (ESC)    |        F♭m        |
-| DUP      |  dup   | `a dup == a a`                       |    33 (!)     | F♭m<sup>o</sup>   |
-| DEPTH    | depth  | `… depth == … n`                     |    35 (#)     |        F♭m        |
-| SWAP     |  swap  | `a b swap == b a`                    |    36 ($)     |        F♭m        |
-| MOD      |   %    | `a b % == n`                         |    37 (%)     |        F♭m        |
-| AND      |   &    | `a b & == n`                         |    38 (&)     |        F♭m        |
-| STASH    |   (    | `… ( == {moves stack to queue}`      |    40 (()     |        F♭m        |
-| FETCH    |   )    | `) == … {restores stack from queue}` |    41 ())     |        F♭m        |
-| MUL      |   \*   | `a b * == n`                         |    42 (\*)    | F♭m<sup>o</sup>   |
-| ADD      |   +    | `a b + == n`                         |    43 (+)     | F♭m<sup>o</sup>   |
-| SUB      |   -    | `a b - == n`                         |    45 (-)     | F♭m<sup>o</sup>   |
-| DUMP     |   .    | `… . == … {prints stack}`            |    46 (.)     | F♭m<sup>o</sup>   |
-| DIV      |   /    | `a b / == n`                         |    47 (/)     | F♭m<sup>o</sup>   |
-| MARK     |   :    | `n : == {begin definition(n)}`       |    58 (:)     | F♭m<sup>o</sup>   |
-| DEF      |   ;    | `; == {end definition}`              |    59 (;)     | F♭m<sup>o</sup>   |
-| LT       |   <    | `a b < == flag`                      |    60 (<)     |        F♭m        |
-| EQ       |   =    | `a b = == flag`                      |    61 (=)     |        F♭m        |
-| GT       |   >    | `a b > == flag`                      |    62 (>)     |        F♭m        |
-| WHEN     |   ?    | `flag [A] ? == a*`                   |    63 (?)     | F♭m<sup>o</sup>   |
-| BRA      |   [    | `[ == {begin quotation}`             |    91 ([)     |        F♭m        |
-| KET      |   ]    | `] == [A] {end quotation}`           |    93 (])     |        F♭m        |
-| POW      |   ^    | `a b ^ == n`                         |    94 (^)     |        F♭m        |
-| OR       |   \|   | `a b \| == n`                        |   124 (\|)    |        F♭m        |
-| NOT      |   ~    | `a ~ == n'`                          |    126 (~)    |        F♭m        |
+
+| Mnemonic | Syntax | Stack Effect                         |  Op (Ascii)   |     Version     |
+| -------- | :----: | ------------------------------------ | :-----------: | :-------------: |
+| NOP      |  nop   | `… nop == …`                         |   0 (null)    |       F♭m       |
+| EVAL     |  eval  | `[A] eval == a*`                     |       1       |       F♭m       |
+| PUTC     |  putc  | `n putc == {prints char(n)}`         |       2       |       F♭m       |
+| GETC     |  getc  | `getc == n {reads char}`             |       3       |       F♭m       |
+| PUTN     |  putn  | `n putn == {prints n}`               |       5       |       F♭m       |
+| CLOCK    | clock  | `clock == n {reads clock}`           |       6       |       F♭m       |
+| DROP     |  drop  | `a drop ==`                          | 8 (backspace) |       F♭m       |
+| PUSHR    |   q<   | `a q< == \| …a`                      |      14       |       F♭m       |
+| PULLR    |   q>   | `q> == a \| a…`                      |      15       |       F♭m       |
+| SHIFTL   |   <<   | `a b << == n`                        |      16       |       F♭m       |
+| SHIFTR   |   >>   | `a b >> == n`                        |      17       |       F♭m       |
+| CLR      |  clr   | `… clr ==`                           |      24       |       F♭m       |
+| RAND     |  rand  | `n rand == r {0 <= r < n}`           |      26       |       F♭m       |
+| EXIT     |  exit  | `n exit == {exits with code n}`      |   27 (ESC)    |       F♭m       |
+| DUP      |  dup   | `a dup == a a`                       |    33 (!)     | F♭m<sup>o</sup> |
+| DEPTH    | depth  | `… depth == … n`                     |    35 (#)     |       F♭m       |
+| SWAP     |  swap  | `a b swap == b a`                    |    36 ($)     |       F♭m       |
+| MOD      |   %    | `a b % == n`                         |    37 (%)     |       F♭m       |
+| AND      |   &    | `a b & == n`                         |    38 (&)     |       F♭m       |
+| STASH    |   (    | `… ( == {moves stack to queue}`      |    40 (()     |       F♭m       |
+| FETCH    |   )    | `) == … {restores stack from queue}` |    41 ())     |       F♭m       |
+| MUL      |   \*   | `a b * == n`                         |    42 (\*)    | F♭m<sup>o</sup> |
+| ADD      |   +    | `a b + == n`                         |    43 (+)     | F♭m<sup>o</sup> |
+| SUB      |   -    | `a b - == n`                         |    45 (-)     | F♭m<sup>o</sup> |
+| DUMP     |   .    | `… . == … {prints stack}`            |    46 (.)     | F♭m<sup>o</sup> |
+| DIV      |   /    | `a b / == n`                         |    47 (/)     | F♭m<sup>o</sup> |
+| MARK     |   :    | `n : == {begin definition(n)}`       |    58 (:)     | F♭m<sup>o</sup> |
+| DEF      |   ;    | `; == {end definition}`              |    59 (;)     | F♭m<sup>o</sup> |
+| LT       |   <    | `a b < == flag`                      |    60 (<)     |       F♭m       |
+| EQ       |   =    | `a b = == flag`                      |    61 (=)     |       F♭m       |
+| GT       |   >    | `a b > == flag`                      |    62 (>)     |       F♭m       |
+| WHEN     |   ?    | `flag [A] ? == a*`                   |    63 (?)     | F♭m<sup>o</sup> |
+| BRA      |   [    | `[ == {begin quotation}`             |    91 ([)     |       F♭m       |
+| KET      |   ]    | `] == [A] {end quotation}`           |    93 (])     |       F♭m       |
+| POW      |   ^    | `a b ^ == n`                         |    94 (^)     |       F♭m       |
+| OR       |   \|   | `a b \| == n`                        |   124 (\|)    |       F♭m       |
+| NOT      |   ~    | `a ~ == n'`                          |    126 (~)    |       F♭m       |
+
 <!-- END mdsh -->
 
 ### _F♭m<sup>+</sup>_
 
 _F♭m<sup>+</sup>_ adds a preprocessor and compiler commands. A word starting with a period `.` (other than `.` itself) is a compiler or preprocessor command. Unlike other words the compiler/preprocessor commands are never pushed to the stack. If an implementation does not support a compiler/preprocessor command it should ignore it. The following commands are supported:
 
-| Command    |                                           Description                                            |       Support       |
-| ---------- | :----------------------------------------------------------------------------------------------: | :-----------------: |
-| `.load`    |                                   loads another file in place                                    | Deno, Go and Racket |
-| `.import`  | loads another file in place only once (same as `.load` except a file will not be imported twice) | Deno, Go and Racket |
-| `.m`       | macro command, the rest of the line will be executed at compile time and included in the output. |      Deno, Go       |
-| `.inline`  |      indicates that a previous definition is safe for inlining (using during optimization)       |        Deno         |
-| `.unsafe`  |    indicates that a previous definition is not safe for inlining (using during optimization)     |        Deno         |
+| Command   |                                           Description                                            |       Support       |
+| --------- | :----------------------------------------------------------------------------------------------: | :-----------------: |
+| `.load`   |                                   loads another file in place                                    | Deno, Go and Racket |
+| `.import` | loads another file in place only once (same as `.load` except a file will not be imported twice) | Deno, Go and Racket |
+| `.m`      | macro command, the rest of the line will be executed at compile time and included in the output. |      Deno, Go       |
+| `.inline` |      indicates that a previous definition is safe for inlining (using during optimization)       |        Deno         |
+| `.unsafe` |    indicates that a previous definition is not safe for inlining (using during optimization)     |        Deno         |
 
 ### Standard Library and Preprocessor
 
@@ -242,7 +245,9 @@ chomp bench
 ## License
 
 [> LICENSE](LICENSE)
+
 <!-- BEGIN mdsh -->
+
 (The MIT License)
 
 Copyright (c) 2021 Jayson Harshbarger
@@ -265,4 +270,5 @@ IN NO EVENT SHALL THE AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY
 CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION OF CONTRACT,
 TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE
 SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
+
 <!-- END mdsh -->

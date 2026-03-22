@@ -7,3 +7,17 @@
     16 iexp 8886110 assert_eq
     1024 iexp ilog 444 assert_eq
 OK
+
+0 'nexp' prints
+    0 0 nexp 1 assert_eq
+    0 1 nexp 2 assert_eq
+    5 1 nexp 271828 assert_eq
+    10 2 nexp 73890560989 assert_eq
+    100 3 nexp ilog 101 assert_eq
+    100 3 nexp 10000 % 7021 assert_eq
+    /* These should pass once nexp is precision-driven rather than derived
+     * from the fixed __exp__e constant.
+     
+    151 1 nexp 10 % 5 assert_eq
+    451 3 nexp 10 % 5 assert_eq */
+OK
