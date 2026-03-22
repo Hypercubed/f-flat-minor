@@ -1,0 +1,10 @@
+.import ../pi.ffp
+.import ../log.ffp
+.import ../../testing.ffp
+
+0 'spi' prints
+    5 spi . 314_159 assert_eq
+    10 spi . 31_415_926_535 assert_eq
+    20 spi . 314_159_265_358_979_323_846 assert_eq
+    100 spi ilog 100 assert_eq
+OK

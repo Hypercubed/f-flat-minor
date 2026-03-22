@@ -8,3 +8,5 @@
 .import ./ack.ffp
 .import ./primes.ffp
 .import ./log.ffp
+.import ./exp.ffp
+.import ./pi.ffp

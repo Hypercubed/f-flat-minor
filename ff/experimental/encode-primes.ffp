@@ -1,5 +1,5 @@
-.import ../core/core.ff
-.import ../seq/seq.ffp
+.import ../lib/core/core.ff
+.import ../lib/seq/seq.ffp
 
 /* encodes the first 9999 odd primes into a single big integer
  * each prime is encoded as a single bit. */

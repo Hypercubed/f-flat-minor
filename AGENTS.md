@@ -79,6 +79,7 @@ Reusable agent workflows have been extracted into local skills:
 - `.agent/skills/ff-code-authoring/SKILL.md`
 - `.agent/skills/ff-euler-ffp/SKILL.md`
 - `.agent/skills/ff-library-web-refactor/SKILL.md`
+- `.agent/skills/ff-math-internal-naming/SKILL.md` (see `_docs/math-naming-internal.md`)
 
 Use these when the task involves:
 
@@ -86,6 +87,7 @@ Use these when the task involves:
 - General f-flat-minor coding in `.ff` and `.ffp` files
 - Refactoring reusable words into `ff/lib/*.ffp`
 - Wiring examples/libs into the web playground
+- Defining internal math functions with proper naming conventions
 
 ## Plans
 

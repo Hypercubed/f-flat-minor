@@ -1,0 +1,41 @@
+.import ../lib/math/pred.ffp
+
+/* Test if value is a factor of 2 or 3 */
+simple-composite?: [ 2 divisor? ] [ 3 divisor? ] or_else ;
+
+_trial_loop: dup2 [ dup * > ] [ % 0 > ] bi2 and [ next-prime _trial_loop ] ? ;
+_trial_by_division: 5 _trial_loop dup * < ;
+
+/* First 10000 primes encoded as bits (/2) */
+_N: 
+.import ./primes-encoded.ff
+; .unsafe
+
+_M: 104729 ;  /* Largest prime encoded in primes-encoded.ff */
+
+/* Lookup prime in encoded list */
+_prime-lookup: _N swap 2 / >> 1 & ; .unsafe
+
+/* invoke lookup or trial division test */
+prime?: 
+  dup simple-composite?
+  [ [ 2 = ] [ 3 = ] or_else ]
+  [ dup _M <= [ _prime-lookup ] [ _trial_by_division ] branch ]
+  branch
+;
+
+_count_zero_bits: dup 1 & 0 = [ swap ++ swap 1 >> _count_zero_bits ] ? ;
+count_zero_bits: 0 swap _count_zero_bits drop ;
+
+/* Find next prime using lookup */
+small-next-prime: 2 + dup 1 >> _N swap >> count_zero_bits 1 << + ;
+
+_next-prime-by-trial: dup prime? not [ 2 + _next-prime-by-trial ] ? ;
+next-prime-by-trial: dup 2 < [ drop 2 ] [ 1 + dup even? + _next-prime-by-trial ] branch ;
+
+next-prime: 
+  dup 2 < [ drop 2 ]
+  [ dup _M < [ dup even? [ -- ] ? small-next-prime ] [ next-prime-by-trial ] branch ]
+  branch ;
+
+th-prime: 0 swap [ next-prime ] swap times ;

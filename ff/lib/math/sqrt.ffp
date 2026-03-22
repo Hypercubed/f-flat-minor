@@ -37,10 +37,10 @@ isqrt_jarvis:
 ;
 
 /* recursive digit-by-digit algorithm */
-isqrt_recur:
+__sqrt__next:
   dup 1 > [ /* n if n < 2 */
     dup /* n n */
-    2 >> isqrt_recur 1 << /* n 2*sqrt(n/4)+1 */
+    2 >> __sqrt__next 1 << /* n 2*sqrt(n/4)+1 */
     dup ++ dup * /* n 2*sqrt(n/4) (2*sqrt(n/4)+1)^2 */
     dig /* 2*sqrt(n/4) (2*sqrt(n/4)+1)^2 n */
     <=
@@ -52,7 +52,7 @@ isqrt_recur:
 isqrt:
   dup 0 < [ 1 0 / ] ? /* error */
   dup 1 > [
-    isqrt_recur
+    __sqrt__next
   ] ? ;
 
 isqrtrem: dup isqrt dup bury 2 ^ - ;

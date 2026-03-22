@@ -1,6 +1,6 @@
 .import ../core/core.ff
 
-_gcd_t: dup bury % dup [ _gcd_t ] ? ;
+__gcd__t: dup bury % dup [ __gcd__t ] ? ;
 
-gcd: dup [ _gcd_t ] ? drop ;
+gcd: dup [ __gcd__t ] ? drop ;
 lcm: dup2 gcd / * ;
