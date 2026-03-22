@@ -26,6 +26,7 @@ const (
 	OP_FETCH = ')'
 	OP_MUL   = '*'
 	OP_ADD   = '+'
+	OP_CONS  = ','
 	OP_SUB   = '-'
 	OP_PRN   = '.'
 	OP_DIV   = '/'
@@ -66,6 +67,7 @@ const (
 	SYM_FETCH = ")"
 	SYM_MUL   = "*"
 	SYM_ADD   = "+"
+	SYM_CONS  = "cons"
 	SYM_SUB   = "-"
 	SYM_PRN   = "."
 	SYM_DIV   = "/"

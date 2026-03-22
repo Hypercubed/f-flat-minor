@@ -101,6 +101,17 @@ func defUser(def []*Int, code int64) {
 	userDict[code] = def
 }
 
+func defAnon(def []*Int) *Int {
+	nextAnonOp++
+	op := NewInt(int64(nextAnonOp))
+	defUser(def, op.Int64())
+	if depth > 0 {
+		push(NewInt(0))
+	}
+	push(op)
+	return op
+}
+
 func call(c *Int) {
 	if c.Sign() == -1 || c.Cmp(NewInt(int64(MAX_SYSTEM_OP_CODE))) == 1 {
 		if d, ok := userDict[c.Int64()]; ok {
@@ -245,6 +256,16 @@ func Setup() {
 	}, OP_ADD)
 
 	defSystem(func() {
+		y := pop()
+		x := pop()
+		def := []*Int{NewInt(0), clone(x)}
+		if y.Sign() != 0 {
+			def = append(def, clone(y))
+		}
+		defAnon(def)
+	}, OP_CONS)
+
+	defSystem(func() {
 		x, y := pop(), peek()
 		y.Sub(y, x)
 	}, OP_SUB)
@@ -312,13 +333,7 @@ func Setup() {
 		mm := int(queuePop().Int64())
 		def := append([]*Int(nil), stack[mm:]...)
 		stack = stack[:mm]
-		nextAnonOp++
-		op := int64(nextAnonOp)
-		defUser(def, op)
-		if depth > 0 {
-			push(NewInt(0))
-		}
-		push(NewInt(op))
+		defAnon(def)
 	}, OP_KET)
 
 	defSystem(func() {

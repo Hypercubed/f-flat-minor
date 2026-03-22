@@ -128,6 +128,7 @@ func Setup() {
 	defSystem(SYM_FETCH, OP_FETCH)
 	defSystem(SYM_MUL, OP_MUL)
 	defSystem(SYM_ADD, OP_ADD)
+	defSystem(SYM_CONS, OP_CONS)
 	defSystem(SYM_SUB, OP_SUB)
 	defSystem(SYM_PRN, OP_PRN)
 	defSystem(SYM_DIV, OP_DIV)
