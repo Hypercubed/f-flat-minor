@@ -2,7 +2,6 @@
 
 /* Logarithm and combinatorics */
 
-lg: dup 1 > [ 1 >> lg ++ ] [ drop 0 ] branch ; /* n lg == floor(log2(n)) */
 !: dup [ dup -- ! * ] [ drop 1 ] branch ; /* n ! == n! */
 nck: dup2 - ! swap ! * [ ! ] dip / ; /* n k nck == C(n,k) */
 

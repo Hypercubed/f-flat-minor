@@ -12,7 +12,7 @@ lib/
 │   ├── math.ffp            -- main math entry point
 │   ├── pred.ffp            -- sign and divisibility predicates
 │   ├── arith.ffp           -- abs, sgn, sqr, min/max, clamp, divrem
-│   ├── num.ffp             -- lg, factorial, combinations, Knuth operators
+│   ├── num.ffp             -- factorial, combinations, Knuth operators
 │   ├── atan.ffp            -- arctangent helpers
 │   ├── sqrt.ffp            -- integer square root words
 │   ├── cbrt.ffp            -- integer cube root words

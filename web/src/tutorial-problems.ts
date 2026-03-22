@@ -275,12 +275,12 @@ collatz-steps: dup 1 > [ next-collatz collatz-steps ++ ] [ drop 0 ] branch ;
     title: "Prime?",
     goal: "Ask whether a number is prime.",
     concepts: ["library loading", "predicates", "reuse"],
-    source: String.raw`.load /lib/primes.ffp
+    source: String.raw`.load /lib/math/primes.ffp
 
-29 prime? dup putn cr drop
+29 prime? putn
 `,
     expected: "1",
-    note: "This is a good place to reuse `/lib/primes.ffp` instead of squeezing a long primality test into the starter editor.",
+    note: "This is a good place to reuse `/lib/math/primes.ffp` instead of squeezing a long primality test into the starter editor.",
   },
   {
     id: "pascal-row",

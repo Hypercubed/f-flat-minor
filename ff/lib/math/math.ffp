@@ -7,3 +7,4 @@
 .import ./gcd.ffp
 .import ./ack.ffp
 .import ./primes.ffp
+.import ./log.ffp

@@ -1,20 +1,3 @@
-import ackLib from "../../ff/lib/math/ack.ffp?raw";
-import arithLib from "../../ff/lib/math/arith.ffp?raw";
-import atanLib from "../../ff/lib/math/atan.ffp?raw";
-import cbrtLib from "../../ff/lib/math/cbrt.ffp?raw";
-import coreLib from "../../ff/lib/core/core.ff?raw";
-import gcdLib from "../../ff/lib/math/gcd.ffp?raw";
-import mathLib from "../../ff/lib/math/math.ffp?raw";
-import numLib from "../../ff/lib/math/num.ffp?raw";
-import predLib from "../../ff/lib/math/pred.ffp?raw";
-import primesEncoded from "../../ff/lib/math/primes-encoded.ff?raw";
-import primesLib from "../../ff/lib/math/primes.ffp?raw";
-import seqLib from "../../ff/lib/seq/seq.ffp?raw";
-import sqrtLib from "../../ff/lib/math/sqrt.ffp?raw";
-import stringLib from "../../ff/lib/string/string.ffp?raw";
-import testingLib from "../../ff/lib/testing.ffp?raw";
-import preludeLib from "../../ff/lib/prelude.ffp?raw";
-
 import factExample from "../../ff/fact.ffp?raw";
 import fizzbuzzExample from "../../ff/fizzbuzz.ffp?raw";
 import bottlesExample from "../../ff/99bottles.ffp?raw";
@@ -39,6 +22,16 @@ interface ExampleEntry {
   source: string;
 }
 
+function toVirtualLibraryPath(sourcePath: string): string {
+  const libraryRoot = "../../ff/lib/";
+
+  if (!sourcePath.startsWith(libraryRoot)) {
+    throw new Error(`Unexpected library source path: ${sourcePath}`);
+  }
+
+  return `/lib/${sourcePath.slice(libraryRoot.length)}`;
+}
+
 const EXAMPLE_ENTRIES: ExampleEntry[] = [
   { path: "/examples/fact.ffp", label: "fact.ffp", source: factExample },
   { path: "/examples/fizzbuzz.ffp", label: "fizzbuzz.ffp", source: fizzbuzzExample },
@@ -57,24 +50,21 @@ const EXAMPLE_ENTRIES: ExampleEntry[] = [
   { path: "/examples/euler7.ffp", label: "euler7.ffp", source: euler7Example },
 ];
 
-const LIBRARY_FILES = {
-  "/lib/core/core.ff": coreLib,
-  "/lib/math/math.ffp": mathLib,
-  "/lib/math/ack.ffp": ackLib,
-  "/lib/math/arith.ffp": arithLib,
-  "/lib/math/atan.ffp": atanLib,
-  "/lib/math/cbrt.ffp": cbrtLib,
-  "/lib/math/gcd.ffp": gcdLib,
-  "/lib/math/num.ffp": numLib,
-  "/lib/math/pred.ffp": predLib,
-  "/lib/math/primes-encoded.ff": primesEncoded,
-  "/lib/math/primes.ffp": primesLib,
-  "/lib/math/sqrt.ffp": sqrtLib,
-  "/lib/seq/seq.ffp": seqLib,
-  "/lib/string/string.ffp": stringLib,
-  "/lib/testing.ffp": testingLib,
-  "/lib/prelude.ffp": preludeLib,
-} satisfies VirtualFiles;
+const librarySources = import.meta.glob(
+  ["../../ff/lib/**/*.{ff,ffp}", "!../../ff/lib/**/__tests__/**"],
+  {
+    eager: true,
+    import: "default",
+    query: "?raw",
+  },
+) as Record<string, string>;
+
+const LIBRARY_FILES: VirtualFiles = Object.fromEntries(
+  Object.entries(librarySources).map(([path, source]) => [
+    toVirtualLibraryPath(path),
+    source,
+  ]),
+);
 
 export const EXAMPLES: Record<string, string> = Object.fromEntries(
   EXAMPLE_ENTRIES.map(({ path, source }) => [path, source]),
