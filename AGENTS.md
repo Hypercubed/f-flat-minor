@@ -63,6 +63,8 @@ chomp test:deno
 - Language examples and tutorials: `_docs/fbm-by-example.md`
 - Stack effect notation standard: `_docs/stack-notation.md`
 - Core words and their stack effects: `_docs/core-vocabulary.md`
+- Math library naming conventions: `_docs/math-naming-convention.md`
+- Math library internal naming: `_docs/math-naming-internal.md`
 _
 ## Deno Implementation Notes
 
