@@ -229,6 +229,8 @@ p/q*S: n->S swap rot * swap / ;
 > 1 1 4 p/q*S  →  10000
 > ```
 
+As of 2026-03-22, these helpers exist in the shared library at `ff/lib/math/precision.ffp`.
+
 ---
 
 ## The Two Series Shapes
@@ -617,7 +619,7 @@ integer arithmetic (*, +, -, /, **)
         │
         ├─── exp-series          (Shape 1 loop)
         │       ├── e            (u=1, v=1)
-        │       ├── exp(u/v)     (range reduce → series → e^i by squaring)
+        │       ├── exp(u/v)     (range reduce → series → exact squaring) [IMPLEMENTED ✓ internally in `exp.ffp`]
         │       ├── cosh(u/v)    (exp(x) + exp(-x)) / 2
         │       └── sinh(u/v)    (exp(x) - exp(-x)) / 2
         │
@@ -628,12 +630,19 @@ integer arithmetic (*, +, -, /, **)
                 └── cos(u/v)     (range reduce using π → cos-series)
 
         (separate)
-        └─── sqrt(u/v)           (Newton's method, not a series)
-                 xₙ₊₁ = (xₙ + (u/v)/xₙ) / 2
+        └─── sqrt(u/v)           (exact integer-root primitive plus scaled wrapper; not a series)
+                 isqrt(x)        = floor(sqrt(x))
+                 nsqrt(n,x)      = floor(10^n*sqrt(x)) = isqrt(x*10^(2n))
 ```
 
 Build order respects the dependency arrows:
-`n->K, n->S` → `ln2` → `ln` → `atanh` → `log` → `exp-series` → `e` → `exp` → `cosh, sinh` → `atan-family` → `pi` → `atan2` → `sin, cos` → `sqrt`
+`n->K, n->S, n->S2` → `ln2` → `ln` → `atanh` → `log` → `exp-series` → `e` → `exp` → `cosh, sinh` → `atan-family` → `pi` → `atan2` → `sin, cos` → `sqrt`
+
+Progress note — 2026-03-22:
+The precision-driven exponential path is now implemented in `ff/lib/math/exp.ffp` via `__exp__parts`, with public integer wrappers `iexp` and `nexp`. The dedicated `nexp` plan is complete and retained as a done decision log.
+
+Incremental note — 2026-03-22:
+`icosh`/`isinh` and `ncosh`/`nsinh` may be added as a first pass by composing the existing `nexp` wrappers. This is acceptable as a temporary step for API coverage and durable tests, with a later refactor expected to move hyperbolic composition down to the shared Shape 1 parts layer.
 
 ---
 

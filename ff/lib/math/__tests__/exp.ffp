@@ -12,12 +12,45 @@ OK
     0 0 nexp 1 assert_eq
     0 1 nexp 2 assert_eq
     5 1 nexp 271828 assert_eq
+    0 -1 nexp 0 assert_eq
+    5 -1 nexp 36787 assert_eq
     10 2 nexp 73890560989 assert_eq
+    10 3 nexp 200855369231 assert_eq
     100 3 nexp ilog 101 assert_eq
     100 3 nexp 10000 % 7021 assert_eq
-    /* These should pass once nexp is precision-driven rather than derived
-     * from the fixed __exp__e constant.
-     
+    151 1 nexp ilog 151 assert_eq
     151 1 nexp 10 % 5 assert_eq
-    451 3 nexp 10 % 5 assert_eq */
+    151 1 nexp 10 / 150 1 nexp assert_eq
+    451 3 nexp 10 % 5 assert_eq
+    451 3 nexp 10 / 450 3 nexp assert_eq
+OK
+
+0 'icosh-isinh' prints
+    0 icosh 1 assert_eq
+    0 isinh 0 assert_eq
+    1 icosh 1 assert_eq
+    1 isinh 1 assert_eq
+    2 icosh 3 assert_eq
+    2 isinh 3 assert_eq
+    -1 icosh 1 assert_eq
+    -1 isinh -1 assert_eq
+    -2 icosh 3 assert_eq
+    -2 isinh -4 assert_eq
+    1 icosh 0 1 ncosh assert_eq
+    -1 isinh 0 -1 nsinh assert_eq
+OK
+
+0 'ncosh-nsinh' prints
+    5 0 ncosh 100000 assert_eq
+    5 0 nsinh 0 assert_eq
+    5 1 ncosh 154307 assert_eq
+    5 1 nsinh 117520 assert_eq
+    5 2 ncosh 376219 assert_eq
+    5 2 nsinh 362686 assert_eq
+    5 -1 ncosh 154307 assert_eq
+    5 -1 nsinh -117521 assert_eq
+    5 -2 ncosh 376219 assert_eq
+    5 -2 nsinh -362686 assert_eq
+    5 2 ncosh 5 -2 ncosh assert_eq
+    5 -1 nsinh 5 1 nsinh + dup 0 <= swap -1 >= and assert
 OK

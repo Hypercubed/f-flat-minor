@@ -1,201 +1,234 @@
 .import ./arith.ffp
+.import ./precision.ffp
 
 /*
- * Arctan utilities using Taylor series and fixed-point integer arithmetic.
+ * Arctan utilities using precision helpers and rational Taylor parts.
  *
  * Words:
- *   n num den atan2                   -> floor(10^n * arctan(num/den))
- *   n x atan                          -> floor(10^n * arctan(x))
- *   n x atan-inv                      -> floor(10^n * arctan(1/x))
+ *   iatan    ( x -- y )
+ *   natan    ( n x -- y )
+ *   qatan    ( u v -- y )
+ *   atan-inv ( n x -- y )
  */
+
+__atan__m2: q< * q> * ; /* a b c __atan__m2 == a*b*c */
 
 /*
- * Recursive Taylor loop for ratio form where |num/den| <= 1
- * state: sum term odd sign num2 den2
+ * Build the next backward-series numerator while carrying u^2 on stack and
+ * v^2 on the queue.
  */
-(_atan2-loop):
-  /* addend = term / odd while preserving state */
+__atan__u2_newp:
   q< q<
+  over
+  q> q>
+  dig
+  q> dup q<
   q<
-  dup q<
-  over swap /
-  q> q> q> q>
+  dig
+  q<
+  __atan__m2
+  q> q>
+  *
+  swap
+  -
+; .unsafe /* u2 p q odd __atan__u2_newp == u2 p' with v2 on queue */
 
-  /* duplicate addend and move condition to top */
-  q< q< q< q<
+__atan__u2_newp_stack:
+  q<
+  __atan__u2_newp
+  q>
+; .unsafe /* u2 p q odd v2 __atan__u2_newp_stack == u2 p' v2 */
+
+__atan__newq_stack:
   dup
-  q> swap
-  q> swap
-  q> swap
-  q> swap
+  q<
+  q<
+  over
+  over
+  q>
+  __atan__m2
+  q>
+; .unsafe /* p q odd v2 __atan__newq_stack == p q odd q' v2 */
 
+/*
+ * Backward recurrence for R where atan(u/v) = (u/v) * R:
+ *   R_k = 1/(2k+1)
+ *   R_j = 1/(2j+1) - (u^2/v^2) * R_{j+1}
+ */
+__atan__tail_loop:
+  over positive?
   [
-    /* state in: sum term addend odd sign num2 den2 */
-    q< q<
-    swap q<
-
-    /* sum' = sum + sign*addend, while preserving sign */
-    dup
-    rot
-    *
+    over
+    2 -
+    [ __atan__newq_stack ] dip
+    swapd
+    [ [ __atan__u2_newp_stack ] dip ] dip
+    swapd
     swap
-    q<
-    swap
-    q<
-    +
-    q>
-    q>
-    q>
-
-    /* restore num2/den2 for term update */
-    q> q>
-
-    /* term' = floor(term * num2 / den2), preserve num2/den2 */
-    dup2
-    q< q<
-    rot
-    q<
-    rot
-    q<
-    q<
-    *
-    q>
-    /
-    q>
-    q>
-    q>
-    q>
-
-    /* sign' = -sign */
-    q< q<
-    swap
-    -1 *
-    q> q>
-
-    /* odd' = odd + 2 */
-    q< q< q<
-    2 +
-    q> q> q>
-
-    (_atan2-loop)
+    __atan__tail_loop
   ]
   [
-    /* addend is zero: return sum */
     drop
     drop
-    drop
-    drop
-    drop
+    dig
     drop
   ]
   branch
-;
+; .unsafe /* u v u2 p q odd v2 __atan__tail_loop == u v p q */
 
-/* scale num den (num,den >= 0, num <= den) -> floor(scale * arctan(num/den)) */
-_atan2-core:
-  /* term0 = floor(scale * num / den) */
-  dup q<
-  over q<
+/*
+ * Small positive-ratio Taylor core. Callers are responsible for range
+ * reduction so u/v stays in the fast-converging regime.
+ */
+__atan__parts:
+  q< q<
+  n->K
+  q> q>
+  dig
+
+  /* build u, v, u^2, p0=1, q0=2K+1, odd=2K-1, v^2 */
+  dup
+  2 *
+  1 +
+  q<
+  2 *
+  1 -
+  q<
+  over
+  dup
+  *
+  q>
+  q<
+  over
+  dup
+  *
+  q>
+  q>
+  rot
+  1
+  rot
+  swap
+  q<
+  swapd
+  q>
+
+  __atan__tail_loop
+
+  swapd
+  *
   q<
   *
   q>
-  /
+; /* n u v __atan__parts == p q */
 
-  /* num2 = num*num, den2 = den*den */
-  q> dup *
-  q> dup *
+__atan__core_scaled:
+  rot
+  dup q<
+  rot
+  __atan__parts
+  q>
+  p/q*S
+; /* n u v __atan__core_scaled == floor(10^n*atan(u/v)) for reduced positive ratios */
 
-  /* init: sum=0 term=term0 odd=1 sign=1 num2 den2 */
-  q< q<
-  0 swap
-  1 1
-  q> q>
+__atan__pi_guard_digits: 20 ;
 
-  (_atan2-loop)
-;
-
-/* scale -> floor(scale * pi) */
-_pi-scaled:
-  dup 1 5 _atan2-core
-  swap 1 239 _atan2-core
+__atan__pi_scaled:
+  __atan__pi_guard_digits +
+  dup 1 5 __atan__core_scaled
+  swap 1 239 __atan__core_scaled
   swap 4 * swap -
   4 *
-;
+  __atan__pi_guard_digits n->S /
+; /* n __atan__pi_scaled == floor(10^n*pi) */
 
-/* scale num den (num == 0) -> 0 */
-_atan2-num-zero:
+__atan__needs_pi4:
+  [ + dup * ] [ nip dup * 2 * ] bi2
+  >
+; /* u v __atan__needs_pi4 == u/v > tan(pi/8) for positive u <= v */
+
+__atan__num_zero:
   drop
   drop
   drop
   0
-;
+; /* n u v (u == 0) __atan__num_zero == 0 */
 
-/* scale num den (den == 0) -> sign(num) * pi/2 */
-_atan2-den-zero:
+__atan__den_zero:
   drop
   dup sgn q<
   drop
-  _pi-scaled 2 /
+  __atan__pi_scaled 2 /
   q> *
-;
+; /* n u v (v == 0) __atan__den_zero == sign(u)*floor(pi/2*10^n) */
 
-/* scale num den (num,den > 0) -> floor(scale * arctan(num/den)) */
-_atan2-abs:
-  dup2 <=
-  [
-    _atan2-core
-  ]
+__atan__abs_scaled:
+  dup2 >
   [
     q< q<
-    dup q<
-    dup _pi-scaled 2 /
-    swap drop
-    q> q> q> swap
-    _atan2-core
+    dup __atan__pi_scaled 2 /
+    q> q>
+    rot
+    q<
+    __atan__scaled
+    q>
+    swap
     -
   ]
-  branch
-;
-
-/* scale num den (num,den != 0) -> floor(scale * arctan(num/den)) */
-_atan2-finite:
-  over sgn q<
-  dup sgn q<
-  abs swap abs swap
-  q> q> * q<
-  _atan2-abs
-  q> *
-;
-
-/* scale num den -> floor(scale * arctan(num/den)) */
-_atan2-scaled:
-  over zero?
   [
-    _atan2-num-zero
-  ]
-  [
-    dup zero?
+    dup2 __atan__needs_pi4
     [
-      _atan2-den-zero
+      q< q<
+      dup __atan__pi_scaled 4 /
+      q> q>
+      rot
+      swapd
+      q<
+      [ swap - ] [ + ] bi2
+      __atan__scaled
+      q>
+      swap
+      -
     ]
     [
-      _atan2-finite
+      __atan__core_scaled
     ]
     branch
   ]
   branch
-;
+; /* n u v (u,v > 0) __atan__abs_scaled == floor(10^n*atan(u/v)) */
 
-/* n num den -> floor(10^n * arctan(num/den)) */
-atan2:
-  q< q<
-  10 swap ^
-  q> q>
-  _atan2-scaled
-;
+__atan__finite:
+  over sgn q<
+  dup sgn q<
+  abs
+  swap
+  abs
+  swap
+  q> q> *
+  q<
+  __atan__abs_scaled
+  q> *
+; /* n u v (u,v != 0) __atan__finite == signed scaled atan(u/v) */
 
-/* n x -> floor(10^n * arctan(x)) */
-atan: 1 atan2 ;
+__atan__scaled:
+  over zero?
+  [
+    __atan__num_zero
+  ]
+  [
+    dup zero?
+    [
+      __atan__den_zero
+    ]
+    [
+      __atan__finite
+    ]
+    branch
+  ]
+  branch
+; /* n u v __atan__scaled == floor(10^n*atan(u/v)) */
 
-/* n x -> floor(10^n * arctan(1/x)) */
-atan-inv: 1 swap atan2 ;
+iatan: 0 swap 1 __atan__scaled ; /* x iatan == floor(atan(x)) */
+natan: 1 __atan__scaled ; /* n x natan == floor(10^n*atan(x)) */
+qatan: 0 swap swapd __atan__scaled ; /* u v qatan == floor(atan(u/v)) */
+atan-inv: 1 swap __atan__scaled ; /* n x atan-inv == floor(10^n*atan(1/x)) */

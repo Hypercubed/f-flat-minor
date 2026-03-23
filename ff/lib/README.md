@@ -10,6 +10,7 @@ lib/
 │   └── core.ff             -- core derived words built on VM primitives
 ├── math/
 │   ├── math.ffp            -- main math entry point
+│   ├── precision.ffp       -- shared variable-precision math helpers
 │   ├── pred.ffp            -- sign and divisibility predicates
 │   ├── arith.ffp           -- abs, sgn, sqr, min/max, clamp, divrem
 │   ├── num.ffp             -- factorial, combinations, Knuth operators

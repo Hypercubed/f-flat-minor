@@ -1,10 +1,12 @@
 # Plan: Precision-Driven `nexp` Without Fixed `e`
 
 ## Status
-ready — 2026-03-22
+done — 2026-03-22
 
 ## Summary
 Replace the current `nexp` implementation in `ff/lib/math/exp.ffp` with a precision-driven algorithm that computes `floor(10^n * e^x)` directly from an integer-only exponential series. The new design removes the fixed `__exp__e` precision ceiling and makes correctness depend on the caller’s requested `n`.
+
+Implemented in `ff/lib/math/exp.ffp` with focused regression coverage in `ff/lib/math/__tests__/exp.ffp`.
 
 ## Context
 The current implementation derives `nexp` from a baked constant `__exp__e = floor(e * 10^150)`. That makes `nexp` fundamentally limited to about `x * 150` meaningful digits for integer `x`, even if the caller requests a larger `n`. The existing math-library plan in `_plans/ffm-math-library.md` already points toward a two-layer design where internal `-parts` words return rational `p q`, and user-facing words scale once at the end with `p/q*S`.

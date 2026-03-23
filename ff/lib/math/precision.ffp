@@ -1,0 +1,8 @@
+.import ../core/core.ff
+
+/* Internal precision helpers shared by variable-precision math words. */
+n->S: 10 swap ^ ; /* n n->S == 10^n */
+n->S2: 2 * n->S ; /* n n->S2 == 10^(2n) */
+n->K: 6 * 4 + 5 / 10 + ; /* n n->K == ceil(6*n/5)+10 */
+p/q*S: n->S swap rot * swap / ; /* p q n p/q*S == floor(p*10^n/q) */
+scale->uv: n->S ; /* scaled n scale->uv == scaled 10^n */

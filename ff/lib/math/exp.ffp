@@ -1,24 +1,140 @@
 
 .import ../core/core.ff
+.import ./gcd.ffp
+.import ./precision.ffp
 
-__exp__n: 150 ; /* number of digits to use for fixed-point calculations */
-__exp__e: 2718281828459045235360287471352662497757247093699959574966967627724076630353547594571382178525166427427466391932003059921817413596629043572900334295260 ; /* floor(e*10^n) */
-__exp__pow10: 10 swap ^ ; /* n __exp__pow10 == 10^n */
+__exp__n: 150 ; /* fixed digits used by the fast iexp special case */
+__exp__e: 2718281828459045235360287471352662497757247093699959574966967627724076630353547594571382178525166427427466391932003059921817413596629043572900334295260 ; /* floor(e*10^__exp__n) */
 __exp__abs: dup 0 < [ -1 * ] ? ; /* x __exp__abs == |x| */
-
-iexp: dup __exp__e swap ^ swap __exp__n * __exp__pow10 / ; /* x iexp == floor(e^x) */
+__exp__terms: 20 + n->K ; /* n __exp__terms == ceil(6*(n+20)/5)+10 */
 
 /*
- * __exp__e stores only __exp__n decimal digits of e, so __exp__e^x carries
- * at most x*__exp__n digits of meaningful precision. We therefore expect
- * nexp to be accurate when n <= x*__exp__n; for larger n it only rescales
- * the truncated fixed-point approximation.
+ * Runtime integer division truncates toward zero, so negative odd values
+ * need one extra decrement to behave like floor(x/2).
  */
-nexp:
+__exp__floor_half:
+  dup 0 < q<
+  dup 2 / q<
+  2 %
+  0 !=
+  q> q>
+  dig
+  and
+  [ -- ] ?
+; /* x __exp__floor_half == floor(x/2) */
+
+/*
+ * Repeatedly halve u/v until |u| <= v, returning the halving count m.
+ * This keeps the exponential series in the stable |x| <= 1 regime.
+ */
+__exp__reduce:
+  q<
+  over __exp__abs over >
+  [ dup 2 * nip q> ++ __exp__reduce ]
+  [ q> ]
+  branch
+; .unsafe /* u v m __exp__reduce == u' v' m' */
+
+/* Reduce p/q by gcd so repeated squaring stays manageable. */
+__exp__frac_reduce:
+  dup2 gcd
+  dup q<
+  dupd / nip
+  q> swapd /
+  swap
+; /* p q __exp__frac_reduce == p' q' */
+
+__exp__square_step:
+  dup * q<
+  dup * q>
+  __exp__frac_reduce
+; /* p q __exp__square_step == p' q' */
+
+__exp__square_loop:
+  dup
+  [ -- bury __exp__square_step dig __exp__square_loop ]
+  [ drop ]
+  branch
+; /* p q m __exp__square_loop == p' q' */
+
+/*
+ * Queue layout during the series loop is rem? u v, with v at the top.
+ * The step itself only mutates p q t k on the data stack.
+ */
+__exp__series_step:
+  dup
+  q> dup q< *
   swap q<
-  dup __exp__e swap ^ swap __exp__n * q>
-  swap -
-  dup 0 >= q<
-  __exp__abs __exp__pow10
-  q> [ * ] [ / ] dig choose eval
+  swap dup q< swap
+  dup q<
+  dig q<
+  dig * +
+  q> q> *
+  q> q> q> q> dup q< swap q< swap q< *
+  q> ++
+; .unsafe /* p q t k __exp__series_step == p' q' t' k' */
+
+__exp__series_loop:
+  dup
+  [
+    --
+    q> q> dig q< q< q<
+    __exp__series_step
+    q> q> q> bury q< q<
+    __exp__series_loop
+  ]
+  [ drop ]
+  branch
+; .unsafe /* p q t k rem __exp__series_loop == p q t k */
+
+__exp__series:
+  rot q< q<
+  q> q> dup q< swap q<
+  swap q< 1 1 rot 1 q>
+  __exp__series_loop
+  drop2
+  q> q> drop2
+; /* u v K __exp__series == p q */
+
+__exp__parts:
+  q< q<
+  __exp__terms
+  q> q>
+  rot q< swap
+  0 __exp__reduce
+  q>
+  swap q<
+  __exp__series
+  q>
+  __exp__square_loop
+; /* n u v __exp__parts == p q */
+
+/*
+ * fixed-precision fast path for floored exponentials
+ */
+iexp:
+  dup __exp__e swap ^
+  swap __exp__n *
+  n->S /
+; /* x iexp == floor(e^x) */
+
+nexp:
+  swap dup q< swap
+  1 __exp__parts
+  q> p/q*S
 ; /* n x nexp == floor(10^n*e^x) */
+
+ncosh:
+  [ nexp ] [ -1 * nexp ] bi2
+  +
+  2 /
+; /* n x ncosh == floor((nexp(n,x)+nexp(n,-x))/2) */
+
+nsinh:
+  [ nexp ] [ -1 * nexp ] bi2
+  -
+  __exp__floor_half
+; /* n x nsinh == floor((nexp(n,x)-nexp(n,-x))/2) */
+
+icosh: 0 swap ncosh ; /* x icosh == floor(cosh(x)) via first-pass nexp wrapper */
+isinh: 0 swap nsinh ; /* x isinh == floor(sinh(x)) via first-pass nexp wrapper */

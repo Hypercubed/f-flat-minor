@@ -12,7 +12,7 @@ import catalanExample from "../../ff/catalan.ffp?raw";
 import collatzExample from "../../ff/collatz.ffp?raw";
 import hanoiExample from "../../ff/hanoi.ffp?raw";
 import euler1Example from "../../ff/euler/euler1.ffp?raw";
-import euler7Example from "../../ff/euler/euler7.ffp?raw";
+// import euler7Example from "../../ff/euler/euler7.ffp?raw";
 
 import type { VirtualFiles } from "./runtime.ts";
 
