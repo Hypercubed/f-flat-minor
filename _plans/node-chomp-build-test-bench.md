@@ -1,7 +1,7 @@
 ---
 status: ready
 status_date: 2026-03-21
-creator: unknown
+creator: openai/gpt-5.4
 ---
 
 # Plan: Node Chomp Build, Test, and Benchmark Support

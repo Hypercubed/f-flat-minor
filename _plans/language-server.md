@@ -1,7 +1,7 @@
 ---
 status: draft
 status_date: 2026-03-23
-creator: unknown
+creator: anthropic/claude-sonnet-4.6
 ---
 
 # Plan: F♭m Language Server (VSCode Extension)

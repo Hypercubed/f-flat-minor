@@ -1,7 +1,7 @@
 ---
 status: ready
 status_date: 2026-03-21
-creator: unknown
+creator: kilo-auto/balanced
 ---
 
 # Plan: Editor Word Inspector Panel

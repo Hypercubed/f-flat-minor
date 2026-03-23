@@ -1,7 +1,7 @@
 ---
 status: ready
 status_date: 2026-03-22
-creator: unknown
+creator: openai/gpt-5.4
 ---
 
 # Plan: Add `cons` parity to Racket
