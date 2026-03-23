@@ -24,11 +24,12 @@ without needing to reconstruct intent from scratch.
 Before starting implementation on any feature or subsystem:
 
 1. Check whether a relevant plan exists in `_plans/`.
-2. If found, treat it as the authoritative starting point.
-3. Do **not** relitigate anything listed in **Decisions already made**.
-4. Check **Open questions** — if any are unresolved and blocking, surface them
+2. Read the YAML frontmatter first, especially `status`, `status_date`, and `creator`.
+3. If found, treat it as the authoritative starting point.
+4. Do **not** relitigate anything listed in **Decisions already made**.
+5. Check **Open questions** — if any are unresolved and blocking, surface them
    to the user before proceeding.
-5. Check **Dependencies** — confirm prerequisite plans or work are complete.
+6. Check **Dependencies** — confirm prerequisite plans or work are complete.
 
 ---
 
@@ -50,11 +51,16 @@ _plans/
 ### Template
 
 ```markdown
-# Plan: [Short descriptive title]
+---
+# draft | ready | in-progress | done | abandoned
+status: draft
+status_date: YYYY-MM-DD
+# Use a human name or agent identifier. If backfilling an older plan and the
+# original author is unclear, use `unknown`.
+creator: codex
+---
 
-## Status
-<!-- draft | ready | in-progress | done | abandoned -->
-draft — YYYY-MM-DD
+# Plan: [Short descriptive title]
 
 ## Summary
 <!-- One or two sentences. What will this plan accomplish when implemented? -->
@@ -104,14 +110,24 @@ draft — YYYY-MM-DD
 
 | Situation                              | Action                                                        |
 |----------------------------------------|---------------------------------------------------------------|
-| Status changes                         | Update the Status field with new status and date              |
+| Status changes                         | Update `status` and `status_date` in frontmatter              |
 | Open question resolved                 | Move resolution to **Decisions already made**, remove from **Open questions** |
-| Plan fully implemented                 | Set status to `done`, add a brief note on outcome             |
-| Plan will not be implemented           | Set status to `abandoned`, record why                         |
+| Plan fully implemented                 | Set `status: done`, update `status_date`, add a brief note on outcome |
+| Plan will not be implemented           | Set `status: abandoned`, update `status_date`, record why     |
 
 Do **not** delete done or abandoned plans. They serve as a lightweight decision
 log — future agents and collaborators can understand why something was done a
 certain way by reading what was planned and what changed.
+
+---
+
+## Frontmatter fields
+
+| Field         | Meaning                                                         |
+|---------------|-----------------------------------------------------------------|
+| `status`      | Current lifecycle state of the plan                             |
+| `status_date` | Date the current status was set                                 |
+| `creator`     | Human name or agent identifier that originally authored the plan |
 
 ---
 

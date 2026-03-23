@@ -1,7 +1,10 @@
-# Plan: Editor Word Inspector Panel
+---
+status: ready
+status_date: 2026-03-21
+creator: unknown
+---
 
-## Status
-ready — 2026-03-21
+# Plan: Editor Word Inspector Panel
 
 ## Summary
 Add a word definition inspector panel to the Playground and Tutorial code editors, similar to the existing REPL inspector. Phase A enables inspection after program execution. Phase B adds live compile-on-change for immediate definition updates without execution.

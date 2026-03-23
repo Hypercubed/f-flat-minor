@@ -1,7 +1,10 @@
-# Plan: Add `cons` parity to Racket
+---
+status: ready
+status_date: 2026-03-22
+creator: unknown
+---
 
-## Status
-ready — 2026-03-22
+# Plan: Add `cons` parity to Racket
 
 ## Summary
 Implement the `cons` system primitive in the Racket runtime so it matches the existing TypeScript behavior and can run `ff/lib/seq/*.ffp` programs that depend on `cons`.

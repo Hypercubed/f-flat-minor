@@ -1,7 +1,10 @@
-# Plan: Node Chomp Build, Test, and Benchmark Support
+---
+status: ready
+status_date: 2026-03-21
+creator: unknown
+---
 
-## Status
-ready — 2026-03-21
+# Plan: Node Chomp Build, Test, and Benchmark Support
 
 ## Summary
 Add first-class `chomp` support for the existing Node implementation so the repo can run `build`, `test`, and `bench` workflows for Node in the same style as other runtimes. This plan intentionally scopes Node support to the current `ff-run` source runner and does not expand Node's CLI surface.

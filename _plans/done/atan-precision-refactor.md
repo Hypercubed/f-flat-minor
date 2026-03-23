@@ -1,7 +1,10 @@
-# Plan: Precision-Helper `atan` Refactor
+---
+status: done
+status_date: 2026-03-22
+creator: unknown
+---
 
-## Status
-done — 2026-03-22
+# Plan: Precision-Helper `atan` Refactor
 
 Implemented in `ff/lib/math/atan.ffp`, with `pi` callers migrated to `__atan__scaled`
 and dedicated `atan` coverage added under `ff/lib/math/__tests__/atan.ffp`.

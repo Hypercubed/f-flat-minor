@@ -1,7 +1,10 @@
-# Plan: Precision-Driven `nexp` Without Fixed `e`
+---
+status: done
+status_date: 2026-03-22
+creator: unknown
+---
 
-## Status
-done — 2026-03-22
+# Plan: Precision-Driven `nexp` Without Fixed `e`
 
 ## Summary
 Replace the current `nexp` implementation in `ff/lib/math/exp.ffp` with a precision-driven algorithm that computes `floor(10^n * e^x)` directly from an integer-only exponential series. The new design removes the fixed `__exp__e` precision ceiling and makes correctness depend on the caller’s requested `n`.

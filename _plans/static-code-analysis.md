@@ -1,11 +1,12 @@
+---
+status: ready
+status_date: 2026-03-22
+creator: unknown
+---
+
 # Plan: Static Code Analysis for f-flat-minor
 
-## Status
-
-ready — 2026-03-22
-
 ## Summary
-
 Add a static code analysis pass that operates on the IR (Intermediate Representation) before bytecode generation, using the existing `pointer` metadata to detect type errors like calling `eval` on a literal number instead of a pointer to code.
 
 ## Context
