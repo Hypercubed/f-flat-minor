@@ -47,7 +47,7 @@ const EXAMPLE_ENTRIES: ExampleEntry[] = [
   { path: "/examples/collatz.ffp", label: "collatz.ffp", source: collatzExample },
   { path: "/examples/hanoi.ffp", label: "hanoi.ffp", source: hanoiExample },
   { path: "/examples/euler1.ffp", label: "euler1.ffp", source: euler1Example },
-  { path: "/examples/euler7.ffp", label: "euler7.ffp", source: euler7Example },
+  // { path: "/examples/euler7.ffp", label: "euler7.ffp", source: euler7Example },
 ];
 
 const librarySources = import.meta.glob(
