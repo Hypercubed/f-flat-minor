@@ -11,11 +11,19 @@ export class Preprocessor {
   private readonly engine: Engine;
   private readonly compiler: Compiler;
   private readonly imported = new Set<string>();
+  private macroPreludeReady = false;
 
-  constructor(host: PreprocessHost, deps: { engine: Engine; compiler?: Compiler }) {
+  constructor(
+    host: PreprocessHost,
+    deps: { engine: Engine; compiler?: Compiler },
+    options?: { bootstrapFile?: string },
+  ) {
     this.host = host;
     this.engine = deps.engine;
     this.compiler = deps.compiler || new Compiler();
+    if (options?.bootstrapFile) {
+      this.bootstrap(options.bootstrapFile);
+    }
   }
 
   preprocess(lines: string[], filename = "-"): string {
@@ -45,14 +53,18 @@ export class Preprocessor {
               return "";
             }
             case ".m": {
-              const ir = this.compiler.compileToIR(
-                Compiler.tokenize(rest.join(" ")),
-              );
-              this.engine.loadIR(ir);
-              this.engine.run();
-              const stack = this.engine.getStack();
-              this.engine.clear();
-              return stack.map(String).join(" ") + ` /* ${line} */`;
+              return this.runMacro(rest.join(" "), line);
+            }
+            case ".ff": {
+              return this.runMacro(rest.join(" "), line);
+            }
+            case ".ffp": {
+              if (!this.macroPreludeReady) {
+                throw new Error(
+                  "Preprocessor: .ffp requires prelude-enabled macro context",
+                );
+              }
+              return this.runMacro(rest.join(" "), line);
             }
           }
           return "";
@@ -76,5 +88,33 @@ export class Preprocessor {
     }
 
     throw 'File not found: "' + filename + '"';
+  }
+
+  private bootstrap(filename: string) {
+    const filepath = this.findFile(filename);
+    if (this.imported.has(filepath)) {
+      this.macroPreludeReady = true;
+      return;
+    }
+
+    this.imported.add(filepath);
+    const code = this.host.readTextFile(filepath);
+    const preprocessed = this.preprocess(Preprocessor.tokenize(code), filepath);
+    const ir = this.compiler.compileToIR(Compiler.tokenize(preprocessed), filepath);
+    this.engine.loadIR(ir);
+    this.engine.run();
+    this.engine.clear();
+    this.macroPreludeReady = true;
+  }
+
+  private runMacro(macroCode: string, sourceLine: string) {
+    const ir = this.compiler.compileToIR(
+      Compiler.tokenize(macroCode),
+    );
+    this.engine.loadIR(ir);
+    this.engine.run();
+    const stack = this.engine.getStack();
+    this.engine.clear();
+    return stack.map(String).join(" ") + ` /* ${sourceLine} */`;
   }
 }

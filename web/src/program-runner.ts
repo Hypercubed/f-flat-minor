@@ -9,6 +9,8 @@ import {
 import { createVirtualFiles } from "./examples.ts";
 import { createBrowserPlatform, createPreprocessHost } from "./runtime.ts";
 
+const PRELUDE = "/lib/prelude.ffp";
+
 export interface RunResult {
   output: string;
   preprocessed: string;
@@ -59,6 +61,8 @@ export function runProgram(source: string, stdin: string, optimize: boolean): Ru
   const preprocessor = new Preprocessor(createPreprocessHost(files), {
     engine,
     compiler,
+  }, {
+    bootstrapFile: PRELUDE,
   });
 
   return withCapturedConsole((message) => logs.push(message), () => {

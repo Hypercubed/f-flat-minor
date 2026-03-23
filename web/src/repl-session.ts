@@ -4,6 +4,8 @@ import type { ValueInspection } from "../../typescript/core/src/engine.ts";
 import { createVirtualFiles } from "./examples.ts";
 import { createBrowserPlatform, createPreprocessHost, type VirtualFiles } from "./runtime.ts";
 
+const PRELUDE = "/lib/prelude.ffp";
+
 export interface StackItem {
   value: string;
   index: number;
@@ -59,6 +61,8 @@ export class ReplSession {
     this.preprocessor = new Preprocessor(createPreprocessHost(this.files), {
       engine: this.engine,
       compiler: this.compiler,
+    }, {
+      bootstrapFile: PRELUDE,
     });
 
     this.execute(".load /lib/core.ff");

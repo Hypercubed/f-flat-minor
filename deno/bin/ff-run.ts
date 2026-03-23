@@ -1,6 +1,7 @@
 #!/usr/bin/env -S deno run --allow-read --allow-env --no-check
 import { red } from "https://deno.land/std@0.224.0/fmt/colors.ts";
 import { parseArgs } from "https://deno.land/std@0.224.0/cli/parse_args.ts";
+import * as path from "https://deno.land/std@0.224.0/path/mod.ts";
 
 interface Arguments {
   file?: string;
@@ -15,6 +16,8 @@ interface Arguments {
   trace?: boolean;
   base?: number;
   profile?: boolean;
+  prelude?: boolean;
+  "preprocessor-prelude"?: boolean;
   [key: string]: unknown;
 }
 
@@ -26,6 +29,10 @@ import { disassembleIr, printFfCompatibleIr, printHighLevelIr, printLowLevelIr }
 import { Optimizer } from "../src/optimizer.ts";
 import { HEADER } from "../src/constants.ts";
 
+const PRELUDE = path.fromFileUrl(
+  new URL("../../ff/lib/prelude.ffp", import.meta.url),
+);
+
 export function run(argv: Arguments) {
   const textDecoder = new TextDecoder();
   const textEncoder = new TextEncoder();
@@ -36,7 +43,10 @@ export function run(argv: Arguments) {
     ? textDecoder.decode(readStdin())
     : Deno.readTextFileSync(filename);
 
-  const preprocessor = new Preprocessor();
+  const loadPreprocessorPrelude = !!(argv["preprocessor-prelude"] || argv.prelude);
+  const preprocessor = new Preprocessor(
+    loadPreprocessorPrelude ? { bootstrapFile: PRELUDE } : undefined,
+  );
   code = preprocessor.preprocess(Preprocessor.tokenize(code), filename);
 
   const compiler = new Compiler();
@@ -136,7 +146,7 @@ export function run(argv: Arguments) {
 if (import.meta.main) {
   const argv = parseArgs(Deno.args, {
     string: ["file", "base"],
-    boolean: ["stats", "validate", "hlir", "llir", "opt", "ir", "disassemble", "enc", "trace", "profile"],
+    boolean: ["stats", "validate", "hlir", "llir", "opt", "ir", "disassemble", "enc", "trace", "profile", "preprocessor-prelude", "prelude"],
     default: { file: "-" },
     alias: {
       file: ["f"],
@@ -150,6 +160,7 @@ if (import.meta.main) {
       enc: ["e"],
       trace: ["t"],
       profile: ["p"],
+      "preprocessor-prelude": ["P", "prelude"],
     },
   });
   // Map first positional argument to file (parseArgs puts them in _)

@@ -4,11 +4,11 @@ import { Compiler } from "./compiler.ts";
 import { Engine } from "./engine.ts";
 
 export class Preprocessor extends CorePreprocessor {
-  constructor() {
+  constructor(options?: { bootstrapFile?: string }) {
     super(createDenoPreprocessHost(), {
       engine: new Engine(),
       compiler: new Compiler()
-    });
+    }, options);
   }
 }
 

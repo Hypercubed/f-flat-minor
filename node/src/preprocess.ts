@@ -4,11 +4,11 @@ import { Engine } from "./engine.ts";
 import { createNodePreprocessHost } from "./runtime.ts";
 
 export class Preprocessor extends CorePreprocessor {
-  constructor() {
+  constructor(options?: { bootstrapFile?: string }) {
     super(createNodePreprocessHost(), {
       engine: new Engine(),
       compiler: new Compiler(),
-    });
+    }, options);
   }
 }
 

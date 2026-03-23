@@ -33,6 +33,8 @@ async function* readLines(reader: Deno.Reader): AsyncIterableIterator<string> {
 
 interface Arguments {
   core?: boolean;
+  prelude?: boolean;
+  "preprocessor-prelude"?: boolean;
   [key: string]: unknown;
 }
 
@@ -45,11 +47,17 @@ const PROMPT = new TextEncoder().encode(`${SHORT}> `);
 const core = path.fromFileUrl(
   path.join(import.meta.url, "../../../ff/lib/core.ff"),
 );
+const prelude = path.fromFileUrl(
+  path.join(import.meta.url, "../../../ff/lib/prelude.ffp"),
+);
 
 export async function run(args: Arguments) {
+  const loadPreprocessorPrelude = !!(args["preprocessor-prelude"] || args.prelude);
   let compiler = new Compiler();
   let interpreter = new Engine();
-  let preprocessor = new Preprocessor();
+  let preprocessor = new Preprocessor(
+    loadPreprocessorPrelude ? { bootstrapFile: prelude } : undefined,
+  );
 
   console.log();
   console.log(GREETINGS);
@@ -82,7 +90,9 @@ export async function run(args: Arguments) {
     if (line.trim() === '.reset') {
       compiler = new Compiler();
       interpreter = new Engine();
-      preprocessor = new Preprocessor();
+      preprocessor = new Preprocessor(
+        loadPreprocessorPrelude ? { bootstrapFile: prelude } : undefined,
+      );
       return;
     }
     if (line.trim() === '.exit' || line.trim() === '.quit') {
@@ -103,10 +113,11 @@ export async function run(args: Arguments) {
 
 if (import.meta.main) {
   const argv = parseArgs(Deno.args, {
-    boolean: ["core", "no-core"],
-    default: { core: true },
+    boolean: ["core", "no-core", "preprocessor-prelude", "prelude"],
+    default: { core: true, prelude: false },
     alias: {
       "no-core": ["nc"],
+      "preprocessor-prelude": ["P", "prelude"],
     },
   });
   // Handle --no-core by setting core to false

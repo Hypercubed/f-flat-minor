@@ -7,16 +7,37 @@ import yargs from "https://deno.land/x/yargs@v17.5.1-deno/deno.ts";
 yargs(Deno.args)
   .version('4')
   .scriptName('ff')
-  .command('preprocess [file]', 'Fb preprocessor', {}, async (argv) => {
+  .command('preprocess [file]', 'Fb preprocessor', {
+    'preprocessor-prelude': {
+      type: 'boolean',
+      default: false,
+      description: 'Load ff/lib/prelude.ffp in preprocessor macro context',
+      alias: 'P',
+    },
+  }, async (argv) => {
     (await import('./ff-preprocess.ts')).run(argv);
   })
-  .command('compile [file]', 'Fb compiler', {}, async (argv) => {
+  .command('compile [file]', 'Fb compiler', {
+    'preprocessor-prelude': {
+      type: 'boolean',
+      default: false,
+      description: 'Load ff/lib/prelude.ffp in preprocessor macro context',
+      alias: 'P',
+    },
+  }, async (argv) => {
     (await import('./ff-compile.ts')).run(argv);
   })
   .command('execute [file]', 'Fb executer', {}, async (argv) => {
     (await import('./ff-execute.ts')).run(argv);
   })
-  .command('run [file]', 'Fb runner', {}, async (argv) => {
+  .command('run [file]', 'Fb runner', {
+    'preprocessor-prelude': {
+      type: 'boolean',
+      default: false,
+      description: 'Load ff/lib/prelude.ffp in preprocessor macro context',
+      alias: 'P',
+    },
+  }, async (argv) => {
     (await import('./ff-run.ts')).run(argv);
   })
   .command('repl', 'Start a Fb REPL', {
@@ -24,6 +45,12 @@ yargs(Deno.args)
       type: 'boolean',
       default: false,
       description: 'Disable loading of core module',
+    },
+    'preprocessor-prelude': {
+      type: 'boolean',
+      default: false,
+      description: 'Load ff/lib/prelude.ffp in preprocessor macro context',
+      alias: 'P',
     },
   }, async (argv) => {
     await (await import('./ff-repl.ts')).run(argv);
