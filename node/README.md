@@ -23,6 +23,45 @@ Both commands:
 4. Optionally validate/optimize/disassemble
 5. Execute in the VM
 
+## Build, Test, and Benchmark
+
+These tasks cover the `ff-run` source runner only. There are no chomp tasks for `ff-compile`, `ff-execute`, or other Node CLI entrypoints.
+
+### Build
+
+```bash
+chomp build:node
+```
+
+Produces the `node/build/ff-run` wrapper artifact. The wrapper invokes `node --experimental-transform-types` on `bin/ff-run.ts` so downstream tasks have a stable built path. The build is invalidated when `bin/ff-run.ts`, `src/**/*.ts`, or the shared TypeScript core changes.
+
+### Test
+
+```bash
+chomp test:node
+```
+
+Runs the full test suite in this order:
+1. Builds `node/build/ff-run`
+2. Smoke-tests `ff-run` against `../ff/example.ff` and `../ff/hello.ffp`
+3. Runs the full corpus of `../ff/*.ff` and `../ff/*.ffp` files, including the `--opt` path for each
+
+### Benchmark
+
+```bash
+chomp -c node/ bench
+```
+
+Runs a local [hyperfine](https://github.com/sharkdp/hyperfine) benchmark against `./build/ff-run` (both with and without `--opt`). Depends on `build`.
+
+### Clean
+
+```bash
+chomp -c node/ clean
+```
+
+Removes `./build`.
+
 ## What Each `node/bin` File Does
 
 ### `bin/ff-run.ts`
