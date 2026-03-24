@@ -2,10 +2,10 @@
 .import ../core/core.ff
 .import ./gcd.ffp
 .import ./precision.ffp
+.import ./arith.ffp
 
 __exp__n: 150 ; /* fixed digits used by the fast iexp special case */
 __exp__e: 2718281828459045235360287471352662497757247093699959574966967627724076630353547594571382178525166427427466391932003059921817413596629043572900334295260 ; /* floor(e*10^__exp__n) */
-__exp__abs: dup 0 < [ -1 * ] ? ; /* x __exp__abs == |x| */
 __exp__terms: 20 + n->K ; /* n __exp__terms == ceil(6*(n+20)/5)+10 */
 
 /*
@@ -29,7 +29,7 @@ __exp__floor_half:
  */
 __exp__reduce:
   q<
-  over __exp__abs over >
+  over abs over >
   [ dup 2 * nip q> ++ __exp__reduce ]
   [ q> ]
   branch
