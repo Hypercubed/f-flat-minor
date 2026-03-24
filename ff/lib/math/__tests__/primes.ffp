@@ -2,32 +2,54 @@
 .import ../primes.ffp
 .import ../../testing.ffp
 
-21474 dup prime?
-. clr  /* false */
+0 'prime?' prints
+    0 prime? assert_false
+    1 prime? assert_false
+    2 prime? assert
+    3 prime? assert
+    4 prime? assert_false
+    5 prime? assert
+    6 prime? assert_false
+    7 prime? assert
+    8 prime? assert_false
+    9 prime? assert_false
+    10 prime? assert_false
+    221 prime? assert_false
+    561 prime? assert_false
+    21474 prime? assert_false
+    21481 prime? assert
+    2147483651 prime? assert_false
+    2147483647 prime? assert
 
-21481 dup prime? 
-. clr /* true */
+0 'maybe_prime?' prints
+    0 maybe_prime? assert_false
+    1 maybe_prime? assert_false
+    2 maybe_prime? assert
+    3 maybe_prime? assert
+    4 maybe_prime? assert_false
+    5 maybe_prime? assert
+    6 maybe_prime? assert_false
+    8 maybe_prime? assert_false
+    9 maybe_prime? assert_false
+    10 maybe_prime? assert_false
+    29 maybe_prime? assert
+    97 maybe_prime? assert
+    2147483647 maybe_prime? assert
 
-0 println
-0 'Next\sPrimes:' println
+0 'next-prime' prints
+    0 next-prime 2 assert_eq
+    1 next-prime 2 assert_eq
+    2 next-prime 3 assert_eq
+    5 next-prime 7 assert_eq
+    47 next-prime 53 assert_eq
+    89 next-prime 97 assert_eq
+    7727 next-prime 7741 assert_eq
+    104743 next-prime 104759 assert_eq
+    2147483647 next-prime 2147483659 assert_eq
 
-0 dup next-prime . clr /* 2 */
-1 dup next-prime . clr /* 2 */
-2 dup next-prime . clr /* 3 */
-5 dup next-prime . clr /* 7 */
-47 dup next-prime . clr /* 53 */
-89 dup next-prime . clr /* 97 */
-7727 dup next-prime . clr /* 7741 */
-104743 dup next-prime . clr /* 104759 */
+0 'th-prime' prints
+    6 th-prime 13 assert_eq
+    168 th-prime 997 assert_eq
+    169 th-prime 1009 assert_eq
 
-0 println
-0 'N-th\sPrimes:' println
-
-6 dup th-prime . clr /* 13 */
-168 dup th-prime . clr /* 997 */
-169 dup th-prime . clr /* 1009 */
-
-/* work but too slow for interpreters tests */
-/* 1000 dup th-prime . clr 7919 */
-/* 10001 dup th-prime . clr 104743 */
-/* 10002 dup th-prime . clr  104759 */
+OK

@@ -12,7 +12,7 @@ import catalanExample from "../../ff/catalan.ffp?raw";
 import collatzExample from "../../ff/collatz.ffp?raw";
 import hanoiExample from "../../ff/hanoi.ffp?raw";
 import euler1Example from "../../ff/euler/euler1.ffp?raw";
-// import euler7Example from "../../ff/euler/euler7.ffp?raw";
+import euler7Example from "../../ff/euler/euler7.ffp?raw";
 
 import type { VirtualFiles } from "./runtime.ts";
 
@@ -47,7 +47,7 @@ const EXAMPLE_ENTRIES: ExampleEntry[] = [
   { path: "/examples/collatz.ffp", label: "collatz.ffp", source: collatzExample },
   { path: "/examples/hanoi.ffp", label: "hanoi.ffp", source: hanoiExample },
   { path: "/examples/euler1.ffp", label: "euler1.ffp", source: euler1Example },
-  // { path: "/examples/euler7.ffp", label: "euler7.ffp", source: euler7Example },
+  { path: "/examples/euler7.ffp", label: "euler7.ffp", source: euler7Example },
 ];
 
 const librarySources = import.meta.glob(

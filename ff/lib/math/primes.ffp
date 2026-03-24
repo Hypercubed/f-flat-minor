@@ -3,17 +3,93 @@
 /* Test if value is a factor of 2 or 3 */
 __primes__simple-composite?: [ 2 divisor? ] [ 3 divisor? ] or_else ;
 
-(__primes__trial): dup2 [ dup * > ] [ % 0 > ] bi2 and [ next-prime (__primes__trial) ] ? ;
+/*
+ * Miller-Rabin helpers copied from the experimental primality test.
+ * `maybe_prime?` is public and probabilistic; `prime?` stays exact by
+ * confirming probable primes with the existing trial-division path.
+ */
+(__primes__factor_by_2):
+  over 1 & 0 =
+  [ [ 1 >> ] dip ++ (__primes__factor_by_2) ]
+  ? ;
+__primes__factor_by_2: 0 (__primes__factor_by_2) ; /* n -> d s */
+
+__primes__nrand: over - rand + ;
+
+__primes__mod: q> dup q< % ; .unsafe /* x -> x%n, with n on queue */
+
+(__primes__powmod_loop): /* acc a d -> acc, with n on queue */
+  dup 0 =
+  [ drop drop ]
+  [
+    dup 1 & 0 !=
+    [ rot over * __primes__mod rot ]
+    [ ]
+    branch
+    swap dup * __primes__mod swap 1 >>
+    (__primes__powmod_loop)
+  ]
+  branch ;
+
+__primes__powmod:
+  rot q< swap 1 rot
+  (__primes__powmod_loop)
+  q> swap
+;  /* n d a -> n a^d%n */
+
+(__primes__inner_witness_loop): /* s n x -> */
+  dup2 swap %  /* s n x x%n */
+  [ over ] dip swap /* s n x x%n n */
+  -- = /* s n x x%n=n-1 */
+  [ false ]
+  [
+    dup * /* s n x^2 */
+    __primes__inner_witness
+  ]
+  branch ;
+
+__primes__inner_witness: /* s n x -> */
+  rot -- dup
+  0 =
+  [ true ]
+  [ rot (__primes__inner_witness_loop) ]
+  branch
+;
+
+/* returns true if composite, false if maybe prime */
+__primes__witness_loop: /* n -> n */
+  pred dup __primes__factor_by_2 /* n n-1 d s */
+  dig 2 swap __primes__nrand /* n d s a */
+  [ bury ] dip /* s n d a */
+  __primes__powmod /* s n a^d%n */
+  dup [ 1 = ] [ over -- = ] or_else
+    [ drop drop drop false ]
+    [ (__primes__inner_witness_loop) nip nip nip ]
+    branch ;
+
+__primes__witness_loop2: [ __primes__witness_loop ] dup or_else ;
+
+/* Exact odd-divisor trial loop.
+   Keep this independent from public next-prime/prime? to avoid recursive
+   Miller-Rabin work while confirming a probable prime. */
+(__primes__trial): dup2 [ dup * > ] [ % 0 > ] bi2 and [ 2 + (__primes__trial) ] ? ;
 __primes__trial: 5 (__primes__trial) dup * < ;
 
 (__primes__next): dup prime? not [ 2 + (__primes__next) ] ? ;
 __primes__next: dup 2 < [ drop 2 ] [ 1 + dup even? + (__primes__next) ] branch ;
 
-/* invoke lookup or trial division test */
+/* Probabilistic Miller-Rabin screen.
+   false means definitely composite; true means probably prime. */
+maybe_prime?: dup 4 <
+  [ 1 > ]
+  [ [ __primes__simple-composite? ] [ __primes__witness_loop2 ] or_else not ]
+  branch ;
+
+/* Exact primality test: use maybe_prime? as a fast screen, then confirm. */
 prime?: 
-  dup __primes__simple-composite?
-  [ [ 2 = ] [ 3 = ] or_else ]
+  dup maybe_prime?
   [ __primes__trial ]
+  [ drop false ]
   branch
 ;
 

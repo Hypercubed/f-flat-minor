@@ -1,22 +1,31 @@
-.import ../../core/core.ff
-.import ../primes.ffp
-.import ../../testing.ffp
+.import ../lib/core/core.ff
+.import ../lib/math/primes.ffp
+.import ../lib/testing.ffp
 
-/* Fermat primality test */
+/* Fermat probable-prime test (one random base).
+   If this returns false, n is definitely composite.
+   If it returns true, n only passed for the chosen base.
+   This is a quick screen, not a proof: Carmichael numbers can pass,
+   and this implementation may choose base 1, which always passes. */
 
 fermat: dup -- rand ++ over -- ^ swap % 1 = ;
 
-/* Wilson primality test */
+/* Wilson's theorem primality test.
+   For n > 1 this is exact and deterministic: n is prime iff n divides
+   ((n - 1)! + 1). It is mathematically correct but factorial-based, so
+   it is only practical for very small n and is mainly a reference test. */
 
 wilson: [ 1 - ! 1 + ] [ divisor? ] bi ;
 
-/* Miller–Rabin primality test */
+/* Miller–Rabin strong probable-prime test.
+   The helpers below factor n - 1 into d * 2^s, choose a random base
+   a in [2, n - 2], compute a^d mod n, and then look for a witness that
+   proves n is composite. */
 
 _factor_by_2:
   over 1 & 0 =
   [ [ 1 >> ] dip ++ _factor_by_2 ]
   ? ;
-
 factor_by_2: 0 _factor_by_2 ; /* n -> d s */
 
 nrand: over - rand + ;
@@ -42,7 +51,9 @@ inner_witness: /* s n x -> */
   branch
 ;
 
-/* returns true if composite, false if maybe prime */
+/* One Miller–Rabin witness search.
+   Returns true if the chosen base proves n composite, false if n is
+   still a strong probable prime for that base. */
 witness_loop: /* n -> n */
   pred dup factor_by_2 /* n n-1 d s */
   dig 2 swap nrand /* n d s a */
@@ -58,6 +69,12 @@ witness_loop4: [ witness_loop2 ] dup or_else ;
 witness_loop8: [ witness_loop4 ] dup or_else ;
 witness_loop16: [ witness_loop8 ] dup or_else ;
 
+/* Public randomized Miller–Rabin wrapper.
+   For n >= 4 this first rejects values divisible by 2 or 3, then runs
+   two Miller–Rabin rounds (witness_loop2) with random bases.
+   false means definitely composite; true means probably prime.
+   For odd composites that reach Miller–Rabin, the false-positive rate is
+   at most 1/4 per independent round, so at most 1/16 across two rounds. */
 maybe_prime?: dup 4 <
   [ 1 > ]
   [ [ __primes__simple-composite? ] [ witness_loop2 ] or_else not ]
