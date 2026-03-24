@@ -2,6 +2,7 @@ import { mountReadonlySourceViewer, mountSourceEditor } from "./editor.ts";
 import { DEFAULT_SOURCE, EXAMPLES, EXAMPLE_OPTIONS_HTML } from "./examples.ts";
 import { compileProgram } from "./program-runner.ts";
 import { ReplSession } from "./repl-session.ts";
+import { buildAppUrl, parseAppTab, type AppTab } from "./app-url-state.ts";
 import appShellTemplate from "./templates/app-shell.html?raw";
 import helpTemplate from "./templates/help.html?raw";
 import { mountTutorial } from "./tutorial.ts";
@@ -103,6 +104,7 @@ export function mountApp(root: HTMLElement) {
   const sourceEditor = mountSourceEditor(source, sourceFromUrl ?? DEFAULT_SOURCE);
   const preprocessedViewer = mountReadonlySourceViewer(preprocessed, "");
   const irViewer = mountReadonlySourceViewer(ir, "");
+  let activeTab: AppTab = parseAppTab(window.location.hash);
 
   function setPlaygroundRunningState(isRunning: boolean) {
     example.disabled = isRunning;
@@ -113,37 +115,45 @@ export function mountApp(root: HTMLElement) {
     summary.dataset.state = isRunning ? "running" : "idle";
   }
 
-  function syncCodeParamToUrl() {
-    const params = new URLSearchParams(window.location.search);
-    const sourceValue = sourceEditor.getValue();
+  function syncUrlToAppState() {
+    let codeParam: string | null = null;
 
-    if (sourceValue) {
-      const encodedSource = encodeCodeForUrlParam(sourceValue);
+    if (activeTab === "playground") {
+      const sourceValue = sourceEditor.getValue();
 
-      if (encodedSource === null) {
-        return;
+      if (sourceValue) {
+        codeParam = encodeCodeForUrlParam(sourceValue);
+
+        if (codeParam === null) {
+          return;
+        }
       }
-
-      params.set("code", encodedSource);
-    } else {
-      params.delete("code");
     }
 
-    const query = params.toString();
-    const nextUrl = `${window.location.pathname}${query ? `?${query}` : ""}${window.location.hash}`;
-    window.history.replaceState(window.history.state, "", nextUrl);
+    const nextUrl = buildAppUrl({
+      pathname: window.location.pathname,
+      search: window.location.search,
+      tab: activeTab,
+      codeParam,
+    });
+    const currentUrl = `${window.location.pathname}${window.location.search}${window.location.hash}`;
+
+    if (nextUrl !== currentUrl) {
+      window.history.replaceState(window.history.state, "", nextUrl);
+    }
   }
 
   function setTab(name: string) {
-    document.body.dataset.mode = name;
+    activeTab = parseAppTab(name);
+    document.body.dataset.mode = activeTab;
 
     tabs.forEach((tab) => {
-      const active = tab.dataset.tab === name;
+      const active = tab.dataset.tab === activeTab;
       tab.classList.toggle("is-active", active);
     });
 
     panels.forEach((panel) => {
-      const active = panel.dataset.panel === name;
+      const active = panel.dataset.panel === activeTab;
       panel.classList.toggle("is-active", active);
     });
   }
@@ -162,11 +172,25 @@ export function mountApp(root: HTMLElement) {
 
   tabs.forEach((tab) => {
     tab.addEventListener("click", () => {
-      setTab(tab.dataset.tab ?? "playground");
+      const nextTab = parseAppTab(tab.dataset.tab);
+
+      if (nextTab === activeTab) {
+        syncUrlToAppState();
+        return;
+      }
+
+      window.location.hash = nextTab;
     });
   });
 
-  setTab("playground");
+  function applyUrlStateFromLocation() {
+    setTab(window.location.hash);
+    syncUrlToAppState();
+  }
+
+  window.addEventListener("hashchange", applyUrlStateFromLocation);
+
+  applyUrlStateFromLocation();
 
   detailTabs.forEach((tab) => {
     tab.addEventListener("click", () => {
@@ -465,17 +489,17 @@ export function mountApp(root: HTMLElement) {
 
   example.addEventListener("change", () => {
     sourceEditor.setValue(EXAMPLES[example.value] ?? DEFAULT_SOURCE);
-    syncCodeParamToUrl();
+    syncUrlToAppState();
     void renderPlayground();
   });
 
   run.addEventListener("click", () => {
-    syncCodeParamToUrl();
+    syncUrlToAppState();
     void renderPlayground();
   });
 
   optimize.addEventListener("change", () => {
-    syncCodeParamToUrl();
+    syncUrlToAppState();
     void renderPlayground();
   });
 
