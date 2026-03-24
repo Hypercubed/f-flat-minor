@@ -3,7 +3,6 @@
 __log__n: 20 ; /* number of digits to use for fixed-point calculations */
 __log__s: 100000000000000000000 ; /* 10^n */
 __log__ln2: 69314718055994530941 ; /* floor(ln(2)*10^n) */
-__log__log2: 30102999566398119521 ; /* floor(log(2)*10^n) */
 
 ilb: dup 1 > [ 1 >> ilb ++ ] [ drop 0 ] branch ; /* n ilb == floor(log2(n)) */
 ilog: dup 10 >= [ 10 / ilog ++ ] [ drop 0 ] branch ; /* n ilog == floor(log10(n)) */
