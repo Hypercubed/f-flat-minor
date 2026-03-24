@@ -4,6 +4,7 @@ import {
   Optimizer,
   Preprocessor,
   formatFfCompatibleIr,
+  type IrInstruction,
 } from "../../typescript/core/src/mod.ts";
 
 import { createVirtualFiles } from "./examples.ts";
@@ -24,6 +25,23 @@ export interface RunResult {
   executeMs: number;
 }
 
+export interface PreparedProgram {
+  preprocessed: string;
+  ir: string;
+  bytecode: string;
+  issues: string[];
+  compileMs: number;
+  execute: () => ExecuteResult;
+}
+
+export interface ExecuteResult {
+  output: string;
+  stack: string[];
+  logs: string[];
+  exitCode: number;
+  executeMs: number;
+}
+
 function withCapturedConsole<T>(
   collector: (message: string) => void,
   fn: () => T,
@@ -40,7 +58,7 @@ function withCapturedConsole<T>(
   }
 }
 
-export function runProgram(source: string, stdin: string, optimize: boolean): RunResult {
+function createProgramContext(source: string, stdin: string) {
   let output = "";
   const logs: string[] = [];
   let exitCode = 0;
@@ -67,40 +85,94 @@ export function runProgram(source: string, stdin: string, optimize: boolean): Ru
     macroEngineBootstrapFile: PRELUDE,
   });
 
-  return withCapturedConsole((message) => logs.push(message), () => {
-    const preprocessed = preprocessor.preprocess(
+  return {
+    compiler,
+    engine,
+    preprocessor,
+    logs,
+    getOutput() {
+      return output;
+    },
+    getExitCode() {
+      return exitCode;
+    },
+  };
+}
+
+export function compileProgram(source: string, stdin: string, optimize: boolean): PreparedProgram {
+  const context = createProgramContext(source, stdin);
+
+  const compileStart = performance.now();
+  const compiled = withCapturedConsole((message) => context.logs.push(message), () => {
+    const preprocessed = context.preprocessor.preprocess(
       Preprocessor.tokenize(source),
       "/main.ffp",
     );
 
-    const compileStart = performance.now();
-    let ir = compiler.compileToIR(Compiler.tokenize(preprocessed), "/main.ffp");
-    const compileEnd = performance.now();
-    const issues = compiler.validate(ir);
+    let ir: IrInstruction[] = context.compiler.compileToIR(
+      Compiler.tokenize(preprocessed),
+      "/main.ffp",
+    );
+    const issues = context.compiler.validate(ir);
 
     if (optimize) {
       ir = new Optimizer().optimize(ir);
     }
 
     const formattedIr = formatFfCompatibleIr(ir);
+    const bytecode = Compiler.compileToBase64(ir);
 
-    engine.loadIR(ir);
-
-    const executeStart = performance.now();
-    engine.run();
-    const executeEnd = performance.now();
+    context.engine.loadIR(ir);
 
     return {
-      output,
       preprocessed,
-      ir: formattedIr,
-      bytecode: Compiler.compileToBase64(ir),
+      formattedIr,
+      bytecode,
       issues,
-      stack: engine.getStack().map(String),
-      logs,
-      exitCode,
-      compileMs: compileEnd - compileStart,
-      executeMs: executeEnd - executeStart,
     };
   });
+  const compileEnd = performance.now();
+
+  return {
+    preprocessed: compiled.preprocessed,
+    ir: compiled.formattedIr,
+    bytecode: compiled.bytecode,
+    issues: compiled.issues,
+    compileMs: compileEnd - compileStart,
+    execute() {
+      const executeStart = performance.now();
+
+      withCapturedConsole((message) => context.logs.push(message), () => {
+        context.engine.run();
+      });
+
+      const executeEnd = performance.now();
+
+      return {
+        output: context.getOutput(),
+        stack: context.engine.getStack().map(String),
+        logs: [...context.logs],
+        exitCode: context.getExitCode(),
+        executeMs: executeEnd - executeStart,
+      };
+    },
+  };
+}
+
+export function runProgram(source: string, stdin: string, optimize: boolean): RunResult {
+  const compiled = compileProgram(source, stdin, optimize);
+  const executed = compiled.execute();
+
+  return {
+    output: executed.output,
+    preprocessed: compiled.preprocessed,
+    ir: compiled.ir,
+    bytecode: compiled.bytecode,
+    issues: compiled.issues,
+    stack: executed.stack,
+    logs: executed.logs,
+    exitCode: executed.exitCode,
+    compileMs: compiled.compileMs,
+    executeMs: executed.executeMs,
+  };
 }

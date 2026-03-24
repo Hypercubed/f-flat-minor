@@ -1,6 +1,6 @@
 import { mountReadonlySourceViewer, mountSourceEditor } from "./editor.ts";
 import { DEFAULT_SOURCE, EXAMPLES, EXAMPLE_OPTIONS_HTML } from "./examples.ts";
-import { runProgram } from "./program-runner.ts";
+import { compileProgram } from "./program-runner.ts";
 import { ReplSession } from "./repl-session.ts";
 import appShellTemplate from "./templates/app-shell.html?raw";
 import helpTemplate from "./templates/help.html?raw";
@@ -30,6 +30,37 @@ function scrollToBottom(element: HTMLElement) {
   element.scrollTop = element.scrollHeight;
 }
 
+type SummaryTone = "default" | "success" | "error" | "running" | "pending";
+
+interface SummaryItem {
+  label: string;
+  value: string;
+  tone?: SummaryTone;
+  showDot?: boolean;
+}
+
+function waitForPaint() {
+  return new Promise<void>((resolve) => {
+    requestAnimationFrame(() => {
+      requestAnimationFrame(() => resolve());
+    });
+  });
+}
+
+function renderSummary(items: SummaryItem[]) {
+  return items.map((item) => {
+    const toneClass = item.tone && item.tone !== "default" ? ` ${item.tone}` : "";
+    const dot = item.showDot ? '<span class="summary-running-dot" aria-hidden="true"></span>' : "";
+
+    return `
+      <span class="summary-bar-item">
+        <span class="label">${item.label}</span>
+        <span class="value${toneClass}">${dot}${escapeHtml(item.value)}</span>
+      </span>
+    `;
+  }).join("");
+}
+
 function renderAppShell() {
   return appShellTemplate
     .replace("{{EXAMPLE_OPTIONS}}", EXAMPLE_OPTIONS_HTML)
@@ -52,6 +83,7 @@ export function mountApp(root: HTMLElement) {
   const bytecode = requireElement<HTMLElement>(root, "#bytecode");
   const replCommand = requireElement<HTMLInputElement>(root, "#repl-command");
   const replReset = requireElement<HTMLButtonElement>(root, "#repl-reset");
+  const replStatus = requireElement<HTMLElement>(root, "#repl-status");
   const replOutput = requireElement<HTMLElement>(root, "#repl-output");
   const replStack = requireElement<HTMLElement>(root, "#repl-stack");
   const replDepth = requireElement<HTMLElement>(root, "#repl-depth");
@@ -71,6 +103,15 @@ export function mountApp(root: HTMLElement) {
   const sourceEditor = mountSourceEditor(source, sourceFromUrl ?? DEFAULT_SOURCE);
   const preprocessedViewer = mountReadonlySourceViewer(preprocessed, "");
   const irViewer = mountReadonlySourceViewer(ir, "");
+
+  function setPlaygroundRunningState(isRunning: boolean) {
+    example.disabled = isRunning;
+    stdin.disabled = isRunning;
+    optimize.disabled = isRunning;
+    run.disabled = isRunning;
+    run.textContent = isRunning ? "Running..." : "Run Program";
+    summary.dataset.state = isRunning ? "running" : "idle";
+  }
 
   function syncCodeParamToUrl() {
     const params = new URLSearchParams(window.location.search);
@@ -135,55 +176,76 @@ export function mountApp(root: HTMLElement) {
 
   async function renderPlayground() {
     document.body.dataset.ready = "false";
+    setPlaygroundRunningState(true);
+    summary.innerHTML = renderSummary([
+      { label: "compile", value: "Running...", tone: "running", showDot: true },
+      { label: "execute", value: "pending", tone: "pending" },
+      { label: "exit", value: "pending", tone: "pending" },
+    ]);
+    errorOutput.textContent = "";
+
+    await waitForPaint();
+
+    let compiled: ReturnType<typeof compileProgram> | null = null;
 
     try {
-      const result = runProgram(sourceEditor.getValue(), stdin.value, optimize.checked);
-      const issueCount = result.issues.length;
+      compiled = compileProgram(sourceEditor.getValue(), stdin.value, optimize.checked);
+
+      summary.innerHTML = renderSummary([
+        { label: "compile", value: `${compiled.compileMs.toFixed(2)} ms` },
+        { label: "execute", value: "Running...", tone: "running", showDot: true },
+        { label: "exit", value: "pending", tone: "pending" },
+      ]);
+
+      await waitForPaint();
+
+      const executed = compiled.execute();
+      const issueCount = compiled.issues.length;
       const stdoutParts: string[] = [];
 
-      if (result.output) {
-        stdoutParts.push(result.output.trimEnd());
+      if (executed.output) {
+        stdoutParts.push(executed.output.trimEnd());
       }
-      if (result.logs.length) {
-        stdoutParts.push(result.logs.join("\n"));
+      if (executed.logs.length) {
+        stdoutParts.push(executed.logs.join("\n"));
       }
 
       const stdoutContent = stdoutParts.length ? stdoutParts.join("\n") : "(no output)";
       const diagnostics = [
         stdoutContent,
-        issueCount ? `\n\n${issueCount} compiler issue(s):\n${result.issues.join("\n")}` : "",
+        issueCount ? `\n\n${issueCount} compiler issue(s):\n${compiled.issues.join("\n")}` : "",
       ].join("");
 
-      summary.innerHTML = `
-        <span class="summary-bar-item">
-          <span class="label">compile</span>
-          <span class="value">${result.compileMs.toFixed(2)} ms</span>
-        </span>
-        <span class="summary-bar-item">
-          <span class="label">execute</span>
-          <span class="value">${result.executeMs.toFixed(2)} ms</span>
-        </span>
-        <span class="summary-bar-item">
-          <span class="label">exit</span>
-          <span class="value ${result.exitCode === 0 ? "success" : "error"}">${result.exitCode}</span>
-        </span>
-      `;
+      summary.innerHTML = renderSummary([
+        { label: "compile", value: `${compiled.compileMs.toFixed(2)} ms` },
+        { label: "execute", value: `${executed.executeMs.toFixed(2)} ms` },
+        {
+          label: "exit",
+          value: String(executed.exitCode),
+          tone: executed.exitCode === 0 ? "success" : "error",
+        },
+      ]);
 
       output.innerHTML = escapeHtml(diagnostics);
       errorOutput.textContent = "";
-      preprocessedViewer.setValue(result.preprocessed);
-      irViewer.setValue(result.ir);
-      bytecode.innerHTML = escapeHtml(result.bytecode);
+      preprocessedViewer.setValue(compiled.preprocessed);
+      irViewer.setValue(compiled.ir);
+      bytecode.innerHTML = escapeHtml(compiled.bytecode);
       scrollToBottom(output);
     } catch (error) {
       const message = error instanceof Error ? error.message : String(error);
 
-      summary.innerHTML = `
-        <span class="summary-bar-item">
-          <span class="label">status</span>
-          <span class="value error">failed</span>
-        </span>
-      `;
+      summary.innerHTML = compiled
+        ? renderSummary([
+          { label: "compile", value: `${compiled.compileMs.toFixed(2)} ms` },
+          { label: "execute", value: "failed", tone: "error" },
+          { label: "exit", value: "error", tone: "error" },
+        ])
+        : renderSummary([
+          { label: "compile", value: "failed", tone: "error" },
+          { label: "execute", value: "pending", tone: "pending" },
+          { label: "exit", value: "pending", tone: "pending" },
+        ]);
       output.innerHTML = "";
       errorOutput.innerHTML = escapeHtml(message);
       preprocessedViewer.setValue("");
@@ -191,6 +253,7 @@ export function mountApp(root: HTMLElement) {
       bytecode.innerHTML = "";
       scrollToBottom(errorOutput);
     } finally {
+      setPlaygroundRunningState(false);
       document.body.dataset.ready = "true";
     }
   }
@@ -204,6 +267,21 @@ export function mountApp(root: HTMLElement) {
   const inspectHistory: ValueInspection[] = [];
   let inspectCurrentIndex = -1;
   let stackErrorTimer: number | undefined;
+  let replIsRunning = false;
+
+  function setReplRunningState(isRunning: boolean) {
+    replIsRunning = isRunning;
+    replCommand.disabled = isRunning;
+    replReset.disabled = isRunning;
+    replStatus.hidden = !isRunning;
+    replStatus.setAttribute("aria-hidden", String(!isRunning));
+  }
+
+  function shouldShowReplRunningState(line: string) {
+    const trimmed = line.trim();
+
+    return trimmed.length > 0 && ![".clear", ".exit", ".quit"].includes(trimmed);
+  }
 
   function renderReplStack(stack: StackItem[]) {
     replDepth.textContent = `depth: ${stack.length}`;
@@ -232,46 +310,63 @@ export function mountApp(root: HTMLElement) {
     scrollToBottom(replOutput);
   }
 
-  function runReplLine() {
+  async function runReplLine() {
+    if (replIsRunning) {
+      return;
+    }
+
     const line = replCommand.value;
-    const result = replSession.execute(line);
+    const showRunningState = shouldShowReplRunningState(line);
 
-    if (result.clearTranscript) {
-      replTranscript.splice(0, replTranscript.length);
+    if (showRunningState) {
+      setReplRunningState(true);
+      await waitForPaint();
     }
 
-    if (line.trim()) {
-      replHistory.push(line);
-      replHistoryIndex = replHistory.length;
-    }
+    try {
+      const result = replSession.execute(line);
 
-    replTranscript.push(`ff> ${line}`);
-
-    if (result.output.trim()) {
-      replTranscript.push(result.output.trimEnd());
-    }
-
-    if (result.logs.length) {
-      replTranscript.push(result.logs.join("\n"));
-    }
-
-    if (result.error) {
-      replTranscript.push(`Error: ${result.error}`);
-      replStack.classList.add("is-error");
-      if (stackErrorTimer !== undefined) {
-        window.clearTimeout(stackErrorTimer);
+      if (result.clearTranscript) {
+        replTranscript.splice(0, replTranscript.length);
       }
-      stackErrorTimer = window.setTimeout(() => {
-        replStack.classList.remove("is-error");
-      }, 500);
+
+      if (line.trim()) {
+        replHistory.push(line);
+        replHistoryIndex = replHistory.length;
+      }
+
+      replTranscript.push(`ff> ${line}`);
+
+      if (result.output.trim()) {
+        replTranscript.push(result.output.trimEnd());
+      }
+
+      if (result.logs.length) {
+        replTranscript.push(result.logs.join("\n"));
+      }
+
+      if (result.error) {
+        replTranscript.push(`Error: ${result.error}`);
+        replStack.classList.add("is-error");
+        if (stackErrorTimer !== undefined) {
+          window.clearTimeout(stackErrorTimer);
+        }
+        stackErrorTimer = window.setTimeout(() => {
+          replStack.classList.remove("is-error");
+        }, 500);
+      }
+
+      replTranscript.push(`[ ${result.stack.map((item) => item.value).join(" ")} ]`);
+
+      renderReplStack(result.stack);
+      renderReplTranscript();
+      replCommand.value = "";
+    } finally {
+      if (showRunningState) {
+        setReplRunningState(false);
+      }
+      replCommand.focus();
     }
-
-    replTranscript.push(`[ ${result.stack.map((item) => item.value).join(" ")} ]`);
-
-    renderReplStack(result.stack);
-    renderReplTranscript();
-    replCommand.value = "";
-    replCommand.focus();
   }
 
   function renderInspectPanel(info: ValueInspection | null) {
@@ -387,7 +482,7 @@ export function mountApp(root: HTMLElement) {
   replCommand.addEventListener("keydown", (event) => {
     if (event.key === "Enter") {
       event.preventDefault();
-      runReplLine();
+      void runReplLine();
       return;
     }
 
@@ -415,15 +510,26 @@ export function mountApp(root: HTMLElement) {
     }
   });
 
-  replReset.addEventListener("click", () => {
-    replSession.reset();
-    replTranscript.splice(0, replTranscript.length, "Session reset. Prelude reloaded.");
-    replHistory.splice(0, replHistory.length);
-    replHistoryIndex = 0;
-    renderReplStack([]);
-    renderReplTranscript();
-    replCommand.value = "";
-    replCommand.focus();
+  replReset.addEventListener("click", async () => {
+    if (replIsRunning) {
+      return;
+    }
+
+    setReplRunningState(true);
+    await waitForPaint();
+
+    try {
+      replSession.reset();
+      replTranscript.splice(0, replTranscript.length, "Session reset. Prelude reloaded.");
+      replHistory.splice(0, replHistory.length);
+      replHistoryIndex = 0;
+      renderReplStack([]);
+      renderReplTranscript();
+      replCommand.value = "";
+    } finally {
+      setReplRunningState(false);
+      replCommand.focus();
+    }
   });
 
   // Stack click handler for inspection

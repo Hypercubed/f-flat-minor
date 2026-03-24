@@ -354,10 +354,34 @@ textarea {
   outline-offset: 1px;
 }
 
+#repl-command:disabled {
+  cursor: progress;
+  opacity: 0.74;
+}
+
 .repl-hint {
   color: var(--muted);
   font-size: 0.8rem;
   padding: 0 0.1rem;
+}
+
+.repl-status {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.5rem;
+  min-height: 44px;
+  color: var(--muted);
+  font-size: 0.85rem;
+  white-space: nowrap;
+}
+
+.repl-status-dot {
+  width: 0.7rem;
+  height: 0.7rem;
+  border-radius: 999px;
+  background: var(--accent);
+  box-shadow: 0 0 0 0 rgba(187, 77, 29, 0.3);
+  animation: run-status-pulse 1.1s ease-out infinite;
 }
 
 .repl-console {
@@ -477,6 +501,12 @@ button:hover {
   transform: translateY(-1px);
 }
 
+button:disabled {
+  cursor: progress;
+  transform: none;
+  opacity: 0.74;
+}
+
 .primary {
   background: var(--ink);
   color: #fff8ef;
@@ -552,6 +582,31 @@ button:hover {
 
 .summary-bar-item .value.error {
   color: var(--accent);
+}
+
+.summary-bar-item .value.running {
+  color: var(--accent);
+  display: inline-flex;
+  align-items: center;
+  gap: 0.45rem;
+}
+
+.summary-bar-item .value.pending {
+  color: var(--muted);
+}
+
+.summary-bar[data-state="running"] {
+  background:
+    linear-gradient(180deg, rgba(255, 247, 238, 0.98), rgba(239, 225, 207, 0.82));
+}
+
+.summary-running-dot {
+  width: 0.7rem;
+  height: 0.7rem;
+  border-radius: 999px;
+  background: currentColor;
+  box-shadow: 0 0 0 0 rgba(187, 77, 29, 0.3);
+  animation: run-status-pulse 1.1s ease-out infinite;
 }
 
 .summary-grid {
@@ -729,9 +784,60 @@ button:hover {
 }
 
 .tutorial-run-summary {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.3rem 0.45rem;
+  align-items: center;
   color: var(--muted);
   font-size: 0.82rem;
   letter-spacing: 0.04em;
+}
+
+.tutorial-summary-item {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.3rem;
+}
+
+.tutorial-summary-label {
+  text-transform: lowercase;
+}
+
+.tutorial-summary-value {
+  color: var(--ink);
+  font-family: "Iosevka", "Cascadia Code", "SFMono-Regular", monospace;
+}
+
+.tutorial-summary-value.success {
+  color: var(--accent-2);
+}
+
+.tutorial-summary-value.error {
+  color: var(--accent);
+}
+
+.tutorial-summary-value.pending {
+  color: var(--muted);
+}
+
+.tutorial-summary-value.running {
+  color: var(--accent);
+  display: inline-flex;
+  align-items: center;
+  gap: 0.35rem;
+}
+
+.tutorial-summary-separator {
+  color: var(--muted);
+}
+
+.tutorial-summary-dot {
+  width: 0.62rem;
+  height: 0.62rem;
+  border-radius: 999px;
+  background: currentColor;
+  box-shadow: 0 0 0 0 rgba(187, 77, 29, 0.3);
+  animation: run-status-pulse 1.1s ease-out infinite;
 }
 
 .tutorial-console,
@@ -855,6 +961,23 @@ button:hover {
   background:
     linear-gradient(180deg, rgba(32, 22, 17, 0.98), rgba(42, 28, 21, 0.95));
   color: #f8eee2;
+}
+
+@keyframes run-status-pulse {
+  0% {
+    transform: scale(0.95);
+    box-shadow: 0 0 0 0 rgba(187, 77, 29, 0.3);
+  }
+
+  70% {
+    transform: scale(1);
+    box-shadow: 0 0 0 0.45rem rgba(187, 77, 29, 0);
+  }
+
+  100% {
+    transform: scale(0.95);
+    box-shadow: 0 0 0 0 rgba(187, 77, 29, 0);
+  }
 }
 
 .code-block {

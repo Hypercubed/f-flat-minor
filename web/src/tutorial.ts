@@ -1,5 +1,5 @@
 import { mountSourceEditor } from "./editor.ts";
-import { runProgram, type RunResult } from "./program-runner.ts";
+import { compileProgram, type RunResult } from "./program-runner.ts";
 import { TUTORIAL_PROBLEMS, type TutorialProblem } from "./tutorial-problems.ts";
 
 function escapeHtml(value: string): string {
@@ -30,6 +30,37 @@ function renderInlineCopy(value: string) {
       return escapeHtml(part);
     })
     .join("");
+}
+
+type TutorialSummaryTone = "default" | "success" | "error" | "running" | "pending";
+
+interface TutorialSummaryItem {
+  label: string;
+  value: string;
+  tone?: TutorialSummaryTone;
+  showDot?: boolean;
+}
+
+function waitForPaint() {
+  return new Promise<void>((resolve) => {
+    requestAnimationFrame(() => {
+      requestAnimationFrame(() => resolve());
+    });
+  });
+}
+
+function renderTutorialSummaryItems(items: TutorialSummaryItem[]) {
+  return items.map((item) => {
+    const toneClass = item.tone && item.tone !== "default" ? ` ${item.tone}` : "";
+    const dot = item.showDot ? '<span class="tutorial-summary-dot" aria-hidden="true"></span>' : "";
+
+    return `
+      <span class="tutorial-summary-item">
+        <span class="tutorial-summary-label">${escapeHtml(item.label)}</span>
+        <span class="tutorial-summary-value${toneClass}">${dot}${escapeHtml(item.value)}</span>
+      </span>
+    `;
+  }).join('<span class="tutorial-summary-separator" aria-hidden="true">|</span>');
 }
 
 function renderProblemCard(problem: TutorialProblem) {
@@ -134,17 +165,6 @@ function renderTutorialShell() {
   `;
 }
 
-function renderSummary(result: RunResult) {
-  const issueLabel = result.issues.length === 1 ? "1 compiler issue" : `${result.issues.length} compiler issues`;
-
-  return [
-    `compile ${result.compileMs.toFixed(2)} ms`,
-    `execute ${result.executeMs.toFixed(2)} ms`,
-    `exit ${result.exitCode}`,
-    result.issues.length ? issueLabel : "no compiler issues",
-  ].join(" | ");
-}
-
 function renderOutput(result: RunResult) {
   const stdoutParts: string[] = [];
 
@@ -189,17 +209,63 @@ export function mountTutorial(root: HTMLElement) {
       error.hidden = true;
     }
 
-    runButton.addEventListener("click", () => {
+    runButton.addEventListener("click", async () => {
       runButton.disabled = true;
       resetButton.disabled = true;
-      summary.textContent = "Running...";
+      if (stdin) {
+        stdin.disabled = true;
+      }
+      summary.innerHTML = renderTutorialSummaryItems([
+        { label: "compile", value: "Running...", tone: "running", showDot: true },
+        { label: "execute", value: "pending", tone: "pending" },
+        { label: "exit", value: "pending", tone: "pending" },
+      ]);
       error.textContent = "";
       error.hidden = true;
 
-      try {
-        const result = runProgram(sourceEditor.getValue(), stdin?.value ?? "", true);
+      let compiled: ReturnType<typeof compileProgram> | null = null;
 
-        summary.textContent = renderSummary(result);
+      try {
+        await waitForPaint();
+
+        compiled = compileProgram(sourceEditor.getValue(), stdin?.value ?? "", true);
+
+        summary.innerHTML = renderTutorialSummaryItems([
+          { label: "compile", value: `${compiled.compileMs.toFixed(2)} ms` },
+          { label: "execute", value: "Running...", tone: "running", showDot: true },
+          { label: "exit", value: "pending", tone: "pending" },
+        ]);
+
+        await waitForPaint();
+
+        const executed = compiled.execute();
+        const result: RunResult = {
+          output: executed.output,
+          preprocessed: compiled.preprocessed,
+          ir: compiled.ir,
+          bytecode: compiled.bytecode,
+          issues: compiled.issues,
+          stack: executed.stack,
+          logs: executed.logs,
+          exitCode: executed.exitCode,
+          compileMs: compiled.compileMs,
+          executeMs: executed.executeMs,
+        };
+
+        summary.innerHTML = renderTutorialSummaryItems([
+          { label: "compile", value: `${result.compileMs.toFixed(2)} ms` },
+          { label: "execute", value: `${result.executeMs.toFixed(2)} ms` },
+          {
+            label: "exit",
+            value: String(result.exitCode),
+            tone: result.exitCode === 0 ? "success" : "error",
+          },
+          {
+            label: "issues",
+            value: result.issues.length === 1 ? "1 compiler issue" : `${result.issues.length} compiler issues`,
+            tone: result.issues.length ? "error" : "default",
+          },
+        ]);
         output.textContent = renderOutput(result);
 
         if (result.issues.length) {
@@ -212,13 +278,26 @@ export function mountTutorial(root: HTMLElement) {
       } catch (runError) {
         const message = runError instanceof Error ? runError.message : String(runError);
 
-        summary.textContent = "Run failed.";
+        summary.innerHTML = compiled
+          ? renderTutorialSummaryItems([
+            { label: "compile", value: `${compiled.compileMs.toFixed(2)} ms` },
+            { label: "execute", value: "failed", tone: "error" },
+            { label: "exit", value: "error", tone: "error" },
+          ])
+          : renderTutorialSummaryItems([
+            { label: "compile", value: "failed", tone: "error" },
+            { label: "execute", value: "pending", tone: "pending" },
+            { label: "exit", value: "pending", tone: "pending" },
+          ]);
         output.textContent = "";
         diagnostics.textContent = "";
         diagnostics.hidden = true;
         error.textContent = message;
         error.hidden = false;
       } finally {
+        if (stdin) {
+          stdin.disabled = false;
+        }
         runButton.disabled = false;
         resetButton.disabled = false;
       }
