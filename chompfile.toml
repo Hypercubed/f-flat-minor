@@ -74,7 +74,8 @@ run = '''
     './deno/build/ff-execute ./ff/example.ffb' -n deno\
     'cat ./ff/example.ff | ./ruby/execute.rb' -n ruby\
     './racket/build/example' -n racket\
-    './ghc/build/ff' -n ghc
+    './ghc/build/ff' -n ghc\
+    'cd assemblyscript && cat ../ff/example.ff | node --no-warnings ./js/run.js' -n assemblyscript
 '''
 # './wolfram/example.wls' -n wolfram\
 
