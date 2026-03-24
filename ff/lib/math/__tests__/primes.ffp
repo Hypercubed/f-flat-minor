@@ -20,6 +20,7 @@
     21481 prime? assert
     2147483651 prime? assert_false
     2147483647 prime? assert
+OK
 
 0 'maybe_prime?' prints
     0 maybe_prime? assert_false
@@ -35,6 +36,7 @@
     29 maybe_prime? assert
     97 maybe_prime? assert
     2147483647 maybe_prime? assert
+OK
 
 0 'next-prime' prints
     0 next-prime 2 assert_eq
@@ -46,10 +48,10 @@
     7727 next-prime 7741 assert_eq
     104743 next-prime 104759 assert_eq
     2147483647 next-prime 2147483659 assert_eq
+OK
 
 0 'th-prime' prints
     6 th-prime 13 assert_eq
     168 th-prime 997 assert_eq
     169 th-prime 1009 assert_eq
-
 OK
