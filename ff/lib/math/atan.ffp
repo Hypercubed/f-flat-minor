@@ -132,14 +132,14 @@ __atan__core_scaled:
 
 __atan__pi_guard_digits: 20 ;
 
-__atan__pi_scaled:
+__npi__:
   __atan__pi_guard_digits +
   dup 1 5 __atan__core_scaled
   swap 1 239 __atan__core_scaled
   swap 4 * swap -
   4 *
   __atan__pi_guard_digits n->S /
-; /* n __atan__pi_scaled == floor(10^n*pi) */
+; /* n __npi__ == floor(10^n*pi) */
 
 __atan__needs_pi4:
   [ + dup * ] [ nip dup * 2 * ] bi2
@@ -157,7 +157,7 @@ __atan__den_zero:
   drop
   dup sgn q<
   drop
-  __atan__pi_scaled 2 /
+  __npi__ 2 /
   q> *
 ; /* n u v (v == 0) __atan__den_zero == sign(u)*floor(pi/2*10^n) */
 
@@ -165,7 +165,7 @@ __atan__abs_scaled:
   dup2 >
   [
     q< q<
-    dup __atan__pi_scaled 2 /
+    dup __npi__ 2 /
     q> q>
     rot
     q<
@@ -178,7 +178,7 @@ __atan__abs_scaled:
     dup2 __atan__needs_pi4
     [
       q< q<
-      dup __atan__pi_scaled 4 /
+      dup __npi__ 4 /
       q> q>
       rot
       swapd
