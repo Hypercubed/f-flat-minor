@@ -11,7 +11,7 @@ map!: _map eval ;
 
 reduce!: depth 2 - times ; /* a+ [B] reduce! == r */
 head!: [drop] reduce! ; /* a+ head! == a */
-tail!: q< clr q> ; /* .. a tail! == a */
+last!: q< clr q> ; /* .. a last! == a */
 
 _reduce_r: depth 3 > [ dup slip _reduce_r ] ? ;
 reduce_r!: _reduce_r eval ; /* a+ [B] reduce_r! == r */
@@ -28,7 +28,7 @@ filter!: _filter dupd eval not [drop] ? ; /* a* [B] filter! == a* */
 
 map: [ map! ] cons compose in ;
 first: [ head! ] compose in eval ;
-last: [ tail! ] compose in eval ;
+last: [ last! ] compose in eval ;
 foldr: [ swap foldr! ] cons cons compose in eval ;
 foldl: [ swap foldl! ] cons cons compose in eval ;
 reverse: [ reverse! ] compose in ;

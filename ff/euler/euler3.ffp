@@ -17,4 +17,4 @@ factors:
   ?
 ;
 
-600851475143 factors tail! . /* 6857 */
+600851475143 factors last! . /* 6857 */
