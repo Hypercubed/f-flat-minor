@@ -1,5 +1,5 @@
 version = 0.1
-default-task = 'test'
+default-task = 'build'
 
 extensions = ['../cmp-extension.js']
 
@@ -11,51 +11,44 @@ NC = '\033[0m'
 GRN = '\033[0;32m'
 
 [[task]]
-name = 'build'
-validation = 'none'
-run = ':'
-
-[[task]]
-name = 'test:interpret'
+name = 'build:run'
+target = './build/ff-run'
 deps = [
   './bin/ff-run.ts',
   './src/**/*.ts',
   '../typescript/core/src/**/*.ts'
 ]
+run = '''
+  mkdir -p ./build
+  printf '#!/bin/sh\nexec node --experimental-transform-types "$(dirname "$0")/../bin/ff-run.ts" "$@"\n' > ./build/ff-run
+  chmod +x ./build/ff-run
+'''
+
+[[task]]
+name = 'build'
+deps = ['build:run']
+
+[[task]]
+name = 'test:interpret'
+dep = './build/ff-run'
 template = 'cmp'
-run = 'node ./bin/ff-run.ts ../ff/example.ff'
+run = './build/ff-run ../ff/example.ff'
 [task.template-options]
 cmp = '../ff/example.out'
 
 [[task]]
 name = 'test:ffp'
-deps = [
-  './bin/ff-run.ts',
-  './src/**/*.ts',
-  '../typescript/core/src/**/*.ts'
-]
+dep = './build/ff-run'
 template = 'cmp'
-run = 'node ./bin/ff-run.ts ../ff/hello.ffp'
+run = './build/ff-run ../ff/hello.ffp'
 [task.template-options]
 cmp = '../ff/hello.out'
-
-[[task]]
-name = 'test'
-deps = [
-  ':test:interpret',
-  ':test:ffp',
-  ':test:ff'
-]
-serial = true
-display = 'none'
 
 [[task]]
 name = 'test:ff'
 deps = [
   '../ff/##.out',
-  './bin/ff-run.ts',
-  './src/**/*.ts',
-  '../typescript/core/src/**/*.ts'
+  './build/ff-run'
 ]
 serial = true
 invalidation = 'always'
@@ -65,22 +58,34 @@ run = '''
   shopt -s nullglob
   shopt -s extglob
   for i in "${DEP%.*}.ff?(p)"; do
-    node ./bin/ff-run.ts $i | cmp - $DEP -s && ${{CHECK}};
-    node ./bin/ff-run.ts $i --opt | cmp - $DEP -s && ${{CHECK}};
+    ./build/ff-run $i | cmp - $DEP -s && ${{CHECK}};
+    ./build/ff-run $i --opt | cmp - $DEP -s && ${{CHECK}};
   done
 '''
 
 [[task]]
+name = 'test'
+deps = [
+  'build',
+  ':test:interpret',
+  ':test:ffp',
+  ':test:ff'
+]
+serial = true
+display = 'none'
+
+[[task]]
 name = 'bench'
+deps = ['build:run']
 validation = 'none'
 serial = true
 run = '''
   hyperfine --warmup 3 -N \
-    'node ./bin/ff-run.ts ../ff/example.ff'\
-    'node ./bin/ff-run.ts ../ff/example.ff --opt'
+    './build/ff-run ../ff/example.ff'\
+    './build/ff-run ../ff/example.ff --opt'
 '''
 
 [[task]]
 name = 'clean'
 validation = 'none'
-run = ':'
+run = 'rm -rf ./build'
