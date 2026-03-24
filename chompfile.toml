@@ -56,7 +56,7 @@ run = '''
 
 [[task]]
 name = 'bench'
-deps = ['build:ghc', 'build:deno', 'build:go', 'build:cpp', 'build:dart', 'build:racket', 'build:rust', 'build:bun']
+deps = ['build:ghc', 'build:deno', 'build:go', 'build:cpp', 'build:dart', 'build:racket', 'build:rust', 'build:bun', 'build:node']
 validation = 'none'
 serial = true
 run = '''
@@ -68,7 +68,7 @@ run = '''
     './cpp/build/run ./ff/example.ff' -n cpp\
     './rust/build/example0' -n rust\
     './bun/build/ff-run ./ff/example.ff' -n bun\
-    'node ./node/bin/ff-run.ts ./ff/example.ff' -n node\
+    './node/build/ff-run ./ff/example.ff' -n node\
     'cat ./ff/example_v0.ff | ./dart/bin/dart.exe' -n dart\
     'cat ./ff/example.ff | ./python/execute.py' -n python\
     './deno/build/ff-execute ./ff/example.ffb' -n deno\
@@ -90,6 +90,18 @@ run = '''
     './deno/build/execute ./ff/example.ffb'\
     './go/build/execute --in ./ff/example.ffb'\
     './racket/main.rkt ./ff/example.ffb'
+'''
+
+[[task]]
+name = 'bench:interp'
+deps = ['build:node', 'build:bun', 'build:deno']
+validation = 'none'
+serial = true
+run = '''
+  hyperfine --warmup 3 -N \
+    './deno/build/ff-run ./ff/example.ff'\
+    './bun/build/ff-run ./ff/example.ff'\
+    './node/build/ff-run ./ff/example.ff'
 '''
 
 [[task]]
