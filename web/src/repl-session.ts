@@ -4,6 +4,8 @@ import type { ValueInspection } from "../../typescript/core/src/engine.ts";
 import { createVirtualFiles } from "./examples.ts";
 import { createBrowserPlatform, createPreprocessHost, type VirtualFiles } from "./runtime.ts";
 
+const PRELUDE = "/lib/prelude.ffp";
+
 export interface StackItem {
   value: string;
   index: number;
@@ -56,12 +58,18 @@ export class ReplSession {
 
     this.compiler = new Compiler();
     this.engine = new Engine(platform);
+
+    const macroCompiler = new Compiler();
+    const macroEngine = new Engine(platform);
+
     this.preprocessor = new Preprocessor(createPreprocessHost(this.files), {
-      engine: this.engine,
-      compiler: this.compiler,
+      engine: macroEngine,
+      compiler: macroCompiler,
+    }, {
+      macroEngineBootstrapFile: PRELUDE,
     });
 
-    this.execute(".load /lib/core.ff");
+    this.execute(`.import ${PRELUDE}`);
   }
 
   inspectValue(valueStr: string): ValueInspection {
@@ -91,7 +99,7 @@ export class ReplSession {
     if (trimmed === ".reset") {
       this.reset();
       return {
-        output: "Session reset. Core library reloaded.",
+        output: "Session reset. Prelude reloaded.",
         clearTranscript: true,
         logs,
         stack: this.createStackItems(),

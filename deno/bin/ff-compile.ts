@@ -7,6 +7,8 @@ import * as path from "https://deno.land/std@0.224.0/path/mod.ts";
 interface Arguments {
   file?: string;
   preprocess?: boolean;
+  prelude?: boolean;
+  "preprocessor-prelude"?: boolean;
   stats?: boolean;
   validate?: boolean;
   hlir?: boolean;
@@ -30,6 +32,10 @@ import { Optimizer } from "../src/optimizer.ts";
 import { Preprocessor } from "../src/preprocess.ts";
 import { dec2hex } from "../src/strings.ts";
 
+const PRELUDE = path.fromFileUrl(
+  new URL("../../ff/lib/prelude.ffp", import.meta.url),
+);
+
 export function run(argv: Arguments) {
   const textEncoder = new TextEncoder();
 
@@ -39,7 +45,10 @@ export function run(argv: Arguments) {
     : Deno.readTextFileSync(filename);
 
   if (!('preprocess' in argv) || argv.preprocess) {
-    const preprocessor = new Preprocessor();
+    const loadPreprocessorPrelude = !!(argv["preprocessor-prelude"] || argv.prelude);
+    const preprocessor = new Preprocessor(
+      loadPreprocessorPrelude ? { macroEngineBootstrapFile: PRELUDE } : undefined,
+    );
     code = preprocessor.preprocess(Preprocessor.tokenize(code), filename);
   }
 
@@ -133,7 +142,7 @@ export function run(argv: Arguments) {
 if (import.meta.main) {
   const argv = parseArgs(Deno.args, {
     string: ["file"],
-    boolean: ["preprocess", "stats", "validate", "hlir", "opt", "ir", "llir", "d", "disassemble", "dc", "bc"],
+    boolean: ["preprocess", "stats", "validate", "hlir", "opt", "ir", "llir", "d", "disassemble", "dc", "bc", "preprocessor-prelude", "prelude"],
     default: { file: "-", preprocess: true },
     alias: {
       file: ["f"],
@@ -148,6 +157,7 @@ if (import.meta.main) {
       disassemble: ["d"],
       dc: ["c"],
       bc: ["b"],
+      "preprocessor-prelude": ["P", "prelude"],
     },
   });
   // Map first positional argument to file (parseArgs puts them in _)

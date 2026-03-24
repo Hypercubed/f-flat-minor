@@ -11,11 +11,19 @@ export class Preprocessor {
   private readonly engine: Engine;
   private readonly compiler: Compiler;
   private readonly imported = new Set<string>();
+  private macroPreludeReady = false;
 
-  constructor(host: PreprocessHost, deps: { engine: Engine; compiler?: Compiler }) {
+  constructor(
+    host: PreprocessHost,
+    deps: { engine: Engine; compiler?: Compiler },
+    options?: { macroEngineBootstrapFile?: string },
+  ) {
     this.host = host;
     this.engine = deps.engine;
     this.compiler = deps.compiler || new Compiler();
+    if (options?.macroEngineBootstrapFile) {
+      this.bootstrapMacroEngine(options.macroEngineBootstrapFile);
+    }
   }
 
   preprocess(lines: string[], filename = "-"): string {
@@ -45,14 +53,18 @@ export class Preprocessor {
               return "";
             }
             case ".m": {
-              const ir = this.compiler.compileToIR(
-                Compiler.tokenize(rest.join(" ")),
-              );
-              this.engine.loadIR(ir);
-              this.engine.run();
-              const stack = this.engine.getStack();
-              this.engine.clear();
-              return stack.map(String).join(" ") + ` /* ${line} */`;
+              return this.runMacro(rest.join(" "), line);
+            }
+            case ".ff": {
+              return this.runMacro(rest.join(" "), line);
+            }
+            case ".ffp": {
+              if (!this.macroPreludeReady) {
+                throw new Error(
+                  "Preprocessor: .ffp requires prelude-enabled macro context",
+                );
+              }
+              return this.runMacro(rest.join(" "), line);
             }
           }
           return "";
@@ -76,5 +88,36 @@ export class Preprocessor {
     }
 
     throw 'File not found: "' + filename + '"';
+  }
+
+  private bootstrapMacroEngine(filename: string) {
+    const filepath = this.findFile(filename);
+    const code = this.host.readTextFile(filepath);
+    // Bootstrap through an isolated child preprocessor so .import state does
+    // not leak, while keeping `.ffp` unavailable until bootstrap completes.
+    const bootstrapPreprocessor = new Preprocessor(this.host, {
+      engine: this.engine,
+      compiler: this.compiler,
+    });
+    const preprocessed = bootstrapPreprocessor.preprocess(
+      Preprocessor.tokenize(code),
+      filepath,
+    );
+    const ir = this.compiler.compileToIR(Compiler.tokenize(preprocessed), filepath);
+    this.engine.loadIR(ir);
+    this.engine.run();
+    this.engine.clear();
+    this.macroPreludeReady = true;
+  }
+
+  private runMacro(macroCode: string, sourceLine: string) {
+    const ir = this.compiler.compileToIR(
+      Compiler.tokenize(macroCode),
+    );
+    this.engine.loadIR(ir);
+    this.engine.run();
+    const stack = this.engine.getStack();
+    this.engine.clear();
+    return stack.map(String).join(" ") + ` /* ${sourceLine} */`;
   }
 }

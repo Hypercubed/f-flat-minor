@@ -1,7 +1,9 @@
 #!/usr/bin/env -S node --experimental-transform-types
 
 import fs from "node:fs";
+import path from "node:path";
 import { parseArgs } from "node:util";
+import { fileURLToPath } from "node:url";
 
 import { Compiler } from "../src/compiler.ts";
 import { HEADER } from "../src/constants.ts";
@@ -10,6 +12,11 @@ import { disassembleIr, printFfCompatibleIr, printHighLevelIr, printLowLevelIr }
 import { Optimizer } from "../src/optimizer.ts";
 import { Preprocessor } from "../src/preprocess.ts";
 import { readStdin } from "../src/read.ts";
+
+const PRELUDE = path.resolve(
+  path.dirname(fileURLToPath(import.meta.url)),
+  "../../ff/lib/prelude.ffp",
+);
 
 interface Arguments {
   file?: string;
@@ -24,6 +31,8 @@ interface Arguments {
   trace?: boolean;
   base?: number;
   profile?: boolean;
+  prelude?: boolean;
+  "preprocessor-prelude"?: boolean;
 }
 
 function red(text: string) {
@@ -40,7 +49,10 @@ export function run(argv: Arguments) {
       ? textDecoder.decode(readStdin())
       : fs.readFileSync(filename, "utf8");
 
-  const preprocessor = new Preprocessor();
+  const loadPreprocessorPrelude = !!(argv["preprocessor-prelude"] || argv.prelude);
+  const preprocessor = new Preprocessor(
+    loadPreprocessorPrelude ? { macroEngineBootstrapFile: PRELUDE } : undefined,
+  );
   code = preprocessor.preprocess(Preprocessor.tokenize(code), filename);
 
   const compiler = new Compiler();
@@ -156,6 +168,8 @@ if (import.meta.main) {
       enc: { type: "boolean", short: "e", default: false },
       trace: { type: "boolean", short: "t", default: false },
       profile: { type: "boolean", short: "p", default: false },
+      "preprocessor-prelude": { type: "boolean", short: "P", default: false },
+      prelude: { type: "boolean", default: false },
       base: { type: "string" },
     },
     allowPositionals: true,
