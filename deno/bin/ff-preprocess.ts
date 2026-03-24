@@ -28,7 +28,7 @@ export function run(args: Arguments) {
 
   const loadPreprocessorPrelude = !!(args["preprocessor-prelude"] || args.prelude);
   const preprocessor = new Preprocessor(
-    loadPreprocessorPrelude ? { bootstrapFile: PRELUDE } : undefined,
+    loadPreprocessorPrelude ? { macroEngineBootstrapFile: PRELUDE } : undefined,
   );
   const processed = preprocessor.preprocess(Preprocessor.tokenize(code), filename);
   Deno.stdout.writeSync(encoder.encode(processed));

@@ -56,7 +56,7 @@ export async function run(args: Arguments) {
   let compiler = new Compiler();
   let interpreter = new Engine();
   let preprocessor = new Preprocessor(
-    loadPreprocessorPrelude ? { bootstrapFile: prelude } : undefined,
+    loadPreprocessorPrelude ? { macroEngineBootstrapFile: prelude } : undefined,
   );
 
   console.log();
@@ -91,7 +91,7 @@ export async function run(args: Arguments) {
       compiler = new Compiler();
       interpreter = new Engine();
       preprocessor = new Preprocessor(
-        loadPreprocessorPrelude ? { bootstrapFile: prelude } : undefined,
+        loadPreprocessorPrelude ? { macroEngineBootstrapFile: prelude } : undefined,
       );
       return;
     }

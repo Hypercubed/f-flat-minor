@@ -4,7 +4,7 @@ import { Engine } from "./engine.ts";
 import { createBunPreprocessHost } from "./runtime.ts";
 
 export class Preprocessor extends CorePreprocessor {
-  constructor(options?: { bootstrapFile?: string }) {
+  constructor(options?: { macroEngineBootstrapFile?: string }) {
     super(createBunPreprocessHost(), {
       engine: new Engine(),
       compiler: new Compiler(),

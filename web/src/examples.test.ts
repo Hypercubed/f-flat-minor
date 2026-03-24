@@ -9,7 +9,7 @@ describe("virtual library files", () => {
     const paths = Object.keys(files);
 
     expect(files["/lib/math/log.ffp"]).toBeDefined();
-    expect(files["/lib/math/encode-primes.ffp"]).toBeDefined();
+    expect(files["/lib/core/core.ff"]).toBeDefined();
     expect(paths.some((path) => path.includes("/__tests__/"))).toBe(false);
     expect(paths.some((path) => path.endsWith(".out"))).toBe(false);
     expect(files["/lib/README.md"]).toBeUndefined();

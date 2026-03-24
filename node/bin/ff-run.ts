@@ -51,7 +51,7 @@ export function run(argv: Arguments) {
 
   const loadPreprocessorPrelude = !!(argv["preprocessor-prelude"] || argv.prelude);
   const preprocessor = new Preprocessor(
-    loadPreprocessorPrelude ? { bootstrapFile: PRELUDE } : undefined,
+    loadPreprocessorPrelude ? { macroEngineBootstrapFile: PRELUDE } : undefined,
   );
   code = preprocessor.preprocess(Preprocessor.tokenize(code), filename);
 

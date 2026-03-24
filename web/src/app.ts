@@ -417,7 +417,7 @@ export function mountApp(root: HTMLElement) {
 
   replReset.addEventListener("click", () => {
     replSession.reset();
-    replTranscript.splice(0, replTranscript.length, "Session reset. Core library reloaded.");
+    replTranscript.splice(0, replTranscript.length, "Session reset. Prelude reloaded.");
     replHistory.splice(0, replHistory.length);
     replHistoryIndex = 0;
     renderReplStack([]);

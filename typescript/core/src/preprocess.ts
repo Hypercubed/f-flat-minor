@@ -16,13 +16,13 @@ export class Preprocessor {
   constructor(
     host: PreprocessHost,
     deps: { engine: Engine; compiler?: Compiler },
-    options?: { bootstrapFile?: string },
+    options?: { macroEngineBootstrapFile?: string },
   ) {
     this.host = host;
     this.engine = deps.engine;
     this.compiler = deps.compiler || new Compiler();
-    if (options?.bootstrapFile) {
-      this.bootstrap(options.bootstrapFile);
+    if (options?.macroEngineBootstrapFile) {
+      this.bootstrapMacroEngine(options.macroEngineBootstrapFile);
     }
   }
 
@@ -90,16 +90,19 @@ export class Preprocessor {
     throw 'File not found: "' + filename + '"';
   }
 
-  private bootstrap(filename: string) {
+  private bootstrapMacroEngine(filename: string) {
     const filepath = this.findFile(filename);
-    if (this.imported.has(filepath)) {
-      this.macroPreludeReady = true;
-      return;
-    }
-
-    this.imported.add(filepath);
     const code = this.host.readTextFile(filepath);
-    const preprocessed = this.preprocess(Preprocessor.tokenize(code), filepath);
+    // Bootstrap through an isolated child preprocessor so .import state does
+    // not leak, while keeping `.ffp` unavailable until bootstrap completes.
+    const bootstrapPreprocessor = new Preprocessor(this.host, {
+      engine: this.engine,
+      compiler: this.compiler,
+    });
+    const preprocessed = bootstrapPreprocessor.preprocess(
+      Preprocessor.tokenize(code),
+      filepath,
+    );
     const ir = this.compiler.compileToIR(Compiler.tokenize(preprocessed), filepath);
     this.engine.loadIR(ir);
     this.engine.run();

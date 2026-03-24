@@ -57,12 +57,14 @@ export function runProgram(source: string, stdin: string, optimize: boolean): Ru
 
   const compiler = new Compiler();
   const engine = new Engine(platform);
+  const macroCompiler = new Compiler();
+  const macroEngine = new Engine(platform);
   const files = createVirtualFiles(source);
   const preprocessor = new Preprocessor(createPreprocessHost(files), {
-    engine,
-    compiler,
+    engine: macroEngine,
+    compiler: macroCompiler,
   }, {
-    bootstrapFile: PRELUDE,
+    macroEngineBootstrapFile: PRELUDE,
   });
 
   return withCapturedConsole((message) => logs.push(message), () => {
