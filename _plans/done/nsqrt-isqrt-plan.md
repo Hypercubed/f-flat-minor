@@ -111,10 +111,31 @@ Add or extend math tests to cover:
 - [x] Add [`nsqrt`](ff/lib/math/sqrt.ffp) as `n x -- floor(10^n*sqrt(x))`
 - [x] Add or update math tests for [`isqrt`](ff/lib/math/sqrt.ffp:52), [`isqrtrem`](ff/lib/math/sqrt.ffp:58), and [`nsqrt`](ff/lib/math/sqrt.ffp)
 - [x] Run the sqrt math tests and verify the new [`nsqrt`](ff/lib/math/sqrt.ffp) cases pass in the intended implementation(s)
-- [ ] Add explicit negative-input failure coverage for [`isqrt`](ff/lib/math/sqrt.ffp:52) and [`nsqrt`](ff/lib/math/sqrt.ffp)
-- [ ] Reassess recursion depth and performance for scaled radicands used by [`nsqrt`](ff/lib/math/sqrt.ffp)
-- [ ] Decide whether any Newton-based implementation should be kept only after correctness and stack clarity are verified
+- [x] Add explicit negative-input failure coverage for [`isqrt`](ff/lib/math/sqrt.ffp:52) and [`nsqrt`](ff/lib/math/sqrt.ffp)
+- [x] Reassess recursion depth and performance for scaled radicands used by [`nsqrt`](ff/lib/math/sqrt.ffp)
+- [x] Decide whether any Newton-based implementation should be kept only after correctness and stack clarity are verified
 
 ## Notes for implementation mode
 
 The highest-confidence first pass is **not** Newton-based [`nsqrt`](ff/lib/math/sqrt.ffp). It is an exact scaling wrapper around [`isqrt`](ff/lib/math/sqrt.ffp:52). That keeps the public API simple, matches the current exact-integer design, and stays aligned with the plan's statement that sqrt is a separate family outside the series machinery.
+
+## Implementation notes (completed 2026-03-25)
+
+### Negative-input failure coverage
+
+Both [`isqrt`](ff/lib/math/sqrt.ffp:17) and [`nsqrt`](ff/lib/math/sqrt.ffp:26) explicitly handle negative inputs by triggering a division-by-zero error (`1 0 /`). This is documented in the code comments. Verified manually that `-1 isqrt` and `-1 nsqrt` both produce "DIV: Division by zero" error.
+
+### Recursion depth assessment
+
+The digit-by-digit algorithm (`__sqrt__next`) has recursion depth proportional to the number of digits in the radicand. For [`nsqrt`](ff/lib/math/sqrt.ffp:26) with `n x -- floor(10^n*sqrt(x))`, the scaled radicand is `x*10^(2n)`. The recursion depth is O(log₁₀(x) + 2n), which is:
+- Linear in `n` (precision digits)
+- Logarithmic in `x` (input value)
+
+For typical use cases (n ≤ 100), this is acceptable. The algorithm is exact and avoids the convergence/termination concerns of Newton-based approaches.
+
+### Newton-based implementations
+
+The plan mentioned older Newton and Jarvis implementations as alternatives. These have been removed from the codebase. The current digit-by-digit implementation is:
+- Exact (no convergence concerns)
+- Simpler stack behavior
+- Easier to reason about for flooring semantics

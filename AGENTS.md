@@ -34,6 +34,24 @@ Use one of the TypeScript implementations instead:
 - `node/README.md` for the Node implementation
 - `bun/README.md` for the Bun implementation
 
+### Running Tests
+
+The most complete test set is the deno tests. From the project root:
+
+```bash
+cd deno && chomp test:ff
+```
+
+This runs all `.ff` and `.ffp` tests, comparing output to corresponding `.out` files.
+
+**Note:** f-flat-minor uses relative `.import` directives that are resolved from the source file's directory, not the current working directory. For individual test files, run from the test directory:
+
+```bash
+cd ff/lib/math/__tests__ && cat sqrt.ffp | deno run - ../../../../deno/bin/ff-run.ts
+```
+
+Or use the chomp build system which handles paths correctly.
+
 ### File Types
 - `.ff` - Basic f-flat-minor source files (works with Python, Deno, Node, or Bun)
 - `.ffp` - Source files requiring preprocessor (use Deno, Node, or Bun)
