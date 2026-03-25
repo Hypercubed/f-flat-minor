@@ -1,5 +1,6 @@
 .import ./arith.ffp
 .import ./precision.ffp
+.import ./pi.ffp
 
 /*
  * Arctan utilities using precision helpers and rational Taylor parts.
@@ -130,17 +131,6 @@ __atan__core_scaled:
   p/q*S
 ; /* n u v __atan__core_scaled == floor(10^n*atan(u/v)) for reduced positive ratios */
 
-__atan__pi_guard_digits: 20 ;
-
-__npi__:
-  __atan__pi_guard_digits +
-  dup 1 5 __atan__core_scaled
-  swap 1 239 __atan__core_scaled
-  swap 4 * swap -
-  4 *
-  __atan__pi_guard_digits n->S /
-; /* n __npi__ == floor(10^n*pi) */
-
 __atan__needs_pi4:
   [ + dup * ] [ nip dup * 2 * ] bi2
   >
@@ -157,7 +147,7 @@ __atan__den_zero:
   drop
   dup sgn q<
   drop
-  __npi__ 2 /
+  npi 2 /
   q> *
 ; /* n u v (v == 0) __atan__den_zero == sign(u)*floor(pi/2*10^n) */
 
@@ -165,7 +155,7 @@ __atan__abs_scaled:
   dup2 >
   [
     q< q<
-    dup __npi__ 2 /
+    dup npi 2 /
     q> q>
     rot
     q<
@@ -178,7 +168,7 @@ __atan__abs_scaled:
     dup2 __atan__needs_pi4
     [
       q< q<
-      dup __npi__ 4 /
+      dup npi 4 /
       q> q>
       rot
       swapd

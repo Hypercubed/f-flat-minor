@@ -1,4 +1,4 @@
-#!/usr/bin/env -S node --experimental-transform-types
+#!/usr/bin/env -S node --experimental-transform-types --disable-warning=ExperimentalWarning
 
 import fs from "node:fs";
 import path from "node:path";

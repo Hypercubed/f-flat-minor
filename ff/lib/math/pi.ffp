@@ -1,4 +1,14 @@
 .import ./atan.ffp
 
+__pi__pi_guard_digits: 20 ;
+
+
 /* n -> floor(pi * 10^n) */
-npi: __npi__ ;
+npi:
+  __pi__pi_guard_digits +
+  dup 1 5 __atan__core_scaled
+  swap 1 239 __atan__core_scaled
+  swap 4 * swap -
+  4 *
+  __pi__pi_guard_digits n->S /
+; /* n __npi__ == floor(10^n*pi) */
