@@ -37,7 +37,6 @@ zero?: 0 = ; /* n zero? == flag */
 truthy?: zero? not ; .inline /* n truthy? == flag */
 falsey?: zero? ; .inline /* n falsey? == flag */
 !=: = not ; .inline /* a b != == flag */
-nz?: zero? not ; .inline /* n nz? == flag */
 
 /* comparison */
 <=: > not ; .inline /* a b <= == flag */

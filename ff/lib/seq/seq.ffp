@@ -34,7 +34,7 @@ foldl: [ swap foldl! ] cons cons compose in eval ;
 reverse: [ reverse! ] compose in ;
 filter: [ filter! ] cons compose in ;
 
-sum!: [+] reduce! ; /* .. sum! == n */
+sum!: 0 swap [+] reduce_l! ; /* .. sum! == n */
 product!: [*] 1 reduce! ; /* .. product! == n */
 
 sum: 0 [+] foldr ; /* [A] sum == n */
