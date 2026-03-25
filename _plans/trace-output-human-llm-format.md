@@ -1,5 +1,5 @@
 ---
-status: draft
+status: done
 status_date: 2026-03-25
 creator: codex
 ---
@@ -69,9 +69,7 @@ Current tracing prints a single line containing stack, action token, and a chara
 - A dedicated machine-readable mode is desirable for agent workflows.
 
 ## Open questions
-- Should `--trace-format` default to `human` only when `--trace` is set, or should explicit format imply tracing automatically?
-- Should JSONL include both symbolic and raw opcode fields by default, or gate one behind verbose mode?
-- What should be the default `queue_preview` token count in human mode?
+None — implemented with `--trace` as the primary switch, JSONL including symbolic/raw fields, and bounded defaults.
 
 ## Out of scope
 - Changing VM execution semantics or performance optimizations unrelated to tracing.
@@ -84,3 +82,8 @@ Current tracing prints a single line containing stack, action token, and a chara
 ## References
 - typescript/core/src/engine.ts (current trace function and queue logging behavior)
 - Discussion on preferred human trace ordering and verbosity
+
+## Outcome
+- Added structured trace events in the shared TypeScript engine and formatter support for human and JSONL outputs.
+- Wired trace formatting options across Node, Bun, and Deno CLI entrypoints.
+- Updated runtime READMEs plus agent guidance (`AGENTS.md` and `.agent/skills/ff-code-authoring/SKILL.md`) to document human vs JSONL trace usage.

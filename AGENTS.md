@@ -78,6 +78,14 @@ The most complete test set is the deno tests. To run the deno tests you can run:
 chomp test:deno
 ```
 
+## Trace output modes (TypeScript runtimes)
+
+Node, Bun, and Deno support structured tracing:
+- `--trace --trace-format human` (default) for concise human-readable traces.
+- `--trace --trace-format jsonl` for one JSON object per VM step (recommended for agents/LLM tooling).
+- `--trace-verbose` to include additional per-step details.
+- `--trace-queue-max` and `--trace-stack-max` to bound trace output size.
+
 ## Documentation
 
 - Language examples and tutorials: `_docs/fbm-by-example.md`

@@ -11,6 +11,10 @@ interface Arguments {
   d?: boolean;
   disassemble?: boolean;
   trace?: boolean;
+  "trace-format"?: string;
+  "trace-verbose"?: boolean;
+  "trace-queue-max"?: number;
+  "trace-stack-max"?: number;
   base?: number;
   stats?: boolean;
   profile?: boolean;
@@ -67,6 +71,10 @@ export function run(args: Arguments) {
 
   interpreter.loadBigIntCode(bigCode);
   interpreter.traceOn = !!args.trace;
+  interpreter.traceFormat = args["trace-format"] === "jsonl" ? "jsonl" : "human";
+  interpreter.traceVerbose = !!args["trace-verbose"];
+  interpreter.traceQueueMax = Number(args["trace-queue-max"] ?? interpreter.traceQueueMax);
+  interpreter.traceStackMax = Number(args["trace-stack-max"] ?? interpreter.traceStackMax);
   interpreter.base = args.base || 10;
   interpreter.statsOn = args.stats || false;
   interpreter.profileOn = args.profile || false;
@@ -89,8 +97,8 @@ export function run(args: Arguments) {
 
 if (import.meta.main) {
   const argv = parseArgs(Deno.args, {
-    string: ["file", "base"],
-    boolean: ["dump", "hlir", "ir", "d", "disassemble", "trace", "stats", "profile"],
+    string: ["file", "base", "trace-format", "trace-queue-max", "trace-stack-max"],
+    boolean: ["dump", "hlir", "ir", "d", "disassemble", "trace", "trace-verbose", "stats", "profile"],
     default: { file: "-" },
     alias: {
       file: ["f"],
@@ -101,6 +109,7 @@ if (import.meta.main) {
       d: ["d"],
       disassemble: ["d"],
       trace: ["t"],
+      "trace-format": ["T"],
       stats: ["s"],
       profile: ["p"],
     },

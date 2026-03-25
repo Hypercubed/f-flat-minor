@@ -15,6 +15,25 @@ const IMMEDIATE_WORDS = [
 
 const Q_LITERAL = 0n;
 const Q_CALL = 1n;
+type TraceFormat = "human" | "jsonl";
+
+interface TraceQueueToken {
+  tag: "literal" | "call";
+  value: string;
+  action: string;
+}
+
+interface TraceEvent {
+  step: number;
+  immediate: boolean;
+  tag: "literal" | "call";
+  value: string;
+  action: string;
+  stack_before: string[];
+  stack_after?: string[];
+  queue_preview: TraceQueueToken[];
+  queue_depth: number;
+}
 
 export interface InspectableToken {
   /** The bigint value */
@@ -66,6 +85,10 @@ export class Engine {
   private nextAnonOp = MAX_SYSTEM_OP_CODE + 1;
 
   traceOn = false;
+  traceFormat: TraceFormat = "human";
+  traceVerbose = false;
+  traceQueueMax = 8;
+  traceStackMax = 32;
   base = 10;
   statsOn = false;
   profileOn = false;
@@ -234,13 +257,14 @@ export class Engine {
   run() {
     const queue = this.queue;
     let immediate = false;
+    let step = 0;
 
     while (queue.length > 0) {
       const [tag, value] = this.queueShift();
       const isCall = tag === Q_CALL;
+      const stackBefore = this.stack.slice();
 
       immediate = !this.depth || (isCall && IMMEDIATE_WORDS.includes(value));
-      this.traceOn && this.trace(tag, value, immediate);
 
       if (isCall) {
         if (!immediate) {
@@ -258,18 +282,108 @@ export class Engine {
         this.stats.max_stack_depth = Math.max(this.stats.max_stack_depth, this.stack.length);
         this.stats.max_queue_depth = Math.max(this.stats.max_queue_depth, queue.length / 2);
       }
+
+      this.traceOn && this.trace({
+        step: step++,
+        immediate,
+        tag,
+        value,
+        stackBefore,
+        stackAfter: this.traceVerbose || this.traceFormat === "jsonl" ? this.stack.slice() : undefined,
+      });
     }
     return this.stack;
   }
 
-  trace(tag: bigint, value: bigint, immediate: boolean) {
-    let name = tag === Q_CALL ? this.getName(value) : String(value);
-    if (immediate) {
-      name = `*${name}*`;
+  private trace({
+    step,
+    immediate,
+    tag,
+    value,
+    stackBefore,
+    stackAfter,
+  }: {
+    step: number;
+    immediate: boolean;
+    tag: bigint;
+    value: bigint;
+    stackBefore: bigint[];
+    stackAfter: bigint[] | undefined;
+  }) {
+    const event = this.createTraceEvent(step, immediate, tag, value, stackBefore, stackAfter);
+    if (this.traceFormat === "jsonl") {
+      console.log(JSON.stringify(event));
+      return;
     }
-    const s = this.stack.map(String).join(" ");
-    const q = this.queue.map(String).join(" ");
-    console.log(`[ ${s} ] ${name} [ ${q.slice(0 , 10)}...`);
+    console.log(this.formatHumanTrace(event));
+  }
+
+  private createTraceEvent(
+    step: number,
+    immediate: boolean,
+    tag: bigint,
+    value: bigint,
+    stackBefore: bigint[],
+    stackAfter: bigint[] | undefined,
+  ): TraceEvent {
+    const isCall = tag === Q_CALL;
+    const action = isCall ? this.getName(value, String(value)) : String(value);
+    const queuePreview = this.getQueuePreview();
+    return {
+      step,
+      immediate,
+      tag: isCall ? "call" : "literal",
+      value: String(value),
+      action,
+      stack_before: this.limitStack(stackBefore).map(String),
+      stack_after: stackAfter ? this.limitStack(stackAfter).map(String) : undefined,
+      queue_preview: queuePreview,
+      queue_depth: this.queue.length / 2,
+    };
+  }
+
+  private limitStack(stack: bigint[]) {
+    return stack.length > this.traceStackMax ? stack.slice(-this.traceStackMax) : stack;
+  }
+
+  private getQueuePreview(): TraceQueueToken[] {
+    const preview: TraceQueueToken[] = [];
+    const max = Math.max(this.traceQueueMax, 0);
+    for (let i = 0; i < this.queue.length && preview.length < max; i += 2) {
+      const tag = this.queue[i] ?? 0n;
+      const value = this.queue[i + 1] ?? 0n;
+      const isCall = tag === Q_CALL;
+      preview.push({
+        tag: isCall ? "call" : "literal",
+        value: String(value),
+        action: isCall ? this.getName(value, String(value)) : String(value),
+      });
+    }
+    return preview;
+  }
+
+  private formatHumanTrace(event: TraceEvent) {
+    const action = event.immediate ? `*${event.action}*` : event.action;
+    const stackBefore = this.formatHumanStack(event.stack_before);
+    const queueNext = this.formatHumanQueue(event.queue_preview, event.queue_depth);
+    let line = `${event.step} | ${stackBefore} | ${action} | ${queueNext}`;
+    if (this.traceVerbose) {
+      const stackAfter = this.formatHumanStack(event.stack_after ?? []);
+      line += ` | ${stackAfter} | immediate=${event.immediate} tag=${event.tag} value=${event.value} stack_depth=${this.stack.length} queue_depth=${event.queue_depth}`;
+    }
+    return line;
+  }
+
+  private formatHumanStack(stack: string[]) {
+    if (stack.length === 0) return "[]";
+    return `[${stack.join(" ")}]`;
+  }
+
+  private formatHumanQueue(preview: TraceQueueToken[], queueDepth: number) {
+    const rendered = preview.map((token) => token.tag === "call" ? `&${token.action}` : token.value);
+    const hidden = Math.max(queueDepth - preview.length, 0);
+    if (hidden > 0) rendered.push(`…(+${hidden})`);
+    return `[${rendered.join(" ")}]`;
   }
 
   getName(op: bigint, def = String(op)): string {

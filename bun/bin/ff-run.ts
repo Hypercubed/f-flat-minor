@@ -34,6 +34,10 @@ interface Arguments {
   disassemble?: boolean;
   enc?: boolean;
   trace?: boolean;
+  "trace-format"?: string;
+  "trace-verbose"?: boolean;
+  "trace-queue-max"?: number;
+  "trace-stack-max"?: number;
   base?: number;
   profile?: boolean;
   prelude?: boolean;
@@ -142,6 +146,10 @@ export function run(argv: Arguments) {
 
   const interpreter = new Engine();
   interpreter.traceOn = !!argv.trace;
+  interpreter.traceFormat = argv["trace-format"] === "jsonl" ? "jsonl" : "human";
+  interpreter.traceVerbose = !!argv["trace-verbose"];
+  interpreter.traceQueueMax = Number(argv["trace-queue-max"] ?? interpreter.traceQueueMax);
+  interpreter.traceStackMax = Number(argv["trace-stack-max"] ?? interpreter.traceStackMax);
   interpreter.base = argv.base || 10;
   interpreter.statsOn = argv.stats || false;
   interpreter.profileOn = argv.profile || false;
@@ -184,6 +192,10 @@ if (import.meta.main) {
       disassemble: { type: "boolean", short: "d", default: false },
       enc: { type: "boolean", short: "e", default: false },
       trace: { type: "boolean", short: "t", default: false },
+      "trace-format": { type: "string", default: "human" },
+      "trace-verbose": { type: "boolean", default: false },
+      "trace-queue-max": { type: "string" },
+      "trace-stack-max": { type: "string" },
       profile: { type: "boolean", short: "p", default: false },
       "preprocessor-prelude": { type: "boolean", short: "P", default: false },
       prelude: { type: "boolean", default: false },
@@ -197,6 +209,8 @@ if (import.meta.main) {
     ...values,
     file: values.file || (typeof positionals[0] === "string" ? positionals[0] : "-"),
     base: values.base ? Number(values.base) : undefined,
+    "trace-queue-max": values["trace-queue-max"] ? Number(values["trace-queue-max"]) : undefined,
+    "trace-stack-max": values["trace-stack-max"] ? Number(values["trace-stack-max"]) : undefined,
   };
 
   run(argv);
