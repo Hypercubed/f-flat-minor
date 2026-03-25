@@ -155,7 +155,7 @@ See [F♭m by example](./_docs/fbm-by-example.md) for a more detailed explanatio
 | DUP      |  dup   | `a dup == a a`                       |    33 (!)     | F♭m<sup>o</sup> |
 | DEPTH    | depth  | `… depth == … n`                     |    35 (#)     |       F♭m       |
 | SWAP     |  swap  | `a b swap == b a`                    |    36 ($)     |       F♭m       |
-| MOD      |   %    | `a b % == n`                         |    37 (%)     |       F♭m       |
+| MOD      |   %    | `a b % == r {a = b*trunc(a/b)+r}`    |    37 (%)     |       F♭m       |
 | AND      |   &    | `a b & == n`                         |    38 (&)     |       F♭m       |
 | STASH    |   (    | `… ( == {moves stack to queue}`      |    40 (()     |       F♭m       |
 | FETCH    |   )    | `) == … {restores stack from queue}` |    41 ())     |       F♭m       |
@@ -163,7 +163,7 @@ See [F♭m by example](./_docs/fbm-by-example.md) for a more detailed explanatio
 | ADD      |   +    | `a b + == n`                         |    43 (+)     | F♭m<sup>o</sup> |
 | SUB      |   -    | `a b - == n`                         |    45 (-)     | F♭m<sup>o</sup> |
 | DUMP     |   .    | `… . == … {prints stack}`            |    46 (.)     | F♭m<sup>o</sup> |
-| DIV      |   /    | `a b / == n`                         |    47 (/)     | F♭m<sup>o</sup> |
+| DIV      |   /    | `a b / == trunc(a/b)`                |    47 (/)     | F♭m<sup>o</sup> |
 | MARK     |   :    | `n : == {begin definition(n)}`       |    58 (:)     | F♭m<sup>o</sup> |
 | DEF      |   ;    | `; == {end definition}`              |    59 (;)     | F♭m<sup>o</sup> |
 | LT       |   <    | `a b < == flag`                      |    60 (<)     |       F♭m       |
@@ -177,6 +177,10 @@ See [F♭m by example](./_docs/fbm-by-example.md) for a more detailed explanatio
 | NOT      |   ~    | `a ~ == n'`                          |    126 (~)    |       F♭m       |
 
 <!-- END mdsh -->
+
+Division note: the language docs define `/` as integer division truncated toward zero, with `%` as the matching remainder. That means `-3 2 /` is `-1`, not `-2`, and `-3 2 %` is `-1`.
+
+Implementation status: Deno, Node, and Bun match that `/` and `%` rule today. Python and Racket truncate `/` toward zero, but `%` still follows divisor-signed modulo. Go currently uses Euclidean division for negative operands, and Ruby currently uses floor division/modulo for negative operands.
 
 ### _F♭m<sup>+</sup>_
 

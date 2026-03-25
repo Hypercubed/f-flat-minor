@@ -10,3 +10,4 @@
 .import ./log.ffp
 .import ./exp.ffp
 .import ./pi.ffp
+.import ./trig.ffp

@@ -644,6 +644,15 @@ The precision-driven exponential path is now implemented in `ff/lib/math/exp.ffp
 Incremental note — 2026-03-22:
 `icosh`/`isinh` and `ncosh`/`nsinh` may be added as a first pass by composing the existing `nexp` wrappers. This is acceptable as a temporary step for API coverage and durable tests, with a later refactor expected to move hyperbolic composition down to the shared Shape 1 parts layer.
 
+Implementation note — 2026-03-24:
+An initial `ncos` attempt in `trig.ffp` was backed out after the loop-state shuffle stopped being trustworthy. The main lessons worth preserving before another trig pass are:
+
+- Treat the queue validator as a first-line design tool. It caught a real `q<`/`q>` mismatch in an early modulo helper before runtime debugging even started.
+- For queue-heavy helpers that must be marked `.unsafe`, add a tiny direct runtime probe before composing them into a full series loop. The helper-level check was far more informative than running the full trig test file.
+- Add one-step invariance probes for Taylor recurrences. For cosine, a single step with `x^2 = 0` should preserve the running sum and zero out the next term; that probe exposed a broken shuffle immediately.
+- Document a preferred loop-state layout before writing code. The friction was not in the cosine mathematics itself, but in repeatedly rediscovering which stack/queue arrangement made `sum`, `term`, `k`, `p`, and `x^2` easy to update without losing invariants.
+- When reducing a signed transcendental result back from guard precision, call out the negative-floor requirement explicitly. Truncation toward zero is not enough for `floor(10^n*f(x))` when the final value is negative.
+
 ---
 
 ## Relationship to Binary Splitting

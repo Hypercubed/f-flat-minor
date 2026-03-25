@@ -167,15 +167,23 @@ F♭m> 6 7 *
 F♭m> 1360 23 -
 [ 1337 ]
 
-F♭m> 12 4 /   /* integer division */ 
+F♭m> 12 4 /   /* integer division, truncates toward 0 */
 [ 3 ]
 
 F♭m> 13 2 %   /* modulo */
 [ 1 ]
 
+F♭m> -13 5 /  /* negative division still truncates toward 0 */
+[ -2 ]
+
+F♭m> -13 5 %  /* matching remainder */
+[ -3 ]
+
 F♭m> 2 3 ^    /* power function */
 [ 8 ]
 ```
+
+These negative-operand examples show the documented language semantics. Some runtimes are still being aligned; see [`_docs/core-vocabulary.md`](./core-vocabulary.md) for the current implementation status.
 
 ### Bitwise operations
 

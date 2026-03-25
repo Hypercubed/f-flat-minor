@@ -1,5 +1,6 @@
 .import ./arith.ffp
 .import ./precision.ffp
+.import ./atan-core.ffp
 .import ./pi.ffp
 
 /*
@@ -11,130 +12,6 @@
  *   qatan    ( u v -- y )
  *   atan-inv ( n x -- y )
  */
-
-__atan__m2: q< * q> * ; /* a b c __atan__m2 == a*b*c */
-
-/*
- * Build the next backward-series numerator while carrying u^2 on stack and
- * v^2 on the queue.
- */
-__atan__u2_newp:
-  q< q<
-  over
-  q> q>
-  dig
-  q> dup q<
-  q<
-  dig
-  q<
-  __atan__m2
-  q> q>
-  *
-  swap
-  -
-; .unsafe /* u2 p q odd __atan__u2_newp == u2 p' with v2 on queue */
-
-__atan__u2_newp_stack:
-  q<
-  __atan__u2_newp
-  q>
-; .unsafe /* u2 p q odd v2 __atan__u2_newp_stack == u2 p' v2 */
-
-__atan__newq_stack:
-  dup
-  q<
-  q<
-  over
-  over
-  q>
-  __atan__m2
-  q>
-; .unsafe /* p q odd v2 __atan__newq_stack == p q odd q' v2 */
-
-/*
- * Backward recurrence for R where atan(u/v) = (u/v) * R:
- *   R_k = 1/(2k+1)
- *   R_j = 1/(2j+1) - (u^2/v^2) * R_{j+1}
- */
-__atan__tail_loop:
-  over positive?
-  [
-    over
-    2 -
-    [ __atan__newq_stack ] dip
-    swapd
-    [ [ __atan__u2_newp_stack ] dip ] dip
-    swapd
-    swap
-    __atan__tail_loop
-  ]
-  [
-    drop
-    drop
-    dig
-    drop
-  ]
-  branch
-; .unsafe /* u v u2 p q odd v2 __atan__tail_loop == u v p q */
-
-/*
- * Small positive-ratio Taylor core. Callers are responsible for range
- * reduction so u/v stays in the fast-converging regime.
- */
-__atan__parts:
-  q< q<
-  n->K
-  q> q>
-  dig
-
-  /* build u, v, u^2, p0=1, q0=2K+1, odd=2K-1, v^2 */
-  dup
-  2 *
-  1 +
-  q<
-  2 *
-  1 -
-  q<
-  over
-  dup
-  *
-  q>
-  q<
-  over
-  dup
-  *
-  q>
-  q>
-  rot
-  1
-  rot
-  swap
-  q<
-  swapd
-  q>
-
-  __atan__tail_loop
-
-  swapd
-  *
-  q<
-  *
-  q>
-; /* n u v __atan__parts == p q */
-
-__atan__core_scaled:
-  rot
-  dup q<
-  rot
-  __atan__parts
-  q>
-  p/q*S
-; /* n u v __atan__core_scaled == floor(10^n*atan(u/v)) for reduced positive ratios */
-
-__atan__needs_pi4:
-  [ + dup * ] [ nip dup * 2 * ] bi2
-  >
-; /* u v __atan__needs_pi4 == u/v > tan(pi/8) for positive u <= v */
 
 __atan__num_zero:
   drop

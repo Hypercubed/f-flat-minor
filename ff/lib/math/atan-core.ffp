@@ -1,0 +1,118 @@
+.import ./arith.ffp
+.import ./precision.ffp
+
+/*
+ * Shared arctan Taylor core without pi-dependent range reduction.
+ * This module exists so pi can depend on atan series terms without
+ * introducing a circular import back through atan.ffp.
+ */
+
+__atan_core__m2: q< * q> * ; /* a b c __atan_core__m2 == a*b*c */
+
+__atan_core__u2_newp:
+  q< q<
+  over
+  q> q>
+  dig
+  q> dup q<
+  q<
+  dig
+  q<
+  __atan_core__m2
+  q> q>
+  *
+  swap
+  -
+; .unsafe /* u2 p q odd __atan_core__u2_newp == u2 p' with v2 on queue */
+
+__atan_core__u2_newp_stack:
+  q<
+  __atan_core__u2_newp
+  q>
+; .unsafe /* u2 p q odd v2 __atan_core__u2_newp_stack == u2 p' v2 */
+
+__atan_core__newq_stack:
+  dup
+  q<
+  q<
+  over
+  over
+  q>
+  __atan_core__m2
+  q>
+; .unsafe /* p q odd v2 __atan_core__newq_stack == p q odd q' v2 */
+
+__atan_core__tail_loop:
+  over positive?
+  [
+    over
+    2 -
+    [ __atan_core__newq_stack ] dip
+    swapd
+    [ [ __atan_core__u2_newp_stack ] dip ] dip
+    swapd
+    swap
+    __atan_core__tail_loop
+  ]
+  [
+    drop
+    drop
+    dig
+    drop
+  ]
+  branch
+; .unsafe /* u v u2 p q odd v2 __atan_core__tail_loop == u v p q */
+
+__atan__parts:
+  q< q<
+  n->K
+  q> q>
+  dig
+
+  dup
+  2 *
+  1 +
+  q<
+  2 *
+  1 -
+  q<
+  over
+  dup
+  *
+  q>
+  q<
+  over
+  dup
+  *
+  q>
+  q>
+  rot
+  1
+  rot
+  swap
+  q<
+  swapd
+  q>
+
+  __atan_core__tail_loop
+
+  swapd
+  *
+  q<
+  *
+  q>
+; /* n u v __atan__parts == p q */
+
+__atan__core_scaled:
+  rot
+  dup q<
+  rot
+  __atan__parts
+  q>
+  p/q*S
+; /* n u v __atan__core_scaled == floor(10^n*atan(u/v)) for reduced positive ratios */
+
+__atan__needs_pi4:
+  [ + dup * ] [ nip dup * 2 * ] bi2
+  >
+; /* u v __atan__needs_pi4 == u/v > tan(pi/8) for positive u <= v */
