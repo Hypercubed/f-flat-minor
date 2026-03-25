@@ -85,5 +85,7 @@ None — implemented with `--trace` as the primary switch, JSONL including symbo
 
 ## Outcome
 - Added structured trace events in the shared TypeScript engine and formatter support for human and JSONL outputs.
+- Refined the human formatter to use terminal-width-aware layout with centered actions, aligned/truncated stack and queue previews, padded bracketed rendering, and clearer fixed-width action spacing.
+- Routed trace output to `stderr` so traced runs keep program output on `stdout`, with terminal-width detection preferring `stderr` when available.
 - Wired trace formatting options across Node, Bun, and Deno CLI entrypoints.
 - Updated runtime READMEs plus agent guidance (`AGENTS.md` and `.agent/skills/ff-code-authoring/SKILL.md`) to document human vs JSONL trace usage.

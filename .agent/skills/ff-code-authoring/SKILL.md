@@ -66,6 +66,7 @@ node node/bin/ff-run.ts -t --trace-format jsonl <file>.ffp
 ```
 - Add `--trace-verbose` for extra fields, and bound output with
   `--trace-queue-max` / `--trace-stack-max` when debugging large programs.
+- Trace output is written to `stderr`, so normal program output remains on `stdout`.
 
 4. Confirm end-state correctness.
 - Verify final stack shape matches expected output contract.

@@ -312,10 +312,10 @@ export class Engine {
   }) {
     const event = this.createTraceEvent(step, immediate, tag, value, stackBefore, stackAfter);
     if (this.traceFormat === "jsonl") {
-      console.log(JSON.stringify(event));
+      this.writeTraceLine(JSON.stringify(event));
       return;
     }
-    console.log(this.formatHumanTrace(event));
+    this.writeTraceLine(this.formatHumanTrace(event));
   }
 
   private createTraceEvent(
@@ -363,27 +363,154 @@ export class Engine {
   }
 
   private formatHumanTrace(event: TraceEvent) {
-    const action = event.immediate ? `*${event.action}*` : event.action;
+    const action = this.padHumanAction(event.action);
     const stackBefore = this.formatHumanStack(event.stack_before);
     const queueNext = this.formatHumanQueue(event.queue_preview, event.queue_depth);
-    let line = `${event.step} | ${stackBefore} | ${action} | ${queueNext}`;
+    const line = this.layoutHumanTraceLine(event.step, stackBefore, action, queueNext);
     if (this.traceVerbose) {
       const stackAfter = this.formatHumanStack(event.stack_after ?? []);
-      line += ` | ${stackAfter} | immediate=${event.immediate} tag=${event.tag} value=${event.value} stack_depth=${this.stack.length} queue_depth=${event.queue_depth}`;
+      return `${line}\n${" ".repeat(String(event.step).length + 1)}${stackAfter} | immediate=${event.immediate} tag=${event.tag} value=${event.value} stack_depth=${this.stack.length} queue_depth=${event.queue_depth}`;
     }
     return line;
   }
 
+  private padHumanAction(action: string) {
+    return action.length >= 7 ? action : action.padStart(Math.floor((7 + action.length) / 2), " ").padEnd(7, " ");
+  }
+
+  private layoutHumanTraceLine(
+    step: number,
+    stackBefore: string,
+    action: string,
+    queueNext: string,
+  ) {
+    const width = this.getTraceTerminalWidth();
+    const stepLabel = `${step} `;
+    if (stepLabel.length >= width) {
+      return stepLabel.slice(0, width);
+    }
+
+    const minGap = 1;
+    const actionWidth = Math.min(action.length, Math.max(width - stepLabel.length - (minGap * 2), 1));
+    const centeredStart = Math.max(
+      stepLabel.length + minGap,
+      Math.floor((width - actionWidth) / 2),
+    );
+    const actionStart = Math.min(centeredStart, Math.max(stepLabel.length + minGap, width - actionWidth - minGap));
+    const actionEnd = actionStart + actionWidth;
+
+    const leftStart = stepLabel.length;
+    const leftEnd = Math.max(leftStart, actionStart - minGap);
+    const rightStart = Math.min(width, actionEnd + minGap);
+    const rightEnd = width;
+    const leftWidth = Math.max(leftEnd - leftStart, 0);
+    const rightWidth = Math.max(rightEnd - rightStart, 0);
+
+    const line = Array.from({ length: width }, () => " ");
+
+    this.writeSegment(line, 0, stepLabel, stepLabel.length);
+    this.writeSegment(line, actionStart, action, actionWidth);
+
+    if (leftWidth > 0) {
+      const leftText = this.truncateLeft(stackBefore, leftWidth);
+      this.writeSegment(line, leftEnd - leftText.length, leftText, leftText.length);
+    }
+
+    if (rightWidth > 0) {
+      const rightText = this.truncateRight(queueNext, rightWidth);
+      this.writeSegment(line, rightStart, rightText, rightText.length);
+    }
+
+    return line.join("").replace(/\s+$/, "");
+  }
+
   private formatHumanStack(stack: string[]) {
-    if (stack.length === 0) return "[]";
-    return `[${stack.join(" ")}]`;
+    if (stack.length === 0) return "[ ]";
+    return `[ ${stack.join(" ")} ]`;
   }
 
   private formatHumanQueue(preview: TraceQueueToken[], queueDepth: number) {
     const rendered = preview.map((token) => token.tag === "call" ? `&${token.action}` : token.value);
     const hidden = Math.max(queueDepth - preview.length, 0);
     if (hidden > 0) rendered.push(`…(+${hidden})`);
-    return `[${rendered.join(" ")}]`;
+    if (rendered.length === 0) return "[ ]";
+    return `[ ${rendered.join(" ")} ]`;
+  }
+
+  private getTraceTerminalWidth() {
+    const fallbackWidth = 120;
+
+    const deno = (globalThis as {
+      Deno?: {
+        consoleSize?: (rid: number) => { columns?: number };
+        stdout?: { rid?: number; isTerminal?: () => boolean };
+        stderr?: { rid?: number; isTerminal?: () => boolean };
+      };
+    }).Deno;
+
+    const denoRid =
+      deno?.stderr?.isTerminal?.() && typeof deno.stderr.rid === "number"
+        ? deno.stderr.rid
+        : deno?.stdout?.isTerminal?.() && typeof deno.stdout.rid === "number"
+          ? deno.stdout.rid
+          : undefined;
+
+    if (typeof denoRid === "number") {
+      try {
+        const columns = deno.consoleSize?.(denoRid).columns;
+        if (typeof columns === "number" && columns > 0) {
+          return columns;
+        }
+      } catch {
+        // Ignore runtime-specific console size lookup failures.
+      }
+    }
+
+    const process = (globalThis as {
+      process?: {
+        stderr?: { columns?: number; isTTY?: boolean };
+        stdout?: { columns?: number; isTTY?: boolean };
+      };
+    }).process;
+
+    const columns =
+      process?.stderr?.isTTY && typeof process.stderr.columns === "number"
+        ? process.stderr.columns
+        : process?.stdout?.isTTY && typeof process.stdout.columns === "number"
+          ? process.stdout.columns
+          : undefined;
+
+    return typeof columns === "number" && columns > 0 ? columns : fallbackWidth;
+  }
+
+  private truncateLeft(text: string, width: number) {
+    if (width <= 0) return "";
+    if (text.length <= width) return text;
+    if (width === 1) return "…";
+    return `…${text.slice(-(width - 1))}`;
+  }
+
+  private truncateRight(text: string, width: number) {
+    if (width <= 0) return "";
+    if (text.length <= width) return text;
+    if (width === 1) return "…";
+    return `${text.slice(0, width - 1)}…`;
+  }
+
+  private writeSegment(line: string[], start: number, text: string, width: number) {
+    if (width <= 0) return;
+    for (let i = 0; i < width && i < text.length && start + i < line.length; i++) {
+      line[start + i] = text[i]!;
+    }
+  }
+
+  private writeTraceLine(text: string) {
+    const data = new TextEncoder().encode(`${text}\n`);
+    if (this.platform.io.writeError) {
+      this.platform.io.writeError(data);
+      return;
+    }
+    this.platform.io.write(data);
   }
 
   getName(op: bigint, def = String(op)): string {

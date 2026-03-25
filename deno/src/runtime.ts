@@ -8,6 +8,9 @@ export function createDenoPlatform(): CorePlatform {
       write(data: Uint8Array) {
         Deno.stdout.writeSync(data);
       },
+      writeError(data: Uint8Array) {
+        Deno.stderr.writeSync(data);
+      },
       readByte() {
         const input = new Uint8Array(1);
         const n = Deno.stdin.readSync(input);

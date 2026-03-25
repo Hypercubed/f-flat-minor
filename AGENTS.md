@@ -85,6 +85,7 @@ Node, Bun, and Deno support structured tracing:
 - `--trace --trace-format jsonl` for one JSON object per VM step (recommended for agents/LLM tooling).
 - `--trace-verbose` to include additional per-step details.
 - `--trace-queue-max` and `--trace-stack-max` to bound trace output size.
+- Trace output is written to `stderr`, so normal program output remains on `stdout`.
 
 ## Documentation
 

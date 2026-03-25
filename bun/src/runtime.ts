@@ -13,6 +13,9 @@ export function createBunPlatform(): CorePlatform {
       write(data: Uint8Array) {
         process.stdout.write(Buffer.from(data));
       },
+      writeError(data: Uint8Array) {
+        process.stderr.write(Buffer.from(data));
+      },
       readByte() {
         const input = Buffer.alloc(1);
         const n = fs.readSync(process.stdin.fd, input, 0, 1, null);
