@@ -1,6 +1,6 @@
 ---
 status: ready
-status_date: 2026-03-24
+status_date: 2026-03-25
 creator: codex
 ---
 
@@ -38,6 +38,8 @@ Preserve and improve stack-effect comments so each helper documents both:
 - its stack contract
 - its mathematical role in the Taylor-series computation
 
+Add a final safety pass that removes remaining `.unsafe` usage in `atan-core.ffp` by making queue dependencies explicit on the stack where possible (especially `__atan_core__u2_newp`) and validating behavior with the math test suite.
+
 ## Decisions already made
 - This is a readability and maintainability refactor only; behavior must remain unchanged.
 - New helper words should stay local to `ff/lib/math/atan-core.ffp` unless they are obviously reusable beyond `atan`.
@@ -45,7 +47,7 @@ Preserve and improve stack-effect comments so each helper documents both:
 - No public API changes should be made to `iatan`, `natan`, `qatan`, `atan-inv`, or `npi`.
 
 ## Open questions
-None -- ready to implement.
+- What stack signature and call-site changes are required to make `__atan_core__u2_newp` fully queue-safe without changing numeric behavior?
 
 ## Out of scope
 - Changing the numerical algorithm or convergence behavior
@@ -67,3 +69,7 @@ None -- ready to implement.
 - `ff/lib/math/pi.ffp`
 - `_plans/done/atan-precision-refactor.md`
 - `_docs/math-naming-internal.md`
+
+
+## Implementation outcome
+- Reopened on 2026-03-25 to finish the safety goal: eliminate remaining `.unsafe` words in `atan-core` while preserving behavior.
