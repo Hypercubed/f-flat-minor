@@ -13,6 +13,7 @@ newline: 10 ; /* newline == 10 */
 
 sp: space putc ; /* sp == {prints char(32)} */
 cr: newline putc ; /* cr == {prints char(10)} */
+tab: '\t' putc ; /* tab == {prints char(9)} */
 
 /* String output */
 
@@ -22,8 +23,8 @@ println: prints cr ; /* 0 n* println == {prints chars, char(10)} */
 
 /* Case conversion */
 
-lower?: dup 'a' -- 'z' ++ dig between? ; /* n lower? == flag (is lowercase letter) */
-upper?: dup 'A' -- 'Z' ++ dig between? ; /* n upper? == flag (is uppercase letter) */
+lower?: 'a' -- 'z' ++ dig between? ; /* n lower? == flag (is lowercase letter) */
+upper?: 'A' -- 'Z' ++ dig between? ; /* n upper? == flag (is uppercase letter) */
 
-ucase: lower? [ 32 - ] ? ; /* n ucase == n' (convert to uppercase) */
-lcase: upper? [ 32 + ] ? ; /* n lcase == n' (convert to lowercase) */
+ucase: dup lower? [ 32 - ] ? ; /* n ucase == n' (convert to uppercase) */
+lcase: dup upper? [ 32 + ] ? ; /* n lcase == n' (convert to lowercase) */

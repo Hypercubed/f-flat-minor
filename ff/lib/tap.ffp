@@ -1,0 +1,68 @@
+.import ./core/core.ff
+.import ./seq/seq.ffp
+.import ./string/string.ffp
+
+/*
+ * TAP library - Test Anything Protocol utilities for writing tests.
+ */
+
+ /* TAP version output
+  * Clears the stack since that is required for proper TAP output.
+ */
+TAP-VERSION: '\0TAP\sversion\s14' println clr ;
+
+/* TAP assertion utilities
+  * Tests if the top stack item is truthy, printing "ok" or "not ok" accordingly.
+  * Leaves a boolean on the stack indicating success or failure.
+  */
+OK: truthy? 
+  [ '\0ok' println true ]
+  [ '\0not\sok' println false ]
+  branch ;
+
+/* TAP skip utilities
+  * Consumes and discards the top assertion result, then prints a skipped
+  * assertion. This makes @#SKIP a drop-in replacement for @OK while an
+  * implementation is pending.
+  * Leaves true on the stack so PLAN counts the skip as satisfied.
+  */
+#SKIP: drop '\0ok\s#SKIP' println true ;
+
+/* TAP todo utilities
+  * Consumes the top assertion result and prints an ok/not ok TODO assertion.
+  * Leaves true on the stack so PLAN treats the TODO as satisfied either way.
+  * This makes @#TODO a drop-in replacement for @OK while an implementation is
+  * still in progress.
+  */
+#TODO:
+  [ '\0ok\s#\sTODO\s' prints println true ]
+  [ '\0not\sok\s#\sTODO\s' prints println true ]
+  branch ;
+
+/* TAP whole-file skip
+  * Takes a reason string and prints a skip plan for the entire file.
+  * This replaces the usual PLAN line.
+  */
+SKIP-ALL: '\01..0\s#\sSKIP\s' prints println ;
+
+/* TAP test plan
+  * Sums the number of tests passed and compares it to the expected count n.
+  * Prints "1..n" to indicate the number of tests planned.
+  * Seeds sum! with 0 so zero-test plans are supported.
+  * Leaves a boolean on the stack indicating whether count matches n.
+  */
+PLAN:
+  dup '\01..' prints putn cr
+  [ 0 sum! ] dip tuck = ;
+
+/* TAP test case
+  * Takes a description string and prints a test case header.
+  * Should be followed by a series of @OK assertions wrapped in `(` ... `)`
+  * (STASH/FETCH), ending with a @PLAN for the assertion count.
+  */
+TEST: '\0#\sSubtest:\s' prints println ;
+
+@OK: tab OK ;
+@#SKIP: tab #SKIP ;
+@#TODO: tab #TODO ;
+@PLAN: tab PLAN ;

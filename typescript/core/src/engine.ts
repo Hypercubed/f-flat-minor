@@ -457,7 +457,7 @@ export class Engine {
 
     if (typeof denoRid === "number") {
       try {
-        const columns = deno.consoleSize?.(denoRid).columns;
+        const columns = deno?.consoleSize?.(denoRid).columns;
         if (typeof columns === "number" && columns > 0) {
           return columns;
         }

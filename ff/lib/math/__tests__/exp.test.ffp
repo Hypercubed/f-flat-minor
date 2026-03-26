@@ -1,0 +1,64 @@
+.import ../exp.ffp
+.import ../log.ffp
+.import ../../tap.ffp
+
+TAP-VERSION
+
+'\0iexp' TEST (
+  1 iexp 2 = @OK
+  16 iexp 8886110 = @OK
+  1024 iexp ilog 444 = @OK
+  3 @PLAN
+) OK
+
+'\0nexp' TEST (
+  0 0 nexp 1 = @OK
+  0 1 nexp 2 = @OK
+  5 1 nexp 271828 = @OK
+  0 -1 nexp 0 = @OK
+  5 -1 nexp 36787 = @OK
+  10 2 nexp 73890560989 = @OK
+  10 3 nexp 200855369231 = @OK
+  100 3 nexp ilog 101 = @OK
+  100 3 nexp 10000 % 7021 = @OK
+  151 1 nexp ilog 151 = @OK
+  151 1 nexp 10 % 5 = @OK
+  151 1 nexp 10 / 150 1 nexp = @OK
+  451 3 nexp 10 % 5 = @OK
+  451 3 nexp 10 / 450 3 nexp = @OK
+  14 @PLAN
+) OK
+
+'\0icosh-isinh' TEST (
+  0 icosh 1 = @OK
+  0 isinh 0 = @OK
+  1 icosh 1 = @OK
+  1 isinh 1 = @OK
+  2 icosh 3 = @OK
+  2 isinh 3 = @OK
+  -1 icosh 1 = @OK
+  -1 isinh -1 = @OK
+  -2 icosh 3 = @OK
+  -2 isinh -4 = @OK
+  1 icosh 0 1 ncosh = @OK
+  -1 isinh 0 -1 nsinh = @OK
+  12 @PLAN
+) OK
+
+'\0ncosh-nsinh' TEST (
+  5 0 ncosh 100000 = @OK
+  5 0 nsinh 0 = @OK
+  5 1 ncosh 154307 = @OK
+  5 1 nsinh 117520 = @OK
+  5 2 ncosh 376219 = @OK
+  5 2 nsinh 362686 = @OK
+  5 -1 ncosh 154307 = @OK
+  5 -1 nsinh -117521 = @OK
+  5 -2 ncosh 376219 = @OK
+  5 -2 nsinh -362686 = @OK
+  5 2 ncosh 5 -2 ncosh = @OK
+  5 -1 nsinh 5 1 nsinh + dup 0 <= swap -1 >= and @OK
+  12 @PLAN
+) OK
+
+4 PLAN

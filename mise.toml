@@ -9,6 +9,7 @@ go = "latest"
 hyperfine = "latest"
 node = "24.14.0"
 "npm:chomp" = "latest"
+perl = "latest"
 rust = "latest"
 wasmtime = "latest"
 
