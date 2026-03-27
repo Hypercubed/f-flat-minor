@@ -1,0 +1,12 @@
+.import ../str.ffp
+.import ../char.ffp
+.import ../../seq/seq.ffp
+
+[ 'Hello\sWorld' ] sprintln
+
+[ 'Hello\sWorld' ] slen .
+
+[ 'Hello' ] [ 'World' ] [ '\s' ] sjoin sprintln
+
+[ 'Hello' ] [ 'World' ] '\s' cjoin sprintln
+

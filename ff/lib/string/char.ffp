@@ -1,0 +1,24 @@
+.import ../core/core.ff
+
+/*
+ * String library - character and string manipulation utilities.
+ */
+
+/* Character constants */
+
+space: 32 ; /* space == 32 */
+newline: 10 ; /* newline == 10 */
+
+/* Character output */
+
+sp: space putc ; /* sp == {prints char(32)} */
+cr: newline putc ; /* cr == {prints char(10)} */
+tab: '\t' putc ; /* tab == {prints char(9)} */
+
+/* Case conversion */
+
+lower?: 'a' -- 'z' ++ dig between? ; /* n lower? == flag (is lowercase letter) */
+upper?: 'A' -- 'Z' ++ dig between? ; /* n upper? == flag (is uppercase letter) */
+
+ucase: dup lower? [ 32 - ] ? ; /* n ucase == n' (convert to uppercase) */
+lcase: dup upper? [ 32 + ] ? ; /* n lcase == n' (convert to lowercase) */

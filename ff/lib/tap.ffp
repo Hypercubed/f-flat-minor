@@ -62,6 +62,9 @@ PLAN:
   */
 TEST: '\0#\sSubtest:\s' prints println ;
 
+/* Stack sentinel used by older tests to detect accidental over-consumption. */
+¶: clr 999 ;
+
 @OK: tab OK ;
 @#SKIP: tab #SKIP ;
 @#TODO: tab #TODO ;
