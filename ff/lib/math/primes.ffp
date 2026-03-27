@@ -57,15 +57,31 @@ __primes__inner_witness: /* s n x -> */
 ;
 
 /* returns true if composite, false if maybe prime */
-__primes__witness_loop: /* n -> n */
+__primes__witness_seed: /* n __primes__witness_seed == s n a^d%n */
   pred dup __primes__factor_by_2 /* n n-1 d s */
   dig 2 swap __primes__nrand /* n d s a */
   [ bury ] dip /* s n d a */
-  __primes__powmod /* s n a^d%n */
+  __primes__powmod
+;
+
+__primes__witness_trivial?: /* s n x __primes__witness_trivial? == s n x b */
   dup [ 1 = ] [ over -- = ] or_else
-    [ drop drop drop false ]
-    [ (__primes__inner_witness_loop) nip nip nip ]
-    branch ;
+;
+
+__primes__witness_composite: /* s n x __primes__witness_composite == b */
+  (__primes__inner_witness_loop) nip nip nip
+;
+
+__primes__witness_probable: /* s n x __primes__witness_probable == false */
+  drop drop drop false
+;
+
+__primes__witness_loop: /* n -> n */
+  __primes__witness_seed
+  __primes__witness_trivial?
+  [ __primes__witness_probable ]
+  [ __primes__witness_composite ]
+  branch ;
 
 __primes__witness_loop2: [ __primes__witness_loop ] dup or_else ;
 
