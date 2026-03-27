@@ -13,12 +13,14 @@ cd bun && chomp test:tap
 The helper is intentionally small. It gives you:
 
 - `TAP-VERSION` to start a TAP file
+- `TAP-RESET` to initialize assertion/failure counters
 - `TEST` to print a subtest header
 - `OK` / `@OK` to print `ok` or `not ok`
 - `#SKIP` / `@#SKIP` to print a skipped assertion
 - `#TODO` / `@#TODO` to print a TODO assertion
 - `SKIP-ALL` to skip an entire TAP file with a reason
-- `PLAN` / `@PLAN` to print `1..n` and return whether the pass count matched `n`
+- `PLAN` / `@PLAN` to print `1..n` and return whether emitted assertion count matched `n`
+- `TAP-PASS?` to return whether failure count is zero
 
 ## String Notes
 
@@ -45,39 +47,51 @@ Prints `TAP version 14` and clears the stack first. This is important because TA
 
 ### `OK`
 
-Consumes the top stack item, treats it as a boolean, and prints:
+Consumes the top stack item, treats it as a boolean, increments the assertion counter, and prints:
 
-- `ok` when the value is truthy
-- `not ok` when the value is zero
+- `ok <index>` when the value is truthy
+- `not ok <index>` when the value is zero
 
 It also leaves a boolean result on the stack:
 
 - `true` for pass
 - `false` for fail
 
+When the assertion fails, `OK` increments the internal failure counter.
+
 `@OK` is the indented form used inside subtests.
 
 ### `PLAN`
 
-Prints `1..n`, where `n` is the expected number of passing checks, then compares `n` against the sum of the boolean results currently on the stack.
+Prints `1..n`, where `n` is the expected number of emitted assertions, then compares `n` against the internal assertion counter.
 
 Important details:
 
-- `PLAN` counts passed `OK` results, not total assertions executed.
-- It seeds `sum!` with `0`, so `0 PLAN` is supported.
-- It leaves a boolean on the stack indicating whether the pass count matched `n`.
+- `PLAN` counts emitted TAP points (`OK`, `#SKIP`, and `#TODO`), not just passing assertions.
+- `PLAN` does not decide suite pass/fail.
+- It leaves a boolean on the stack indicating whether emitted count matched `n`.
 
 `@PLAN` is the indented form used inside subtests.
 
-### `#SKIP`
+### `TAP-PASS?`
 
-Consumes the current assertion result and prints:
+Returns whether the current suite/subtest has zero failures.
 
-```text
-ok #SKIP
+Use this together with `PLAN` when deciding the enclosing `OK` line:
+
+```ff
+6 @PLAN TAP-PASS? and
 ```
 
-It leaves `true` on the stack so the current `PLAN` logic counts the skip as satisfied.
+### `#SKIP`
+
+Consumes the current assertion result, increments the assertion counter, and prints:
+
+```text
+ok <index> # SKIP
+```
+
+It leaves `true` on the stack so the caller can combine it with other booleans as needed.
 
 This means `@#SKIP` is meant to be a drop-in replacement for `@OK` on the same assertion line.
 
@@ -88,16 +102,16 @@ This means `@#SKIP` is meant to be a drop-in replacement for `@OK` on the same a
 Consumes the current assertion result and prints either:
 
 ```text
-ok # TODO
+ok <index> # TODO
 ```
 
 or:
 
 ```text
-not ok # TODO
+not ok <index> # TODO
 ```
 
-`#TODO` always leaves `true` on the stack so the current `PLAN` logic treats TODO assertions as satisfied either way.
+`#TODO` always leaves `true` on the stack so TODOs don't contribute failures.
 
 This matches the current helper design: TAP still shows whether the TODO currently passes or fails, but the suite does not fail because of that line.
 
@@ -133,13 +147,17 @@ The current pattern is:
 2. For each subtest:
    - print a label with `TEST`
    - enter `(` to stash the outer stack
+   - call `TAP-RESET`
    - run a series of `@OK` checks
    - optionally use `@#SKIP` or `@#TODO` inside the subtest
-   - finish with `@PLAN`
+   - finish with `@PLAN TAP-PASS? and`
    - leave `)` and collapse the subtest result with `OK`
-3. Finish the file with a top-level `PLAN`
+3. For the top-level suite:
+   - call `TAP-RESET`
+   - run subtests and top-level `OK` lines
+   - finish with `PLAN TAP-PASS? and`
 
-The `(` and `)` words are core STASH/FETCH operations. In this pattern they park the outer stack on the queue while the subtest accumulates its own assertion booleans.
+The `(` and `)` words are core STASH/FETCH operations. In this pattern they park the outer stack on the queue while the subtest tracks its own TAP counters.
 
 In normal TAP tests, prefer one `(` ... `)` wrapper per subtest. Avoid nested STASH/FETCH or manual `q<` / `q>` in the test body unless you are specifically testing queue behavior or there is no simpler way to express the post-condition.
 
@@ -154,23 +172,27 @@ This is the same structure used in [`ff/lib/core/__tests__/bitwise.test.ffp`](..
 TAP-VERSION
 
 '\0&\s(and)' TEST (
+  TAP-RESET
   0 0 & 0 = @OK
   0 1 & 0 = @OK
   1 0 & 0 = @OK
   1 1 & 1 = @OK
-  6 @PLAN
+  4 @PLAN TAP-PASS? and
 ) OK
 
-1 PLAN
+TAP-RESET
+1 PLAN TAP-PASS? and
 ```
 
 What happens here:
 
-- each `@OK` pushes a pass/fail boolean for one assertion
-- `@PLAN` prints the inner `1..6` line and returns whether all six assertions passed
+- `TAP-RESET` starts counters at `0 failures, 0 assertions`
+- each `@OK` emits one TAP point and increments the assertion counter
+- `@PLAN` prints the inner `1..4` line and verifies exactly four TAP points were emitted
+- `TAP-PASS?` verifies no failures were recorded
 - `)` restores the outer stack
 - outer `OK` prints the subtest result
-- final `PLAN` counts passed subtests
+- final `PLAN` validates the number of emitted top-level test points
 
 ## Asserting Stack Shape
 
@@ -205,12 +227,13 @@ Practical hints:
 
 ## Zero-Test Cases
 
-Zero-test plans are supported because `PLAN` uses `0 sum!`.
+Zero-test plans are supported because `PLAN` checks emitted assertion count directly.
 
 Examples:
 
 ```ff
 TAP-VERSION
+TAP-RESET
 0 PLAN
 ```
 
@@ -226,9 +249,11 @@ An empty subtest is also valid:
 ```ff
 TAP-VERSION
 '\0empty' TEST (
-  0 @PLAN
+  TAP-RESET
+  0 @PLAN TAP-PASS? and
 ) OK
-1 PLAN
+TAP-RESET
+1 PLAN TAP-PASS? and
 ```
 
 This prints a passing empty subtest and a passing top-level plan.
@@ -239,20 +264,24 @@ Skip one assertion inside a subtest:
 
 ```ff
 '\0feature\sflags' TEST (
+  TAP-RESET
   2 2 + 5 = @#SKIP
-  1 @PLAN
+  1 @PLAN TAP-PASS? and
 ) OK
-1 PLAN
+TAP-RESET
+1 PLAN TAP-PASS? and
 ```
 
 Mark one assertion as TODO:
 
 ```ff
 '\0future\sbehavior' TEST (
+  TAP-RESET
   2 2 + 5 = @#TODO
-  1 @PLAN
+  1 @PLAN TAP-PASS? and
 ) OK
-1 PLAN
+TAP-RESET
+1 PLAN TAP-PASS? and
 ```
 
 Skip an entire file:
@@ -264,11 +293,11 @@ TAP-VERSION
 
 ## Current Conventions And Limitations
 
-- `PLAN` is a pass-count check, not an independent TAP assertion counter.
+- `PLAN` validates emitted TAP point count against `n`.
 - `TEST` only prints the subtest header; `(...) OK` determines subtest success.
-- Inner `@PLAN` counts passed assertions within one subtest.
-- Outer `PLAN` counts passed subtests.
-- `#SKIP` and `#TODO` consume the current assertion result, then leave `true` so they integrate with the current pass-count-based `PLAN`.
+- `TAP-PASS?` is the pass/fail decision word (`failure_count == 0`).
+- Call `TAP-RESET` at each file/subtest boundary before emitting assertions.
+- `#SKIP` and `#TODO` emit assertion points and increment assertion count.
 - `SKIP-ALL` replaces the usual final `PLAN` line for a whole-file skip.
 - Printed TAP labels currently need explicit string-literal handling such as `'\0Control\sFlow'`.
 - Migrating older stack-shape tests may require rewriting an `assert_eq` chain into one boolean expression with `swap`, `=`, and `and`.
