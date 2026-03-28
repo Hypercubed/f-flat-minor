@@ -5,6 +5,7 @@ Syntax highlighting and language support for [f-flat-minor](https://github.com/H
 ## Features
 
 - Syntax highlighting for `.ff` and `.ffp` files
+- Preprocessor command-line highlighting in `.ffp` files (lines that begin with `.`)
 - Block comment support (`/* */`)
 - Bracket matching for code blocks (`[ ]`)
 - Language configuration for editor features
