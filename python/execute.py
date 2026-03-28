@@ -191,6 +191,18 @@ def mark():
     d.append(ss)
   defineUser(o, d)
 
+def cons():
+  global stack, op
+  y = stack.pop()
+  x = stack.pop()
+  # Create anonymous definition [PUSH x, CALL y]
+  op = op + 1
+  d = [0, x]
+  if y != 0:
+    d.append(y)
+  defs[op] = d
+  stack.append(op)
+
 defineSystem('nop', nop)
 defineSystem('eval', call)
 defineSystem('putc', putc)
@@ -210,6 +222,7 @@ defineSystem('(', stash)
 defineSystem(')', fetch)
 defineSystem('*', mul)
 defineSystem('+', add)
+defineSystem('cons', cons)
 defineSystem('-', sub)
 defineSystem('.', printStack)
 defineSystem('/', div)
