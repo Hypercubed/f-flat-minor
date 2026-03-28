@@ -1,0 +1,15 @@
+.import ../tap.ffp
+
+TAP-VERSION
+
+'\0TODO' TEST
+  false @#TODO
+  true @#TODO
+  2 @PLAN OK
+
+'\0SKIP' TEST
+  false @#SKIP
+  true @#SKIP
+  2 @PLAN OK
+
+2 PLAN

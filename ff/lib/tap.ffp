@@ -42,13 +42,13 @@ OK:
   branch ;
 
 /* Skip one assertion. */
-#SKIP: drop _TAP-NEXT! '\0ok\s' prints putn '\s#\sSKIP' println ;
+#SKIP: drop _TAP-NEXT! '\0ok\s' prints putn '\0\s#\sSKIP' prints cr ;
 
 /* Mark one assertion TODO. */
 #TODO:
   q< _TAP-NEXT! q> truthy?
-  [ '\0ok\s' prints putn '\s#\sTODO\s' prints println ]
-  [ '\0not\sok\s' prints putn '\s#\sTODO\s' prints println ]
+  [ '\0ok\s' prints putn '\0\s#\sTODO' prints cr ]
+  [ '\0not\sok\s' prints putn '\0\s#\sTODO' prints cr ]
   branch ;
 
 /* Skip the whole file. */

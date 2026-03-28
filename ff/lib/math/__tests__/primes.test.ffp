@@ -3,7 +3,7 @@
 
 TAP-VERSION
 
-'\0prime?' TEST (
+'\0prime?' TEST
   0 prime? not @OK
   1 prime? not @OK
   2 prime? @OK
@@ -21,10 +21,9 @@ TAP-VERSION
   21481 prime? @OK
   2147483651 prime? not @OK
   2147483647 prime? @OK
-  17 @PLAN
-) OK
+  17 @PLAN OK
 
-'\0maybe_prime?' TEST (
+'\0maybe_prime?' TEST
   0 maybe_prime? not @OK
   1 maybe_prime? not @OK
   2 maybe_prime? @OK
@@ -38,10 +37,9 @@ TAP-VERSION
   29 maybe_prime? @OK
   97 maybe_prime? @OK
   2147483647 maybe_prime? @OK
-  13 @PLAN
-) OK
+  13 @PLAN OK
 
-'\0next-prime' TEST (
+'\0next-prime' TEST
   0 next-prime 2 = @OK
   1 next-prime 2 = @OK
   2 next-prime 3 = @OK
@@ -51,14 +49,12 @@ TAP-VERSION
   7727 next-prime 7741 = @OK
   104743 next-prime 104759 = @OK
   2147483647 next-prime 2147483659 = @OK
-  9 @PLAN
-) OK
+  9 @PLAN OK
 
-'\0th-prime' TEST (
+'\0th-prime' TEST
   6 th-prime 13 = @OK
   168 th-prime 997 = @OK
   169 th-prime 1009 = @OK
-  3 @PLAN
-) OK
+  3 @PLAN OK
 
 4 PLAN

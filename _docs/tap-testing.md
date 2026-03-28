@@ -83,9 +83,9 @@ Consumes the current assertion result, increments the assertion counter, and pri
 ok <index> # SKIP
 ```
 
-It leaves `true` on the stack so the caller can combine it with other booleans as needed.
+It ignores the assertion result for pass/fail accounting: the TAP point is emitted as `ok`, and it does not contribute a failure to `PLAN`.
 
-This means `@#SKIP` is meant to be a drop-in replacement for `@OK` on the same assertion line.
+This means `@#SKIP` is meant to be a drop-in replacement for `@OK` on the same assertion line when you want to record a skipped check without failing the current TAP scope.
 
 `@#SKIP` is the indented form used inside subtests.
 
@@ -103,7 +103,7 @@ or:
 not ok <index> # TODO
 ```
 
-`#TODO` always leaves `true` on the stack so TODOs don't contribute failures.
+`#TODO` does not contribute a failure to `PLAN`.
 
 This matches the current helper design: TAP still shows whether the TODO currently passes or fails, but the suite does not fail because of that line.
 
