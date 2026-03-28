@@ -9,6 +9,7 @@ CHECK = 'printf "  ${GRN}OK${NC} " || printf "  ${RED}FAIL${NC} "'
 BLUE = '\033[0;34m'
 NC = '\033[0m'
 GRN = '\033[0;32m'
+BIN = './build/ff-run'
 
 [[task]]
 name = 'build:#'
@@ -62,13 +63,15 @@ deps = [
     ':test:compile',
     ':test:execute',
     ':test:interpret',
-    ':test:ff'
+    ':test:out',
+    ':test:lib',
+    ':test:tap'
 ]
 serial = true
 display = 'none'
 
 [[task]]
-name = 'test:ff'
+name = 'test:out'
 deps = [
     '../ff/##.out',
     './build/ff-run'
@@ -84,6 +87,41 @@ run = '''
     ./build/ff-run $i | cmp - $DEP -s && ${{CHECK}};
     ./build/ff-run $i --opt | cmp - $DEP -s && ${{CHECK}};
   done
+'''
+
+[[task]]
+name = 'test:lib'
+deps = [
+    './build/ff-run'
+]
+serial = true
+invalidation = 'always'
+validation = 'none'
+display = 'status-only'
+run = '''
+  shopt -s nullglob
+  shopt -s extglob
+  shopt -s globstar
+  for i in ../ff/**/__tests__/*.ffp; do
+    ./build/ff-run $i > /dev/null && ${{CHECK}}
+    ./build/ff-run $i --opt > /dev/null && ${{CHECK}}
+    echo " $i"
+  done
+'''
+
+[[task]]
+name = 'test:tap'
+deps = [
+    './build/ff-run'
+]
+serial = true
+invalidation = 'always'
+validation = 'none'
+run = '''
+  shopt -s nullglob
+  shopt -s extglob
+  shopt -s globstar
+  prove --exec "$BIN" ../ff/lib/**/__tests__/*.test.ff?(p)
 '''
 
 [[task]]
@@ -144,7 +182,7 @@ run = '''
 '''
 
 [[task]]
-name = 'test:ff:##'
+name = 'test:out:##'
 deps = [
     '../ff/##.out',
     './build/ff-run'

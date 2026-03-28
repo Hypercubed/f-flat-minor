@@ -218,6 +218,7 @@ export class Compiler {
     let def = 0;
     let braket = 0;
     let q = 0;
+    const qScopes = [0];
 
     if (!ir[0]) return [];
 
@@ -231,16 +232,33 @@ export class Compiler {
         if (_i.op === IROp.call && _i.value === BigInt(OpCodes.MARK)) def++;
         if (_i.op === IROp.call && _i.value === BigInt(OpCodes.DEF)) def--;
 
-        if (_i.op === IROp.call && _i.value === BigInt(OpCodes.BRA)) braket++;
-        if (_i.op === IROp.call && _i.value === BigInt(OpCodes.KET)) braket--;
+        if (_i.op === IROp.call && _i.value === BigInt(OpCodes.BRA)) {
+          braket++;
+          qScopes.push(0);
+        }
+        if (_i.op === IROp.call && _i.value === BigInt(OpCodes.KET)) {
+          braket--;
+          const quoteQ = qScopes.length > 1 ? qScopes.pop() : 0;
+          if (quoteQ !== 0) {
+            issues.push(`${filename}: Unbalanced queue push ( ${cyan('q< q>')} ) in quote in ${name}`);
+          }
+        }
 
-        if (_i.op === IROp.call && _i.value === BigInt(OpCodes.PUSHR)) q++;
-        if (_i.op === IROp.call && _i.value === BigInt(OpCodes.PULLR)) q--;
-
-        // TODO: stash/fetch
+        if (_i.op === IROp.call && (_i.value === BigInt(OpCodes.PUSHR) || _i.value === BigInt(OpCodes.STASH))) {
+          q++;
+          qScopes[qScopes.length - 1]!++;
+        }
+        if (_i.op === IROp.call && (_i.value === BigInt(OpCodes.PULLR) || _i.value === BigInt(OpCodes.FETCH))) {
+          const localQ = qScopes[qScopes.length - 1]!;
+          if (localQ === 0) {
+            const op = _i.value === BigInt(OpCodes.FETCH) ? ')' : 'q>';
+            issues.push(`${filename}: Queue borrow ( ${cyan(op)} ) requires ${cyan('.unsafe')} in ${name} (including quotes)`);
+          }
+          q--;
+          qScopes[qScopes.length - 1]!--;
+        }
 
         if (braket < 0) issues.push(`${filename}: Bracket ( ${cyan('[ ]')} ) mismatch in ${name}`);
-        if (q < 0) issues.push(`${filename}: Queue push ( ${cyan('q< q>')} ) mismatch in ${name}`);
         if (def < 0) issues.push(`${filename}: Definition ( ${cyan(': ;')} ) mismatch in ${name}`);
       }
 
@@ -248,7 +266,7 @@ export class Compiler {
     }
 
     if (braket !== 0) issues.push(`${filename}: Unbalanced brackets ( ${cyan('[ ]')} ) in ${name}`);
-    if (q !== 0) issues.push(`${filename}: Unbalanced queue push ( ${cyan('q< q>')} ) in ${name}`);
+    if (q !== 0) issues.push(`${filename}: Unbalanced queue push ( ${cyan('q< q> ( )')} ) in ${name}`);
     if (def !== 0) issues.push(`${filename}: Unbalanced definition ( ${cyan(': ;')} ) in ${name}`);
 
     return issues;

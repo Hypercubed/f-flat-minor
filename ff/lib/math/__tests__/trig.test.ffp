@@ -1,0 +1,34 @@
+.import ../trig.ffp
+.import ../pi.ffp
+.import ../../tap.ffp
+
+/* Temporary placeholders so skipped trig tests compile until trig.ffp
+ * defines these words. Remove these local definitions once real
+ * implementations exist in the library.
+ */
+ncos: drop2 0 ;
+nsin: drop2 0 ;
+
+TAP-VERSION
+
+'\0ncos-nsin' TEST (
+  5 0 ncos 100_000 = @#SKIP
+  5 0 nsin 0 = @#SKIP
+  5 1 ncos 54_030 = @#SKIP
+  5 1 nsin 84_147 = @#SKIP
+  5 -1 ncos 54_030 = @#SKIP
+  5 -1 nsin -84_148 = @#SKIP
+  5 2 ncos -41_615 = @#SKIP
+  5 2 nsin 90_929 = @#SKIP
+  8 @PLAN
+) OK
+
+'\0periodicity-and-symmetry' TEST (
+  5 7 ncos 75_390 = @#SKIP
+  5 7 nsin 65_698 = @#SKIP
+  5 -7 ncos 75_390 = @#SKIP
+  5 -7 nsin -65_699 = @#SKIP
+  4 @PLAN
+) OK
+
+2 PLAN

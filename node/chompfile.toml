@@ -28,7 +28,7 @@ run = '$BIN ../ff/hello.ffp'
 cmp = '../ff/hello.out'
 
 [[task]]
-name = 'test:ff'
+name = 'test:out'
 deps = [
   '../ff/##.out',
   './bin/ff-run.ts'
@@ -47,12 +47,48 @@ run = '''
 '''
 
 [[task]]
+name = 'test:lib'
+deps = [
+  './bin/ff-run.ts'
+]
+serial = true
+invalidation = 'always'
+validation = 'none'
+display = 'status-only'
+run = '''
+  shopt -s nullglob
+  shopt -s extglob
+  shopt -s globstar
+  for i in ../ff/**/__tests__/*.ffp; do
+    $BIN $i > /dev/null && ${{CHECK}}
+    $BIN $i --opt > /dev/null && ${{CHECK}}
+    echo " $i"
+  done
+'''
+
+[[task]]
+name = 'test:tap'
+deps = [
+  './bin/ff-run.ts'
+]
+serial = true
+invalidation = 'always'
+validation = 'none'
+run = '''
+  shopt -s nullglob
+  shopt -s extglob
+  shopt -s globstar
+  prove --exec "$BIN" ../ff/lib/**/__tests__/*.test.ff?(p)
+'''
+
+[[task]]
 name = 'test'
 deps = [
-  'build',
   ':test:interpret',
   ':test:ffp',
-  ':test:ff'
+  ':test:out',
+  ':test:lib',
+  ':test:tap'
 ]
 serial = true
 display = 'none'

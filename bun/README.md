@@ -47,6 +47,10 @@ Common flags:
 - `-d, --disassemble`
 - `-e, --enc`
 - `-t, --trace`
+- `--trace-format` (`human` or `jsonl`)
+- `--trace-verbose`
+- `--trace-queue-max`
+- `--trace-stack-max`
 - `-p, --profile`
 - `--base`
 

@@ -78,11 +78,27 @@ The most complete test set is the deno tests. To run the deno tests you can run:
 chomp test:deno
 ```
 
+TAP-style library tests now also exist under `ff/lib/**/__tests__/*.test.ffp`.
+See `_docs/tap-testing.md` for the helper API and conventions, and run them with:
+```bash
+cd bun && chomp test:tap
+```
+
+## Trace output modes (TypeScript runtimes)
+
+Node, Bun, and Deno support structured tracing:
+- `--trace --trace-format human` (default) for concise human-readable traces.
+- `--trace --trace-format jsonl` for one JSON object per VM step (recommended for agents/LLM tooling).
+- `--trace-verbose` to include additional per-step details.
+- `--trace-queue-max` and `--trace-stack-max` to bound trace output size.
+- Trace output is written to `stderr`, so normal program output remains on `stdout`.
+
 ## Documentation
 
 - Language examples and tutorials: `_docs/fbm-by-example.md`
 - Stack effect notation standard: `_docs/stack-notation.md`
 - Core words and their stack effects: `_docs/core-vocabulary.md`
+- TAP-style testing helper and `.test.ffp` conventions: `_docs/tap-testing.md`
 - Math library naming conventions: `_docs/math-naming-convention.md`
 - Math library internal naming: `_docs/math-naming-internal.md`
 _

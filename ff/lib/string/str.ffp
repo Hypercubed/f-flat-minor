@@ -1,0 +1,14 @@
+/* String output */
+
+_prints: dup [ q< _prints q> putc ] ? ; /* 0 n* _prints == 0 {prints chars} */
+prints: _prints drop ; /* 0 n* prints == {prints chars} */
+println: prints cr ; /* 0 n* println == {prints chars, char(10)} */
+
+lens: dup [ q< lens q> drop 1 + ] ? ;
+
+sprint: 0 swap eval prints ;
+sprintln: sprint cr ;
+slen: 0 swap eval lens ;
+scat: compose ;
+sjoin: swap compose compose ;
+cjoin: swap cons compose ;

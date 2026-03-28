@@ -25,8 +25,14 @@
     "languages": [
       {
         "id": "f-flat-minor",
-        "aliases": ["F♭m", "f-flat-minor", "ff", "ffp"],
-        "extensions": [".ff", ".ffp"],
+        "aliases": ["F♭m", "f-flat-minor", "ff"],
+        "extensions": [".ff"],
+        "configuration": "./language-configuration.json"
+      },
+      {
+        "id": "f-flat-minor-preprocessed",
+        "aliases": ["F♭m Preprocessed", "f-flat-minor preprocessed", "ffp"],
+        "extensions": [".ffp"],
         "configuration": "./language-configuration.json"
       }
     ],
@@ -35,6 +41,11 @@
         "language": "f-flat-minor",
         "scopeName": "source.f-flat-minor",
         "path": "./syntaxes/ff.tmLanguage.json"
+      },
+      {
+        "language": "f-flat-minor-preprocessed",
+        "scopeName": "source.f-flat-minor.preprocessed",
+        "path": "./syntaxes/ffp.tmLanguage.json"
       }
     ]
   }

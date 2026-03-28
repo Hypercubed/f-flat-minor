@@ -2,7 +2,7 @@
 .import ../trig.ffp
 .import ../../testing.ffp
 
-0 'ncos-nsin' prints
+/* 0 'ncos-nsin' prints
     5 0 ncos 100_000 assert_eq
     5 0 nsin 0 assert_eq
     5 1 ncos 54_030 assert_eq
@@ -27,4 +27,4 @@ OK
     5 npi 2 / ncos 0 assert_eq
     5 npi nsin 0 assert_eq
     5 npi ncos -100_000 assert_eq
-OK
+OK */

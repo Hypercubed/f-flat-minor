@@ -1,5 +1,6 @@
 export interface CoreIO {
   write(data: Uint8Array): void;
+  writeError?(data: Uint8Array): void;
   readByte(): number | null;
   setRaw?(raw: boolean): void;
 }

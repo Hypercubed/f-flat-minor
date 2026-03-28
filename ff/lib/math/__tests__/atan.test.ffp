@@ -1,0 +1,39 @@
+.import ../atan.ffp
+.import ../../tap.ffp
+
+TAP-VERSION
+
+'\0iatan' TEST (
+  0 iatan 0 = @OK
+  1 iatan 0 = @OK
+  -1 iatan 0 = @OK
+  3 @PLAN
+) OK
+
+'\0qatan' TEST (
+  0 1 qatan 0 = @OK
+  1 1 qatan 0 = @OK
+  -1 1 qatan 0 = @OK
+  1 -1 qatan 0 = @OK
+  1 0 qatan 1 = @OK
+  -1 0 qatan -1 = @OK
+  6 @PLAN
+) OK
+
+'\0natan' TEST (
+  5 1 natan 78_539 = @OK
+  20 1 natan 78_539_816_339_744_830_961 = @OK
+  2 @PLAN
+) OK
+
+'\0consistency' TEST (
+  0 2 natan 2 iatan = @OK
+  0 -2 natan -2 iatan = @OK
+  2 1 qatan 2 iatan = @OK
+  -2 1 qatan -2 iatan = @OK
+  5 2 atan-inv 46_364 = @OK
+  5 2 atan-inv 5 1 2 __atan__scaled = @OK
+  6 @PLAN
+) OK
+
+4 PLAN

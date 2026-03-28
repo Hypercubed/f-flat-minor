@@ -7,27 +7,33 @@ pair: unit cons ;
 compose: [ [eval] dip eval ] cons cons ;
 
 _map: depth 2 > [ swap q< _map dup slip q> swap ] ? ;
-map!: _map eval ;
+map!: depth 1 > [ _map eval ] [ drop ] branch ;
 
 reduce!: depth 2 - times ; /* a+ [B] reduce! == r */
 head!: [drop] reduce! ; /* a+ head! == a */
+tail!: reverse! drop reverse! ; /* a+ tail! == a* */
 last!: q< clr q> ; /* .. a last! == a */
 
 _reduce_r: depth 3 > [ dup slip _reduce_r ] ? ;
 reduce_r!: _reduce_r eval ; /* a+ [B] reduce_r! == r */
-foldr!: pushtop reduce_r! ;  /* a* [B] z foldr! == r */
+foldr!: depth 2 > [ pushtop reduce_r! ] [ nip ] branch ;  /* a* [B] z foldr! == r */
  
 _reduce_l: depth 3 > [ swap q< _reduce_l dup slip q> swap ] ? ;
 reduce_l!: _reduce_l eval ; /* a+ [B] reduce_l! == r */
-foldl!: pushtop reduce_l! ; /* a* [B] z foldl! == r */
+foldl!: depth 2 > [ pushtop reduce_l! ] [ nip ] branch ; /* a* [B] z foldl! == r */
 
 reverse!: depth 1 > [ q< reverse! q> pushtop ] ? ;
 
 _filter: depth 2 > [ swap q< _filter over over eval not [nip] ? q> swap ] ? ;
-filter!: _filter dupd eval not [drop] ? ; /* a* [B] filter! == a* */
+filter!: depth 1 > [ _filter dupd eval not [drop] ? ] [ drop ] branch ; /* a* [B] filter! == a* */
+
+_seq=: over emptyq? [ drop2 true ] [
+  over first over first = [ swap tail swap tail _seq= ] [ drop2 false ] branch
+] branch ; /* [A] [B] _seq= == flag (assumes same length) */
 
 map: [ map! ] cons compose in ;
 first: [ head! ] compose in eval ;
+tail: [ tail! ] compose in ;
 last: [ last! ] compose in eval ;
 foldr: [ swap foldr! ] cons cons compose in eval ;
 foldl: [ swap foldl! ] cons cons compose in eval ;
@@ -39,4 +45,7 @@ product!: [*] 1 reduce! ; /* .. product! == n */
 
 sum: 0 [+] foldr ; /* [A] sum == n */
 product: 1 [*] foldr ; /* [A] product == n */
-length: 0 [ drop 1 + ] foldl ; /* [A] length == n */
+length: [ depth q< clr q> ] compose in eval ; /* [A] length == n */
+emptyq?: length zero? ; /* [A] emptyq? == flag */
+
+seq=: over length over length = [ _seq= ] [ drop2 false ] branch ; /* [A] [B] seq= == flag */

@@ -52,6 +52,10 @@ Common flags:
 - `-d, --disassemble`
 - `-e, --enc` (emit encoded bytecode with header instead of executing)
 - `-t, --trace`
+- `--trace-format` (`human` or `jsonl`)
+- `--trace-verbose`
+- `--trace-queue-max`
+- `--trace-stack-max`
 - `-p, --profile`
 - `--base`
 
@@ -99,6 +103,10 @@ Common flags:
 - `-i, --ir` (FF-compatible IR text)
 - `-d, --disassemble`
 - `-t, --trace`
+- `--trace-format` (`human` or `jsonl`)
+- `--trace-verbose`
+- `--trace-queue-max`
+- `--trace-stack-max`
 - `-s, --stats`
 - `-p, --profile`
 - `-b, --base`

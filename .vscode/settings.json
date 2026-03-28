@@ -2,6 +2,6 @@
   "deno.enable": true,
   "files.associations": {
     "*.ff": "f-flat-minor",
-    "*.ffp": "f-flat-minor"
+    "*.ffp": "f-flat-minor-preprocessed"
   }
 }

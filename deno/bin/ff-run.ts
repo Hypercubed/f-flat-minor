@@ -14,6 +14,10 @@ interface Arguments {
   disassemble?: boolean;
   enc?: boolean;
   trace?: boolean;
+  "trace-format"?: string;
+  "trace-verbose"?: boolean;
+  "trace-queue-max"?: number;
+  "trace-stack-max"?: number;
   base?: number;
   profile?: boolean;
   prelude?: boolean;
@@ -120,6 +124,10 @@ export function run(argv: Arguments) {
   
   const interpreter = new Engine();
   interpreter.traceOn = !!argv.trace;
+  interpreter.traceFormat = argv["trace-format"] === "jsonl" ? "jsonl" : "human";
+  interpreter.traceVerbose = !!argv["trace-verbose"];
+  interpreter.traceQueueMax = Number(argv["trace-queue-max"] ?? interpreter.traceQueueMax);
+  interpreter.traceStackMax = Number(argv["trace-stack-max"] ?? interpreter.traceStackMax);
   interpreter.base = argv.base || 10;
   interpreter.statsOn = argv.stats || false;
   interpreter.profileOn = argv.profile || false;
@@ -145,8 +153,8 @@ export function run(argv: Arguments) {
 
 if (import.meta.main) {
   const argv = parseArgs(Deno.args, {
-    string: ["file", "base"],
-    boolean: ["stats", "validate", "hlir", "llir", "opt", "ir", "disassemble", "enc", "trace", "profile", "preprocessor-prelude", "prelude"],
+    string: ["file", "base", "trace-format", "trace-queue-max", "trace-stack-max"],
+    boolean: ["stats", "validate", "hlir", "llir", "opt", "ir", "disassemble", "enc", "trace", "trace-verbose", "profile", "preprocessor-prelude", "prelude"],
     default: { file: "-" },
     alias: {
       file: ["f"],
@@ -159,6 +167,7 @@ if (import.meta.main) {
       disassemble: ["d"],
       enc: ["e"],
       trace: ["t"],
+      "trace-format": ["T"],
       profile: ["p"],
       "preprocessor-prelude": ["P", "prelude"],
     },

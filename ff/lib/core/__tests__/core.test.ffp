@@ -1,0 +1,50 @@
+.import ../core.ff
+.import ../../tap.ffp
+
+TAP-VERSION
+
+'\0Shuffling' TEST (
+  3 5 dup2 5 = swap 3 = and swap 5 = and swap 3 = and @OK
+  1 2 3 bury 2 = swap 1 = and swap 3 = and @OK
+  1 2 3 rot 1 = swap 2 = and swap 3 = and @OK
+  5 [ 2 * ] [ 2 + ] bi 7 = swap 10 = and @OK
+  4 @PLAN
+) OK
+
+'\0Logical' TEST (
+  true true and @OK
+  true false and not @OK
+  false true and not @OK
+  false false and not @OK
+
+  true true or @OK
+  true false or @OK
+  false true or @OK
+  false false or not @OK
+  8 @PLAN
+) OK
+
+'\0Comparison' TEST (
+  1 2 <= @OK
+  2 2 <= @OK
+  6 6 >= @OK
+  8 7 >= @OK
+  8 7 != @OK
+
+  1 3 2 between? @OK
+  3 1 2 between? @OK
+  1 2 3 between? not @OK
+  3 2 1 between? not @OK
+  9 @PLAN
+) OK
+
+'\0Control\sFlow' TEST (
+  true 5 8 choose 5 = @OK
+  false 5 8 choose 8 = @OK
+
+  5 true [ 3 + ] [ 3 - ] branch 8 = @OK
+  5 false [ 3 + ] [ 3 - ] branch 2 = @OK
+  4 @PLAN
+) OK
+
+4 PLAN
