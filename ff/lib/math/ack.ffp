@@ -17,7 +17,7 @@ __ack__F_4_5:
 ;
 
 __ack__F:
-  over 4 >
+  over 4 >=
   [ __ack__F_4_5 ]
   [ __ack__F_0_3 ]
   branch
