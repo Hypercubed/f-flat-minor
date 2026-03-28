@@ -7,6 +7,12 @@ description: Use when writing, debugging, or refactoring f-flat-minor programs (
 
 Use this skill when the task is to implement or fix f-flat-minor code.
 
+## Tool bootstrap
+
+- Use `mise x -- ...` for commands that depend on repo-managed tools such as `node`, `bun`, `deno`, `npm`, and `chomp`.
+- If a managed tool is missing, run `mise install` once from the repo root, then retry the command with `mise x -- ...`.
+- Do not switch runtimes just because a bare command is missing from `PATH`.
+
 ## Pick the right runtime first
 
 - Use Python for `.ff`:
@@ -15,8 +21,8 @@ cat <file>.ff | python3 python/execute.py
 ```
 - Use Node or Deno for `.ffp` (preprocessor required):
 ```bash
-node node/bin/ff-run.ts <file>.ffp
-node node/bin/ff-run.ts -t <file>.ffp
+mise x -- node node/bin/ff-run.ts <file>.ffp
+mise x -- node node/bin/ff-run.ts -t <file>.ffp
 ```
 - Do not use Python for `.ffp`.
 
@@ -36,8 +42,8 @@ Common commands:
 
 Practical preprocessing pipelines from `README.md`:
 ```bash
-./deno/build/preprocess my_file.ffp | ./ccp/build/run
-./racket/main.rkt --pp-only ./ff/fact.ffp | ./python/execute.py
+mise x -- deno run -A deno/bin/ff-preprocess.ts my_file.ffp | ./ccp/build/run
+./racket/main.rkt --pp-only ./ff/fact.ffp | python3 python/execute.py
 ```
 
 ## Authoring workflow
@@ -58,11 +64,11 @@ Practical preprocessing pipelines from `README.md`:
 - Run tiny probes before integrating into larger programs.
 - For stack-order bugs, use trace mode:
 ```bash
-node node/bin/ff-run.ts -t <file>.ffp
+mise x -- node node/bin/ff-run.ts -t <file>.ffp
 ```
 - For LLM/agent parsing, prefer machine-readable traces:
 ```bash
-node node/bin/ff-run.ts -t --trace-format jsonl <file>.ffp
+mise x -- node node/bin/ff-run.ts -t --trace-format jsonl <file>.ffp
 ```
 - Add `--trace-verbose` for extra fields, and bound output with
   `--trace-queue-max` / `--trace-stack-max` when debugging large programs.

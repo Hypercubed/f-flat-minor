@@ -7,6 +7,12 @@ description: Use when editing or debugging Project Euler programs in ff/euler/*.
 
 Use this skill for work in `ff/euler/*.ffp`.
 
+## Tool bootstrap
+
+- Use `mise x -- ...` for commands that depend on repo-managed tools such as `node`, `bun`, `deno`, `npm`, and `chomp`.
+- If a managed tool is missing, run `mise install` once from the repo root, then retry the command with `mise x -- ...`.
+- Do not switch runtimes just because a bare command is missing from `PATH`.
+
 ## Core rules
 
 1. Always solve algorithmically.
@@ -21,8 +27,8 @@ Use this skill for work in `ff/euler/*.ffp`.
 - Python `python/execute.py` does not preprocess `.ffp`.
 - Preferred commands:
 ```bash
-node node/bin/ff-run.ts ff/euler/<file>.ffp
-node node/bin/ff-run.ts -t ff/euler/<file>.ffp
+mise x -- node node/bin/ff-run.ts ff/euler/<file>.ffp
+mise x -- node node/bin/ff-run.ts -t ff/euler/<file>.ffp
 ```
 
 ## Runtime gotchas
@@ -37,7 +43,7 @@ node node/bin/ff-run.ts -t ff/euler/<file>.ffp
 2. Prove helper words independently before full-scan recursion.
 3. Use trace mode for stack underflow and ordering bugs:
 ```bash
-node node/bin/ff-run.ts -t ff/euler/<file>.ffp
+mise x -- node node/bin/ff-run.ts -t ff/euler/<file>.ffp
 ```
 4. In scan solutions, confirm cleanup only drops dataset values, not the computed result.
 5. If preserving a result across bulk `drop`, move it aside with `q< ... q>`.
