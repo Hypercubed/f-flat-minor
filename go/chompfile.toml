@@ -75,6 +75,7 @@ deps = [
     ':execute',
     ':interpret',
     ':ff',
+    ':test:tap',
 ]
 serial = true
 display = 'none'
@@ -101,6 +102,21 @@ run = '''
 name = 'clean'
 run = '''
   rm -rf ./build
+'''
+
+[[task]]
+name = 'test:tap'
+deps = [
+    './build/run'
+]
+serial = true
+invalidation = 'always'
+validation = 'none'
+run = '''
+  shopt -s nullglob
+  shopt -s extglob
+  shopt -s globstar
+  prove --exec "./build/run --in" ../ff/**/*.test.ffp
 '''
 
 [[task]]
