@@ -3,7 +3,7 @@
 
 TAP-VERSION
 
-'\0Derived\sMath' TEST (
+'\0Derived\sMath' TEST
   12 ! 479001600 = @OK
   5 sqr 25 = @OK
 
@@ -30,7 +30,6 @@ TAP-VERSION
   5 10 1 clamp 5 = @OK
   5 10 6 clamp 6 = @OK
   5 10 11 clamp 10 = @OK
-  21 @PLAN
-) OK
+  21 @PLAN OK
 
 1 PLAN

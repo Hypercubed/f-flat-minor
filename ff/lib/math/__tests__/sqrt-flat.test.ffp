@@ -1,0 +1,15 @@
+.import ../sqrt.ffp
+.import ../../tap.ffp
+
+TAP-VERSION
+
+0 isqrt 0 = OK
+1 isqrt 1 = OK
+2 isqrt 1 = OK
+3 isqrt 1 = OK
+4 isqrt 2 = OK
+25 isqrt 5 = OK
+125348 isqrt 354 = OK
+100 8 ^ 2 * isqrt 141421356 = OK
+
+8 PLAN

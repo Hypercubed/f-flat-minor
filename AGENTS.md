@@ -84,6 +84,8 @@ See `_docs/tap-testing.md` for the helper API and conventions, and run them with
 cd bun && chomp test:tap
 ```
 
+Treat [`cd bun && chomp test:tap`](AGENTS.md) as the default TAP runner for `.test.ffp` library tests. Do not try multiple runtimes first unless this documented path is failing.
+
 ## Trace output modes (TypeScript runtimes)
 
 Node, Bun, and Deno support structured tracing:
