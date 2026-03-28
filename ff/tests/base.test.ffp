@@ -3,11 +3,11 @@
 
 TAP-VERSION
 
-'\0Shuffling' TEST
+'\0Shuffling' SUBTEST
     3 dup 3 = [ 3 = ] dip and OK
     1 PLAN OK
 
-'\0Basic\sMath' TEST
+'\0Basic\sMath' SUBTEST
     1 2 + 3 = OK
     3 4 - -1 = OK
     5 6 * 30 = OK
@@ -16,17 +16,17 @@ TAP-VERSION
     9 12 ^ 282429536481 = OK
     6 PLAN OK
 
-'\0Large\sPowers' TEST
+'\0Large\sPowers' SUBTEST
     5 4 3 2 ^ ^ ^ 10 10 ^ % 8212890625 = OK
     1 PLAN OK
 
-'\0Bitwise' TEST
+'\0Bitwise' SUBTEST
     5 3 & 1 = OK
     5 3 | 7 = OK
     5 ~ -6 = OK
     3 PLAN OK
 
-'\0Comparison' TEST
+'\0Comparison' SUBTEST
     1 2 < OK
     2 2 < not OK
     4 3 < not OK
@@ -37,7 +37,7 @@ TAP-VERSION
     10 10 = OK
     8 PLAN OK
 
-'\0Control\sFlow' TEST
+'\0Control\sFlow' SUBTEST
     5 true [ 3 + ] ? 8 = OK
     5 false [ 3 + ] ? 5 = OK
     2 PLAN OK

@@ -3,13 +3,13 @@
 
 TAP-VERSION
 
-'\0iatan' TEST
+'\0iatan' SUBTEST
   0 iatan 0 = OK
   1 iatan 0 = OK
   -1 iatan 0 = OK
   3 PLAN OK
 
-'\0qatan' TEST
+'\0qatan' SUBTEST
   0 1 qatan 0 = OK
   1 1 qatan 0 = OK
   -1 1 qatan 0 = OK
@@ -18,12 +18,12 @@ TAP-VERSION
   -1 0 qatan -1 = OK
   6 PLAN OK
 
-'\0natan' TEST
+'\0natan' SUBTEST
   5 1 natan 78_539 = OK
   20 1 natan 78_539_816_339_744_830_961 = OK
   2 PLAN OK
 
-'\0consistency' TEST
+'\0consistency' SUBTEST
   0 2 natan 2 iatan = OK
   0 -2 natan -2 iatan = OK
   2 1 qatan 2 iatan = OK

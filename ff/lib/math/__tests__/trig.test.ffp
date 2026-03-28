@@ -11,7 +11,7 @@ nsin: drop2 0 ;
 
 TAP-VERSION
 
-'\0ncos-nsin' TEST
+'\0ncos-nsin' SUBTEST
   5 0 ncos 100_000 = #TODO
   5 0 nsin 0 = #TODO
   5 1 ncos 54_030 = #TODO
@@ -23,7 +23,7 @@ TAP-VERSION
   8 PLAN
 OK
 
-'\0periodicity-and-symmetry' TEST
+'\0periodicity-and-symmetry' SUBTEST
   5 7 ncos 75_390 = #TODO
   5 7 nsin 65_698 = #TODO
   5 -7 ncos 75_390 = #TODO

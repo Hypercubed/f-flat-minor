@@ -3,7 +3,7 @@
 
 TAP-VERSION
 
-'\0Numeric' TEST
+'\0Numeric' SUBTEST
     /* TODO: cpp
     0b1111 15 assert_eq
     0xFFFF 65535 assert_eq
@@ -23,7 +23,7 @@ TAP-VERSION
     -1e10 -10000000000 assert_eq */
     0 PLAN OK
 
-'\0Characters' TEST
+'\0Characters' SUBTEST
     'A' 65 = OK
     'a' 97 = OK
 
@@ -31,7 +31,7 @@ TAP-VERSION
     '\n' 10 = OK
     4 PLAN OK
 
-'\0Strings' TEST
+'\0Strings' SUBTEST
   'abc' rot 'a' = [ 'b' = [ 'c' = ] dip and ] dip and OK
   1 PLAN OK
 

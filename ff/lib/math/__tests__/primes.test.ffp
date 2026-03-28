@@ -3,7 +3,7 @@
 
 TAP-VERSION
 
-'\0prime?' TEST
+'\0prime?' SUBTEST
   0 prime? not OK
   1 prime? not OK
   2 prime? OK
@@ -23,7 +23,7 @@ TAP-VERSION
   2147483647 prime? OK
   17 PLAN OK
 
-'\0maybe_prime?' TEST
+'\0maybe_prime?' SUBTEST
   0 maybe_prime? not OK
   1 maybe_prime? not OK
   2 maybe_prime? OK
@@ -39,7 +39,7 @@ TAP-VERSION
   2147483647 maybe_prime? OK
   13 PLAN OK
 
-'\0next-prime' TEST
+'\0next-prime' SUBTEST
   0 next-prime 2 = OK
   1 next-prime 2 = OK
   2 next-prime 3 = OK
@@ -51,7 +51,7 @@ TAP-VERSION
   2147483647 next-prime 2147483659 = OK
   9 PLAN OK
 
-'\0th-prime' TEST
+'\0th-prime' SUBTEST
   6 th-prime 13 = OK
   168 th-prime 997 = OK
   169 th-prime 1009 = OK

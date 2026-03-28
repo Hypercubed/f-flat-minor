@@ -4,7 +4,7 @@
 
 TAP-VERSION
 
-'\0ilb' TEST
+'\0ilb' SUBTEST
   1 ilb 0 = OK
   16 ilb 4 = OK
   1024 ilb 10 = OK
@@ -14,7 +14,7 @@ TAP-VERSION
   52656145834278593348959013841835216159447547700274555627155488768 ilb 215 = OK
   7 PLAN OK
 
-'\0ilog' TEST
+'\0ilog' SUBTEST
   1 ilog 0 = OK
   16 ilog 1 = OK
   1024 ilog 3 = OK
@@ -23,7 +23,7 @@ TAP-VERSION
   120 ! ilog 198 = OK
   6 PLAN OK
 
-'\0iln' TEST
+'\0iln' SUBTEST
   1 iln 0 = OK
   16 iln 2 = OK
   1024 iln 6 = OK

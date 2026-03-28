@@ -4,13 +4,13 @@
 
 TAP-VERSION
 
-'\0iexp' TEST
+'\0iexp' SUBTEST
   1 iexp 2 = OK
   16 iexp 8886110 = OK
   1024 iexp ilog 444 = OK
   3 PLAN OK
 
-'\0nexp' TEST
+'\0nexp' SUBTEST
   0 0 nexp 1 = OK
   0 1 nexp 2 = OK
   5 1 nexp 271828 = OK
@@ -27,7 +27,7 @@ TAP-VERSION
   451 3 nexp 10 / 450 3 nexp = OK
   14 PLAN OK
 
-'\0icosh-isinh' TEST
+'\0icosh-isinh' SUBTEST
   0 icosh 1 = OK
   0 isinh 0 = OK
   1 icosh 1 = OK
@@ -42,7 +42,7 @@ TAP-VERSION
   -1 isinh 0 -1 nsinh = OK
   12 PLAN OK
 
-'\0ncosh-nsinh' TEST
+'\0ncosh-nsinh' SUBTEST
   5 0 ncosh 100000 = OK
   5 0 nsinh 0 = OK
   5 1 ncosh 154307 = OK
