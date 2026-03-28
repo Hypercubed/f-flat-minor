@@ -1,0 +1,25 @@
+.import ../lib/core/core.ff
+.import ../lib/tap.ffp
+
+TAP-VERSION
+
+'\0Case\sInsensitive' TEST
+  x: 1 2 + ;
+  X 3 = OK
+
+  Y: 5 8 + ;
+  y 13 = OK
+
+  [Z] : 21 34 + ;
+  z 55 = OK
+  3 PLAN OK
+
+'\0Compiler\sCommands\n' TEST
+.this should be ignored
+1 2 + .this_also_ignored 3 = OK
+5
+. 8 + /* this should not be ignored */
+13 = OK
+2 PLAN OK
+
+2 PLAN

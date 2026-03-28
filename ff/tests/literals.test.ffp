@@ -1,0 +1,38 @@
+.import ../lib/core/core.ff
+.import ../lib/tap.ffp
+
+TAP-VERSION
+
+'\0Numeric' TEST
+    /* TODO: cpp
+    0b1111 15 assert_eq
+    0xFFFF 65535 assert_eq
+    0o27 23 assert_eq
+    1_000_000 1000000 assert_eq
+    0b1110_0000_0000_0000 57344 assert_eq */
+
+    /* TODO: cpp, python
+    -0b1111 -15 assert_eq
+    -0xFFFF -65535 assert_eq
+    -0o27 -23 assert_eq
+    -1_000_000 -1000000 assert_eq
+    -0b1110_0000_0000_0000 -57344 assert_eq */
+
+    /* TODO: cpp
+    1e10 10000000000 assert_eq
+    -1e10 -10000000000 assert_eq */
+    0 PLAN OK
+
+'\0Characters' TEST
+    'A' 65 = OK
+    'a' 97 = OK
+
+    '\s' 32 = OK
+    '\n' 10 = OK
+    4 PLAN OK
+
+'\0Strings' TEST
+  'abc' rot 'a' = OK 'b' = OK 'c' = OK
+  3 PLAN OK
+
+3 PLAN

@@ -47,7 +47,6 @@ deps = [
   ':test:interpret',
   ':test:ffp',
   ':test:out',
-  ':test:lib',
   ':test:tap'
 ]
 serial = true
@@ -73,26 +72,6 @@ run = '''
 '''
 
 [[task]]
-name = 'test:lib'
-deps = [
-  './build/ff-run'
-]
-serial = true
-invalidation = 'always'
-validation = 'none'
-display = 'status-only'
-run = '''
-  shopt -s nullglob
-  shopt -s extglob
-  shopt -s globstar
-  for i in ../ff/**/__tests__/*.ffp; do
-    ./build/ff-run $i > /dev/null  && ${{CHECK}}
-    ./build/ff-run $i --opt > /dev/null  && ${{CHECK}}
-    echo " $i"
-  done
-'''
-
-[[task]]
 name = 'test:tap'
 deps = [
   './build/ff-run'
@@ -104,7 +83,7 @@ run = '''
   shopt -s nullglob
   shopt -s extglob
   shopt -s globstar
-  prove --exec "$BIN" ../ff/lib/**/__tests__/*.test.ff?(p)
+  prove --exec "$BIN --opt" ../ff/lib/**/*.test.ff?(p)
 '''
 
 [[task]]
