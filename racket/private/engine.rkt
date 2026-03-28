@@ -163,6 +163,19 @@
 (define (depth!)
   (push! stack (length stack)))
 
+(define (cons!)
+  (define y (pop! stack))
+  (define x (pop! stack))
+  (define anon-op (next-code!))
+  ; Create anonymous definition: [PUSH x, CALL y] (or just [PUSH x] if y is 0)
+  (hash-set! definitions anon-op (if (zero? y)
+                                     `(,x ,op_nop)
+                                     `(,x ,op_nop ,y ,op_eval)))
+  ; If inside a definition, push 0 first (indicating data), then the anon-op
+  (unless (empty? def-stack)
+    (push 0))
+  (push anon-op))
+
 (define system_defs (hash
   op_nop void
   op_eval eval!
@@ -200,7 +213,8 @@
   op_ket ket!
   op_pow pow!
   op_or or!
-  op_not not!))
+  op_not not!
+  op_cons cons!))
 
 ;;; internal macros
 (define-macro (do-trace V)

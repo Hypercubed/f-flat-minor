@@ -36,5 +36,6 @@
 (define op_pow  (char->integer #\^))
 (define op_or   (char->integer #\|))
 (define op_not  (char->integer #\~))
+(define op_cons (char->integer #\,))
 
 (provide (all-defined-out))
