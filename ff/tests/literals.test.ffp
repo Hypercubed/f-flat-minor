@@ -32,7 +32,7 @@ TAP-VERSION
     4 PLAN OK
 
 '\0Strings' TEST
-  'abc' rot 'a' = OK 'b' = OK 'c' = OK
-  3 PLAN OK
+  'abc' rot 'a' = [ 'b' = [ 'c' = ] dip and ] dip and OK
+  1 PLAN OK
 
 3 PLAN

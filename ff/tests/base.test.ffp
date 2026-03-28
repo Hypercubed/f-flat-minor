@@ -4,8 +4,8 @@
 TAP-VERSION
 
 '\0Shuffling' TEST
-    3 dup 3 = OK 3 = OK
-    2 PLAN OK
+    3 dup 3 = [ 3 = ] dip and OK
+    1 PLAN OK
 
 '\0Basic\sMath' TEST
     1 2 + 3 = OK

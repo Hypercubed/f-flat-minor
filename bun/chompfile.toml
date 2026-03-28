@@ -83,9 +83,9 @@ run = '''
   shopt -s nullglob
   shopt -s extglob
   shopt -s globstar
-  prove --exec "$BIN --opt" ../ff/lib/**/*.test.ff?(p)
+  prove --exec "$BIN --opt" ../ff/**/*.test.ffp
 '''
-
+  
 [[task]]
 name = 'bench'
 deps = ['build']
