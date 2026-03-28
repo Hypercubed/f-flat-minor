@@ -7,9 +7,10 @@
  * introducing a circular import back through atan.ffp.
  */
 
-__atan_core__m2: q< * q> * ; /* a b c __atan_core__m2 == a*b*c */
+__atan_core__m2: [ * ] dip * ; .inline /* a b c __atan_core__m2 == a*b*c */
 
 __atan_core__u2_newp:
+  /* Not queue-safe yet: this word intentionally consumes/rewrites queued v2. */
   q< q<
   over
   q> q>
@@ -25,12 +26,6 @@ __atan_core__u2_newp:
   -
 ; .unsafe /* u2 p q odd __atan_core__u2_newp == u2 p' with v2 on queue */
 
-__atan_core__u2_newp_stack:
-  q<
-  __atan_core__u2_newp
-  q>
-; .unsafe /* u2 p q odd v2 __atan_core__u2_newp_stack == u2 p' v2 */
-
 __atan_core__newq_stack:
   dup
   q<
@@ -40,7 +35,7 @@ __atan_core__newq_stack:
   q>
   __atan_core__m2
   q>
-; .unsafe /* p q odd v2 __atan_core__newq_stack == p q odd q' v2 */
+; /* p q odd v2 __atan_core__newq_stack == p q odd q' v2 */
 
 __atan_core__tail_loop:
   over positive?
@@ -49,7 +44,7 @@ __atan_core__tail_loop:
     2 -
     [ __atan_core__newq_stack ] dip
     swapd
-    [ [ __atan_core__u2_newp_stack ] dip ] dip
+    [ [ q< __atan_core__u2_newp q> ] dip ] dip
     swapd
     swap
     __atan_core__tail_loop
@@ -61,14 +56,15 @@ __atan_core__tail_loop:
     drop
   ]
   branch
-; .unsafe /* u v u2 p q odd v2 __atan_core__tail_loop == u v p q */
+; /* u v u2 p q odd v2 __atan_core__tail_loop == u v p q */
 
-__atan__parts:
-  q< q<
+__atan__odd_from_precision:
+  rot
   n->K
-  q> q>
-  dig
+  swapd
+; .inline /* n u v __atan__odd_from_precision == u v odd */
 
+__atan__seed_taylor_state:
   dup
   2 *
   1 +
@@ -77,13 +73,11 @@ __atan__parts:
   1 -
   q<
   over
-  dup
-  *
+  sqr
   q>
   q<
   over
-  dup
-  *
+  sqr
   q>
   q>
   rot
@@ -93,14 +87,21 @@ __atan__parts:
   q<
   swapd
   q>
+; /* u v odd __atan__seed_taylor_state == u v u2 p q odd v2 */
 
-  __atan_core__tail_loop
-
+__atan__scale_tail_result:
   swapd
   *
   q<
   *
   q>
+; .inline /* u v p q __atan__scale_tail_result == p q */
+
+__atan__parts:
+  __atan__odd_from_precision
+  __atan__seed_taylor_state
+  __atan_core__tail_loop
+  __atan__scale_tail_result
 ; /* n u v __atan__parts == p q */
 
 __atan__core_scaled:
@@ -113,6 +114,6 @@ __atan__core_scaled:
 ; /* n u v __atan__core_scaled == floor(10^n*atan(u/v)) for reduced positive ratios */
 
 __atan__needs_pi4:
-  [ + dup * ] [ nip dup * 2 * ] bi2
+  [ + sqr ] [ nip sqr 2 * ] bi2
   >
 ; /* u v __atan__needs_pi4 == u/v > tan(pi/8) for positive u <= v */
