@@ -4,137 +4,119 @@
 
 TAP-VERSION
 
-'\0cons' TEST (
-  4 [ ] cons eval 4 = @OK
-  4 0 cons eval 4 = @OK
-  1 [ 2 + ] cons eval 3 = @OK
-  4 [ dup * ] cons eval 16 = @OK
-  4 @PLAN
-) OK
+'\0cons' TEST
+  4 [ ] cons eval 4 = OK
+  4 0 cons eval 4 = OK
+  1 [ 2 + ] cons eval 3 = OK
+  4 [ dup * ] cons eval 16 = OK
+  4 PLAN OK
 
-'\0unit' TEST (
-  5 unit eval 5 = @OK
-  9 unit eval 1 + 10 = @OK
-  2 @PLAN
-) OK
+'\0unit' TEST
+  5 unit eval 5 = OK
+  9 unit eval 1 + 10 = OK
+  2 PLAN OK
 
-'\0stack' TEST (
-  1 2 3 stack eval 3 = swap 2 = and swap 1 = and @OK
-  1 @PLAN
-) OK
+'\0stack' TEST
+  1 2 3 stack eval 3 = swap 2 = and swap 1 = and OK
+  1 PLAN OK
 
-'\0in' TEST (
-  [ 2 3 + ] in eval 5 = @OK
-  1 @PLAN
-) OK
+'\0in' TEST
+  [ 2 3 + ] in eval 5 = OK
+  1 PLAN OK
 
-'\0pair' TEST (
-  1 2 pair eval + 3 = @OK
-  1 @PLAN
-) OK
+'\0pair' TEST
+  1 2 pair eval + 3 = OK
+  1 PLAN OK
 
-'\0compose' TEST (
-  [ 1 2 ] [ 3 5 ] compose eval + + + 11 = @OK
-  [ 1 ] [ 2 + ] compose eval 3 = @OK
-  3 [ 1 ] [ 2 + + ] compose eval 6 = @OK
-  3 @PLAN
-) OK
+'\0compose' TEST
+  [ 1 2 ] [ 3 5 ] compose eval + + + 11 = OK
+  [ 1 ] [ 2 + ] compose eval 3 = OK
+  3 [ 1 ] [ 2 + + ] compose eval 6 = OK
+  3 PLAN OK
 
-'\0first' TEST (
-  [ 1 2 ] first 1 = @OK
-  [ 3 5 8 ] first 3 = @OK
-  [ 13 21 + ] first 34 = @OK
-  3 @PLAN
-) OK
+'\0first' TEST
+  [ 1 2 ] first 1 = OK
+  [ 3 5 8 ] first 3 = OK
+  [ 13 21 + ] first 34 = OK
+  3 PLAN OK
 
-'\0last' TEST (
-  [ 1 2 ] last 2 = @OK
-  [ 3 5 8 ] last 8 = @OK
-  [ 13 21 + ] last 34 = @OK
-  3 @PLAN
-) OK
+'\0last' TEST
+  [ 1 2 ] last 2 = OK
+  [ 3 5 8 ] last 8 = OK
+  [ 13 21 + ] last 34 = OK
+  3 PLAN OK
 
-'\0tail' TEST (
-  [ 1 ] tail length 0 = @OK
-  [ 1 2 ] tail first 2 = @OK
-  [ 3 5 8 ] tail first 5 = @OK
-  [ 3 5 8 ] tail last 8 = @OK
-  4 @PLAN
-) OK
+'\0tail' TEST
+  [ 1 ] tail length 0 = OK
+  [ 1 2 ] tail first 2 = OK
+  [ 3 5 8 ] tail first 5 = OK
+  [ 3 5 8 ] tail last 8 = OK
+  4 PLAN OK
 
-'\0map' TEST (
-  [ ] [ 2 * ] map length 0 = @OK
-  [ 1 2 4 ] [ 2 * ] map length 3 = @OK
-  [ 1 2 4 ] [ 2 * ] map eval + + 14 = @OK
-  3 @PLAN
-) OK
+'\0map' TEST
+  [ ] [ 2 * ] map length 0 = OK
+  [ 1 2 4 ] [ 2 * ] map length 3 = OK
+  [ 1 2 4 ] [ 2 * ] map eval + + 14 = OK
+  3 PLAN OK
 
-'\0foldr' TEST (
-  [ ] 0 [+] foldr 0 = @OK
-  [ ] 99 [+] foldr 99 = @OK
-  [ 1 2 3 ] 0 [+] foldr 6 = @OK
-  3 @PLAN
-) OK
+'\0foldr' TEST
+  [ ] 0 [+] foldr 0 = OK
+  [ ] 99 [+] foldr 99 = OK
+  [ 1 2 3 ] 0 [+] foldr 6 = OK
+  3 PLAN OK
 
-'\0foldl' TEST (
-  [ ] 0 [+] foldl 0 = @OK
-  [ ] 99 [+] foldl 99 = @OK
-  [ 1 2 3 ] 0 [+] foldl 6 = @OK
-  [ 10 20 30 ] 0 [ drop 1 + ] foldl 3 = @OK
-  4 @PLAN
-) OK
+'\0foldl' TEST
+  [ ] 0 [+] foldl 0 = OK
+  [ ] 99 [+] foldl 99 = OK
+  [ 1 2 3 ] 0 [+] foldl 6 = OK
+  [ 10 20 30 ] 0 [ drop 1 + ] foldl 3 = OK
+  4 PLAN OK
 
-'\0length' TEST (
-  [ ] length 0 = @OK
-  [ 1 2 3 ] length 3 = @OK
-  [ 10 20 30 40 ] length 4 = @OK
-  [ 1 2 + 3 + 4 ] length 2 = @OK
-  4 @PLAN
-) OK
+'\0length' TEST
+  [ ] length 0 = OK
+  [ 1 2 3 ] length 3 = OK
+  [ 10 20 30 40 ] length 4 = OK
+  [ 1 2 + 3 + 4 ] length 2 = OK
+  4 PLAN OK
 
-'\0emptyq?' TEST (
-  [ ] emptyq? @OK
-  [ 1 ] emptyq? not @OK
-  [ 1 2 3 ] emptyq? not @OK
-  [ 1 2 + 3 + 4 ] emptyq? not @OK
-  4 @PLAN
-) OK
+'\0emptyq?' TEST
+  [ ] emptyq? OK
+  [ 1 ] emptyq? not OK
+  [ 1 2 3 ] emptyq? not OK
+  [ 1 2 + 3 + 4 ] emptyq? not OK
+  4 PLAN OK
 
-'\0seq=' TEST (
-  [ ] [ ] seq= @OK
-  [ ] [ 1 ] seq= not @OK
-  [ 1 ] [ ] seq= not @OK
-  [ 1 ] [ 1 ] seq= @OK
-  [ 1 ] [ 2 ] seq= not @OK
-  [ 1 2 3 ] [ 1 2 3 ] seq= @OK
-  [ 1 2 3 ] [ 1 2 4 ] seq= not @OK
-  [ 1 2 + 4 ] [ 3 4 ] seq= @OK
-  [ 1 2 + 4 ] [ 3 5 ] seq= not @OK
-  9 @PLAN
-) OK
+'\0seq=' TEST
+  [ ] [ ] seq= OK
+  [ ] [ 1 ] seq= not OK
+  [ 1 ] [ ] seq= not OK
+  [ 1 ] [ 1 ] seq= OK
+  [ 1 ] [ 2 ] seq= not OK
+  [ 1 2 3 ] [ 1 2 3 ] seq= OK
+  [ 1 2 3 ] [ 1 2 4 ] seq= not OK
+  [ 1 2 + 4 ] [ 3 4 ] seq= OK
+  [ 1 2 + 4 ] [ 3 5 ] seq= not OK
+  9 PLAN OK
 
-'\0sum/product' TEST (
-  [ 5 8 13 21 ] sum 47 = @OK
-  [ 11 7 5 3 ] product 1155 = @OK
-  2 @PLAN
-) OK
+'\0sum/product' TEST
+  [ 5 8 13 21 ] sum 47 = OK
+  [ 11 7 5 3 ] product 1155 = OK
+  2 PLAN OK
 
-'\0reverse' TEST (
-  [ 1 2 3 ] reverse first 3 = @OK
-  [ 5 8 13 21 ] reverse first 21 = @OK
-  [ 5 8 13 21 ] reverse last 5 = @OK
-  [ 5 8 13 21 + ] reverse first 34 = @OK
-  [ 5 8 13 21 + ] reverse last 5 = @OK
-  5 @PLAN
-) OK
+'\0reverse' TEST
+  [ 1 2 3 ] reverse first 3 = OK
+  [ 5 8 13 21 ] reverse first 21 = OK
+  [ 5 8 13 21 ] reverse last 5 = OK
+  [ 5 8 13 21 + ] reverse first 34 = OK
+  [ 5 8 13 21 + ] reverse last 5 = OK
+  5 PLAN OK
 
-'\0filter' TEST (
-  [ ] [even?] filter length 0 = @OK
-  [ 1 2 3 4 5 6 ] [even?] filter first 2 = @OK
-  [ 1 2 3 4 5 6 ] [even?] filter last 6 = @OK
-  [ 1 2 3 4 5 6 ] [odd?] filter first 1 = @OK
-  [ 1 2 3 4 5 6 ] [odd?] filter last 5 = @OK
-  5 @PLAN
-) OK
+'\0filter' TEST
+  [ ] [even?] filter length 0 = OK
+  [ 1 2 3 4 5 6 ] [even?] filter first 2 = OK
+  [ 1 2 3 4 5 6 ] [even?] filter last 6 = OK
+  [ 1 2 3 4 5 6 ] [odd?] filter first 1 = OK
+  [ 1 2 3 4 5 6 ] [odd?] filter last 5 = OK
+  5 PLAN OK
 
 18 PLAN

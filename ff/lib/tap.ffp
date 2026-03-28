@@ -1,71 +1,70 @@
 .import ./core/core.ff
-.import ./seq/seq.ffp
 .import ./string/string.ffp
 
-/*
- * TAP library - Test Anything Protocol utilities for writing tests.
+/* TAP helpers for TAP streams.
+ *
+ * Known-good TAP usage in this repo:
+ * - Run TAP library tests with `cd bun && chomp test:tap`.
+ * - Start each TAP file with TAP-VERSION.
+ * - TAP-VERSION resets top-level TAP counters.
+ * - Start each subtest with TEST; it resets that subtest's TAP counters.
+ * - Use OK for assertions at any TAP depth.
+ * - Flatten subtests when possible: omit `(` / `)` wrappers unless you actually need stack/queue isolation.
+ * - End each assertion scope with PLAN.
+ *
+ * The flattened subtest pattern used by `ff/lib/math/__tests__/*.test.ffp` is the current
+ * known-good state and should be treated as the default unless TAP semantics change.
  */
 
- /* TAP version output
-  * Clears the stack since that is required for proper TAP output.
+/* TAP state: failure_count assertion_count.
+ * Reset at TAP file scope via TAP-VERSION and at subtest scope via TEST.
  */
-TAP-VERSION: '\0TAP\sversion\s14' println clr ;
+_TAP-RESET: 0 0 ;
 
-/* TAP assertion utilities
-  * Tests if the top stack item is truthy, printing "ok" or "not ok" accordingly.
-  * Leaves a boolean on the stack indicating success or failure.
-  */
-OK: truthy? 
-  [ '\0ok' println true ]
-  [ '\0not\sok' println false ]
+/* Bump assertion_count and return idx. */
+_TAP-NEXT!: ++ dup ;
+
+/* Bump failure_count. */
+_TAP-FAIL!: swap ++ swap ;
+
+/* No failures recorded? */
+_TAP-PASS?: over zero? ;
+
+/* Indent assertion/plan lines from active TAP stack depth.
+ * indent_level = (depth - 3) / 2, with 4 spaces per level.
+ */
+_TAP-INDENT: depth 3 - 2 / [ '\0\s\s\s\s' prints ] swap times ;
+
+ /* Print TAP version and reset top-level TAP state. */
+TAP-VERSION: '\0TAP\sversion\s14' println clr _TAP-RESET ;
+
+/* Primary assertion word. */
+OK:
+  _TAP-INDENT q< _TAP-NEXT! q> truthy?
+  [ '\0ok\s' prints putn cr ]
+  [ '\0not\sok\s' prints putn cr _TAP-FAIL! ]
   branch ;
 
-/* TAP skip utilities
-  * Consumes and discards the top assertion result, then prints a skipped
-  * assertion. This makes @#SKIP a drop-in replacement for @OK while an
-  * implementation is pending.
-  * Leaves true on the stack so PLAN counts the skip as satisfied.
-  */
-#SKIP: drop '\0ok\s#SKIP' println true ;
+/* Skip one assertion. */
+#SKIP: _TAP-INDENT drop _TAP-NEXT! '\0ok\s' prints putn '\0\s#\sSKIP' prints cr ;
 
-/* TAP todo utilities
-  * Consumes the top assertion result and prints an ok/not ok TODO assertion.
-  * Leaves true on the stack so PLAN treats the TODO as satisfied either way.
-  * This makes @#TODO a drop-in replacement for @OK while an implementation is
-  * still in progress.
-  */
+/* Mark one assertion TODO. */
 #TODO:
-  [ '\0ok\s#\sTODO\s' prints println true ]
-  [ '\0not\sok\s#\sTODO\s' prints println true ]
+  _TAP-INDENT q< _TAP-NEXT! q> truthy?
+  [ '\0ok\s' prints putn '\0\s#\sTODO' prints cr ]
+  [ '\0not\sok\s' prints putn '\0\s#\sTODO' prints cr ]
   branch ;
 
-/* TAP whole-file skip
-  * Takes a reason string and prints a skip plan for the entire file.
-  * This replaces the usual PLAN line.
-  */
+/* Skip the whole file. */
 SKIP-ALL: '\01..0\s#\sSKIP\s' prints println ;
 
-/* TAP test plan
-  * Sums the number of tests passed and compares it to the expected count n.
-  * Prints "1..n" to indicate the number of tests planned.
-  * Seeds sum! with 0 so zero-test plans are supported.
-  * Leaves a boolean on the stack indicating whether count matches n.
-  */
+/* Print 1..n and require count match plus no failures. */
 PLAN:
-  dup '\01..' prints putn cr
-  [ 0 sum! ] dip tuck = ;
+  _TAP-INDENT dup '\01..' prints putn cr
+  over = swap drop swap zero? and ;
 
-/* TAP test case
-  * Takes a description string and prints a test case header.
-  * Should be followed by a series of @OK assertions wrapped in `(` ... `)`
-  * (STASH/FETCH), ending with a @PLAN for the assertion count.
-  */
-TEST: '\0#\sSubtest:\s' prints println ;
+/* Print a subtest header and reset subtest TAP state. */
+TEST: '\0#\sSubtest:\s' prints println _TAP-RESET ;
 
-/* Stack sentinel used by older tests to detect accidental over-consumption. */
+/* Stack sentinel for older tests. */
 ¶: clr 999 ;
-
-@OK: tab OK ;
-@#SKIP: tab #SKIP ;
-@#TODO: tab #TODO ;
-@PLAN: tab PLAN ;

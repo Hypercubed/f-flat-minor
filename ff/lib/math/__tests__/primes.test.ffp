@@ -3,62 +3,58 @@
 
 TAP-VERSION
 
-'\0prime?' TEST (
-  0 prime? not @OK
-  1 prime? not @OK
-  2 prime? @OK
-  3 prime? @OK
-  4 prime? not @OK
-  5 prime? @OK
-  6 prime? not @OK
-  7 prime? @OK
-  8 prime? not @OK
-  9 prime? not @OK
-  10 prime? not @OK
-  221 prime? not @OK
-  561 prime? not @OK
-  21474 prime? not @OK
-  21481 prime? @OK
-  2147483651 prime? not @OK
-  2147483647 prime? @OK
-  17 @PLAN
-) OK
+'\0prime?' TEST
+  0 prime? not OK
+  1 prime? not OK
+  2 prime? OK
+  3 prime? OK
+  4 prime? not OK
+  5 prime? OK
+  6 prime? not OK
+  7 prime? OK
+  8 prime? not OK
+  9 prime? not OK
+  10 prime? not OK
+  221 prime? not OK
+  561 prime? not OK
+  21474 prime? not OK
+  21481 prime? OK
+  2147483651 prime? not OK
+  2147483647 prime? OK
+  17 PLAN OK
 
-'\0maybe_prime?' TEST (
-  0 maybe_prime? not @OK
-  1 maybe_prime? not @OK
-  2 maybe_prime? @OK
-  3 maybe_prime? @OK
-  4 maybe_prime? not @OK
-  5 maybe_prime? @OK
-  6 maybe_prime? not @OK
-  8 maybe_prime? not @OK
-  9 maybe_prime? not @OK
-  10 maybe_prime? not @OK
-  29 maybe_prime? @OK
-  97 maybe_prime? @OK
-  2147483647 maybe_prime? @OK
-  13 @PLAN
-) OK
+'\0maybe_prime?' TEST
+  0 maybe_prime? not OK
+  1 maybe_prime? not OK
+  2 maybe_prime? OK
+  3 maybe_prime? OK
+  4 maybe_prime? not OK
+  5 maybe_prime? OK
+  6 maybe_prime? not OK
+  8 maybe_prime? not OK
+  9 maybe_prime? not OK
+  10 maybe_prime? not OK
+  29 maybe_prime? OK
+  97 maybe_prime? OK
+  2147483647 maybe_prime? OK
+  13 PLAN OK
 
-'\0next-prime' TEST (
-  0 next-prime 2 = @OK
-  1 next-prime 2 = @OK
-  2 next-prime 3 = @OK
-  5 next-prime 7 = @OK
-  47 next-prime 53 = @OK
-  89 next-prime 97 = @OK
-  7727 next-prime 7741 = @OK
-  104743 next-prime 104759 = @OK
-  2147483647 next-prime 2147483659 = @OK
-  9 @PLAN
-) OK
+'\0next-prime' TEST
+  0 next-prime 2 = OK
+  1 next-prime 2 = OK
+  2 next-prime 3 = OK
+  5 next-prime 7 = OK
+  47 next-prime 53 = OK
+  89 next-prime 97 = OK
+  7727 next-prime 7741 = OK
+  104743 next-prime 104759 = OK
+  2147483647 next-prime 2147483659 = OK
+  9 PLAN OK
 
-'\0th-prime' TEST (
-  6 th-prime 13 = @OK
-  168 th-prime 997 = @OK
-  169 th-prime 1009 = @OK
-  3 @PLAN
-) OK
+'\0th-prime' TEST
+  6 th-prime 13 = OK
+  168 th-prime 997 = OK
+  169 th-prime 1009 = OK
+  3 PLAN OK
 
 4 PLAN

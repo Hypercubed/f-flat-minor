@@ -7,6 +7,12 @@ description: Use when refactoring non-Euler ff/*.ffp code into reusable ff/lib m
 
 Use this skill for reusable non-Euler `ff/*.ffp` work and web playground integration.
 
+## Tool bootstrap
+
+- Use `mise x -- ...` for commands that depend on repo-managed tools such as `node`, `bun`, `deno`, `npm`, and `chomp`.
+- If a managed tool is missing, run `mise install` once from the repo root, then retry the command with `mise x -- ...`.
+- Do not switch runtimes just because a bare command is missing from `PATH`.
+
 ## Library extraction rules
 
 1. Move reusable words from `ff/<name>.ffp` to `ff/lib/<name>.ffp`.
@@ -31,7 +37,7 @@ Use this skill for reusable non-Euler `ff/*.ffp` work and web playground integra
 1. Validate stack effects with tiny probes before broad refactors.
 2. Use trace mode to localize underflows and ordering bugs:
 ```bash
-node node/bin/ff-run.ts -t <file>.ffp
+mise x -- node node/bin/ff-run.ts -t <file>.ffp
 ```
 3. Remember queue behavior: `q<` pops from stack into queue; `q>` restores in FIFO order.
 
@@ -45,7 +51,7 @@ When adding or renaming libraries/examples used in web:
 4. Update example `<select>` options.
 5. Verify build:
 ```bash
-npm --prefix web run build
+mise x -- npm --prefix web run build
 ```
 
 ## Example documentation standard

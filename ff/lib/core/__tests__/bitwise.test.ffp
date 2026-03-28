@@ -3,48 +3,44 @@
 
 TAP-VERSION
 
-'\0&\s(and)' TEST (
-  0 0 & 0 = @OK
-  0 1 & 0 = @OK
-  1 0 & 0 = @OK
-  1 1 & 1 = @OK
+'\0&\s(and)' TEST
+  0 0 & 0 = OK
+  0 1 & 0 = OK
+  1 0 & 0 = OK
+  1 1 & 1 = OK
 
-  0b0001 0b1001 & 0b0001 = @OK
-  0b0010 0b0001 & 0b0000 = @OK
-  6 @PLAN
-) OK
+  0b0001 0b1001 & 0b0001 = OK
+  0b0010 0b0001 & 0b0000 = OK
+  6 PLAN OK
 
-'\0|\s(or)' TEST (
-  0 0 | 0 = @OK
-  0 1 | 1 = @OK
-  1 0 | 1 = @OK
-  1 1 | 1 = @OK
+'\0|\s(or)' TEST
+  0 0 | 0 = OK
+  0 1 | 1 = OK
+  1 0 | 1 = OK
+  1 1 | 1 = OK
 
-  0b0001 0b1001 | 0b1001 = @OK
-  0b0010 0b0001 | 0b0011 = @OK
-  6 @PLAN
-) OK
+  0b0001 0b1001 | 0b1001 = OK
+  0b0010 0b0001 | 0b0011 = OK
+  6 PLAN OK
 
-'\0~\s(not)' TEST (  
-  0 ~ -1 = @OK
-  -1 ~ 0 = @OK
+'\0~\s(not)' TEST
+  0 ~ -1 = OK
+  -1 ~ 0 = OK
 
-  0b0000 ~ -0b0001 = @OK
-  -0b0001 ~ -0b0000 = @OK
+  0b0000 ~ -0b0001 = OK
+  -0b0001 ~ -0b0000 = OK
 
-  0b1010 ~ -0b1011 = @OK
-  5 @PLAN
-) OK
+  0b1010 ~ -0b1011 = OK
+  5 PLAN OK
 
-'\0bxor' TEST (
-  0 0 bxor 0 = @OK
-  0 1 bxor 1 = @OK
-  1 0 bxor 1 = @OK
-  1 1 bxor 0 = @OK
+'\0bxor' TEST
+  0 0 bxor 0 = OK
+  0 1 bxor 1 = OK
+  1 0 bxor 1 = OK
+  1 1 bxor 0 = OK
 
-  0b0001 0b1001 bxor 0b1000 = @OK
-  0b0010 0b0001 bxor 0b0011 = @OK
-  6 @PLAN
-) OK
+  0b0001 0b1001 bxor 0b1000 = OK
+  0b0010 0b0001 bxor 0b0011 = OK
+  6 PLAN OK
 
 4 PLAN
