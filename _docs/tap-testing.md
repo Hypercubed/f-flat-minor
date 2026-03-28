@@ -215,7 +215,7 @@ This flattened form is currently known good and should be preferred for new TAP 
 
 ## Asserting Stack Shape
 
-Older `testing.ffp` tests often assert a whole stack shape by consuming values one at a time with `assert_eq`. When converting them to TAP, the simplest approach is usually to turn the full post-condition into one boolean and feed that into `OK`.
+Older `testing.ffp` tests often assert a whole stack shape by consuming values one at a time with `assert_eq`. In TAP tests, prefer quotation-to-sequence comparison for multi-value post-conditions and feed the resulting boolean into `OK`.
 
 For single-result words, prefer direct comparisons:
 
@@ -223,24 +223,23 @@ For single-result words, prefer direct comparisons:
 5 false [ 3 + ] [ 3 - ] branch 2 = OK
 ```
 
-For multi-value stack results, compare from the top of the stack downward and combine the checks with `and`:
+For multi-value stack results, wrap the computation in a quotation, apply `in`, and compare with `seq=`:
 
 ```ff
-3 5 dup2 5 = swap 3 = and swap 5 = and swap 3 = and OK
+[ 3 5 dup2 ] in [ 3 5 3 5 ] seq= OK
 ```
 
 Another example:
 
 ```ff
-1 2 3 bury 2 = swap 1 = and swap 3 = and OK
+[ 1 2 3 bury ] in [ 3 1 2 ] seq= OK
 ```
 
 Practical hints:
 
 - Prefer one `OK` per logical post-condition, not one per stack item, when the word leaves several values.
-- Check values in the order they are naturally available from the stack top.
-- Use `swap` to bring the next pending value into position before the next comparison.
-- Collapse intermediate booleans with `and`.
+- Write the expected sequence in normal stack order, from deepest checked value to topmost checked value.
+- Wrap the computation being asserted in `[ ... ]` so `in` captures only the stack result of that expression.
 - Prefer this direct style over queue plumbing in tests.
 - If the expression becomes hard to read, split the original test group into smaller TAP subtests instead of introducing manual `q<` / `q>`.
 

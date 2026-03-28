@@ -1,4 +1,5 @@
 .import ../sqrt.ffp
+.import ../../seq/seq.ffp
 .import ../../tap.ffp
 
 TAP-VERSION
@@ -15,17 +16,17 @@ TAP-VERSION
   8 PLAN OK
 
 '\0isqrtrem' TEST
-  1 isqrtrem 0 = swap 1 = and OK
-  2 isqrtrem 1 = swap 1 = and OK
-  3 isqrtrem 2 = swap 1 = and OK
-  4 isqrtrem 0 = swap 2 = and OK
-  7 isqrtrem 3 = swap 2 = and OK
-  9 isqrtrem 0 = swap 3 = and OK
-  11 isqrtrem 2 = swap 3 = and OK
-  24 isqrtrem 8 = swap 4 = and OK
-  25 isqrtrem 0 = swap 5 = and OK
-  26 isqrtrem 1 = swap 5 = and OK
-  1048576 isqrtrem 0 = swap 1024 = and OK
+  [ 1 isqrtrem ] in [ 1 0 ] seq= OK
+  [ 2 isqrtrem ] in [ 1 1 ] seq= OK
+  [ 3 isqrtrem ] in [ 1 2 ] seq= OK
+  [ 4 isqrtrem ] in [ 2 0 ] seq= OK
+  [ 7 isqrtrem ] in [ 2 3 ] seq= OK
+  [ 9 isqrtrem ] in [ 3 0 ] seq= OK
+  [ 11 isqrtrem ] in [ 3 2 ] seq= OK
+  [ 24 isqrtrem ] in [ 4 8 ] seq= OK
+  [ 25 isqrtrem ] in [ 5 0 ] seq= OK
+  [ 26 isqrtrem ] in [ 5 1 ] seq= OK
+  [ 1048576 isqrtrem ] in [ 1024 0 ] seq= OK
   11 PLAN OK
 
 '\0nsqrt' TEST

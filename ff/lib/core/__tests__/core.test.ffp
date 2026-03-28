@@ -1,13 +1,14 @@
 .import ../core.ff
+.import ../../seq/seq.ffp
 .import ../../tap.ffp
 
 TAP-VERSION
 
 '\0Shuffling' TEST
-  3 5 dup2 5 = swap 3 = and swap 5 = and swap 3 = and OK
-  1 2 3 bury 2 = swap 1 = and swap 3 = and OK
-  1 2 3 rot 1 = swap 2 = and swap 3 = and OK
-  5 [ 2 * ] [ 2 + ] bi 7 = swap 10 = and OK
+  [ 3 5 dup2 ] in [ 3 5 3 5 ] seq= OK
+  [ 1 2 3 bury ] in [ 3 1 2 ] seq= OK
+  [ 1 2 3 rot ] in [ 3 2 1 ] seq= OK
+  [ 5 [ 2 * ] [ 2 + ] bi ] in [ 10 7 ] seq= OK
   4 PLAN OK
 
 '\0Logical' TEST
