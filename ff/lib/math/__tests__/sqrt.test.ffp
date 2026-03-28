@@ -4,36 +4,36 @@
 TAP-VERSION
 
 '\0isqrt' TEST
-  0 isqrt 0 = @OK
-  1 isqrt 1 = @OK
-  2 isqrt 1 = @OK
-  3 isqrt 1 = @OK
-  4 isqrt 2 = @OK
-  25 isqrt 5 = @OK
-  125348 isqrt 354 = @OK
-  100 8 ^ 2 * isqrt 141421356 = @OK
-  8 @PLAN OK
+  0 isqrt 0 = OK
+  1 isqrt 1 = OK
+  2 isqrt 1 = OK
+  3 isqrt 1 = OK
+  4 isqrt 2 = OK
+  25 isqrt 5 = OK
+  125348 isqrt 354 = OK
+  100 8 ^ 2 * isqrt 141421356 = OK
+  8 PLAN OK
 
 '\0isqrtrem' TEST
-  1 isqrtrem 0 = swap 1 = and @OK
-  2 isqrtrem 1 = swap 1 = and @OK
-  3 isqrtrem 2 = swap 1 = and @OK
-  4 isqrtrem 0 = swap 2 = and @OK
-  7 isqrtrem 3 = swap 2 = and @OK
-  9 isqrtrem 0 = swap 3 = and @OK
-  11 isqrtrem 2 = swap 3 = and @OK
-  24 isqrtrem 8 = swap 4 = and @OK
-  25 isqrtrem 0 = swap 5 = and @OK
-  26 isqrtrem 1 = swap 5 = and @OK
-  1048576 isqrtrem 0 = swap 1024 = and @OK
-  11 @PLAN OK
+  1 isqrtrem 0 = swap 1 = and OK
+  2 isqrtrem 1 = swap 1 = and OK
+  3 isqrtrem 2 = swap 1 = and OK
+  4 isqrtrem 0 = swap 2 = and OK
+  7 isqrtrem 3 = swap 2 = and OK
+  9 isqrtrem 0 = swap 3 = and OK
+  11 isqrtrem 2 = swap 3 = and OK
+  24 isqrtrem 8 = swap 4 = and OK
+  25 isqrtrem 0 = swap 5 = and OK
+  26 isqrtrem 1 = swap 5 = and OK
+  1048576 isqrtrem 0 = swap 1024 = and OK
+  11 PLAN OK
 
 '\0nsqrt' TEST
-  0 0 nsqrt 0 = @OK
-  0 2 nsqrt 1 = @OK
-  1 2 nsqrt 14 = @OK
-  3 2 nsqrt 1414 = @OK
-  2 81 nsqrt 900 = @OK
-  5 @PLAN OK
+  0 0 nsqrt 0 = OK
+  0 2 nsqrt 1 = OK
+  1 2 nsqrt 14 = OK
+  3 2 nsqrt 1414 = OK
+  2 81 nsqrt 900 = OK
+  5 PLAN OK
 
 3 PLAN

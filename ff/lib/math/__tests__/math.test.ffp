@@ -4,32 +4,32 @@
 TAP-VERSION
 
 '\0Derived\sMath' TEST
-  12 ! 479001600 = @OK
-  5 sqr 25 = @OK
+  12 ! 479001600 = OK
+  5 sqr 25 = OK
 
-  0 sgn 0 = @OK
-  5 sgn 1 = @OK
-  -5 sgn -1 = @OK
+  0 sgn 0 = OK
+  5 sgn 1 = OK
+  -5 sgn -1 = OK
 
-  0 abs 0 = @OK
-  5 abs 5 = @OK
-  -5 abs 5 = @OK
+  0 abs 0 = OK
+  5 abs 5 = OK
+  -5 abs 5 = OK
 
-  6 3 divisor? @OK
-  7 3 divisor? not @OK
-  8 even? @OK
-  9 even? not @OK
-  9 odd? @OK
-  8 odd? not @OK
+  6 3 divisor? OK
+  7 3 divisor? not OK
+  8 even? OK
+  9 even? not OK
+  9 odd? OK
+  8 odd? not OK
 
-  1 5 max 5 = @OK
-  13 8 max 13 = @OK
-  1 5 min 1 = @OK
-  13 8 min 8 = @OK
+  1 5 max 5 = OK
+  13 8 max 13 = OK
+  1 5 min 1 = OK
+  13 8 min 8 = OK
 
-  5 10 1 clamp 5 = @OK
-  5 10 6 clamp 6 = @OK
-  5 10 11 clamp 10 = @OK
-  21 @PLAN OK
+  5 10 1 clamp 5 = OK
+  5 10 6 clamp 6 = OK
+  5 10 11 clamp 10 = OK
+  21 PLAN OK
 
 1 PLAN

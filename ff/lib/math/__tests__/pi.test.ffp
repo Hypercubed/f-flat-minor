@@ -5,13 +5,13 @@
 TAP-VERSION
 
 '\0Pi\sDerived\sConstants' TEST
-  0 npi 3 = @OK
-  1 npi 31 = @OK
-  5 npi 314159 = @OK
-  10 npi 31415926535 = @OK
+  0 npi 3 = OK
+  1 npi 31 = OK
+  5 npi 314159 = OK
+  10 npi 31415926535 = OK
 
-  5 __trig__tau nip 628318 = @OK
-  5 __trig__half_pi nip 157079 = @OK
-  6 @PLAN OK
+  5 __trig__tau nip 628318 = OK
+  5 __trig__half_pi nip 157079 = OK
+  6 PLAN OK
 
 1 PLAN

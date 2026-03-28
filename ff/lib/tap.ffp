@@ -8,10 +8,9 @@
  * - Start each TAP file with TAP-VERSION.
  * - TAP-VERSION resets top-level TAP counters.
  * - Start each subtest with TEST; it resets that subtest's TAP counters.
- * - Use OK for top-level assertions.
- * - Use @-helpers for indented subtest assertions and subtest plans.
+ * - Use OK for assertions at any TAP depth.
  * - Flatten subtests when possible: omit `(` / `)` wrappers unless you actually need stack/queue isolation.
- * - End each assertion scope with PLAN or @PLAN.
+ * - End each assertion scope with PLAN.
  *
  * The flattened subtest pattern used by `ff/lib/math/__tests__/*.test.ffp` is the current
  * known-good state and should be treated as the default unless TAP semantics change.
@@ -31,22 +30,27 @@ _TAP-FAIL!: swap ++ swap ;
 /* No failures recorded? */
 _TAP-PASS?: over zero? ;
 
+/* Indent assertion/plan lines from active TAP stack depth.
+ * indent_level = (depth - 3) / 2, with 4 spaces per level.
+ */
+_TAP-INDENT: depth 3 - 2 / [ '\0\s\s\s\s' prints ] swap times ;
+
  /* Print TAP version and reset top-level TAP state. */
 TAP-VERSION: '\0TAP\sversion\s14' println clr _TAP-RESET ;
 
 /* Primary assertion word. */
 OK:
-  q< _TAP-NEXT! q> truthy?
+  _TAP-INDENT q< _TAP-NEXT! q> truthy?
   [ '\0ok\s' prints putn cr ]
   [ '\0not\sok\s' prints putn cr _TAP-FAIL! ]
   branch ;
 
 /* Skip one assertion. */
-#SKIP: drop _TAP-NEXT! '\0ok\s' prints putn '\0\s#\sSKIP' prints cr ;
+#SKIP: _TAP-INDENT drop _TAP-NEXT! '\0ok\s' prints putn '\0\s#\sSKIP' prints cr ;
 
 /* Mark one assertion TODO. */
 #TODO:
-  q< _TAP-NEXT! q> truthy?
+  _TAP-INDENT q< _TAP-NEXT! q> truthy?
   [ '\0ok\s' prints putn '\0\s#\sTODO' prints cr ]
   [ '\0not\sok\s' prints putn '\0\s#\sTODO' prints cr ]
   branch ;
@@ -56,7 +60,7 @@ SKIP-ALL: '\01..0\s#\sSKIP\s' prints println ;
 
 /* Print 1..n and require count match plus no failures. */
 PLAN:
-  dup '\01..' prints putn cr
+  _TAP-INDENT dup '\01..' prints putn cr
   over = swap drop swap zero? and ;
 
 /* Print a subtest header and reset subtest TAP state. */
@@ -64,11 +68,3 @@ TEST: '\0#\sSubtest:\s' prints println _TAP-RESET ;
 
 /* Stack sentinel for older tests. */
 ¶: clr 999 ;
-
-/* Indented wrappers for flattened subtests.
- * Keep subtest assertions/plans indented with these helpers even when `(` / `)` wrappers are removed.
- */
-@OK: tab OK ;
-@#SKIP: tab #SKIP ;
-@#TODO: tab #TODO ;
-@PLAN: tab PLAN ;

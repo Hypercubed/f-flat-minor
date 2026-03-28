@@ -16,11 +16,16 @@ The helper is intentionally small. It gives you:
 
 - `TAP-VERSION` to start a TAP file
 - `TEST` to print a subtest header
-- `OK` / `@OK` to print `ok` or `not ok`
-- `#SKIP` / `@#SKIP` to print a skipped assertion
-- `#TODO` / `@#TODO` to print a TODO assertion
+- `OK` to print `ok` or `not ok`
+- `#SKIP` to print a skipped assertion
+- `#TODO` to print a TODO assertion
 - `SKIP-ALL` to skip an entire TAP file with a reason
-- `PLAN` / `@PLAN` to print `1..n` and return whether emitted assertion count matched `n` and failure count is zero
+- `PLAN` to print `1..n` and return whether emitted assertion count matched `n` and failure count is zero
+
+`OK`, `PLAN`, `#SKIP`, and `#TODO` self-indent from TAP depth. For assertion and plan emission, the helper computes:
+
+- `indent_level = (depth - 3) / 2`
+- `4` spaces per indentation level
 
 ## String Notes
 
@@ -59,7 +64,7 @@ It also leaves a boolean result on the stack:
 
 When the assertion fails, `OK` increments the internal failure counter.
 
-`@OK` is the indented form used inside subtests.
+Inside flattened subtests, use plain `OK`; it indents itself based on TAP depth.
 
 ### `PLAN`
 
@@ -73,7 +78,7 @@ Important details:
   - emitted count matched `n`
   - failure count is zero
 
-`@PLAN` is the indented form used inside subtests.
+Inside flattened subtests, use plain `PLAN`; it indents itself based on TAP depth.
 
 ### `#SKIP`
 
@@ -85,9 +90,7 @@ ok <index> # SKIP
 
 It ignores the assertion result for pass/fail accounting: the TAP point is emitted as `ok`, and it does not contribute a failure to `PLAN`.
 
-This means `@#SKIP` is meant to be a drop-in replacement for `@OK` on the same assertion line when you want to record a skipped check without failing the current TAP scope.
-
-`@#SKIP` is the indented form used inside subtests.
+This means `#SKIP` is meant to be a drop-in replacement for `OK` on the same assertion line when you want to record a skipped check without failing the current TAP scope. Like `OK`, it self-indents inside subtests.
 
 ### `#TODO`
 
@@ -107,9 +110,7 @@ not ok <index> # TODO
 
 This matches the current helper design: TAP still shows whether the TODO currently passes or fails, but the suite does not fail because of that line.
 
-This means `@#TODO` is also meant to be a drop-in replacement for `@OK` on the same assertion line.
-
-`@#TODO` is the indented form used inside subtests.
+This means `#TODO` is also meant to be a drop-in replacement for `OK` on the same assertion line. Like `OK`, it self-indents inside subtests.
 
 ### `SKIP-ALL`
 
@@ -140,9 +141,9 @@ The current known-good pattern is:
 1. Print `TAP-VERSION`.
 2. For each subtest:
    - print a label with `TEST`
-   - run a series of indented `@OK` checks
-   - optionally use `@#SKIP` or `@#TODO` inside the subtest
-   - finish with indented `@PLAN`
+   - run a series of `OK` checks
+   - optionally use `#SKIP` or `#TODO` inside the subtest
+   - finish with `PLAN`
    - collapse the subtest result with top-level `OK`
 3. For the top-level suite:
    - finish with `PLAN`
@@ -153,13 +154,13 @@ Prefer flattened subtests by default:
 TAP-VERSION
 
 '\0example' TEST
-  1 1 = @OK
-  1 @PLAN OK
+  1 1 = OK
+  1 PLAN OK
 
 1 PLAN
 ```
 
-Keep the subtest assertion lines indented by using the indented TAP helpers, even though the wrappers are gone.
+Keep the subtest assertion lines visually indented in source for readability; emitted TAP indentation now comes from the helper itself.
 
 Use `(` ... `)` only when you actually need stack or queue isolation for the test body. That is an escape hatch, not the recommended shape for normal TAP files.
 
@@ -171,9 +172,9 @@ Older TAP files used a wrapped subtest shape:
 2. For each subtest:
    - print a label with `TEST`
    - enter `(` to stash the outer stack
-   - run a series of `@OK` checks
-   - optionally use `@#SKIP` or `@#TODO` inside the subtest
-   - finish with `@PLAN`
+    - run a series of `OK` checks
+    - optionally use `#SKIP` or `#TODO` inside the subtest
+    - finish with `PLAN`
    - leave `)` and collapse the subtest result with `OK`
 3. For the top-level suite:
    - run subtests and top-level `OK` lines
@@ -194,9 +195,9 @@ This is the current known-good flattened structure used in [`ff/lib/math/__tests
 TAP-VERSION
 
 '\0isqrt' TEST
-  0 isqrt 0 = @OK
-  1 isqrt 1 = @OK
-  2 @PLAN OK
+  0 isqrt 0 = OK
+  1 isqrt 1 = OK
+  2 PLAN OK
 
 1 PLAN
 ```
@@ -205,8 +206,8 @@ What happens here:
 
 - `TAP-VERSION` initializes the top-level TAP counters before the first subtest
 - `TEST` starts each subtest at `0 failures, 0 assertions`
-- each `@OK` emits one TAP point and increments the assertion counter
-- `@PLAN` prints the inner plan and verifies both emitted subtest TAP point count and zero recorded failures
+- each `OK` emits one TAP point and increments the assertion counter
+- `PLAN` prints the inner plan and verifies both emitted subtest TAP point count and zero recorded failures
 - outer `OK` prints the subtest result
 - final `PLAN` validates both the number of emitted top-level test points and zero recorded failures
 
@@ -214,29 +215,29 @@ This flattened form is currently known good and should be preferred for new TAP 
 
 ## Asserting Stack Shape
 
-Older `testing.ffp` tests often assert a whole stack shape by consuming values one at a time with `assert_eq`. When converting them to TAP, the simplest approach is usually to turn the full post-condition into one boolean and feed that into `@OK`.
+Older `testing.ffp` tests often assert a whole stack shape by consuming values one at a time with `assert_eq`. When converting them to TAP, the simplest approach is usually to turn the full post-condition into one boolean and feed that into `OK`.
 
 For single-result words, prefer direct comparisons:
 
 ```ff
-5 false [ 3 + ] [ 3 - ] branch 2 = @OK
+5 false [ 3 + ] [ 3 - ] branch 2 = OK
 ```
 
 For multi-value stack results, compare from the top of the stack downward and combine the checks with `and`:
 
 ```ff
-3 5 dup2 5 = swap 3 = and swap 5 = and swap 3 = and @OK
+3 5 dup2 5 = swap 3 = and swap 5 = and swap 3 = and OK
 ```
 
 Another example:
 
 ```ff
-1 2 3 bury 2 = swap 1 = and swap 3 = and @OK
+1 2 3 bury 2 = swap 1 = and swap 3 = and OK
 ```
 
 Practical hints:
 
-- Prefer one `@OK` per logical post-condition, not one per stack item, when the word leaves several values.
+- Prefer one `OK` per logical post-condition, not one per stack item, when the word leaves several values.
 - Check values in the order they are naturally available from the stack top.
 - Use `swap` to bring the next pending value into position before the next comparison.
 - Collapse intermediate booleans with `and`.
@@ -266,7 +267,7 @@ An empty subtest is also valid:
 ```ff
 TAP-VERSION
 '\0empty' TEST
-  0 @PLAN OK
+  0 PLAN OK
 1 PLAN
 ```
 
@@ -278,8 +279,8 @@ Skip one assertion inside a subtest:
 
 ```ff
 '\0feature\sflags' TEST
-  2 2 + 5 = @#SKIP
-  1 @PLAN OK
+  2 2 + 5 = #SKIP
+  1 PLAN OK
 1 PLAN
 ```
 
@@ -287,8 +288,8 @@ Mark one assertion as TODO:
 
 ```ff
 '\0future\sbehavior' TEST
-  2 2 + 5 = @#TODO
-  1 @PLAN OK
+  2 2 + 5 = #TODO
+  1 PLAN OK
 1 PLAN
 ```
 
@@ -302,7 +303,7 @@ TAP-VERSION
 ## Current Conventions And Limitations
 
 - `PLAN` validates emitted TAP point count against `n` and also requires zero failures in the current TAP scope.
-- `TEST` prints the subtest header and resets subtest counters; in the normal flattened style, `@PLAN OK` determines subtest success.
+- `TEST` prints the subtest header and resets subtest counters; in the normal flattened style, `PLAN OK` determines subtest success.
 - `TAP-VERSION` owns top-level reset and `TEST` owns subtest reset.
 - `#SKIP` and `#TODO` emit assertion points and increment assertion count.
 - `SKIP-ALL` replaces the usual final `PLAN` line for a whole-file skip.

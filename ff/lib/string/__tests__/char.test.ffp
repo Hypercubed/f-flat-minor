@@ -4,27 +4,27 @@
 TAP-VERSION
 
 '\0String\sConstants' TEST
-  space 32 = @OK
-  newline 10 = @OK
-  2 @PLAN OK
+  space 32 = OK
+  newline 10 = OK
+  2 PLAN OK
 
 '\0Case\sConversion' TEST
-  'a' ucase 'A' = @OK
-  'A' ucase 'A' = @OK
-  'Z' lcase 'z' = @OK
-  'z' lcase 'z' = @OK
-  4 @PLAN OK
+  'a' ucase 'A' = OK
+  'A' ucase 'A' = OK
+  'Z' lcase 'z' = OK
+  'z' lcase 'z' = OK
+  4 PLAN OK
 
 '\0Case\sPredicates' TEST
-  'a' lower? @OK
-  'A' lower? not @OK
-  'z' lower? @OK
-  'Z' lower? not @OK
+  'a' lower? OK
+  'A' lower? not OK
+  'z' lower? OK
+  'Z' lower? not OK
 
-  'A' upper? @OK
-  'a' upper? not @OK
-  'Z' upper? @OK
-  'z' upper? not @OK
-  8 @PLAN OK
+  'A' upper? OK
+  'a' upper? not OK
+  'Z' upper? OK
+  'z' upper? not OK
+  8 PLAN OK
 
 3 PLAN
