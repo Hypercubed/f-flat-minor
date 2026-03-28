@@ -1,3 +1,6 @@
+[settings]
+lockfile = true
+
 [tools]
 bun = "latest"
 "cargo:hyperfine" = "latest"
