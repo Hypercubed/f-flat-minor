@@ -40,6 +40,7 @@
   "^" op_pow
   "|" op_or
   "~" op_not
+  "cons" op_cons
 ))
 
 (provide system_symbols)
