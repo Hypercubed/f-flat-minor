@@ -79,7 +79,7 @@ export const systemWords: Record<string, number> = {
   "[": OpCodes.BRA,
   "]": OpCodes.KET,
   "|": OpCodes.OR,
-  "~": OpCodes.NOT,
+  "~": OpCodes.NOT
 };
 
 export const MAX_SYSTEM_OP_CODE = 0xFF;

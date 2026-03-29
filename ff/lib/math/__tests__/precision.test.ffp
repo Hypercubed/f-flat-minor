@@ -1,0 +1,28 @@
+.import ../precision.ffp
+.import ../../tap.ffp
+
+V: 84_626_433_832_795_028_841_971_693_993_751_058_209_749 ;
+
+TAP-VERSION
+
+'\0ntrunc' SUBTEST
+  V 39 ntrunc 84 = OK
+  V 38 ntrunc 846 = OK
+  V 37 ntrunc 8462 = OK
+  V 40 ntrunc 8 = OK
+  V 41 ntrunc 0 = OK
+  V -1 * 39 ntrunc -84 = OK
+  6 PLAN
+OK
+
+'\0frac' SUBTEST
+  V 3 nfrac 749 = OK
+  V 4 nfrac 9749 = OK
+  V 5 nfrac 9749 = OK
+  V 6 nfrac 209749 = OK
+  V 41 nfrac V = OK
+  V -1 * 3 nfrac 749 = OK
+  6 PLAN
+OK
+
+2 PLAN

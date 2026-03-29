@@ -1,0 +1,13 @@
+.import ../core/core.ff
+.import ./precision.ffp
+.import ../string/string.ffp
+.import ./gcd.ffp
+
+_dot: '.' putc ;
+_zero: '0' putc ;
+_needs-zero: dup 1 <= [ drop2 false ] [ over over -- n->S < nip nip ] branch ; /* x n _needs-zero == x n needs-zero? */
+_putn0: dup2 _needs-zero [ _zero -- _putn0 ] [ drop putn ] branch ; /* x n _putn0 == {prints x zero-padded to n digits} */
+nputn: dup2 ntrunc putn _dot tuck nfrac swap _putn0 ;
+
+_slash: '/' putc ;
+qputn: dup2 gcd tuck [ [ / putn ] dip ] dip _slash / putn ;
