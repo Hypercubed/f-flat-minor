@@ -139,10 +139,6 @@ void setup() {
     //
   });
 
-  define('cls', () {
-    stack.clear();
-  });
-
   define('clr', () {
     stack.clear();
   });
