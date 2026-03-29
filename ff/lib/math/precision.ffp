@@ -1,4 +1,5 @@
 .import ../core/core.ff
+.import ./arith.ffp
 
 /* Internal precision helpers shared by variable-precision math words. */
 n->S: 10 swap ^ ; /* n n->S == 10^n */
@@ -7,4 +8,4 @@ n->K: 6 * 4 + 5 / 10 + ; /* n n->K == ceil(6*n/5)+10 */
 p/q*S: n->S swap rot * swap / ; /* p q n p/q*S == floor(p*10^n/q) */
 
 ntrunc: n->S / ; /* x n ntrunc == floor(x/10^n) */
-nfrac: n->S % ; /* x n nfrac == (x - floor(x/10^n))*10^n */
+nfrac: [ abs ] dip n->S % ; /* x n nfrac == (x - floor(x/10^n))*10^n */
