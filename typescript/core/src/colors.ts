@@ -26,3 +26,7 @@ export function green(text: string): string {
 export function cyan(text: string): string {
   return color(36, text);
 }
+
+export function red(text: string): string {
+  return color(31, text);
+}

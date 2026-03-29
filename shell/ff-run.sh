@@ -30,8 +30,8 @@ Runners:
 Preprocessors:
   go (default)
   deno
-  bun   (reserved, not implemented yet)
-  node  (reserved, not implemented yet)
+  bun
+  node
 
 Note:
   .ff files run directly unless --pp is explicitly provided.

@@ -33,8 +33,17 @@ ff_preprocess() {
     deno)
       exec "$REPO_ROOT/deno/build/ff-preprocess" "$file"
       ;;
-    bun|node)
-      die "Preprocessor preset '$preprocessor' is not implemented yet"
+    bun)
+      exec mise exec -- bun -- "$REPO_ROOT/bun/bin/ff-preprocess.ts" "$file"
+      ;;
+    node)
+      exec mise exec -- \
+        node \
+        --experimental-transform-types \
+        --disable-warning=ExperimentalWarning \
+        -- \
+        "$REPO_ROOT/node/bin/ff-preprocess.ts" \
+        "$file"
       ;;
   esac
 }
@@ -70,16 +79,17 @@ ff_execute() {
       exec "$REPO_ROOT/deno/build/ff-run" --no-preprocess "$input"
       ;;
     node)
-      exec \
+      exec mise exec -- \
         node \
         --experimental-transform-types \
         --disable-warning=ExperimentalWarning \
+        -- \
         "$REPO_ROOT/node/bin/ff-run.ts" \
         --no-preprocess \
         "$input"
       ;;
     bun)
-      exec bun "$REPO_ROOT/bun/bin/ff-run.ts" --no-preprocess "$input"
+      exec mise exec -- bun -- "$REPO_ROOT/bun/bin/ff-run.ts" --no-preprocess "$input"
       ;;
     go)
       exec "$REPO_ROOT/go/build/run" --in "$input"

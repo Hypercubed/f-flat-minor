@@ -17,8 +17,8 @@ Examples:
 Preprocessors:
   go (default)
   deno
-  bun   (reserved, not implemented yet)
-  node  (reserved, not implemented yet)
+  bun
+  node
 
 Output:
   Writes the preprocessed program to stdout.

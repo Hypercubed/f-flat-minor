@@ -1,16 +1,28 @@
-#!/usr/bin/env -S deno run --allow-read --allow-env --no-check
-import { parseArgs } from "https://deno.land/std@0.224.0/cli/parse_args.ts";
-import * as path from "https://deno.land/std@0.224.0/path/mod.ts";
+#!/usr/bin/env bun
+
+import path from "node:path";
+import { parseArgs } from "node:util";
+import { fileURLToPath } from "node:url";
 
 import { Compiler } from "../src/compiler.ts";
 import { Engine } from "../src/engine.ts";
 import { Preprocessor } from "../src/preprocess.ts";
 import { GREETINGS, SHORT } from "../src/constants.ts";
-import type { ReplArgs } from "../src/args.ts";
+import { ReplArgs } from "../src/args.ts";
 
-const __dirname = path.dirname(path.fromFileUrl(import.meta.url));
+const __dirname = path.dirname(fileURLToPath(import.meta.url));
 const CORE = path.resolve(__dirname, "../../ff/lib/core.ff");
 const PRELUDE = path.resolve(__dirname, "../../ff/lib/prelude.ffp");
+
+function getRuntimeArgs() {
+  if (process.versions.bun) {
+    const bunGlobal = globalThis as { Bun?: { argv?: string[] } };
+    if (Array.isArray(bunGlobal.Bun?.argv)) {
+      return bunGlobal.Bun.argv.slice(2);
+    }
+  }
+  return process.argv.slice(2);
+}
 
 export async function run(args: ReplArgs) {
   const loadPreprocessorPrelude = !!(args["preprocessor-prelude"] || args.prelude);
@@ -28,23 +40,27 @@ export async function run(args: ReplArgs) {
   }
 
   const PROMPT = `${SHORT}> `;
-  const bufSize = 1024;
-  const buf = new Uint8Array(bufSize);
+  const readline = await import("node:readline");
 
-  Deno.stdout.writeSync(new TextEncoder().encode(PROMPT));
+  const rl = readline.createInterface({
+    input: process.stdin,
+    output: process.stdout,
+    prompt: PROMPT,
+  });
 
-  for (;;) {
-    const n = await Deno.stdin.read(buf);
-    if (n === null) break;
-    
-    const line = new TextDecoder().decode(buf.slice(0, n)).trim();
-    if (line.length === 0) continue;
+  rl.prompt();
 
+  rl.on("line", (line: string) => {
     runLine(line);
     interpreter.print();
     console.log();
-    Deno.stdout.writeSync(new TextEncoder().encode(PROMPT));
-  }
+    rl.prompt();
+  });
+
+  rl.on("close", () => {
+    console.log("\nGoodbye!");
+    process.exit(0);
+  });
 
   function runLine(line: string) {
     if (line.trim() === ".reset") {
@@ -57,7 +73,7 @@ export async function run(args: ReplArgs) {
     }
     if (line.trim() === ".exit" || line.trim() === ".quit") {
       console.log("Goodbye!");
-      Deno.exit(0);
+      process.exit(0);
     }
     const code = preprocessor.preprocess([line]);
     const ir = compiler.compileToIR(Compiler.tokenize(code));
@@ -72,17 +88,22 @@ export async function run(args: ReplArgs) {
 }
 
 if (import.meta.main) {
-  const parsed = parseArgs(Deno.args, {
-    core: { type: "boolean", default: true },
-    "no-core": { type: "boolean", default: false },
-    "preprocessor-prelude": { short: "P", default: false },
-    prelude: { type: "boolean", default: false },
+  const { values } = parseArgs({
+    args: getRuntimeArgs(),
+    options: {
+      core: { type: "boolean", default: true },
+      "no-core": { type: "boolean", default: false },
+      "preprocessor-prelude": { type: "boolean", short: "P", default: false },
+      prelude: { type: "boolean", default: false },
+    },
+    allowPositionals: true,
+    allowNegative: true,
   });
 
   const argv: ReplArgs = {
-    ...parsed,
-    core: parsed["no-core"] ? false : parsed.core,
+    ...values,
+    core: values["no-core"] ? false : values.core,
   };
 
-  await run(argv);
+  run(argv);
 }

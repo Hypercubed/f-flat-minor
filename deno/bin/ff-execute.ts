@@ -1,53 +1,30 @@
 #!/usr/bin/env -S deno run --allow-read --allow-env --no-check
-
 import { parseArgs } from "https://deno.land/std@0.224.0/cli/parse_args.ts";
 import { assertEquals } from "https://deno.land/std@0.224.0/assert/assert_equals.ts";
-
-interface Arguments {
-  file?: string;
-  dump?: boolean;
-  hlir?: boolean;
-  ir?: boolean;
-  d?: boolean;
-  disassemble?: boolean;
-  trace?: boolean;
-  "trace-format"?: string;
-  "trace-verbose"?: boolean;
-  "trace-queue-max"?: number;
-  "trace-stack-max"?: number;
-  base?: number;
-  stats?: boolean;
-  profile?: boolean;
-  [key: string]: unknown;
-}
 
 import { HEADER } from "../src/constants.ts";
 import { base64ToArrayBuffer, dumpByteArray } from "../src/dump.ts";
 import { Engine } from "../src/engine.ts";
 import { bigCodeToIr, disassembleIr, printBigCodeIr, printHighLevelIr } from "../src/ir.ts";
 import { readStdin } from "../src/read.ts";
+import type { ExecuteArgs } from "../src/args.ts";
 
-export function run(args: Arguments) {
-  const encoder = new TextEncoder();
-  const decoder = new TextDecoder();
-
-  const uIntHEADER = encoder.encode(HEADER);
-
-  const interpreter = new Engine();
-
+export function run(args: ExecuteArgs) {
   const filename = args.file || "-";
   const bin = filename == "-" ? readStdin() : Deno.readFileSync(filename);
+  const decoder = new TextDecoder();
 
-  for (let i = 0; i < uIntHEADER.length; i++) {
-    assertEquals(uIntHEADER[i], bin[i], "Invalid Header");
-  }
+  assertEquals(
+    HEADER,
+    decoder.decode(bin.slice(0, HEADER.length)),
+  );
 
-  const base64 = decoder.decode(bin.subarray(uIntHEADER.length));
+  const base64 = decoder.decode(bin.subarray(HEADER.length));
 
   if (args.dump) {
     const byteCode = base64ToArrayBuffer(base64);
     dumpByteArray(byteCode);
-    Deno.exit();
+    Deno.exit(0);
   }
 
   const bigCode = Engine.fromBase64(base64);
@@ -55,20 +32,21 @@ export function run(args: Arguments) {
   if (args.hlir) {
     const ir = bigCodeToIr(bigCode);
     printHighLevelIr(ir);
-    Deno.exit();
+    Deno.exit(0);
   }
 
   if (args.ir) {
     printBigCodeIr(bigCode);
-    Deno.exit();
+    Deno.exit(0);
   }
 
-  if (args.d || args.disassemble) {
+  if (args.disassemble) {
     const ir = bigCodeToIr(bigCode);
     disassembleIr(ir);
-    Deno.exit();
+    Deno.exit(0);
   }
 
+  const interpreter = new Engine();
   interpreter.loadBigIntCode(bigCode);
   interpreter.traceOn = !!args.trace;
   interpreter.traceFormat = args["trace-format"] === "jsonl" ? "jsonl" : "human";
@@ -96,27 +74,29 @@ export function run(args: Arguments) {
 }
 
 if (import.meta.main) {
-  const argv = parseArgs(Deno.args, {
-    string: ["file", "base", "trace-format", "trace-queue-max", "trace-stack-max"],
-    boolean: ["dump", "hlir", "ir", "d", "disassemble", "trace", "trace-verbose", "stats", "profile"],
-    default: { file: "-" },
-    alias: {
-      file: ["f"],
-      base: ["b"],
-      dump: ["d"],
-      hlir: ["h"],
-      ir: ["i"],
-      d: ["d"],
-      disassemble: ["d"],
-      trace: ["t"],
-      "trace-format": ["T"],
-      stats: ["s"],
-      profile: ["p"],
-    },
+  const parsed = parseArgs(Deno.args, {
+    file: { type: "string", short: "f" },
+    base: { type: "string", short: "b" },
+    dump: { type: "boolean", short: "d", default: false },
+    hlir: { type: "boolean", short: "h", default: false },
+    ir: { type: "boolean", short: "i", default: false },
+    disassemble: { type: "boolean", short: "D", default: false },
+    trace: { type: "boolean", short: "t", default: false },
+    "trace-format": { type: "string", default: "human" },
+    "trace-verbose": { type: "boolean", default: false },
+    "trace-queue-max": { type: "string" },
+    "trace-stack-max": { type: "string" },
+    stats: { type: "boolean", short: "s", default: false },
+    profile: { type: "boolean", short: "p", default: false },
   });
-  // Map first positional argument to file (parseArgs puts them in _)
-  if (argv._ && argv._.length > 0 && typeof argv._[0] === "string") {
-    argv.file = argv._[0] as string;
-  }
-  run(argv as Arguments);
+
+  const argv: ExecuteArgs = {
+    ...parsed,
+    file: parsed.file || (parsed._?.[0] as string) || "-",
+    base: parsed.base ? Number(parsed.base) : undefined,
+    "trace-queue-max": parsed["trace-queue-max"] ? Number(parsed["trace-queue-max"]) : undefined,
+    "trace-stack-max": parsed["trace-stack-max"] ? Number(parsed["trace-stack-max"]) : undefined,
+  };
+
+  run(argv);
 }
