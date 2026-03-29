@@ -3,7 +3,7 @@
 
 TAP-VERSION
 
-'\0Derived\sMath' TEST
+'\0Derived\sMath' SUBTEST
   12 ! 479001600 = OK
   5 sqr 25 = OK
 

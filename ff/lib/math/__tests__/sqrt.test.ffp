@@ -4,7 +4,7 @@
 
 TAP-VERSION
 
-'\0isqrt' TEST
+'\0isqrt' SUBTEST
   0 isqrt 0 = OK
   1 isqrt 1 = OK
   2 isqrt 1 = OK
@@ -15,7 +15,7 @@ TAP-VERSION
   100 8 ^ 2 * isqrt 141421356 = OK
   8 PLAN OK
 
-'\0isqrtrem' TEST
+'\0isqrtrem' SUBTEST
   [ 1 isqrtrem ] in [ 1 0 ] seq= OK
   [ 2 isqrtrem ] in [ 1 1 ] seq= OK
   [ 3 isqrtrem ] in [ 1 2 ] seq= OK
@@ -29,7 +29,7 @@ TAP-VERSION
   [ 1048576 isqrtrem ] in [ 1024 0 ] seq= OK
   11 PLAN OK
 
-'\0nsqrt' TEST
+'\0nsqrt' SUBTEST
   0 0 nsqrt 0 = OK
   0 2 nsqrt 1 = OK
   1 2 nsqrt 14 = OK

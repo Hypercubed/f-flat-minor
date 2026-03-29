@@ -7,7 +7,7 @@
  * - Run TAP library tests with `cd bun && chomp test:tap`.
  * - Start each TAP file with TAP-VERSION.
  * - TAP-VERSION resets top-level TAP counters.
- * - Start each subtest with TEST; it resets that subtest's TAP counters.
+ * - Start each subtest with SUBTEST; it resets that subtest's TAP counters.
  * - Use OK for assertions at any TAP depth.
  * - Flatten subtests when possible: omit `(` / `)` wrappers unless you actually need stack/queue isolation.
  * - End each assertion scope with PLAN.
@@ -17,7 +17,7 @@
  */
 
 /* TAP state: failure_count assertion_count.
- * Reset at TAP file scope via TAP-VERSION and at subtest scope via TEST.
+ * Reset at TAP file scope via TAP-VERSION and at subtest scope via SUBTEST.
  */
 _TAP-RESET: 0 0 ;
 
@@ -64,7 +64,7 @@ PLAN:
   over = swap drop swap zero? and ;
 
 /* Print a subtest header and reset subtest TAP state. */
-TEST: '\0#\sSubtest:\s' prints println _TAP-RESET ;
+SUBTEST: '\0#\sSubtest:\s' prints println _TAP-RESET ;
 
 /* Stack sentinel for older tests. */
 ¶: clr 999 ;

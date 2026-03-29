@@ -4,14 +4,14 @@
 
 TAP-VERSION
 
-'\0Shuffling' TEST
+'\0Shuffling' SUBTEST
   [ 3 5 dup2 ] in [ 3 5 3 5 ] seq= OK
   [ 1 2 3 bury ] in [ 3 1 2 ] seq= OK
   [ 1 2 3 rot ] in [ 3 2 1 ] seq= OK
   [ 5 [ 2 * ] [ 2 + ] bi ] in [ 10 7 ] seq= OK
   4 PLAN OK
 
-'\0Logical' TEST
+'\0Logical' SUBTEST
   true true and OK
   true false and not OK
   false true and not OK
@@ -23,7 +23,7 @@ TAP-VERSION
   false false or not OK
   8 PLAN OK
 
-'\0Comparison' TEST
+'\0Comparison' SUBTEST
   1 2 <= OK
   2 2 <= OK
   6 6 >= OK
@@ -36,7 +36,7 @@ TAP-VERSION
   3 2 1 between? not OK
   9 PLAN OK
 
-'\0Control\sFlow' TEST
+'\0Control\sFlow' SUBTEST
   true 5 8 choose 5 = OK
   false 5 8 choose 8 = OK
 

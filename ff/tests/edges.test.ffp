@@ -3,7 +3,7 @@
 
 TAP-VERSION
 
-'\0Case\sInsensitive' TEST
+'\0Case\sInsensitive' SUBTEST
   x: 1 2 + ;
   X 3 = OK
 
@@ -14,7 +14,7 @@ TAP-VERSION
   z 55 = OK
   3 PLAN OK
 
-'\0Compiler\sCommands\n' TEST
+'\0Compiler\sCommands\n' SUBTEST
 .this should be ignored
 1 2 + .this_also_ignored 3 = OK
 5

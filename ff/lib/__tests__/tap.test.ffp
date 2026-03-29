@@ -2,12 +2,12 @@
 
 TAP-VERSION
 
-'\0TODO' TEST
+'\0TODO' SUBTEST
   false #TODO
   true #TODO
   2 PLAN OK
 
-'\0SKIP' TEST
+'\0SKIP' SUBTEST
   false #SKIP
   true #SKIP
   2 PLAN OK

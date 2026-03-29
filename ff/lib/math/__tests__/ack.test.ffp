@@ -3,7 +3,7 @@
 
 TAP-VERSION
 
-'\0Ackermann\sBoundary' TEST (
+'\0Ackermann\sBoundary' SUBTEST (
   3 8 ack 2045 = @OK
   4 0 ack 13 = @OK
   4 1 ack 65533 = @OK
