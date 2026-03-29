@@ -13,13 +13,13 @@ CHECK = 'printf "  ${GRN}OK${NC} " || printf "  ${RED}FAIL${NC} "'
 
 [[task]]
 display = 'none'
-name = 'build-deno-compiler'
-run = 'chomp -c ../deno/ :disassemble'
+name = 'build-go-precompiler'
+run = 'chomp -c ../go/ build:preprocess'
 
 [[task]]
 display = 'none'
-name = 'build-go-precompiler'
-run = 'chomp -c ../go/ build:preprocess'
+name = 'build-deno-preprocessor'
+run = 'chomp -c ../deno/ build:preprocess'
 
 [[task]]
 name = 'interpret'
@@ -40,7 +40,8 @@ display = 'none'
 [[task]]
 name = 'test:tap'
 deps = [
-    'build-go-precompiler'
+    'build-go-precompiler',
+    'build-deno-preprocessor',
 ]
 serial = true
 invalidation = 'always'
@@ -49,14 +50,15 @@ run = '''
   shopt -s nullglob
   shopt -s extglob
   shopt -s globstar
-  prove --exec 'sh ./run-tap-test.sh' ../ff/**/*.test.ffp
+  prove --exec '../shell/ff-run.sh' ../ff/**/*.test.ffp
 '''
 
 [[task]]
 name = 'ff'
 deps = [
     '../ff/##.out',
-    'build-deno-compiler',
+    'build-go-precompiler',
+    'build-deno-preprocessor',
 ]
 serial = true
 invalidation = 'always'
@@ -64,7 +66,7 @@ validation = 'none'
 display = 'status-only'
 run = '''
   if [ -f ${DEP%.*}.ffp ]; then
-    ../deno/build/ff-preprocess ${DEP%.*}.ffp | ${{BIN}} | cmp - $DEP -s && ${{CHECK}};
+    ../shell/ff-run.sh ${DEP%.*}.ffp | cmp - $DEP -s && ${{CHECK}};
   fi
   if [ -f ${DEP%.*}.ff ]; then
     cat ${DEP%.*}.ff | ${{BIN}} | cmp - $DEP -s && ${{CHECK}};

@@ -5,6 +5,7 @@ import * as path from "https://deno.land/std@0.224.0/path/mod.ts";
 
 interface Arguments {
   file?: string;
+  preprocess?: boolean;
   stats?: boolean;
   validate?: boolean;
   hlir?: boolean;
@@ -47,11 +48,13 @@ export function run(argv: Arguments) {
     ? textDecoder.decode(readStdin())
     : Deno.readTextFileSync(filename);
 
-  const loadPreprocessorPrelude = !!(argv["preprocessor-prelude"] || argv.prelude);
-  const preprocessor = new Preprocessor(
-    loadPreprocessorPrelude ? { macroEngineBootstrapFile: PRELUDE } : undefined,
-  );
-  code = preprocessor.preprocess(Preprocessor.tokenize(code), filename);
+  if (!("preprocess" in argv) || argv.preprocess) {
+    const loadPreprocessorPrelude = !!(argv["preprocessor-prelude"] || argv.prelude);
+    const preprocessor = new Preprocessor(
+      loadPreprocessorPrelude ? { macroEngineBootstrapFile: PRELUDE } : undefined,
+    );
+    code = preprocessor.preprocess(Preprocessor.tokenize(code), filename);
+  }
 
   const compiler = new Compiler();
 
@@ -154,10 +157,11 @@ export function run(argv: Arguments) {
 if (import.meta.main) {
   const argv = parseArgs(Deno.args, {
     string: ["file", "base", "trace-format", "trace-queue-max", "trace-stack-max"],
-    boolean: ["stats", "validate", "hlir", "llir", "opt", "ir", "disassemble", "enc", "trace", "trace-verbose", "profile", "preprocessor-prelude", "prelude"],
-    default: { file: "-" },
+    boolean: ["preprocess", "stats", "validate", "hlir", "llir", "opt", "ir", "disassemble", "enc", "trace", "trace-verbose", "profile", "preprocessor-prelude", "prelude"],
+    default: { file: "-", preprocess: true },
     alias: {
       file: ["f"],
+      preprocess: ["E"],
       stats: ["s"],
       validate: ["V"],
       hlir: ["h"],

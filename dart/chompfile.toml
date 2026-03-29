@@ -42,6 +42,11 @@ name = 'build-go-precompiler'
 run = 'chomp -c ../go/ build:preprocess'
 
 [[task]]
+display = 'none'
+name = 'build-deno-preprocessor'
+run = 'chomp -c ../deno/ build:preprocess'
+
+[[task]]
 name = 'test'
 deps = [
     ':build',
@@ -54,6 +59,7 @@ display = 'none'
 name = 'test:tap'
 deps = [
     'build-go-precompiler',
+    'build-deno-preprocessor',
     ':build',
 ]
 serial = true
@@ -63,7 +69,7 @@ run = '''
   shopt -s nullglob
   shopt -s extglob
   shopt -s globstar
-  prove --exec 'sh ./run-tap-test.sh' ../ff/**/*.test.ffp
+  prove --exec '../shell/ff-run.sh --run dart' ../ff/**/*.test.ffp
 '''
 
 [[task]]

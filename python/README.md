@@ -4,7 +4,7 @@ This directory contains the Python implementation of f-flat-minor.
 
 Current scope:
 - Bytecode/source executor in [`python/execute.py`](execute.py)
-- TAP test runner wrapper in [`python/run-tap-test.sh`](run-tap-test.sh)
+- Shared shell helpers in [`shell/ff-run.sh`](../shell/ff-run.sh)
 - Example script in [`python/fact.py`](fact.py)
 
 ## Tooling
@@ -40,4 +40,4 @@ cd python && mise exec -- chomp test:tap
 
 - [`python/execute.py`](execute.py) executes f-flat-minor programs from `stdin`
 - [`python/chompfile.toml`](chompfile.toml) defines build/test tasks for this runtime
-- [`python/run-tap-test.sh`](run-tap-test.sh) adapts TAP tests to the Python interpreter
+- [`shell/ff-run.sh`](../shell/ff-run.sh) preprocesses when needed and executes via the selected runtime

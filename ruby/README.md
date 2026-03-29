@@ -4,7 +4,7 @@ This directory contains the Ruby implementation of f-flat-minor.
 
 Current scope:
 - Bytecode/source executor in [`ruby/execute.rb`](execute.rb)
-- TAP test runner wrapper in [`ruby/run-tap-test.sh`](run-tap-test.sh)
+- Shared shell helpers in [`shell/ff-run.sh`](../shell/ff-run.sh)
 - Example script in [`ruby/fact.rb`](fact.rb)
 
 ## Tooling
@@ -40,4 +40,4 @@ cd ruby && mise exec -- chomp test:tap
 
 - [`ruby/execute.rb`](execute.rb) executes f-flat-minor programs from `stdin`
 - [`ruby/chompfile.toml`](chompfile.toml) defines build/test tasks for this runtime
-- [`ruby/run-tap-test.sh`](run-tap-test.sh) adapts TAP tests to the Ruby interpreter
+- [`shell/ff-run.sh`](../shell/ff-run.sh) preprocesses when needed and executes via the selected runtime

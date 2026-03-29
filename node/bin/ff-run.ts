@@ -20,6 +20,7 @@ const PRELUDE = path.resolve(
 
 interface Arguments {
   file?: string;
+  preprocess?: boolean;
   stats?: boolean;
   validate?: boolean;
   hlir?: boolean;
@@ -53,11 +54,13 @@ export function run(argv: Arguments) {
       ? textDecoder.decode(readStdin())
       : fs.readFileSync(filename, "utf8");
 
-  const loadPreprocessorPrelude = !!(argv["preprocessor-prelude"] || argv.prelude);
-  const preprocessor = new Preprocessor(
-    loadPreprocessorPrelude ? { macroEngineBootstrapFile: PRELUDE } : undefined,
-  );
-  code = preprocessor.preprocess(Preprocessor.tokenize(code), filename);
+  if (argv.preprocess !== false) {
+    const loadPreprocessorPrelude = !!(argv["preprocessor-prelude"] || argv.prelude);
+    const preprocessor = new Preprocessor(
+      loadPreprocessorPrelude ? { macroEngineBootstrapFile: PRELUDE } : undefined,
+    );
+    code = preprocessor.preprocess(Preprocessor.tokenize(code), filename);
+  }
 
   const compiler = new Compiler();
 
@@ -166,6 +169,7 @@ if (import.meta.main) {
     args: process.argv.slice(2),
     options: {
       file: { type: "string", short: "f" },
+      preprocess: { type: "boolean", short: "E", default: true },
       stats: { type: "boolean", short: "s", default: false },
       validate: { type: "boolean", short: "V", default: true },
       hlir: { type: "boolean", short: "h", default: false },

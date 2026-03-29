@@ -4,7 +4,7 @@ This directory contains the Dart implementation of f-flat-minor.
 
 Current scope:
 - Compiled CLI entrypoint in [`dart/bin/dart.dart`](bin/dart.dart)
-- TAP test runner wrapper in [`dart/run-tap-test.sh`](run-tap-test.sh)
+- Shared shell helpers in [`shell/ff-run.sh`](../shell/ff-run.sh)
 - Dart package configuration in [`dart/pubspec.yaml`](pubspec.yaml)
 
 ## Tooling
@@ -46,4 +46,4 @@ cd dart && mise exec -- chomp test:tap
 
 - [`dart/bin/dart.dart`](bin/dart.dart) is the main Dart runtime entrypoint
 - [`dart/chompfile.toml`](chompfile.toml) defines build/test tasks for this runtime
-- [`dart/run-tap-test.sh`](run-tap-test.sh) adapts TAP tests to the Dart runtime
+- [`shell/ff-run.sh`](../shell/ff-run.sh) preprocesses when needed and executes via the selected runtime
