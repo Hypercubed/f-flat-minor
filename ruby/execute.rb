@@ -1,4 +1,6 @@
 #!/usr/bin/env ruby
+# frozen_string_literal: true
+# encoding: UTF-8
 
 require 'date'
 
@@ -68,16 +70,35 @@ def callOp (o)
 end
 
 def unescape (text)
-  text.gsub("\\n", "\n").gsub("\\s", " ")
+  text.gsub("\\n", "\n").gsub("\\s", " ").gsub("\\0", "\0")
+end
+
+def trunc_divmod(lhs, rhs)
+  q = lhs.abs / rhs.abs
+  q = -q if (lhs < 0) != (rhs < 0)
+  r = lhs - rhs * q
+  [q, r]
 end
 
 def parseInteger (str)
   begin
-    str = str.gsub('_', '')
-    if str.include? "e" or str.include? "E"
-      return Integer(Float(str))
+    str = str.delete('_')
+    sign = 1
+    if str.start_with?('-')
+      sign = -1
+      str = str[1..]
     end
-    return Integer(str)
+    if str.start_with?('0x') || str.start_with?('0X')
+      return sign * Integer(str, 16)
+    elsif str.start_with?('0b') || str.start_with?('0B')
+      return sign * Integer(str, 2)
+    elsif str.start_with?('0o') || str.start_with?('0O')
+      return sign * Integer(str, 8)
+    elsif str.include?('e') || str.include?('E')
+      return sign * Float(str).to_i
+    else
+      return sign * Integer(str)
+    end
   rescue ArgumentError
     return nil
   end
@@ -144,6 +165,7 @@ def token (x)
 end
 
 def tokenize (str)
+  str = str.dup.force_encoding(Encoding::UTF_8)
   return str.gsub(/\s+/m, ' ').strip.split(" ").map { |s| token(s) }
 end
 
@@ -201,7 +223,8 @@ defineSystem('swap', lambda {||
 
 defineSystem('%', lambda {||
   a = $stack.pop
-  $stack[-1] %= a
+  _, r = trunc_divmod($stack[-1], a)
+  $stack[-1] = r
 })
 
 defineSystem('(', lambda {||
@@ -238,7 +261,16 @@ defineSystem('.', lambda {||
 
 defineSystem('/', lambda {||
   a = $stack.pop
-  $stack[-1] /= a
+  q, _ = trunc_divmod($stack[-1], a)
+  $stack[-1] = q
+})
+
+defineSystem('cons', lambda {||
+  y = $stack.pop
+  x = $stack.pop
+  o = $op = $op + 1
+  $defs[o] = [x, y, 'eval']
+  $stack.push o
 })
 
 defineSystem('>>', lambda {||

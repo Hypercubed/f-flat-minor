@@ -1,15 +1,119 @@
 import 'dart:io';
 import 'dart:convert';
+import 'dart:collection';
+import 'dart:math';
 
 final List<BigInt> stack = [];
-final List<BigInt> rstack = [];
 
-final List<String> queue = [];
+final ListQueue<Object> queue = ListQueue<Object>();
+final _random = Random();
 
 final symbols = Map<String, BigInt>();
 final defs = Map<BigInt, dynamic>();
 
-var _nextCode = BigInt.zero;
+var _nextCode = -BigInt.one;
+
+Object popFrontQueue() {
+  return queue.removeFirst();
+}
+
+Object popBackQueue() {
+  return queue.removeLast();
+}
+
+void pushFrontQueueAll(Iterable<Object> items) {
+  for (final item in items.toList().reversed) {
+    queue.addFirst(item);
+  }
+}
+
+void pushFrontQueue(Object item) {
+  queue.addFirst(item);
+}
+
+BigInt truncDiv(BigInt lhs, BigInt rhs) {
+  var q = lhs.abs() ~/ rhs.abs();
+  if (lhs.isNegative != rhs.isNegative) {
+    q = -q;
+  }
+  return q;
+}
+
+BigInt truncMod(BigInt lhs, BigInt rhs) {
+  final q = truncDiv(lhs, rhs);
+  return lhs - rhs * q;
+}
+
+String unescapeQuotedString(String text) {
+  final out = StringBuffer();
+  for (var i = 0; i < text.length; i++) {
+    final ch = text[i];
+    if (ch == r'\' && i + 1 < text.length) {
+      final next = text[++i];
+      switch (next) {
+        case 'n':
+          out.write('\n');
+          break;
+        case 's':
+          out.write(' ');
+          break;
+        case '0':
+          out.writeCharCode(0);
+          break;
+        default:
+          out.write(next);
+          break;
+      }
+      continue;
+    }
+    out.write(ch);
+  }
+  return out.toString();
+}
+
+BigInt? parseInteger(String token) {
+  if (token.isEmpty) {
+    return null;
+  }
+
+  var normalized = token.replaceAll('_', '');
+  var sign = BigInt.one;
+  if (normalized.startsWith('-')) {
+    sign = -BigInt.one;
+    normalized = normalized.substring(1);
+  }
+
+  if (normalized.isEmpty) {
+    return null;
+  }
+
+  BigInt? parsed;
+  if (normalized.startsWith('0x') || normalized.startsWith('0X')) {
+    parsed = BigInt.tryParse(normalized.substring(2), radix: 16);
+  } else if (normalized.startsWith('0b') || normalized.startsWith('0B')) {
+    parsed = BigInt.tryParse(normalized.substring(2), radix: 2);
+  } else if (normalized.startsWith('0o') || normalized.startsWith('0O')) {
+    parsed = BigInt.tryParse(normalized.substring(2), radix: 8);
+  } else if (normalized.contains('e') || normalized.contains('E')) {
+    final expMatch = RegExp(r'^(\d+)[eE]([+-]?\d+)4').firstMatch('$normalized\u0000');
+    if (expMatch != null) {
+      final mantissa = BigInt.parse(expMatch.group(1)!);
+      final exponent = int.parse(expMatch.group(2)!);
+      if (exponent < 0) {
+        return null;
+      }
+      parsed = mantissa * BigInt.from(10).pow(exponent);
+    }
+  } else {
+    parsed = BigInt.tryParse(normalized);
+  }
+
+  if (parsed == null) {
+    return null;
+  }
+
+  return sign * parsed;
+}
 
 BigInt nextCode() {
   _nextCode += BigInt.one;
@@ -39,6 +143,15 @@ void setup() {
     stack.clear();
   });
 
+  define('clr', () {
+    stack.clear();
+  });
+
+  define('rand', () {
+    var a = stack.removeLast();
+    stack.add(BigInt.from(_random.nextInt(a.toInt() + 1)));
+  });
+
   define('eval', () {
     var code = stack.removeLast();
     callOp(code);
@@ -55,7 +168,16 @@ void setup() {
     stdout.write(String.fromCharCode(a.toInt()));
   });
 
+  define('putn', () {
+    var a = stack.removeLast();
+    stdout.write(a);
+  });
+
   define('drop', () => stack.removeLast());
+
+  define('depth', () {
+    stack.add(BigInt.from(stack.length));
+  });
 
   define('dup', () {
     var a = stack.last;
@@ -64,12 +186,18 @@ void setup() {
 
   define('q<', () {
     var a = stack.removeLast();
-    rstack.add(a);
+    queue.add(a);
   });
 
   define('q>', () {
-    var a = rstack.removeLast();
-    stack.add(a);
+    var a = popBackQueue();
+    if (a is BigInt) {
+      stack.add(a);
+      return;
+    }
+    final token = a.toString();
+    final number = parseInteger(token);
+    stack.add(number ?? getSymbol(token));
   });
 
   define('swap', () {
@@ -97,16 +225,77 @@ void setup() {
     stack.add(a * b);
   });
 
+  define('%', () {
+    var b = stack.removeLast();
+    var a = stack.removeLast();
+    stack.add(truncMod(a, b));
+  });
+
+  define('&', () {
+    var b = stack.removeLast();
+    var a = stack.removeLast();
+    stack.add(a & b);
+  });
+
+  define('|', () {
+    var b = stack.removeLast();
+    var a = stack.removeLast();
+    stack.add(a | b);
+  });
+
+  define('~', () {
+    var a = stack.removeLast();
+    stack.add(~a);
+  });
+
   define('/', () {
     var b = stack.removeLast();
     var a = stack.removeLast();
-    stack.add(a ~/ b);
+    stack.add(truncDiv(a, b));
+  });
+
+  define('^', () {
+    var b = stack.removeLast();
+    var a = stack.removeLast();
+    stack.add(a.pow(b.toInt()));
+  });
+
+  define('<<', () {
+    var b = stack.removeLast();
+    var a = stack.removeLast();
+    stack.add(a << b.toInt());
+  });
+
+  define('>>', () {
+    var b = stack.removeLast();
+    var a = stack.removeLast();
+    stack.add(a >> b.toInt());
+  });
+
+  define('cons', () {
+    var y = stack.removeLast();
+    var x = stack.removeLast();
+    var code = nextCode();
+    defs[code] = [x, y, 'eval'];
+    stack.add(code);
+  });
+
+  define('<', () {
+    var b = stack.removeLast();
+    var a = stack.removeLast();
+    stack.add(a < b ? BigInt.one : BigInt.zero);
   });
 
   define('=', () {
     var b = stack.removeLast();
     var a = stack.removeLast();
     stack.add(a == b ? BigInt.one : BigInt.zero);
+  });
+
+  define('>', () {
+    var b = stack.removeLast();
+    var a = stack.removeLast();
+    stack.add(a > b ? BigInt.one : BigInt.zero);
   });
 
   define('?', () {
@@ -119,11 +308,11 @@ void setup() {
 
   define(':', () {
     var code = stack.removeLast();
-    var token = queue.removeAt(0);
+    var token = popFrontQueue().toString();
     List<String> def = [];
     while (token != ';' && queue.length > 0) {
       def.add(token);
-      token = queue.removeAt(0);
+      token = popFrontQueue().toString();
     }
     defs[code] = def;
   });
@@ -134,8 +323,11 @@ void callOp(BigInt code) {
   if (r is Function) {
     r();
   } else {
-    queue.insertAll(0,r); 
-    ev();
+    if (r == null) {
+      throw Exception('Undefined op code: $code stack=${stack.join(' ')}');
+    }
+    final definition = List<Object>.from(r as Iterable);
+    pushFrontQueueAll(definition);
   }
 }
 
@@ -146,49 +338,66 @@ List<String> tokenize(String s) {
 }
 
 void ev() {
-  var token = '';
+  Object token = '';
   while (queue.length > 0) {
-    token = queue.removeAt(0);
+    token = popFrontQueue();
 
-    var number = BigInt.tryParse(token);
-    if (number != null) {
-      stack.add(number);
-    } else if (token.startsWith('.') && token.length > 1) {
-      // no op
-    } else if (token.startsWith('\'')) {
-      var chars = token.substring(1).split('');
-      var asc = chars.map((c) => BigInt.from(c.codeUnitAt(0))).toList();
-      stack.addAll(asc);
-    } else if (symbols[token] != null) {
-      var code = getSymbol(token);
-      callOp(code);
-    } else if (token.startsWith('[') && token.endsWith(']')) {
-      var name = token.substring(1, token.length - 1);
-      stack.add(getSymbol(name));
-    } else if (token.endsWith(':') && token.length > 1) {
-      var name = token.substring(0, token.length - 1);
-      var code = getSymbol(name);
-      stack.add(code);
-      queue.insert(0, ":");
-    } else if (token == '/*') {
-      while (token != '*/' && queue.length > 0) {
-        token = queue.removeAt(0);
-      }
+    if (token is BigInt) {
+      stack.add(token);
     } else {
-      throw Exception('Undefined word: ' + token);
+      final text = token.toString();
+      var number = parseInteger(text);
+      if (number != null) {
+        stack.add(number);
+      } else if (text.startsWith('.') && text.length > 1) {
+      // no op
+      } else if (text.startsWith('\'')) {
+        var end = text.endsWith('\'') ? text.length - 1 : text.length;
+        var chars = unescapeQuotedString(text.substring(1, end)).split('');
+        var asc = chars.map((c) => BigInt.from(c.codeUnitAt(0))).toList();
+        stack.addAll(asc);
+      } else if (symbols[text.toLowerCase()] != null) {
+        var code = getSymbol(text);
+        callOp(code);
+      } else if (text.startsWith('[') && text.endsWith(']')) {
+        var name = text.substring(1, text.length - 1);
+        stack.add(getSymbol(name));
+      } else if (text.endsWith(':') && text.length > 1) {
+        var name = text.substring(0, text.length - 1);
+        var code = getSymbol(name);
+        stack.add(code);
+        pushFrontQueue(":");
+      } else if (text == '[') {
+        final code = nextCode();
+        final definition = <Object>[];
+        var depth = 1;
+        while (queue.isNotEmpty && depth > 0) {
+          final item = popFrontQueue();
+          if (item == ']') {
+            depth -= 1;
+          } else if (item == '[') {
+            depth += 1;
+          }
+          if (depth > 0) {
+            definition.add(item);
+          }
+        }
+        defs[code] = definition;
+        stack.add(code);
+      } else if (text == '/*') {
+        while (token != '*/' && queue.length > 0) {
+          token = popFrontQueue();
+        }
+      } else {
+        throw Exception('Undefined word: ' + text);
+      }
     }
   }
 }
 
-void main() {
+Future<void> main() async {
   setup();
-
-  while (true) {
-    var line = stdin.readLineSync();
-    if (line == null) {
-      break;
-    }
-    queue.addAll(tokenize(line));
-    ev();
-  }
+  final code = await stdin.transform(utf8.decoder).join();
+  queue.addAll(tokenize(code));
+  ev();
 }

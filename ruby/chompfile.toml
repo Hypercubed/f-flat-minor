@@ -17,6 +17,11 @@ name = 'build-deno-preprocess'
 run = 'chomp -c ../deno/ build'
 
 [[task]]
+display = 'none'
+name = 'build-go-precompiler'
+run = 'chomp -c ../go/ build:run'
+
+[[task]]
 name = 'interpret'
 run = 'cat ../ff/example.ff | ${{BIN}}'
 template = 'cmp'
@@ -31,6 +36,21 @@ deps = [
 ]
 serial = true
 display = 'none'
+
+[[task]]
+name = 'test:tap'
+deps = [
+    'build-go-precompiler'
+]
+serial = true
+invalidation = 'always'
+validation = 'none'
+run = '''
+  shopt -s nullglob
+  shopt -s extglob
+  shopt -s globstar
+  prove --exec 'sh ./run-tap-test.sh' ../ff/**/*.test.ffp
+'''
 
 [[task]]
 name = 'ff'
