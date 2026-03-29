@@ -33,6 +33,7 @@ name = 'test'
 deps = [
     ':interpret',
     ':ff',
+    ':test:tap'
 ]
 serial = true
 display = 'none'

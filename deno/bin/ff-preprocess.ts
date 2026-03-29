@@ -25,14 +25,16 @@ export function run(argv: PreprocessArgs) {
 
 if (import.meta.main) {
   const parsed = parseArgs(Deno.args, {
-    file: { short: "f", default: "" },
-    prelude: { type: "boolean", default: false },
-    "preprocessor-prelude": { short: "P", default: false },
+    boolean: ["prelude", "preprocessor-prelude"],
+    default: { prelude: false, "preprocessor-prelude": false },
+    alias: {
+      "preprocessor-prelude": ["P", "prelude"],
+    },
   });
 
   const argv: PreprocessArgs = {
     ...parsed,
-    file: parsed.file || (parsed._?.[0] as string) || "-",
+    file: (parsed._?.[0] as string) || "-",
   };
 
   run(argv);

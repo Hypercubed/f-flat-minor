@@ -13,15 +13,25 @@ BIN = './build/ff-run'
 
 [[task]]
 name = 'build'
-target = './build/ff-run'
 deps = [
-  './bin/ff-run.ts',
+  'build:compile',
+  'build:run',
+  'build:execute',
+  'build:preprocess',
+  'build:repl'
+]
+
+[[task]]
+name = 'build:#'
+target = './build/ff-#'
+deps = [
+  './bin/ff-#.ts',
   './src/**/*.ts',
   '../typescript/core/src/**/*.ts'
 ]
 run = '''
   mkdir -p ./build
-  bun build --compile --outfile ./build/ff-run ./bin/ff-run.ts
+  bun build --compile --outfile ./build/ff-$MATCH ./bin/ff-$MATCH.ts
 '''
 
 [[task]]

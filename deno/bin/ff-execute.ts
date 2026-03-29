@@ -75,27 +75,53 @@ export function run(args: ExecuteArgs) {
 
 if (import.meta.main) {
   const parsed = parseArgs(Deno.args, {
-    file: { type: "string", short: "f" },
-    base: { type: "string", short: "b" },
-    dump: { type: "boolean", short: "d", default: false },
-    hlir: { type: "boolean", short: "h", default: false },
-    ir: { type: "boolean", short: "i", default: false },
-    disassemble: { type: "boolean", short: "D", default: false },
-    trace: { type: "boolean", short: "t", default: false },
-    "trace-format": { type: "string", default: "human" },
-    "trace-verbose": { type: "boolean", default: false },
-    "trace-queue-max": { type: "string" },
-    "trace-stack-max": { type: "string" },
-    stats: { type: "boolean", short: "s", default: false },
-    profile: { type: "boolean", short: "p", default: false },
+    boolean: [
+      "dump",
+      "hlir",
+      "ir",
+      "disassemble",
+      "trace",
+      "trace-verbose",
+      "stats",
+      "profile",
+    ],
+    string: ["file", "base", "trace-format", "trace-queue-max", "trace-stack-max"],
+    default: {
+      dump: false,
+      hlir: false,
+      ir: false,
+      disassemble: false,
+      trace: false,
+      "trace-verbose": false,
+      stats: false,
+      profile: false,
+      "trace-format": "human",
+      file: "-",
+    },
+    alias: {
+      f: "file",
+      b: "base",
+      d: "dump",
+      h: "hlir",
+      i: "ir",
+      D: "disassemble",
+      t: "trace",
+      T: "trace-format",
+      s: "stats",
+      p: "profile",
+    },
   });
 
   const argv: ExecuteArgs = {
     ...parsed,
-    file: parsed.file || (parsed._?.[0] as string) || "-",
+    file: (parsed._?.[0] as string) || parsed.file || "-",
     base: parsed.base ? Number(parsed.base) : undefined,
-    "trace-queue-max": parsed["trace-queue-max"] ? Number(parsed["trace-queue-max"]) : undefined,
-    "trace-stack-max": parsed["trace-stack-max"] ? Number(parsed["trace-stack-max"]) : undefined,
+    "trace-queue-max": parsed["trace-queue-max"]
+      ? Number(parsed["trace-queue-max"])
+      : undefined,
+    "trace-stack-max": parsed["trace-stack-max"]
+      ? Number(parsed["trace-stack-max"])
+      : undefined,
   };
 
   run(argv);

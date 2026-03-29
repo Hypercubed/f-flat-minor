@@ -21,6 +21,25 @@ run = '''
 '''
 
 [[task]]
+name = 'test'
+deps = [
+    ':test:deno',
+    # ':test:go',
+    # ':test:cpp',
+    # ':test:racket',
+    # ':test:rust',
+    ':test:bun',
+    ':test:dart',
+    ':test:node',
+    ':test:python',
+    ':test:ruby',
+    # ':test:ghc',
+    # ':test:assemblyscript',
+]
+serial = true
+display = 'none'
+
+[[task]]
 name = 'clean:#'
 dep = '#/chompfile.toml'
 validation = 'none'
