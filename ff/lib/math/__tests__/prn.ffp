@@ -1,0 +1,17 @@
+.import ../prn.ffp
+.import ../pi.ffp
+.import ../../string/string.ffp
+.import ../exp.ffp
+
+N: 100 ;
+S: 10 N ^ ; /* 10^31 */
+
+P: N npi ; /* 10^31 * pi */
+E: N 1 nexp ; /* 10^31 * e */
+
+'\0pi\s=\s' prints
+P N nputn
+cr
+
+'\0e\s=\s' prints
+E N nputn

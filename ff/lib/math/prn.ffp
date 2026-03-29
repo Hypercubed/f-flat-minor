@@ -1,0 +1,9 @@
+.import ../core/core.ff
+.import ./precision.ffp
+.import ./pi.ffp
+.import ../string/char.ffp
+.import ../string/string.ffp
+.import ./exp.ffp
+
+_dot: '.' putc ;
+nputn: [ ntrunc ] [ nfrac ] bi2 [ putn ] dip _dot putn ;
