@@ -1,22 +1,22 @@
 .import ./atan-core.ffp
 
-__pi__pi_guard_digits: 20 ;
+_pi__pi_guard_digits: 20 ;
 
 
 /* n -> floor(pi * 10^n) */
 npi:
-  __pi__pi_guard_digits +
-  dup 1 5 __atan__core_scaled
-  swap 1 239 __atan__core_scaled
+  _pi__pi_guard_digits +
+  dup 1 5 _atan__core_scaled
+  swap 1 239 _atan__core_scaled
   swap 4 * swap -
   4 *
-  __pi__pi_guard_digits n->S /
-; /* n __npi__ == floor(10^n*pi) */
+  _pi__pi_guard_digits n->S /
+; /* n _npi__ == floor(10^n*pi) */
 
-__trig__tau:
+_trig__tau:
   dup npi 2 *
-; /* n __trig__tau == floor(10^n*2*pi) */
+; /* n _trig__tau == floor(10^n*2*pi) */
 
-__trig__half_pi:
+_trig__half_pi:
   dup npi 2 /
-; /* n __trig__half_pi == floor(10^n*pi/2) */
+; /* n _trig__half_pi == floor(10^n*pi/2) */

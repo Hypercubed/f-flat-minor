@@ -16,8 +16,8 @@ pi-digits:
   /* use n+guard directly with the internal scaled atan helper */
   guard-digits +
 
-  dup 1 5 __atan__scaled
-  swap 1 239 __atan__scaled
+  dup 1 5 _atan__scaled
+  swap 1 239 _atan__scaled
 
   swap 4 * swap -
   4 *

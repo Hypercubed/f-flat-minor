@@ -13,22 +13,22 @@
  *   atan-inv ( n x -- y )
  */
 
-__atan__num_zero:
+_atan__num_zero:
   drop
   drop
   drop
   0
-; /* n u v (u == 0) __atan__num_zero == 0 */
+; /* n u v (u == 0) _atan__num_zero == 0 */
 
-__atan__den_zero:
+_atan__den_zero:
   drop
   dup sgn q<
   drop
   npi 2 /
   q> *
-; /* n u v (v == 0) __atan__den_zero == sign(u)*floor(pi/2*10^n) */
+; /* n u v (v == 0) _atan__den_zero == sign(u)*floor(pi/2*10^n) */
 
-__atan__abs_scaled:
+_atan__abs_scaled:
   dup2 >
   [
     q< q<
@@ -36,13 +36,13 @@ __atan__abs_scaled:
     q> q>
     rot
     q<
-    __atan__scaled
+    _atan__scaled
     q>
     swap
     -
   ]
   [
-    dup2 __atan__needs_pi4
+    dup2 _atan__needs_pi4
     [
       q< q<
       dup npi 4 /
@@ -51,20 +51,20 @@ __atan__abs_scaled:
       swapd
       q<
       [ swap - ] [ + ] bi2
-      __atan__scaled
+      _atan__scaled
       q>
       swap
       -
     ]
     [
-      __atan__core_scaled
+      _atan__core_scaled
     ]
     branch
   ]
   branch
-; /* n u v (u,v > 0) __atan__abs_scaled == floor(10^n*atan(u/v)) */
+; /* n u v (u,v > 0) _atan__abs_scaled == floor(10^n*atan(u/v)) */
 
-__atan__finite:
+_atan__finite:
   over sgn q<
   dup sgn q<
   abs
@@ -73,29 +73,29 @@ __atan__finite:
   swap
   q> q> *
   q<
-  __atan__abs_scaled
+  _atan__abs_scaled
   q> *
-; /* n u v (u,v != 0) __atan__finite == signed scaled atan(u/v) */
+; /* n u v (u,v != 0) _atan__finite == signed scaled atan(u/v) */
 
-__atan__scaled:
+_atan__scaled:
   over zero?
   [
-    __atan__num_zero
+    _atan__num_zero
   ]
   [
     dup zero?
     [
-      __atan__den_zero
+      _atan__den_zero
     ]
     [
-      __atan__finite
+      _atan__finite
     ]
     branch
   ]
   branch
-; /* n u v __atan__scaled == floor(10^n*atan(u/v)) */
+; /* n u v _atan__scaled == floor(10^n*atan(u/v)) */
 
-iatan: 0 swap 1 __atan__scaled ; /* x iatan == floor(atan(x)) */
-natan: 1 __atan__scaled ; /* n x natan == floor(10^n*atan(x)) */
-qatan: 0 swap swapd __atan__scaled ; /* u v qatan == floor(atan(u/v)) */
-atan-inv: 1 swap __atan__scaled ; /* n x atan-inv == floor(10^n*atan(1/x)) */
+iatan: 0 swap 1 _atan__scaled ; /* x iatan == floor(atan(x)) */
+natan: 1 _atan__scaled ; /* n x natan == floor(10^n*atan(x)) */
+qatan: 0 swap swapd _atan__scaled ; /* u v qatan == floor(atan(u/v)) */
+atan-inv: 1 swap _atan__scaled ; /* n x atan-inv == floor(10^n*atan(1/x)) */

@@ -5,8 +5,8 @@
  * `icbrt` returns the integer cube root (truncated toward zero).
  */
 
-__cbrt__closer: dup2 2 ^ / over 2 * + 3 / ;
-__cbrt__loop: __cbrt__closer dup2 > [ nip __cbrt__loop ] ? ;
-__cbrt__cbrtn: dup 3 / __cbrt__loop drop nip ;
+_cbrt__closer: dup2 2 ^ / over 2 * + 3 / ;
+_cbrt__loop: _cbrt__closer dup2 > [ nip _cbrt__loop ] ? ;
+_cbrt__cbrtn: dup 3 / _cbrt__loop drop nip ;
 
-icbrt: dup sgn swap over * dup 1 > [ __cbrt__cbrtn ] ? * ;
+icbrt: dup sgn swap over * dup 1 > [ _cbrt__cbrtn ] ? * ;

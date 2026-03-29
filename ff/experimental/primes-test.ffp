@@ -77,7 +77,7 @@ witness_loop16: [ witness_loop8 ] dup or_else ;
    at most 1/4 per independent round, so at most 1/16 across two rounds. */
 maybe_prime?: dup 4 <
   [ 1 > ]
-  [ [ __primes__simple-composite? ] [ witness_loop2 ] or_else not ]
+  [ [ _primes__simple-composite? ] [ witness_loop2 ] or_else not ]
   branch ;
 
 0 println

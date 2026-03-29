@@ -83,8 +83,8 @@ Example:
 ```
 
 ## Internal Naming
-Internal constants and helper words use `__{filename}__{name}` pattern to avoid global namespace collisions.
-Example: `__log__n`, `__exp__e`
+Internal constants and helper words currently use the soft-private `_{filename}__{name}` pattern.
+Example: `_log__n`, `_exp__e`
 
 See: `_docs/math-naming-internal.md`
 

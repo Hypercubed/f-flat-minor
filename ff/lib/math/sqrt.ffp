@@ -2,21 +2,21 @@
 .import ./precision.ffp
 
 /* Exact integer square root via recursive digit-by-digit refinement. */
-__sqrt__base: 2 >> __sqrt__next 1 << ; /* n __sqrt__base == 2*sqrt(n/4) */
+_sqrt__base: 2 >> _sqrt__next 1 << ; /* n _sqrt__base == 2*sqrt(n/4) */
 
-__sqrt__pick:
+_sqrt__pick:
   dup ++ dup * /* n x (x+1)^2 */
   dig /* x (x+1)^2 n */
   <=
   [ ++ ] /* x+1 */
   ? /* else x */
-; /* n x __sqrt__pick == floor(sqrt(n)) */
+; /* n x _sqrt__pick == floor(sqrt(n)) */
 
-__sqrt__next:
+_sqrt__next:
   dup 1 > [ /* n if n < 2 */
     dup /* n n */
-    __sqrt__base
-    __sqrt__pick
+    _sqrt__base
+    _sqrt__pick
   ] ?
 ;
 
@@ -24,7 +24,7 @@ __sqrt__next:
 isqrt:
   dup 0 < [ 1 0 / ] ? /* error: negative input */
   dup 1 > [
-    __sqrt__next
+    _sqrt__next
   ] ? ;
 
 /* x -- floor(sqrt(x)) x-floor(sqrt(x))^2 */

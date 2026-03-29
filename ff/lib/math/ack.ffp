@@ -1,7 +1,7 @@
 .import ./num.ffp
 
 /* Buck's functions used for m <= 5 */
-__ack__F_0_3:
+_ack__F_0_3:
   over 0 = [ nip 1 + ] [
     over 1 = [ nip 2 + ] [
       over 2 = [ nip 2 * ]
@@ -10,23 +10,23 @@ __ack__F_0_3:
   ] branch
 ;
 
-__ack__F_4_5:
+_ack__F_4_5:
   over 4 = [ nip 2 swap ^^ ]
   [ nip 2 swap ^^^ ]
   branch
 ;
 
-__ack__F:
+_ack__F:
   over 4 >=
-  [ __ack__F_4_5 ]
-  [ __ack__F_0_3 ]
+  [ _ack__F_4_5 ]
+  [ _ack__F_0_3 ]
   branch
 ;
 
 /* Recursive function for m > 5 */
-__ack__ackn: over [ dup
+_ack__ackn: over [ dup
   [ [ dup -- swap ] dip -- ack ack ]
   [ drop -- 1 ack ] branch ] [ nip ++ ] branch ;
 
 /* Ackermann function */
-ack: over 6 < [ 3 + __ack__F 3 - ] [ __ack__ackn ] branch ;
+ack: over 6 < [ 3 + _ack__F 3 - ] [ _ack__ackn ] branch ;
