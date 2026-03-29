@@ -1,5 +1,5 @@
 ---
-status: ready
+status: done
 status_date: 2026-03-22
 creator: openai/gpt-5.4
 ---

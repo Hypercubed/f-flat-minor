@@ -15,13 +15,14 @@ This is an explicit project decision, not just a temporary reading of current ru
 
 ## Context
 
-Investigation on 2026-03-24 found that the runtimes do not currently agree on division for
+Investigation on 2026-03-24 found that the runtimes did not all agree on division for
 negative operands.
 
 - Deno/Node/Bun already implement the desired pair through the shared TypeScript core.
 - Python truncates `/` toward zero, but `%` still uses Python's divisor-signed modulo.
 - Racket truncates `/` toward zero, but `%` still uses `modulo`, which is also divisor-signed.
-- Go uses `big.Int.Div` and `big.Int.Mod`, which gives Euclidean division for negative operands.
+- Go is already aligned with the desired semantics: `/` uses `big.Int.Quo`, `%` uses
+  `big.Int.Rem`, and regression coverage already exists in `go/src/engine/engine_test.go`.
 - Ruby uses `/` and `%` directly on `Integer`, which gives floor division/modulo for negative operands.
 
 This mismatch is now documented in [README.md](/home/jmh/workspace/projects/f-flat-minor/README.md)
@@ -52,11 +53,9 @@ implementations to it.
    - `-3 -2 % == -1`
 
 2. Fix the runtimes that currently drift.
-   - Go: replace `big.Int.Div` with `big.Int.Quo` for `/`, and replace `big.Int.Mod` with
-     `big.Int.Rem` for `%`.
    - Ruby: stop delegating directly to Ruby's `/` and `%` for negative integer division. Add a
-     helper that computes truncate-toward-zero quotient and remainder as a pair from integer-only
-     operations, then use it for both words.
+      helper that computes truncate-toward-zero quotient and remainder as a pair from integer-only
+      operations, then use it for both words.
    - Python: replace `int(lhs / rhs)` and `%=` with an integer-only helper that computes the
      truncate-toward-zero quotient and remainder together. This avoids both the semantic mismatch
      and the current large-integer float-conversion risk.
@@ -65,8 +64,8 @@ implementations to it.
 
 3. Add or expand implementation-level tests.
    - Shared corpus test for the language-level behavior once all runtimes are fixed.
-   - Runtime-local tests where helpful, especially in Go and Racket where the host library exposes
-     multiple integer division conventions.
+   - Runtime-local tests where helpful in the remaining drifting runtimes. Go already has
+     regression coverage for truncate-toward-zero division semantics in `go/src/engine/engine_test.go`.
    - Python test coverage should include very large integers to verify the new helper does not rely
      on floating-point conversion.
 
@@ -81,6 +80,8 @@ implementations to it.
   - `%` is the matching remainder, so `a = b * (a b /) + (a b %)` and the remainder keeps the sign
     of the dividend unless it is zero.
 - Deno/Node/Bun shared TypeScript behavior is the target to align to.
+- Go is already aligned with the canonical truncate-toward-zero `/` and matching `%` semantics and
+  already has regression coverage for them.
 - Euclidean and floor-division semantics were considered and rejected for this repo.
 - Do not change the shared TypeScript core to match host-language defaults in Python, Ruby, Go, or
   Racket; change those runtimes to match the project rule instead.

@@ -41,6 +41,16 @@ For each target language first implement a proof-of-concept interpreter either i
 | Forth/Factor/Cat             |
 | F-flat                       |
 
+## Tooling
+
+This repo ships with [`mise.toml`](mise.toml) and [`mise.lock`](mise.lock) for pinned development tools.
+
+- Prefer activating the repo toolchain in your shell before running repo commands.
+- If your shell is not activated, prefix commands with `mise exec -- ...`.
+- Use the [`mise.toml`](mise.toml) environment for repo tools such as `chomp` and for Go commands that must match the version required by [`go/go.mod`](go/go.mod).
+
+This avoids failures where `chomp` is not on `PATH` or `go` resolves to an incompatible version.
+
 ## The Language
 
 `f-flat-minor` is a minimal implementation of [f-flat](https://github.com/Hypercubed/f-flat_node#readme).
@@ -212,18 +222,18 @@ or
 
 For build and testing we use [chomp](https://chompbuild.com/). To build all projects run:
 
-This repo also includes a `mise.toml` for development tools. Using `mise` is optional, but it can help keep tool versions aligned across the different implementations.
+Before running repo build or test commands, activate the repo [`mise.toml`](mise.toml) environment. If you do not activate your shell, use `mise exec -- ...` explicitly.
 
 ```sh
-chomp build:
+mise exec -- chomp build:
 ```
 
-> Note: this assumes you have the necessary runtimes and compilers installed for each project. See the details on `mise` above for help with this.
+> Note: this assumes you have the necessary runtimes and compilers installed or available through [`mise.toml`](mise.toml). The locked toolchain in [`mise.lock`](mise.lock) is the intended environment for repo tasks.
 
 or to build only one project run:
 
 ```sh
-chomp build:{name}
+mise exec -- chomp build:{name}
 ```
 
 Where `{name}` is the name of the project (i.e. `deno`, `cpp`, `racket`).
@@ -231,20 +241,22 @@ Where `{name}` is the name of the project (i.e. `deno`, `cpp`, `racket`).
 To test all projects run:
 
 ```sh
-chomp test:
+mise exec -- chomp test:
 ```
 
 or to test only one project run:
 
 ```sh
-chomp test:{name}
+mise exec -- chomp test:{name}
 ```
 
 For benchmarking run you will need to install [hyperfine](https://github.com/sharkdp/hyperfine) then run:
 
 ```sh
-chomp bench
+mise exec -- chomp bench
 ```
+
+For Go-specific usage, quick-start commands, and tests, see [`go/README.md`](go/README.md).
 
 ## License
 

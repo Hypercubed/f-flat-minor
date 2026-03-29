@@ -10,7 +10,11 @@ f-flat-minor (F♭m) is a minimal stack-oriented programming language. It featur
 
 ## Development Tools
 
-This repo includes a `mise.toml` for managing development tools. Using `mise` is optional, but it helps keep tool versions consistent across the different implementations.
+This repo includes [`mise.toml`](mise.toml) and [`mise.lock`](mise.lock) for pinned development tools.
+
+- Prefer activating the repo toolchain in your shell before running repo commands so tools like `chomp` and `go` resolve to the versions locked for this workspace.
+- If your shell is not activated, use `mise exec -- ...` for commands that depend on the pinned toolchain.
+- This is especially important for repo-level `chomp` tasks and for Go commands, because running outside the [`mise.toml`](mise.toml) environment can miss `chomp` entirely or pick an incompatible Go version for [`go/go.mod`](go/go.mod).
 
 ## Running Code
 
@@ -39,7 +43,7 @@ Use one of the TypeScript implementations instead:
 The most complete test set is the deno tests. From the project root:
 
 ```bash
-cd deno && chomp test:ff
+mise exec -- chomp test:deno
 ```
 
 This runs all `.ff` and `.ffp` tests, comparing output to corresponding `.out` files.
@@ -50,7 +54,7 @@ This runs all `.ff` and `.ffp` tests, comparing output to corresponding `.out` f
 cd ff/lib/math/__tests__ && cat sqrt.ffp | deno run - ../../../../deno/bin/ff-run.ts
 ```
 
-Or use the chomp build system which handles paths correctly.
+Or use the chomp build system inside the activated [`mise.toml`](mise.toml) environment, which handles paths correctly.
 
 ### File Types
 - `.ff` - Basic f-flat-minor source files (works with Python, Deno, Node, or Bun)
@@ -65,26 +69,28 @@ Or use the chomp build system which handles paths correctly.
 - **Ruby**: Basic interpreter
 - **Racket**: Full implementation
 
-To use other implementations, install the respective runtime and use the `chomp` build tool:
+To use other implementations, activate the repo [`mise.toml`](mise.toml) environment and use the `chomp` build tool:
 ```bash
 chomp build   # Build all projects
 chomp test    # Run tests
 ```
 
+If your shell is not activated, run the same commands with `mise exec -- ...`.
+
 ## Testing
 
 The most complete test set is the deno tests. To run the deno tests you can run:
 ```bash
-chomp test:deno
+mise exec -- chomp test:deno
 ```
 
 TAP-style library tests now also exist under `ff/lib/**/__tests__/*.test.ffp`.
 See `_docs/tap-testing.md` for the helper API and conventions, and run them with:
 ```bash
-cd bun && chomp test:tap
+cd bun && mise exec -- chomp test:tap
 ```
 
-Treat [`cd bun && chomp test:tap`](AGENTS.md) as the default TAP runner for `.test.ffp` library tests. Do not try multiple runtimes first unless this documented path is failing.
+Treat [`cd bun && mise exec -- chomp test:tap`](AGENTS.md) as the default TAP runner for `.test.ffp` library tests. Do not try multiple runtimes first unless this documented path is failing.
 
 ## Trace output modes (TypeScript runtimes)
 
@@ -115,6 +121,10 @@ For Node-specific usage, entrypoints, and implementation notes, see `node/README
 ## Bun Implementation Notes
 
 For Bun-specific usage, entrypoints, and implementation notes, see `bun/README.md`.
+
+## Go Implementation Notes
+
+For Go-specific usage, entrypoints, and testing notes, see [`go/README.md`](go/README.md).
 
 ## Project Skills
 

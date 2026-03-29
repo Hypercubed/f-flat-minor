@@ -218,7 +218,7 @@ func Setup() {
 
 	defSystem(func() {
 		x, y := pop(), peek()
-		y.Mod(y, x)
+		y.Rem(y, x)
 	}, OP_MOD)
 
 	defSystem(func() {
@@ -276,7 +276,7 @@ func Setup() {
 
 	defSystem(func() {
 		x, y := pop(), peek()
-		y.Div(y, x)
+		y.Quo(y, x)
 	}, OP_DIV)
 
 	defSystem(func() {

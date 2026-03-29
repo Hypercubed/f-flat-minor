@@ -116,3 +116,32 @@ func TestConsCapturesLiteralWhenNested(t *testing.T) {
 		t.Fatalf("expected cons with 0 tail to encode [0 4], got [%s %s]", def[0].String(), def[1].String())
 	}
 }
+
+func TestDivisionSemanticsTruncateTowardZero(t *testing.T) {
+	tests := []struct {
+		name     string
+		lhs      int64
+		rhs      int64
+		op       byte
+		expected int64
+	}{
+		{name: "div_negative_positive", lhs: -3, rhs: 2, op: OP_DIV, expected: -1},
+		{name: "mod_negative_positive", lhs: -3, rhs: 2, op: OP_MOD, expected: -1},
+		{name: "div_positive_negative", lhs: 3, rhs: -2, op: OP_DIV, expected: -1},
+		{name: "mod_positive_negative", lhs: 3, rhs: -2, op: OP_MOD, expected: 1},
+		{name: "div_negative_negative", lhs: -3, rhs: -2, op: OP_DIV, expected: 1},
+		{name: "mod_negative_negative", lhs: -3, rhs: -2, op: OP_MOD, expected: -1},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			resetEngineStateForTest()
+			push(big.NewInt(tt.lhs))
+			push(big.NewInt(tt.rhs))
+
+			systemDict[tt.op]()
+
+			assertStack(t, tt.expected)
+		})
+	}
+}
