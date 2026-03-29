@@ -19,6 +19,7 @@ export interface CompilerHost {
 export interface PathHost {
   isAbsolute(path: string): boolean;
   dirname(path: string): string;
+  relative(from: string, to: string): string;
   resolve(...parts: string[]): string;
 }
 

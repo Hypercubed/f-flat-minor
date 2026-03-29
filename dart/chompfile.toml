@@ -39,7 +39,7 @@ run = 'chomp -c ../deno/ :disassemble'
 [[task]]
 display = 'none'
 name = 'build-go-precompiler'
-run = 'chomp -c ../go/ build:run'
+run = 'chomp -c ../go/ build:preprocess'
 
 [[task]]
 name = 'test'

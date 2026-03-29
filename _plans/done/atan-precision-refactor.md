@@ -6,7 +6,7 @@ creator: unknown
 
 # Plan: Precision-Helper `atan` Refactor
 
-Implemented in `ff/lib/math/atan.ffp`, with `pi` callers migrated to `__atan__scaled`
+Implemented in `ff/lib/math/atan.ffp`, with `pi` callers migrated to `_atan__scaled`
 and dedicated `atan` coverage added under `ff/lib/math/__tests__/atan.ffp`.
 
 ## Summary
@@ -59,17 +59,17 @@ Do not preserve public `atan2` or `atan` compatibility names in this refactor.
 ### 2. Internal precision-driven helper
 Introduce one internal shared helper:
 
-- `__atan__scaled ( n u v -- scaled )`
+- `_atan__scaled ( n u v -- scaled )`
 
 This helper becomes the implementation target used by:
 
-- `iatan` via `0 x 1 __atan__scaled`
-- `natan` via `n x 1 __atan__scaled`
-- `qatan` via `0 u v __atan__scaled`
-- `atan-inv` via `n 1 x __atan__scaled`
+- `iatan` via `0 x 1 _atan__scaled`
+- `natan` via `n x 1 _atan__scaled`
+- `qatan` via `0 u v _atan__scaled`
+- `atan-inv` via `n 1 x _atan__scaled`
 - `ff/lib/math/pi.ffp`
 
-`__atan__scaled` must:
+`_atan__scaled` must:
 
 - use `n->S` rather than raw `10 swap ^`
 - use `n->K` to determine the Taylor term budget
@@ -134,7 +134,7 @@ Cover:
 - consistency checks:
   - `0 x natan == x iatan`
   - `x 1 qatan == x iatan`
-  - `n x atan-inv == n 1 x __atan__scaled` behavior through the public alias
+  - `n x atan-inv == n 1 x _atan__scaled` behavior through the public alias
 - unchanged `pi` coverage:
   - run existing `ff/lib/math/__tests__/pi.ffp` unchanged after the caller migration
 

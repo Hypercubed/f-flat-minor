@@ -72,7 +72,7 @@ Side effect: `exp.ffp` gains free access to `sgn`, `min`, `max`, `clamp`, and `d
 - Return `floor(π·10^n)`
 
 The only cosmetic differences are the guard-digit constant name and the atan dispatcher called
-(`__atan__core_scaled` vs `__atan__scaled`) — functionally equivalent for these specific inputs.
+(`_atan__core_scaled` vs `_atan__scaled`) — functionally equivalent for these specific inputs.
 
 Fix (two steps):
 

@@ -6,30 +6,30 @@ in: [stack] dip dip [stack] dip dip ;
 pair: unit cons ;
 compose: [ [eval] dip eval ] cons cons ;
 
-_map: depth 2 > [ swap q< _map dup slip q> swap ] ? ;
-map!: depth 1 > [ _map eval ] [ drop ] branch ;
+__map: depth 2 > [ swap q< __map dup slip q> swap ] ? ;
+map!: depth 1 > [ __map eval ] [ drop ] branch ;
 
 reduce!: depth 2 - times ; /* a+ [B] reduce! == r */
 head!: [drop] reduce! ; /* a+ head! == a */
 tail!: reverse! drop reverse! ; /* a+ tail! == a* */
 last!: q< clr q> ; /* .. a last! == a */
 
-_reduce_r: depth 3 > [ dup slip _reduce_r ] ? ;
-reduce_r!: _reduce_r eval ; /* a+ [B] reduce_r! == r */
+__reduce_r: depth 3 > [ dup slip __reduce_r ] ? ;
+reduce_r!: __reduce_r eval ; /* a+ [B] reduce_r! == r */
 foldr!: depth 2 > [ pushtop reduce_r! ] [ nip ] branch ;  /* a* [B] z foldr! == r */
  
-_reduce_l: depth 3 > [ swap q< _reduce_l dup slip q> swap ] ? ;
-reduce_l!: _reduce_l eval ; /* a+ [B] reduce_l! == r */
+__reduce_l: depth 3 > [ swap q< __reduce_l dup slip q> swap ] ? ;
+reduce_l!: __reduce_l eval ; /* a+ [B] reduce_l! == r */
 foldl!: depth 2 > [ pushtop reduce_l! ] [ nip ] branch ; /* a* [B] z foldl! == r */
 
 reverse!: depth 1 > [ q< reverse! q> pushtop ] ? ;
 
-_filter: depth 2 > [ swap q< _filter over over eval not [nip] ? q> swap ] ? ;
-filter!: depth 1 > [ _filter dupd eval not [drop] ? ] [ drop ] branch ; /* a* [B] filter! == a* */
+__filter: depth 2 > [ swap q< __filter over over eval not [nip] ? q> swap ] ? ;
+filter!: depth 1 > [ __filter dupd eval not [drop] ? ] [ drop ] branch ; /* a* [B] filter! == a* */
 
-_seq=: over emptyq? [ drop2 true ] [
-  over first over first = [ swap tail swap tail _seq= ] [ drop2 false ] branch
-] branch ; /* [A] [B] _seq= == flag (assumes same length) */
+__seq=: over emptyq? [ drop2 true ] [
+  over first over first = [ swap tail swap tail __seq= ] [ drop2 false ] branch
+] branch ; /* [A] [B] __seq= == flag (assumes same length) */
 
 map: [ map! ] cons compose in ;
 first: [ head! ] compose in eval ;
@@ -48,4 +48,4 @@ product: 1 [*] foldr ; /* [A] product == n */
 length: [ depth q< clr q> ] compose in eval ; /* [A] length == n */
 emptyq?: length zero? ; /* [A] emptyq? == flag */
 
-seq=: over length over length = [ _seq= ] [ drop2 false ] branch ; /* [A] [B] seq= == flag */
+seq=: over length over length = [ __seq= ] [ drop2 false ] branch ; /* [A] [B] seq= == flag */

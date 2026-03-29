@@ -3,13 +3,14 @@ package compiler
 import (
 	. "m/src/utils"
 	"math/big"
+	"os"
+	"path/filepath"
 	"testing"
 )
 
 func resetCompilerStateForTest() {
 	symbolMap = make(map[string]int64)
 	code = -1
-	imported = make(map[string]bool)
 }
 
 func TestCompileConsAsSystemWord(t *testing.T) {
@@ -27,5 +28,39 @@ func TestCompileConsAsSystemWord(t *testing.T) {
 
 	if ir[0].value.Cmp(big.NewInt(OP_CONS)) != 0 {
 		t.Fatalf("expected cons opcode %d, got %s", OP_CONS, ir[0].value.String())
+	}
+}
+
+func TestCompileToIRManglesImportedPrivateWords(t *testing.T) {
+	resetCompilerStateForTest()
+	Setup()
+
+	tmpDir := t.TempDir()
+	mainFile := filepath.Join(tmpDir, "main.ffp")
+	firstPrivate := filepath.Join(tmpDir, "a-b", "private.ffp")
+	secondPrivate := filepath.Join(tmpDir, "a", "b-private.ffp")
+
+	check(os.MkdirAll(filepath.Dir(firstPrivate), 0o755))
+	check(os.MkdirAll(filepath.Dir(secondPrivate), 0o755))
+	check(os.WriteFile(
+		mainFile,
+		[]byte(".import ./a-b/private.ffp\n.import ./a/b-private.ffp\n"),
+		0o644,
+	))
+	check(os.WriteFile(firstPrivate, []byte("__hidden: 1 ;\n"), 0o644))
+	check(os.WriteFile(secondPrivate, []byte("__hidden: 2 ;\n"), 0o644))
+
+	defer func() {
+		if r := recover(); r != nil {
+			t.Fatalf("expected mangled imports to avoid symbol collisions, got panic: %v", r)
+		}
+	}()
+
+	ir := CompileToIR(
+		Tokenize(".import ./a-b/private.ffp\n.import ./a/b-private.ffp\n"),
+		mainFile,
+	)
+	if len(ir) == 0 {
+		t.Fatalf("expected compiled IR for imported files")
 	}
 }

@@ -37,11 +37,12 @@ _exp__e: 27182818284590452353602874713526624977572470936999595749669676277240766
 ## Public API vs Internal
 - **Public API**: Uses variant prefixes (`i`, `n`, `q`) - e.g., `ilog`, `nlog`, `qlog`
 - **Soft-private**: Uses `_{filename}__{name}` - e.g., `_log__n`, `_exp__e`
-- **Reserved for future preprocessing privacy**: `__...`
+- **Preprocessor-private**: Uses `__...` inside imported `.ffp` files
 
 ## Application
 When creating new math modules (e.g., `atan.ffp`, `sqrt.ffp`):
 1. Define soft-private internals: `_atan__precision`, `_atan__pi`
-2. Define public API: `iatan`, `natan`, `qatan`
+2. Use `__...` for helpers that should be private to the imported file after preprocessing
+3. Define public API: `iatan`, `natan`, `qatan`
 
-This convention keeps internal helpers predictable while reserving the `__` prefix for future preprocessor-scoped privacy.
+This convention keeps internal helpers predictable while using `__` for active preprocessor-scoped privacy.

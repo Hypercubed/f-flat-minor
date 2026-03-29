@@ -11,7 +11,9 @@ export class Preprocessor {
   private readonly engine: Engine;
   private readonly compiler: Compiler;
   private readonly imported = new Set<string>();
+  private readonly importPrefixes = new Map<string, string>();
   private macroPreludeReady = false;
+  private rootFilename: string | null = null;
 
   constructor(
     host: PreprocessHost,
@@ -27,6 +29,24 @@ export class Preprocessor {
   }
 
   preprocess(lines: string[], filename = "-"): string {
+    const isTopLevel = this.rootFilename === null;
+    if (isTopLevel && filename !== "-") {
+      this.rootFilename = filename;
+    }
+    try {
+      return this.preprocessLines(lines, filename);
+    } finally {
+      if (isTopLevel) {
+        this.rootFilename = null;
+      }
+    }
+  }
+
+  private preprocessLines(
+    lines: string[],
+    filename: string,
+    importScopeFilename?: string,
+  ): string {
     return lines.map((line) => {
       if (line.length > 1 && (line[0] === ".")) {
         const [cmd, ...rest] = line.split(" ");
@@ -37,18 +57,27 @@ export class Preprocessor {
                 this.host.exit();
                 break;
               }
-              throw new Error("Preprocessor: .exit requires a host exit handler");
+              throw new Error(
+                "Preprocessor: .exit requires a host exit handler",
+              );
             case ".load": {
               const filepath = this.findFile(rest.join(" "), filename);
               const code = this.host.readTextFile(filepath);
-              return this.preprocess(Preprocessor.tokenize(code), filepath);
+              return this.preprocessLines(
+                Preprocessor.tokenize(code),
+                filepath,
+              );
             }
             case ".import": {
               const filepath = this.findFile(rest.join(" "), filename);
               if (!this.imported.has(filepath)) {
                 this.imported.add(filepath);
                 const code = this.host.readTextFile(filepath);
-                return this.preprocess(Preprocessor.tokenize(code), filepath);
+                return this.preprocessLines(
+                  Preprocessor.tokenize(code),
+                  filepath,
+                  filepath,
+                );
               }
               return "";
             }
@@ -69,6 +98,9 @@ export class Preprocessor {
           }
           return "";
         }
+      }
+      if (importScopeFilename) {
+        return this.mangleImportedLine(line, importScopeFilename);
       }
       return line;
     }).join("\n");
@@ -103,7 +135,10 @@ export class Preprocessor {
       Preprocessor.tokenize(code),
       filepath,
     );
-    const ir = this.compiler.compileToIR(Compiler.tokenize(preprocessed), filepath);
+    const ir = this.compiler.compileToIR(
+      Compiler.tokenize(preprocessed),
+      filepath,
+    );
     this.engine.loadIR(ir);
     this.engine.run();
     this.engine.clear();
@@ -119,5 +154,68 @@ export class Preprocessor {
     const stack = this.engine.getStack();
     this.engine.clear();
     return stack.map(String).join(" ") + ` /* ${sourceLine} */`;
+  }
+
+  private mangleImportedLine(
+    line: string,
+    importScopeFilename: string,
+  ): string {
+    const prefix = this.getImportPrefix(importScopeFilename);
+    return line.split(/(\s+)/).map((part) => {
+      if (!part || /\s+/.test(part)) {
+        return part;
+      }
+      return this.mangleImportedToken(part, prefix);
+    }).join("");
+  }
+
+  private mangleImportedToken(token: string, prefix: string): string {
+    if (token.startsWith("[__")) {
+      return `[${prefix}${token.slice(3)}`;
+    }
+    if (token.startsWith("__")) {
+      return `${prefix}${token.slice(2)}`;
+    }
+    return token;
+  }
+
+  private getImportPrefix(importScopeFilename: string): string {
+    const cached = this.importPrefixes.get(importScopeFilename);
+    if (cached) {
+      return cached;
+    }
+
+    const normalizedPath = this.getNormalizedImportPath(importScopeFilename);
+    const safePath = normalizedPath
+      .replace(/[^A-Za-z0-9]+/g, "_")
+      .replace(/^_+|_+$/g, "")
+      .replace(/_+/g, "_") || "module";
+    const hash = this.hashPath(importScopeFilename);
+    const prefix = `__${safePath}_${hash}__`;
+    this.importPrefixes.set(importScopeFilename, prefix);
+    return prefix;
+  }
+
+  private getNormalizedImportPath(importScopeFilename: string): string {
+    if (this.rootFilename && this.rootFilename !== "-") {
+      const rootDir = this.host.path.dirname(this.rootFilename);
+      const relativePath = this.host.path.relative(
+        rootDir,
+        importScopeFilename,
+      );
+      if (relativePath) {
+        return relativePath.replace(/\\/g, "/");
+      }
+    }
+    return importScopeFilename.replace(/\\/g, "/");
+  }
+
+  private hashPath(importScopeFilename: string): string {
+    let hash = 0x811c9dc5;
+    for (let i = 0; i < importScopeFilename.length; i++) {
+      hash ^= importScopeFilename.charCodeAt(i);
+      hash = Math.imul(hash, 0x01000193) >>> 0;
+    }
+    return hash.toString(36);
   }
 }

@@ -1,117 +1,117 @@
 .import ./pred.ffp
 
 /* Test if value is a factor of 2 or 3 */
-_primes__simple-composite?: [ 2 divisor? ] [ 3 divisor? ] or_else ;
+__simple-composite?: [ 2 divisor? ] [ 3 divisor? ] or_else ;
 
 /*
  * Miller-Rabin helpers copied from the experimental primality test.
  * `maybe_prime?` is public and probabilistic; `prime?` stays exact by
  * confirming probable primes with the existing trial-division path.
  */
-(_primes__factor_by_2):
+__(factor_by_2):
   over 1 & 0 =
-  [ [ 1 >> ] dip ++ (_primes__factor_by_2) ]
+  [ [ 1 >> ] dip ++ __(factor_by_2) ]
   ? ;
-_primes__factor_by_2: 0 (_primes__factor_by_2) ; /* n -> d s */
+__factor_by_2: 0 __(factor_by_2) ; /* n -> d s */
 
-_primes__nrand: over - rand + ;
+__nrand: over - rand + ;
 
-_primes__mod: q> dup q< % ; .unsafe /* x -> x%n, with n on queue */
+__mod: q> dup q< % ; .unsafe /* x -> x%n, with n on queue */
 
-(_primes__powmod_loop): /* acc a d -> acc, with n on queue */
+__(powmod_loop): /* acc a d -> acc, with n on queue */
   dup 0 =
   [ drop drop ]
   [
     dup 1 & 0 !=
-    [ rot over * _primes__mod rot ]
+    [ rot over * __mod rot ]
     [ ]
     branch
-    swap dup * _primes__mod swap 1 >>
-    (_primes__powmod_loop)
+    swap dup * __mod swap 1 >>
+    __(powmod_loop)
   ]
   branch ;
 
-_primes__powmod:
+__powmod:
   rot q< swap 1 rot
-  (_primes__powmod_loop)
+  __(powmod_loop)
   q> swap
 ;  /* n d a -> n a^d%n */
 
-(_primes__inner_witness_loop): /* s n x -> */
+__(inner_witness_loop): /* s n x -> */
   dup2 swap %  /* s n x x%n */
   [ over ] dip swap /* s n x x%n n */
   -- = /* s n x x%n=n-1 */
   [ false ]
   [
     dup * /* s n x^2 */
-    _primes__inner_witness
+    __inner_witness
   ]
   branch ;
 
-_primes__inner_witness: /* s n x -> */
+__inner_witness: /* s n x -> */
   rot -- dup
   0 =
   [ true ]
-  [ rot (_primes__inner_witness_loop) ]
+  [ rot __(inner_witness_loop) ]
   branch
 ;
 
 /* returns true if composite, false if maybe prime */
-_primes__witness_seed: /* n _primes__witness_seed == s n a^d%n */
-  pred dup _primes__factor_by_2 /* n n-1 d s */
-  dig 2 swap _primes__nrand /* n d s a */
+__witness_seed: /* n __witness_seed == s n a^d%n */
+  pred dup __factor_by_2 /* n n-1 d s */
+  dig 2 swap __nrand /* n d s a */
   [ bury ] dip /* s n d a */
-  _primes__powmod
+  __powmod
 ;
 
-_primes__witness_trivial?: /* s n x _primes__witness_trivial? == s n x b */
+__witness_trivial?: /* s n x __witness_trivial? == s n x b */
   dup [ 1 = ] [ over -- = ] or_else
 ;
 
-_primes__witness_composite: /* s n x _primes__witness_composite == b */
-  (_primes__inner_witness_loop) nip nip nip
+__witness_composite: /* s n x __witness_composite == b */
+  __(inner_witness_loop) nip nip nip
 ;
 
-_primes__witness_probable: /* s n x _primes__witness_probable == false */
+__witness_probable: /* s n x __witness_probable == false */
   drop drop drop false
 ;
 
-_primes__witness_loop: /* n -> n */
-  _primes__witness_seed
-  _primes__witness_trivial?
-  [ _primes__witness_probable ]
-  [ _primes__witness_composite ]
+__witness_loop: /* n -> n */
+  __witness_seed
+  __witness_trivial?
+  [ __witness_probable ]
+  [ __witness_composite ]
   branch ;
 
-_primes__witness_loop2: [ _primes__witness_loop ] dup or_else ;
+__witness_loop2: [ __witness_loop ] dup or_else ;
 
 /* Exact odd-divisor trial loop.
    Keep this independent from public next-prime/prime? to avoid recursive
    Miller-Rabin work while confirming a probable prime. */
-(_primes__trial): dup2 [ dup * > ] [ % 0 > ] bi2 and [ 2 + (_primes__trial) ] ? ;
-_primes__trial: 5 (_primes__trial) dup * < ;
+__(trial): dup2 [ dup * > ] [ % 0 > ] bi2 and [ 2 + __(trial) ] ? ;
+__trial: 5 __(trial) dup * < ;
 
-(_primes__next): dup prime? not [ 2 + (_primes__next) ] ? ;
-_primes__next: dup 2 < [ drop 2 ] [ 1 + dup even? + (_primes__next) ] branch ;
+__(next): dup prime? not [ 2 + __(next) ] ? ;
+__next: dup 2 < [ drop 2 ] [ 1 + dup even? + __(next) ] branch ;
 
 /* Probabilistic Miller-Rabin screen.
    false means definitely composite; true means probably prime. */
 maybe_prime?: dup 4 <
   [ 1 > ]
-  [ [ _primes__simple-composite? ] [ _primes__witness_loop2 ] or_else not ]
+  [ [ __simple-composite? ] [ __witness_loop2 ] or_else not ]
   branch ;
 
 /* Exact primality test: use maybe_prime? as a fast screen, then confirm. */
 prime?: 
   dup maybe_prime?
-  [ _primes__trial ]
+  [ __trial ]
   [ drop false ]
   branch
 ;
 
 next-prime: 
   dup 2 < [ drop 2 ]
-  [ _primes__next ]
+  [ __next ]
   branch ;
 
 th-prime: 0 swap [ next-prime ] swap times ;

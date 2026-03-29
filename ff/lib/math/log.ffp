@@ -1,9 +1,9 @@
 .import ../core/core.ff
 
-_log__n: 20 ; /* number of digits to use for fixed-point calculations */
-_log__s: 100000000000000000000 ; /* 10^n */
-_log__ln2: 69314718055994530941 ; /* floor(ln(2)*10^n) */
+__n: 20 ; /* number of digits to use for fixed-point calculations */
+__s: 100000000000000000000 ; /* 10^n */
+__ln2: 69314718055994530941 ; /* floor(ln(2)*10^n) */
 
 ilb: dup 1 > [ 1 >> ilb ++ ] [ drop 0 ] branch ; /* n ilb == floor(log2(n)) */
 ilog: dup 10 >= [ 10 / ilog ++ ] [ drop 0 ] branch ; /* n ilog == floor(log10(n)) */
-iln: ilb _log__ln2 * _log__s / ; /* n iln == floor(ln(n)) */
+iln: ilb __ln2 * __s / ; /* n iln == floor(ln(n)) */

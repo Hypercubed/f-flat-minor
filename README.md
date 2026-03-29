@@ -206,10 +206,10 @@ _F♭m<sup>+</sup>_ adds a preprocessor and compiler commands. A word starting w
 
 ### Standard Library and Preprocessor
 
-[core.ff](./ff/lib/core.ff) Contains definitions of commonly used _F♭m_ words. This can be included in other files by using the `.load` or `.import` command in implementations that support _F♭m<sup>+</sup>_ (currently Deno, Go, and Racket). By convention _F♭m_ files that require the preprocessor have the `.ffp` extension. For implementations that don't support _F♭m<sup>+</sup>_ compiler commands, the source file can be preprocessed using Deno or Racket versions. Example:
+[core.ff](./ff/lib/core.ff) Contains definitions of commonly used _F♭m_ words. This can be included in other files by using the `.load` or `.import` command in implementations that support _F♭m<sup>+</sup>_ (currently Deno, Go, and Racket). By convention _F♭m_ files that require the preprocessor have the `.ffp` extension. For implementations that don't support _F♭m<sup>+</sup>_ compiler commands, the source file can be preprocessed using Deno, Go, or Racket. Example:
 
 ```sh
-./deno/build/preprocess my_file.ffp | ./ccp/build/run
+mise exec -- go run ./go/cmd/preprocess --in my_file.ffp | ./python/execute.py
 ```
 
 or

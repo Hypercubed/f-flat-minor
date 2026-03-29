@@ -19,38 +19,38 @@
 /* TAP state: failure_count assertion_count.
  * Reset at TAP file scope via TAP-VERSION and at subtest scope via SUBTEST.
  */
-_TAP-RESET: 0 0 ;
+__RESET: 0 0 ;
 
 /* Bump assertion_count and return idx. */
-_TAP-NEXT!: ++ dup ;
+__NEXT!: ++ dup ;
 
 /* Bump failure_count. */
-_TAP-FAIL!: swap ++ swap ;
+__FAIL!: swap ++ swap ;
 
 /* No failures recorded? */
-_TAP-PASS?: over zero? ;
+__PASS?: over zero? ;
 
 /* Indent assertion/plan lines from active TAP stack depth.
  * indent_level = (depth - 3) / 2, with 4 spaces per level.
  */
-_TAP-INDENT: depth 3 - 2 / [ '\0\s\s\s\s' prints ] swap times ;
+__INDENT: depth 3 - 2 / [ '\0\s\s\s\s' prints ] swap times ;
 
  /* Print TAP version and reset top-level TAP state. */
-TAP-VERSION: '\0TAP\sversion\s14' println clr _TAP-RESET ;
+TAP-VERSION: '\0TAP\sversion\s14' println clr __RESET ;
 
 /* Primary assertion word. */
 OK:
-  _TAP-INDENT q< _TAP-NEXT! q> truthy?
+  __INDENT q< __NEXT! q> truthy?
   [ '\0ok\s' prints putn cr ]
-  [ '\0not\sok\s' prints putn cr _TAP-FAIL! ]
+  [ '\0not\sok\s' prints putn cr __FAIL! ]
   branch ;
 
 /* Skip one assertion. */
-#SKIP: _TAP-INDENT drop _TAP-NEXT! '\0ok\s' prints putn '\0\s#\sSKIP' prints cr ;
+#SKIP: __INDENT drop __NEXT! '\0ok\s' prints putn '\0\s#\sSKIP' prints cr ;
 
 /* Mark one assertion TODO. */
 #TODO:
-  _TAP-INDENT q< _TAP-NEXT! q> truthy?
+  __INDENT q< __NEXT! q> truthy?
   [ '\0ok\s' prints putn '\0\s#\sTODO' prints cr ]
   [ '\0not\sok\s' prints putn '\0\s#\sTODO' prints cr ]
   branch ;
@@ -60,11 +60,11 @@ SKIP-ALL: '\01..0\s#\sSKIP\s' prints println ;
 
 /* Print 1..n and require count match plus no failures. */
 PLAN:
-  _TAP-INDENT dup '\01..' prints putn cr
+  __INDENT dup '\01..' prints putn cr
   over = swap drop swap zero? and ;
 
 /* Print a subtest header and reset subtest TAP state. */
-SUBTEST: '\0#\sSubtest:\s' prints println _TAP-RESET ;
+SUBTEST: '\0#\sSubtest:\s' prints println __RESET ;
 
 /* Stack sentinel for older tests. */
 ¶: clr 999 ;

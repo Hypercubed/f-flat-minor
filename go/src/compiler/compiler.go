@@ -3,6 +3,7 @@ package compiler
 import (
 	"fmt"
 	"m/src/engine"
+	"m/src/preprocess"
 	. "m/src/utils"
 	. "math/big"
 	"os"
@@ -158,9 +159,15 @@ func getInteger(s string) *Int {
 	return nil
 }
 
-var imported = make(map[string]bool)
-
 func CompileToIR(t []string, filename string) []IrInstruction {
+	return compileToIR(t, filename, preprocess.New(filename))
+}
+
+func compileToIR(
+	t []string,
+	filename string,
+	preprocessor *preprocess.Processor,
+) []IrInstruction {
 	ret := make([]IrInstruction, 0)
 
 	push := func(value *Int, comment string) {
@@ -185,19 +192,26 @@ func CompileToIR(t []string, filename string) []IrInstruction {
 				filepath := getFilepath(tokens[1], filename)
 				dat, err := os.ReadFile(filepath)
 				check(err)
-				ir := CompileToIR(Tokenize(string(dat)), filepath)
+				preprocessed := preprocessor.ProcessLoadedForCompile(
+					string(dat),
+					filepath,
+				)
+				ir := compileToIR(Tokenize(preprocessed), filepath, preprocessor)
 				ret = append(ret, ir...)
 			} else if tokens[0] == ".import" {
 				filepath := getFilepath(tokens[1], filename)
-				if !imported[filepath] {
-					imported[filepath] = true
+				if preprocessor.MarkImported(filepath) {
 					dat, err := os.ReadFile(filepath)
 					check(err)
-					ir := CompileToIR(Tokenize(string(dat)), filepath)
+					preprocessed := preprocessor.ProcessImportedForCompile(
+						string(dat),
+						filepath,
+					)
+					ir := compileToIR(Tokenize(preprocessed), filepath, preprocessor)
 					ret = append(ret, ir...)
 				}
 			} else if tokens[0] == ".m" {
-				ir := CompileToIR(Tokenize(tokens[1]), filename)
+				ir := compileToIR(Tokenize(tokens[1]), filename, preprocessor)
 				bigCode := CompileToBigIntArray(ir)
 				engine.Run(bigCode)
 				for i, item := range engine.GetStack() {

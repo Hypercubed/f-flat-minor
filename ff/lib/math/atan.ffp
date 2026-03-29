@@ -13,22 +13,22 @@
  *   atan-inv ( n x -- y )
  */
 
-_atan__num_zero:
+__num_zero:
   drop
   drop
   drop
   0
-; /* n u v (u == 0) _atan__num_zero == 0 */
+; /* n u v (u == 0) __num_zero == 0 */
 
-_atan__den_zero:
+__den_zero:
   drop
   dup sgn q<
   drop
   npi 2 /
   q> *
-; /* n u v (v == 0) _atan__den_zero == sign(u)*floor(pi/2*10^n) */
+; /* n u v (v == 0) __den_zero == sign(u)*floor(pi/2*10^n) */
 
-_atan__abs_scaled:
+__abs_scaled:
   dup2 >
   [
     q< q<
@@ -62,9 +62,9 @@ _atan__abs_scaled:
     branch
   ]
   branch
-; /* n u v (u,v > 0) _atan__abs_scaled == floor(10^n*atan(u/v)) */
+; /* n u v (u,v > 0) __abs_scaled == floor(10^n*atan(u/v)) */
 
-_atan__finite:
+__finite:
   over sgn q<
   dup sgn q<
   abs
@@ -73,22 +73,22 @@ _atan__finite:
   swap
   q> q> *
   q<
-  _atan__abs_scaled
+  __abs_scaled
   q> *
-; /* n u v (u,v != 0) _atan__finite == signed scaled atan(u/v) */
+; /* n u v (u,v != 0) __finite == signed scaled atan(u/v) */
 
 _atan__scaled:
   over zero?
   [
-    _atan__num_zero
+    __num_zero
   ]
   [
     dup zero?
     [
-      _atan__den_zero
+      __den_zero
     ]
     [
-      _atan__finite
+      __finite
     ]
     branch
   ]

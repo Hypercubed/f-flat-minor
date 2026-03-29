@@ -1,6 +1,10 @@
 import * as path from "https://deno.land/std@0.224.0/path/mod.ts";
 
-import type { CorePlatform, PreprocessHost, CompilerHost } from "../../typescript/core/src/platform.ts";
+import type {
+  CompilerHost,
+  CorePlatform,
+  PreprocessHost,
+} from "../../typescript/core/src/platform.ts";
 
 export function createDenoPlatform(): CorePlatform {
   return {
@@ -19,14 +23,14 @@ export function createDenoPlatform(): CorePlatform {
       },
       setRaw(raw: boolean) {
         Deno.stdin.setRaw(raw);
-      }
+      },
     },
     exit(code: number) {
       Deno.exit(code);
     },
     now() {
       return Date.now();
-    }
+    },
   };
 }
 
@@ -37,7 +41,7 @@ export function createDenoCompilerHost(): CompilerHost {
     },
     log(...args: Array<string | number | bigint>) {
       console.log(...args);
-    }
+    },
   };
 }
 
@@ -57,6 +61,6 @@ export function createDenoPreprocessHost(): PreprocessHost {
         return false;
       }
     },
-    path
+    path,
   };
 }
