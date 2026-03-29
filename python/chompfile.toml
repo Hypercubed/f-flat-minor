@@ -33,6 +33,24 @@ serial = true
 display = 'none'
 
 [[task]]
+name = 'test:tap'
+deps = [
+    '../go/build/run'
+]
+serial = true
+invalidation = 'always'
+validation = 'none'
+run = '''
+  shopt -s nullglob
+  shopt -s extglob
+  shopt -s globstar
+  for f in ../ff/**/*.test.ffp; do
+    # Preprocess with Go, then run with Python
+    ../go/build/run --preprocess "$f" | python3 ./execute.py
+  done
+'''
+
+[[task]]
 name = 'ff'
 deps = [
     '../ff/##.out',
