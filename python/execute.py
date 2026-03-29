@@ -56,9 +56,17 @@ def mul():
   a = stack.pop()
   stack[-1] *= a
 
+def trunc_divmod(lhs, rhs):
+  q = abs(lhs) // abs(rhs)
+  if (lhs < 0) != (rhs < 0):
+    q = -q
+  r = lhs - rhs * q
+  return q, r
+
 def mod():
   a = stack.pop()
-  stack[-1] %= a
+  _, r = trunc_divmod(stack[-1], a)
+  stack[-1] = r
 
 def band():
   a = stack.pop()
@@ -77,7 +85,8 @@ def pow():
 
 def div():
   a = stack.pop()
-  stack[-1] = int(stack[-1] / a)
+  q, _ = trunc_divmod(stack[-1], a)
+  stack[-1] = q
 
 def eq():
   a = stack.pop()
@@ -195,12 +204,9 @@ def cons():
   global stack, op
   y = stack.pop()
   x = stack.pop()
-  # Create anonymous definition [PUSH x, CALL y]
+  # Create anonymous token body [x, y, eval]
   op = op + 1
-  d = [0, x]
-  if y != 0:
-    d.append(y)
-  defs[op] = d
+  defs[op] = [x, y, 'eval']
   stack.append(op)
 
 defineSystem('nop', nop)
@@ -248,17 +254,21 @@ def unescape(text):
 
 def number(text):
   text = text.strip("_")
+  sign = 1
+  if text.startswith("-"):
+    sign = -1
+    text = text[1:]
   try:
     if text.startswith("0x"):
-      return int(text, 16)
+      return sign * int(text, 16)
     elif text.startswith("0b"):
-      return int(text, 2)
+      return sign * int(text, 2)
     elif text.startswith("0o"):
-      return int(text, 8)
+      return sign * int(text, 8)
     elif "e" in text or "E" in text:
-      return int(float(text))
+      return sign * int(float(text))
     else:
-      return int(text)
+      return sign * int(text)
   except:
     return None
 

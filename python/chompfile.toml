@@ -17,6 +17,11 @@ name = 'build-deno-compiler'
 run = 'chomp -c ../deno/ :disassemble'
 
 [[task]]
+display = 'none'
+name = 'build-go-precompiler'
+run = 'chomp -c ../go/ build:run'
+
+[[task]]
 name = 'interpret'
 run = 'cat ../ff/example.ff | ${{BIN}}'
 template = 'cmp'
@@ -35,7 +40,7 @@ display = 'none'
 [[task]]
 name = 'test:tap'
 deps = [
-    '../go/build/run'
+    'build-go-precompiler'
 ]
 serial = true
 invalidation = 'always'
@@ -44,10 +49,7 @@ run = '''
   shopt -s nullglob
   shopt -s extglob
   shopt -s globstar
-  for f in ../ff/**/*.test.ffp; do
-    # Preprocess with Go, then run with Python
-    ../go/build/run --preprocess --in "$f" | python3 ./execute.py
-  done
+  prove --exec 'sh ./run-tap-test.sh' ../ff/**/*.test.ffp
 '''
 
 [[task]]
