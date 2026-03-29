@@ -15,28 +15,28 @@ Reference set: `systemWords` in `typescript/core/src/opcodes.ts`.
 
 ## Canonical core set (TypeScript core)
 
-Count: **39** words
+Count: **38** words
 
-`nop eval ; : clr rand exit . putc getc putn clock drop swap dup << >> + - cons * / < = > ? % & ( ) q< q> depth ^ [ ] | ~ \\`
+`nop eval ; : clr rand exit . putc getc putn clock drop swap dup << >> + - cons * / < = > ? % & ( ) q< q> depth ^ [ ] | ~`
 
 ## Results
 
 | Implementation | Status vs canonical set | Missing words | Extra words |
 | --- | --- | --- | --- |
 | TypeScript core (Deno/Node/Bun) | Exact match | _none_ | _none_ |
-| Go | 1 missing | `\\` | _none_ |
-| Python | 6 missing | `;`, `[`, `]`, `\\`, `exit`, `getc` | _none_ |
-| Ruby | 6 missing | `;`, `[`, `]`, `\\`, `exit`, `getc` | _none_ |
-| Racket | 5 missing | `(`, `)`, `\\`, `clock`, `exit` | _none_ |
-| Dart | 9 missing + 1 extra | `(`, `)`, `;`, `[`, `]`, `\\`, `clock`, `exit`, `getc` | `cls` |
+| Go | Exact match | _none_ | _none_ |
+| Python | 5 missing | `;`, `[`, `]`, `exit`, `getc` | _none_ |
+| Ruby | 5 missing | `;`, `[`, `]`, `exit`, `getc` | _none_ |
+| Racket | 4 missing | `(`, `)`, `clock`, `exit` | _none_ |
+| Dart | 8 missing | `(`, `)`, `;`, `[`, `]`, `clock`, `exit`, `getc` | _none_ |
 
 ## Notes
 
 - Deno/Node/Bun all delegate to the same `typescript/core` engine/compiler/opcode layer, so they share one primitive set.
-- Go includes the standard `OP_*` constants and symbols for nearly all words, but has no `\\`/RAT word.
-- Python and Ruby are older F♭m-level interpreters; both currently omit `getc`, `exit`, explicit `;`, and quote opcodes `[ ]`, and `\\`.
+- Go now matches the TypeScript core primitive set.
+- Python and Ruby are older F♭m-level interpreters; both currently omit `getc`, `exit`, explicit `;`, and quote opcodes `[ ]`.
 - Racket provides `getc` but intentionally lacks stack stash/fetch primitives `(` and `)` in its symbol table.
-- Dart is currently the furthest from parity and also defines non-canonical `cls` alias in addition to `clr`.
+- Dart is currently the furthest from parity among major runtimes in this audit.
 
 ## Repro command
 

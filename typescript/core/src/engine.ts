@@ -657,12 +657,6 @@ export class Engine {
     }, OpCodes.PRN);
 
     this.defineSystem(() => {
-      const q = this.pop();
-      const p = this.pop();
-      console.log(Number(p)/Number(q));
-    }, OpCodes.RAT);
-
-    this.defineSystem(() => {
       this.push(BigInt(this.platform.now()));
     }, OpCodes.CLOCK);
 
