@@ -244,7 +244,7 @@ defineSystem('~', bnot)
 systemOps = op
 
 def unescape(text):
-  return text.replace('\\n', '\n').replace('\\s', ' ')
+  return text.replace('\\n', '\n').replace('\\s', ' ').replace('\\0', '\0')
 
 def number(text):
   text = text.strip("_")

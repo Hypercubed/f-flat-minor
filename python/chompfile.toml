@@ -46,7 +46,7 @@ run = '''
   shopt -s globstar
   for f in ../ff/**/*.test.ffp; do
     # Preprocess with Go, then run with Python
-    ../go/build/run --preprocess "$f" | python3 ./execute.py
+    ../go/build/run --preprocess --in "$f" | python3 ./execute.py
   done
 '''
 
@@ -62,7 +62,7 @@ validation = 'none'
 display = 'status-only'
 run = '''
   if [ -f ${DEP%.*}.ffp ]; then
-    ../deno/build/preprocess ${DEP%.*}.ffp | ${{BIN}} | cmp - $DEP -s && ${{CHECK}};
+    ../deno/build/ff-preprocess ${DEP%.*}.ffp | ${{BIN}} | cmp - $DEP -s && ${{CHECK}};
   fi
   if [ -f ${DEP%.*}.ff ]; then
     cat ${DEP%.*}.ff | ${{BIN}} | cmp - $DEP -s && ${{CHECK}};
