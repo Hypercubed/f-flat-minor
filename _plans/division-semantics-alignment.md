@@ -19,10 +19,10 @@ Investigation on 2026-03-24 found that the runtimes did not all agree on divisio
 negative operands.
 
 - Deno/Node/Bun already implement the desired pair through the shared TypeScript core.
-- Python truncates `/` toward zero, but `%` still uses Python's divisor-signed modulo.
+- Python is now aligned in [`python/execute.py`](python/execute.py): it uses truncate-toward-zero division and matching remainder semantics via an integer-only helper, eliminating the prior large-integer float-conversion risk.
 - Racket truncates `/` toward zero, but `%` still uses `modulo`, which is also divisor-signed.
 - Go is already aligned with the desired semantics: `/` uses `big.Int.Quo`, `%` uses
-  `big.Int.Rem`, and regression coverage already exists in `go/src/engine/engine_test.go`.
+  `big.Int.Rem`, and regression coverage already exists in [`go/src/engine/engine_test.go`](go/src/engine/engine_test.go).
 - Ruby uses `/` and `%` directly on `Integer`, which gives floor division/modulo for negative operands.
 
 This mismatch is now documented in [README.md](/home/jmh/workspace/projects/f-flat-minor/README.md)
