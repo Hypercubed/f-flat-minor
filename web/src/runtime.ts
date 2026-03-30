@@ -49,28 +49,6 @@ function resolve(...parts: string[]): string {
   return normalizePath(joined);
 }
 
-function relative(from: string, to: string): string {
-  const fromParts = normalizePath(from).split("/").filter(Boolean);
-  const toParts = normalizePath(to).split("/").filter(Boolean);
-
-  let commonLength = 0;
-  const minLength = Math.min(fromParts.length, toParts.length);
-  
-  for (let i = 0; i < minLength; i++) {
-    if (fromParts[i] === toParts[i]) {
-      commonLength++;
-    } else {
-      break;
-    }
-  }
-
-  const upCount = fromParts.length - commonLength;
-  const remainingTo = toParts.slice(commonLength);
-
-  const parts = Array(upCount).fill("..").concat(remainingTo);
-  return parts.join("/") || ".";
-}
-
 export function createPreprocessHost(files: VirtualFiles): PreprocessHost {
   return {
     readTextFile(path: string) {
@@ -92,7 +70,6 @@ export function createPreprocessHost(files: VirtualFiles): PreprocessHost {
       },
       dirname,
       resolve,
-      relative,
     },
   };
 }
