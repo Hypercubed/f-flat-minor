@@ -110,39 +110,16 @@ mise x -- node node/bin/ff-run.ts -t --trace-format jsonl <file>.ffp
 
 ## Rewriting techniques
 
-### `q< X q>` → `[ X ] dip`
-
-The pattern `q< X q>` (push to queue, operate, pop) is equivalent to `[ X ] dip`.
-
-**Collapsing pattern**: `dup q< [ X ] dip q>` can become `dup [ [ X ] dip ] dip` — the
-outer `q<`/`q>` is now balanced at the same level as `dip`'s internals.
-
-**Apply inside-out**: when nested `q< X q>` pairs exist, collapse the innermost first,
-then absorb outward. Example:
-
-```
-q< [ 2 * 1 - [ over sqr over sqr ] dip ] dip q>
-```
-
-### Finding no-ops
-
-- `q> q<` on the same value is a no-op — remove both.
-- `over sqr over sqr` squares the top two elements; extract as `sqr2: over sqr over sqr ;`.
-- Core words may already express combined ops:
-  - `rot swap` == `bury`
-  - `swap swapd` == `bury`
-  - `swapd swap` == `dig`
-  - `dupd swap` == `over`
-  - `swap drop` == `nip`
-  - `swap over` == `tuck`
-
-### Extracting repeated patterns
-
-- Inline sequences that appear in multiple words or in different parts of the same word
-  should be named and extracted.
-- Keep helpers focused on one stack transform.
-- Prefer `_prefix` for module-scoped helpers, `__` for truly local words.
-- Math helpers that could be reused (like `sqr2`) belong in `arith.ffp`.
+- Use `_docs/stack-rewrites-and-annotations.md` as the canonical guide for:
+  - per-line stack-effect comments
+  - queue-state annotation with `| queue`
+  - no-op removal
+  - core-word canonicalization
+  - `q< ... q>` to `dip` rewrites
+  - helper extraction vs reuse
+  - full stack-effect verification before accepting a rewrite
+- For substantial refactors, follow that document’s workflow: annotate first, rewrite second,
+  then verify with tests.
 
 ## Style and reliability notes
 
@@ -156,3 +133,4 @@ q< [ 2 * 1 - [ over sqr over sqr ] dip ] dip q>
 
 - Language examples: `_docs/fbm-by-example.md`
 - Stack notation: `_docs/stack-notation.md`
+- Stack rewrites and annotations: `_docs/stack-rewrites-and-annotations.md`

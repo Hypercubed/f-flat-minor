@@ -135,6 +135,7 @@ Reusable agent workflows have been extracted into local skills:
 - `.agent/skills/ff-euler-ffp/SKILL.md`
 - `.agent/skills/ff-library-web-refactor/SKILL.md`
 - `.agent/skills/ff-math-internal-naming/SKILL.md` (see `_docs/math-naming-internal.md`)
+- `.agent/skills/ff-lib-word-rankings/SKILL.md` (see `_docs/ff-lib-word-definition-rankings.md`)
 
 Use these when the task involves:
 
@@ -143,6 +144,7 @@ Use these when the task involves:
 - Refactoring reusable words into `ff/lib/*.ffp`
 - Wiring examples/libs into the web playground
 - Defining internal math functions with proper naming conventions
+- Regenerating the ff/lib word definition rankings table
 
 ## Plans
 

@@ -30,15 +30,12 @@ __tail_loop:
     [ __newq_stack ] dip
     swapd
     [ [ __u2_newp ] dip ] dip
-    swapd
-    swap
+    dig
     __tail_loop
   ]
   [
-    drop
-    drop
-    dig
-    drop
+    drop2
+    [ nip ] dip
   ]
   branch
 ; /* u v u2 p q odd v2 __tail_loop == u v p q */
@@ -59,11 +56,11 @@ __seed_taylor_state: /* u v odd */
   [ swapd ] dip                               /* u v u² 1 (2*odd+1) (2*odd-1) v² */
 ; /* u v odd __seed_taylor_state == u v u2 p q odd v2 */
 
-__sqr2: * [ * ] dip ; .inline /* a b __sqr2 == a b a² b² */
+__mul2_pairs: * [ * ] dip ; .inline /* a b c d __mul2_pairs == a*b c*d */
 
 __scale_tail_result:
   swapd
-  __sqr2
+  __mul2_pairs
 ; .inline /* u v p q __scale_tail_result == p q */
 
 __parts:
