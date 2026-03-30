@@ -1,14 +1,15 @@
 /* String output */
 
-__prints: dup [ q< __prints q> putc ] ? ; /* 0 n* __prints == 0 {prints chars} */
-prints: __prints drop ; /* 0 n* prints == {prints chars} */
-println: prints cr ; /* 0 n* println == {prints chars, char(10)} */
+__prints: dup [ q< __prints q> putc ] ? ;   /* 0 n* __prints == 0 {prints chars} */
+prints: __prints drop ;                      /* 0 n* prints == {prints chars} */
+println: prints cr ;                         /* 0 n* println == {prints chars, newline} */
 
-__lens: dup [ q< __lens q> drop 1 + ] ? ;
+__lens: dup [ q< __lens q> drop 1 + ] ? ;    /* 0 n* __lens == 0 n */
 
-sprint: 0 swap eval prints ;
-sprintln: sprint cr ;
-slen: 0 swap eval __lens ;
-scat: compose ;
-sjoin: swap compose compose ;
-cjoin: swap cons compose ;
+sprint: 0 swap eval prints ;                 /* [S] sprint == {prints string} */
+sprintln: sprint cr ;                        /* [S] sprintln == {prints string, newline} */
+slen: 0 swap eval __lens ;                   /* [S] slen == n */
+
+scat: compose ;                              /* [A] [B] scat == [A+B] */
+sjoin: swap compose compose ;                /* [A] [Sep] [B] sjoin == [A Sep B] */
+cjoin: swap cons compose ;                   /* [A] c [B] cjoin == [A c B] */

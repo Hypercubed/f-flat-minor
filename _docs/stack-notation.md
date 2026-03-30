@@ -96,6 +96,18 @@ Within word bodies, use stack pictures without `==`:
   [ nip (_isqrt_newton) ] ? ;
 ```
 
+## One-Line Definitions
+
+For single-line word definitions, place the stack effect comment at the end of the line:
+
+```ff
+inc: 1 + ;           /* n inc == n' */
+dec: 1 - ;           /* n dec == n' */
+square: dup * ;      /* n square == n² */
+```
+
+This keeps short definitions compact while maintaining documentation.
+
 ## Examples
 
 ```ff

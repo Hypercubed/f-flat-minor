@@ -4,9 +4,9 @@
 
 Double-quoted strings (e.g. `"hello"`) are compiler sugar for a **quote that pushes character codes**. They are first-class values — a single pointer on the stack, like any other quote.
 
-\```
+```
 "hi"  ≡  [ 'h' 'i' ]  ≡  [ 104 105 ]
-\```
+```
 
 The empty string is `0` — the same `0` that already means NOP/nil throughout the language. This gives strings a natural null terminator with no new machinery.
 
@@ -16,89 +16,117 @@ The empty string is `0` — the same `0` that already means NOP/nil throughout t
 
 Strings are built from **cons cells**, directly analogous to Lisp. Each cons cell is a two-instruction quote body:
 
-\```
+```
 x y cons  →  ptr,  body: [ PUSH x, CALL y ]
-\```
+```
 
 A string is a linked chain of cons cells terminating at `0`:
 
-\```
+```
 "hi"  →  ptrH,  body: [ PUSH 104, CALL ptrI ]
           ptrI,  body: [ PUSH 105, CALL 0    ]
-\```
+```
 
 Eval'ing the head pointer walks the chain, pushing each character code in order.
 
 ---
 
-## New Primitives (opcodes)
-
-Two new system opcodes are added:
+## Primitives (opcodes)
 
 ### `cons` — construct a cell
 
-\```
+```
 x y cons  →  ptr
-\```
+```
 
 Allocates a new quote whose body pushes `x` then calls `y`. The value `x` is always
 treated as **data** (a push), never as a call. `y` is the tail — either another cons
 cell pointer or `0`.
 
-### `concat` — compose two quotes
+**Status: ✅ Implemented** (system opcode)
 
-\```
-ptrA ptrB concat  →  ptr
-\```
+### `compose` / `concat` — compose two quotes
+
+```
+ptrA ptrB compose  →  ptr
+```
 
 Allocates a new quote equivalent to `[ ptrA eval ptrB eval ]`. When eval'd, runs
-`ptrA` then `ptrB` in sequence. This is **function composition**, not list walking —
-no `first`/`rest` needed.
+`ptrA` then `ptrB` in sequence. This is **function composition**, not list walking.
+
+The plan originally called this `concat`, but the implementation uses `compose` 
+(defined in `ff/lib/seq/seq.ffp` as `[ [eval] dip eval ] cons cons`).
+
+**Status: ✅ Implemented** (defined word in seq.ffp)
 
 ---
 
 ## Compiler Sugar
 
-`"hello"` is desugared at compile time to a right-to-left chain of `swons` calls
-terminating at `0`:
+```
+"hello"  →  desugared at compile time to 0 'o' swons 'l' swons 'l' swons 'e' swons 'h' swons
+```
 
-\```
-"hi"  →  0 105 swons 104 swons
-\```
+So eval'ing the result pushes characters left to order: `h`, `e`, `l`, `l`, `o`.
 
-So eval'ing the result pushes `104` then `105` — left to right. ✓
+**Status: ❌ NOT IMPLEMENTED** - No implementation currently desugars `"..."` syntax.
+Users must manually construct strings using `0` and `cons`/`swons`:
+```
+0 'i' swons 'h' swons   /* creates "hi" */
+```
 
 ---
 
 ## Defined Words
 
-These require no new opcodes — all derived from `cons`, `concat`, and `0`:
+These are implemented in `ff/lib/string/str.ffp`:
 
-| Word         | Definition              | Stack effect       |
-|--------------|-------------------------|--------------------|
-| `null`       | `0 =`                   | `ptr -- bool`      |
-| `swons`      | `swap cons`             | `y x -- ptr`       |
-| `unit`       | `0 swons`               | `x -- ptr`         |
-| `strnil`     | `0`                     | `-- ptr`           |
-| `strconcat`  | `concat`                | `ptrA ptrB -- ptr` |
-| `strappend`  | `unit concat`           | `ptr char -- ptr`  |
-| `strprepend` | `swap unit swap concat` | `char ptr -- ptr`  |
-| `prints`     | `dup eval _prints drop` | `ptr --`           |
-| `println`    | `prints cr`             | `ptr --`           |
+| Word      | Definition               | Stack effect                        |
+|-----------|--------------------------|-------------------------------------|
+| `prints`  | `__prints drop`          | `0 n* prints == {prints chars}`     |
+| `println` | `prints cr`              | `0 n* println == {prints chars, nl}`|
+| `sprint`  | `0 swap eval prints`     | `[S] sprint == {prints string}`     |
+| `sprintln`| `sprint cr`              | `[S] sprintln == {prints s, nl}`    |
+| `slen`    | `0 swap eval __lens`     | `[S] slen == n`                     |
+| `scat`    | `compose`                | `[A] [B] scat == [A+B]`             |
+| `sjoin`   | `swap compose compose`   | `[A] [Sep] [B] sjoin == [A Sep B]`  |
+| `cjoin`   | `swap cons compose`      | `[A] c [B] cjoin == [A c B]`        |
 
-`prints` bridges old and new: eval'ing a cons-string flattens chars onto the stack
-above the `0` tail, which the existing `_prints` sentinel loop already handles
-correctly.
+### Core seq words (from `ff/lib/seq/seq.ffp`):
+
+| Word     | Definition              | Stack effect             |
+|----------|-------------------------|--------------------------|
+| `unit`   | `0 cons`                | `x unit == [x]`          |
+| `swons`  | `swap cons` (use inline)| `y x swons == ptr`       |
 
 ---
 
-## Deferred (requires `first`/`rest`)
+## Deferred (requires `first`/`rest` opcodes)
 
-| Word       | Stack effect      |
-|------------|-------------------|
-| `strlen`   | `ptr -- n`        |
-| `strequal` | `ptr ptr -- bool` |
+| Word        | Stack effect      | Notes                                    |
+|-------------|-------------------|------------------------------------------|
+| `strlen`    | `[S] -- n`        | Non-destructive length (current `slen` uses eval) |
+| `strequal`  | `[A] [B] -- flag` | Deep equality without eval'ing           |
 
 These need to **inspect** a cons chain without eval'ing it flat. They are
 straightforward to add once `first` and `rest` opcodes are introduced, following
 the same recursive pattern as Lisp's `car`/`cdr`.
+
+---
+
+## Usage Examples
+
+```ff
+/* Building strings manually */
+0 '!' swons 'd' swons 'l' swons 'r' swons 'o' swons 'W' swons ' ' swons 'o' swons 'l' swons 'l' swons 'e' swons 'H' swons
+sprint   /* prints: Hello World! */
+
+/* Concatenation */
+[ 'Hello' ] [ 'World' ] scat sprintln
+
+/* Join with separator */
+[ 'foo' ] [ '-' ] [ 'bar' ] sjoin sprintln   /* prints: foo-bar */
+
+/* Join with char separator */
+[ 'path' ] '/' [ 'to' ] [ 'file' ] cjoin sprintln   /* prints: path/to/file */
+```
