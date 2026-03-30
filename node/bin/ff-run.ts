@@ -12,39 +12,19 @@ import { disassembleIr, printFfCompatibleIr, printHighLevelIr, printLowLevelIr }
 import { Optimizer } from "../src/optimizer.ts";
 import { Preprocessor } from "../src/preprocess.ts";
 import { readStdin } from "../src/read.ts";
+import type { RunArgs } from "../src/ff-run-args.ts";
+import { buildParseArgsConfig, normalizeRunArgs } from "../src/ff-run-args.ts";
 
 const PRELUDE = path.resolve(
   path.dirname(fileURLToPath(import.meta.url)),
   "../../ff/lib/prelude.ffp",
 );
 
-interface Arguments {
-  file?: string;
-  preprocess?: boolean;
-  stats?: boolean;
-  validate?: boolean;
-  hlir?: boolean;
-  llir?: boolean;
-  opt?: boolean;
-  ir?: boolean;
-  disassemble?: boolean;
-  enc?: boolean;
-  trace?: boolean;
-  "trace-format"?: string;
-  "trace-verbose"?: boolean;
-  "trace-queue-max"?: number;
-  "trace-stack-max"?: number;
-  base?: number;
-  profile?: boolean;
-  prelude?: boolean;
-  "preprocessor-prelude"?: boolean;
-}
-
 function red(text: string) {
   return process.stderr.isTTY ? `\x1b[31m${text}\x1b[0m` : text;
 }
 
-export function run(argv: Arguments) {
+export function run(argv: RunArgs) {
   const textDecoder = new TextDecoder();
   const textEncoder = new TextEncoder();
   const filename = argv.file || "-";
@@ -165,40 +145,14 @@ export function run(argv: Arguments) {
 }
 
 if (import.meta.main) {
+  const options = buildParseArgsConfig();
   const { values, positionals } = parseArgs({
     args: process.argv.slice(2),
-    options: {
-      file: { type: "string", short: "f" },
-      preprocess: { type: "boolean", short: "E", default: true },
-      stats: { type: "boolean", short: "s", default: false },
-      validate: { type: "boolean", short: "V", default: true },
-      hlir: { type: "boolean", short: "h", default: false },
-      llir: { type: "boolean", short: "l", default: false },
-      opt: { type: "boolean", short: "O", default: false },
-      ir: { type: "boolean", short: "i", default: false },
-      disassemble: { type: "boolean", short: "d", default: false },
-      enc: { type: "boolean", short: "e", default: false },
-      trace: { type: "boolean", short: "t", default: false },
-      "trace-format": { type: "string", default: "human" },
-      "trace-verbose": { type: "boolean", default: false },
-      "trace-queue-max": { type: "string" },
-      "trace-stack-max": { type: "string" },
-      profile: { type: "boolean", short: "p", default: false },
-      "preprocessor-prelude": { type: "boolean", short: "P", default: false },
-      prelude: { type: "boolean", default: false },
-      base: { type: "string" },
-    },
+    options,
     allowPositionals: true,
     allowNegative: true,
   });
 
-  const argv: Arguments = {
-    ...values,
-    file: values.file || (typeof positionals[0] === "string" ? positionals[0] : "-"),
-    base: values.base ? Number(values.base) : undefined,
-    "trace-queue-max": values["trace-queue-max"] ? Number(values["trace-queue-max"]) : undefined,
-    "trace-stack-max": values["trace-stack-max"] ? Number(values["trace-stack-max"]) : undefined,
-  };
-
+  const argv = normalizeRunArgs(values, positionals);
   run(argv);
 }

@@ -18,6 +18,7 @@ export interface CompileArgs extends CommonArgs {
   ir?: boolean;
   llir?: boolean;
   disassemble?: boolean;
+  enc?: boolean;
   dc?: boolean;
   bc?: boolean;
   dump?: boolean;

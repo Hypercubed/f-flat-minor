@@ -3,29 +3,6 @@ import { red } from "https://deno.land/std@0.224.0/fmt/colors.ts";
 import { parseArgs } from "https://deno.land/std@0.224.0/cli/parse_args.ts";
 import * as path from "https://deno.land/std@0.224.0/path/mod.ts";
 
-interface Arguments {
-  file?: string;
-  preprocess?: boolean;
-  stats?: boolean;
-  validate?: boolean;
-  hlir?: boolean;
-  llir?: boolean;
-  opt?: boolean;
-  ir?: boolean;
-  disassemble?: boolean;
-  enc?: boolean;
-  trace?: boolean;
-  "trace-format"?: string;
-  "trace-verbose"?: boolean;
-  "trace-queue-max"?: number;
-  "trace-stack-max"?: number;
-  base?: number;
-  profile?: boolean;
-  prelude?: boolean;
-  "preprocessor-prelude"?: boolean;
-  [key: string]: unknown;
-}
-
 import { Compiler } from "../src/compiler.ts";
 import { Engine } from "../src/engine.ts";
 import { Preprocessor } from "../src/preprocess.ts";
@@ -33,12 +10,14 @@ import { readStdin } from "../src/read.ts";
 import { disassembleIr, printFfCompatibleIr, printHighLevelIr, printLowLevelIr } from "../src/ir.ts";
 import { Optimizer } from "../src/optimizer.ts";
 import { HEADER } from "../src/constants.ts";
+import type { RunArgs } from "../src/ff-run-args.ts";
+import { buildDenoParseArgsConfig, normalizeRunArgs } from "../src/ff-run-args.ts";
 
 const PRELUDE = path.fromFileUrl(
   new URL("../../ff/lib/prelude.ffp", import.meta.url),
 );
 
-export function run(argv: Arguments) {
+export function run(argv: RunArgs) {
   const textDecoder = new TextDecoder();
   const textEncoder = new TextEncoder();
   
@@ -155,30 +134,9 @@ export function run(argv: Arguments) {
 }
 
 if (import.meta.main) {
-  const argv = parseArgs(Deno.args, {
-    string: ["file", "base", "trace-format", "trace-queue-max", "trace-stack-max"],
-    boolean: ["preprocess", "stats", "validate", "hlir", "llir", "opt", "ir", "disassemble", "enc", "trace", "trace-verbose", "profile", "preprocessor-prelude", "prelude"],
-    default: { file: "-", preprocess: true },
-    alias: {
-      file: ["f"],
-      preprocess: ["E"],
-      stats: ["s"],
-      validate: ["V"],
-      hlir: ["h"],
-      llir: ["l"],
-      opt: ["O", "opt"],
-      ir: ["i"],
-      disassemble: ["d"],
-      enc: ["e"],
-      trace: ["t"],
-      "trace-format": ["T"],
-      profile: ["p"],
-      "preprocessor-prelude": ["P", "prelude"],
-    },
-  });
+  const config = buildDenoParseArgsConfig();
+  const argv = parseArgs(Deno.args, config);
   // Map first positional argument to file (parseArgs puts them in _)
-  if (argv._ && argv._.length > 0 && typeof argv._[0] === "string") {
-    argv.file = argv._[0] as string;
-  }
-  run(argv as Arguments);
+  const normalized = normalizeRunArgs(argv, argv._ as string[]);
+  run(normalized);
 }

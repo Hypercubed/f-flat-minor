@@ -41,23 +41,27 @@ Full pipeline runner for source code:
 
 Primary use: run `.ff` and `.ffp` source directly.
 
+> **Note:** The `ff-run` CLI interface is standardized across Deno, Node, and Bun. All three runtimes support the same flags, aliases, and behavior documented below.
+
 Common flags:
-- `-f, --file`
-- `-s, --stats`
-- `-V, --validate` / `--no-validate`
-- `-O, --opt`
-- `-h, --hlir`
-- `-l, --llir`
-- `-i, --ir` (FF-compatible IR text)
-- `-d, --disassemble`
-- `-e, --enc` (emit encoded bytecode with header instead of executing)
-- `-t, --trace`
-- `--trace-format` (`human` or `jsonl`)
-- `--trace-verbose`
-- `--trace-queue-max`
-- `--trace-stack-max`
-- `-p, --profile`
-- `--base`
+- `-f, --file` — Source file to run (or `-` for stdin)
+- `-s, --stats` — Print compilation and execution statistics
+- `-V, --validate` / `--no-validate` — Enable/disable IR validation (default: enabled)
+- `-O, --opt` — Run the optimizer before execution
+- `-h, --hlir` — Print high-level IR and exit
+- `-l, --llir` — Print low-level IR and exit
+- `-i, --ir` — Print FF-compatible IR text and exit
+- `-d, --disassemble` — Disassemble to bytecode and exit
+- `-e, --enc` — Emit encoded bytecode with header instead of executing
+- `-t, --trace` — Enable VM execution tracing
+- `-T, --trace-format` — Trace format: `human` or `jsonl` (default: `human`)
+- `--trace-verbose` — Include additional details in trace output
+- `--trace-queue-max` — Limit trace output for the queue
+- `--trace-stack-max` — Limit trace output for the stack
+- `-p, --profile` — Enable profiling output
+- `-E, --preprocess` / `--no-preprocess` — Enable/disable preprocessing (default: enabled)
+- `-P, --preprocessor-prelude, --prelude` — Load the preprocessor prelude macros
+- `--base` — Numeric base for output (default: 10)
 
 ### `bin/ff-compile.ts`
 
