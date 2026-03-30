@@ -9,6 +9,16 @@ validation = 'none'
 run = 'chomp -c $DEP build'
 
 [[task]]
+name = 'build'
+deps = [
+    ':build:deno',
+    ':build:bun',
+    ':build:dart'
+]
+serial = true
+display = 'none'
+
+[[task]]
 name = 'test:#'
 dep = '#/chompfile.toml'
 serial = true

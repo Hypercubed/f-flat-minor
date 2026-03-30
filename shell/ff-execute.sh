@@ -3,7 +3,7 @@ set -euo pipefail
 
 source "$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)/_ff-common.sh"
 
-DEFAULT_RUNNER="python"
+DEFAULT_RUNNER="bun"
 
 usage() {
   cat <<'EOF' >&2
@@ -16,12 +16,12 @@ Examples:
   ./shell/ff-execute.sh --run node -
 
 Runners:
-  python (default)
+  python
   ruby
   dart
   deno
   node
-  bun
+  bun (default)
   go
 
 Input:

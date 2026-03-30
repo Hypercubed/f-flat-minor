@@ -3,7 +3,7 @@ set -euo pipefail
 
 source "$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)/_ff-common.sh"
 
-DEFAULT_PREPROCESSOR="go"
+DEFAULT_PREPROCESSOR="bun"
 
 usage() {
   cat <<'EOF' >&2
@@ -15,9 +15,9 @@ Examples:
   ./shell/ff-preprocess.sh --pp deno ff/hello.ffp
 
 Preprocessors:
-  go (default)
+  go
   deno
-  bun
+  bun (default)
   node
 
 Output:

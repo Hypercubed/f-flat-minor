@@ -31,21 +31,6 @@ template = 'cmp'
 cmp = '../ff/example_v0.out'
 
 [[task]]
-display = 'none'
-name = 'build-deno-compiler'
-run = 'chomp -c ../deno/ :disassemble'
-
-[[task]]
-display = 'none'
-name = 'build-go-precompiler'
-run = 'chomp -c ../go/ build:preprocess'
-
-[[task]]
-display = 'none'
-name = 'build-deno-preprocessor'
-run = 'chomp -c ../deno/ build:preprocess'
-
-[[task]]
 name = 'test'
 deps = [
     ':build',
@@ -58,8 +43,6 @@ display = 'none'
 [[task]]
 name = 'test:tap'
 deps = [
-    'build-go-precompiler',
-    'build-deno-preprocessor',
     ':build',
 ]
 serial = true

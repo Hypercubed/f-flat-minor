@@ -4,8 +4,8 @@ set -euo pipefail
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 REPO_ROOT="$(cd "$SCRIPT_DIR/.." && pwd)"
 
-DEFAULT_RUNNER="python"
-DEFAULT_PREPROCESSOR="go"
+DEFAULT_RUNNER="bun"
+DEFAULT_PREPROCESSOR="bun"
 
 usage() {
   cat <<'EOF' >&2
@@ -19,18 +19,18 @@ Examples:
   ./shell/ff-run.sh --run node --pp deno ff/hello.ffp
 
 Runners:
-  python (default)
+  python
   ruby
   dart
   deno
   node
-  bun
+  bun (default)
   go
 
 Preprocessors:
-  go (default)
+  go
   deno
-  bun
+  bun (default)
   node
 
 Note:

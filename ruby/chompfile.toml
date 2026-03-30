@@ -12,16 +12,6 @@ BIN = './execute.rb'
 NC = '\033[0m'
 
 [[task]]
-display = 'none'
-name = 'build-go-precompiler'
-run = 'chomp -c ../go/ build:preprocess'
-
-[[task]]
-display = 'none'
-name = 'build-deno-preprocessor'
-run = 'chomp -c ../deno/ build:preprocess'
-
-[[task]]
 name = 'interpret'
 run = 'cat ../ff/example.ff | ${{BIN}}'
 template = 'cmp'
@@ -40,10 +30,6 @@ display = 'none'
 
 [[task]]
 name = 'test:tap'
-deps = [
-    'build-go-precompiler',
-    'build-deno-preprocessor',
-]
 serial = true
 invalidation = 'always'
 validation = 'none'
@@ -58,8 +44,6 @@ run = '''
 name = 'ff'
 deps = [
     '../ff/##.out',
-    'build-go-precompiler',
-    'build-deno-preprocessor',
 ]
 serial = true
 invalidation = 'always'
