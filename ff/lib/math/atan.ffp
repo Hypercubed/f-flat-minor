@@ -14,8 +14,7 @@
  */
 
 __num_zero:
-  drop
-  drop
+  drop2
   drop
   0
 ; /* n u v (u == 0) __num_zero == 0 */

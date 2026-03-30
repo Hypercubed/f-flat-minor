@@ -13,11 +13,11 @@ __terms: 20 + n->K ; /* n __terms == ceil(6*(n+20)/5)+10 */
  * Negative odd values need one extra decrement to behave like floor(x/2).
  */
 __floor_half:
-  dup 0 < q<
-  dup 2 / q<
-  2 %
-  nz?
-  q> q>
+  dup 0 < [
+  dup 2 / [
+    2 %
+    nz?
+  ] dip ] dip
   dig
   and
   [ -- ] ?
@@ -63,24 +63,24 @@ __square_loop:
  */
 __series_step:
   dup
-  q> dup q< *
-  swap q<
-  swap dup q< swap
-  dup q<
-  dig q<
+  q> dup [ *
+  swap [
+  swap dup [
+  swap dup [
+  dig [
   dig * +
-  q> q> *
-  q> q> q> q> dup q< swap q< swap q< *
-  q> ++
+  ] dip ] dip *
+  ] dip ] dip ] dip q> dup q< swap q< swap [ * ]
+  dip ++
 ; .unsafe /* p q t k __series_step == p' q' t' k' */
 
 __series_loop:
   dup
   [
     --
-    q> q> dig q< q< q<
-    __series_step
-    q> q> q> bury q< q<
+    q> q> dig [
+    [ [ __series_step ] dip ] dip
+    ] dip bury q< q<
     __series_loop
   ]
   [ drop ]
@@ -88,24 +88,24 @@ __series_loop:
 ; .unsafe /* p q t k rem __series_loop == p q t k */
 
 __series:
-  rot q< q<
-  q> q> dup q< swap q<
-  swap q< 1 1 rot 1 q>
+  rot
+  dup [ swap [
+  swap [ 1 1 rot 1 ] dip
   __series_loop
   drop2
-  q> q> drop2
+  ] dip ] dip drop2
 ; /* u v K __series == p q */
 
 __parts:
-  q< q<
+  [ [
   __terms
-  q> q>
-  rot q< swap
+  ] dip ] dip
+  rot [ swap
   0 __reduce
-  q>
-  swap q<
+  ] dip
+  swap [
   __series
-  q>
+  ] dip
   __square_loop
 ; /* n u v __parts == p q */
 

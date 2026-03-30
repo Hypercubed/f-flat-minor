@@ -85,6 +85,10 @@ Bad annotations:
 
 ## Rewrite discipline
 
+All whitespace — including newlines — is a word boundary. "Adjacent" means two words with only
+whitespace between them, regardless of line breaks. All rewrite rules in this document apply across
+lines.
+
 Every rewrite must preserve the full stack effect, not just the visible top few words.
 
 Before accepting a rewrite:
@@ -104,6 +108,9 @@ These can be removed when they operate on the same value / same local stack regi
 - `swap swap`
 - `q< q>`
 - `q> q<`
+- `dup drop`
+- `++ --`
+- `-- ++`
 
 These can be collapsed to named words:
 
@@ -222,10 +229,31 @@ The rewrite is a direct text substitution:
 Apply this mechanically at every nesting level without analyzing stack effects. The equivalence is
 definitional.
 
+When a `q< ... q>` pair spans multiple lines, both the opening `q<` and the closing `q>` must be
+replaced. Do not only edit the line containing `q<` — the `q>` on a later line must also become
+`] dip`.
+
+For words marked `.unsafe`, the substitution can still be applied to innermost pairs. Work
+inside-out and stop when no matching pairs remain — the leftover `q<`/`q>` are the ones that share
+queue state with the caller and must stay as-is.
+
+### Identifying innermost pairs
+
+When tracing pairs, match `q<` with its closest unmatched `q>`. Multiple queue operations on the
+same line can belong to different pairs — do not treat all `q>` on a line as belonging to the same
+pair. A `q>` that is the closing half of a pair is not "between" that pair.
+
+A pair is innermost if and only if the content between its `q<` and `q>` contains no other `q<` or
+`q>`. If the content has any queue operations, the pair is not innermost — find a different one.
+
 ### Apply inside-out
 
-If multiple nested `q< ... q>` regions exist, collapse the innermost one first, then re-evaluate
-the outer layer.
+If multiple nested `q< ... q>` regions exist, collapse the innermost one first, then re-scan for
+the next innermost pair. Each replacement changes the content between remaining pairs, so always
+re-evaluate after every step.
+
+Only replace what is between the pair's own `q<` and `q>`. When pairs are adjacent (not nested),
+each pair's content is separate — do not pull content from an adjacent pair into the replacement.
 
 ## Branch simplifications
 
