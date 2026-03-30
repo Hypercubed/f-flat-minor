@@ -1,0 +1,62 @@
+#!/usr/bin/env bash
+set -euo pipefail
+
+SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+REPO_ROOT="$(cd "$SCRIPT_DIR/.." && pwd)"
+
+list_commands() {
+  local helper helper_name command
+
+  for helper in "$SCRIPT_DIR"/ff-*.sh; do
+    [ -e "$helper" ] || continue
+
+    helper_name="$(basename "$helper")"
+    command="${helper_name#ff-}"
+    command="${command%.sh}"
+
+    printf '  %s\n' "$command"
+  done | sort
+}
+
+usage() {
+  cat >&2 <<EOF
+Usage:
+  ff <command> [args...]
+
+Commands:
+$(list_commands)
+
+Each subcommand forwards all remaining arguments to the matching
+shell/ff-<command>.sh helper. Use "ff <command> --help" for details.
+EOF
+}
+
+if [ "$#" -lt 1 ]; then
+  usage
+  exit 1
+fi
+
+command="$1"
+shift
+
+case "$command" in
+  --help|-h|help)
+    usage
+    exit 0
+    ;;
+esac
+
+helper="$SCRIPT_DIR/ff-$command.sh"
+
+if [ ! -f "$helper" ]; then
+  printf 'Unknown command: %s\n\n' "$command" >&2
+  usage
+  exit 1
+fi
+
+if [ ! -x "$helper" ]; then
+  printf 'Subcommand is not executable: %s\n' "$helper" >&2
+  exit 1
+fi
+
+exec "$helper" "$@"

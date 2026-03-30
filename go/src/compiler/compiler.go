@@ -10,6 +10,7 @@ import (
 	"path"
 	"path/filepath"
 	"regexp"
+	"strconv"
 	"strings"
 )
 
@@ -292,16 +293,45 @@ func Tokenize(code string) []string {
 	return tokens
 }
 
+func hex2char(hex string) string {
+	n, err := strconv.ParseUint(hex, 16, 32)
+	if err != nil {
+		return "[hex error: " + hex + "]"
+	}
+	if n <= 0xffff {
+		return string(rune(n))
+	} else if n <= 0x10ffff {
+		adjusted := n - 0x10000
+		high := 0xd800 | (adjusted >> 10)
+		low := 0xdc00 | (adjusted & 0x3ff)
+		return string(rune(high)) + string(rune(low))
+	}
+	return "[hex error: " + hex + "]"
+}
+
 func convertEsc2Char(str string) string {
+	// Handle \UXXXXXXXX (8 hex digits) first
+	reU := regexp.MustCompile(`\\U([0-9a-fA-F]{8})`)
+	str = reU.ReplaceAllStringFunc(str, func(match string) string {
+		return hex2char(match[2:])
+	})
+	// Handle \uXXXX (4 hex digits)
+	reU4 := regexp.MustCompile(`\\u([0-9a-fA-F]{4})`)
+	str = reU4.ReplaceAllStringFunc(str, func(match string) string {
+		return hex2char(match[2:])
+	})
+	// Handle standard escapes
 	str = strings.Replace(str, "\\0", "\u0000", -1)
 	str = strings.Replace(str, "\\b", "\b", -1)
-	str = strings.Replace(str, "\\n", "\n", -1)
 	str = strings.Replace(str, "\\t", "\t", -1)
+	str = strings.Replace(str, "\\n", "\n", -1)
+	str = strings.Replace(str, "\\v", "\v", -1)
+	str = strings.Replace(str, "\\f", "\f", -1)
 	str = strings.Replace(str, "\\r", "\r", -1)
 	str = strings.Replace(str, "\\\"", "\"", -1)
 	str = strings.Replace(str, "\\'", "'", -1)
-	str = strings.Replace(str, "\\\\", "\\", -1)
 	str = strings.Replace(str, "\\s", " ", -1)
+	str = strings.Replace(str, "\\\\", "\\", -1)
 
 	return str
 }

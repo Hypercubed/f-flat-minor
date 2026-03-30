@@ -8,10 +8,11 @@ DEFAULT_RUNNER="bun"
 usage() {
   cat <<'EOF' >&2
 Usage:
-  ./shell/ff-execute.sh [--run <runner>] <file.ff|->
+  ./shell/ff-execute.sh [--quiet] [--run <runner>] <file.ff|->
 
 Examples:
   ./shell/ff-execute.sh ff/example.ff
+  ./shell/ff-execute.sh --quiet ff/example.ff
   ./shell/ff-execute.sh --run ruby ff/example.ff
   ./shell/ff-execute.sh --run node -
 
@@ -40,6 +41,10 @@ fi
 
 while [ "$#" -gt 0 ]; do
   case "$1" in
+    --quiet)
+      export FF_SHELL_TRACE=0
+      shift
+      ;;
     --run)
       [ "$#" -ge 2 ] || die "Missing value for --run"
       runner="$2"

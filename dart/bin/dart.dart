@@ -44,21 +44,77 @@ BigInt truncMod(BigInt lhs, BigInt rhs) {
   return lhs - rhs * q;
 }
 
+String _hex2char(String hex) {
+  final n = int.parse(hex, radix: 16);
+  if (n <= 0xffff) {
+    return String.fromCharCode(n);
+  } else if (n <= 0x10ffff) {
+    final adjusted = n - 0x10000;
+    final high = 0xd800 | (adjusted >> 10);
+    final low = 0xdc00 | (adjusted & 0x3ff);
+    return String.fromCharCode(high) + String.fromCharCode(low);
+  } else {
+    return '[hex error: $hex]';
+  }
+}
+
 String unescapeQuotedString(String text) {
   final out = StringBuffer();
   for (var i = 0; i < text.length; i++) {
     final ch = text[i];
     if (ch == r'\' && i + 1 < text.length) {
       final next = text[++i];
+      // Handle \UXXXXXXXX (8 hex digits)
+      if ((next == 'U' || next == 'u') && i + 8 <= text.length) {
+        final hex = text.substring(i + 1, i + 9);
+        if (RegExp(r'^[0-9a-fA-F]{8}$').hasMatch(hex)) {
+          out.write(_hex2char(hex));
+          i += 8;
+          continue;
+        }
+      }
+      // Handle \uXXXX (4 hex digits)
+      if ((next == 'u') && i + 4 <= text.length) {
+        final hex = text.substring(i + 1, i + 5);
+        if (RegExp(r'^[0-9a-fA-F]{4}$').hasMatch(hex)) {
+          out.write(_hex2char(hex));
+          i += 4;
+          continue;
+        }
+      }
       switch (next) {
+        case '0':
+          out.writeCharCode(0);
+          break;
+        case 'b':
+          out.write('\b');
+          break;
+        case 't':
+          out.write('\t');
+          break;
         case 'n':
           out.write('\n');
+          break;
+        case 'v':
+          out.write('\v');
+          break;
+        case 'f':
+          out.write('\f');
+          break;
+        case 'r':
+          out.write('\r');
+          break;
+        case "'":
+          out.write("'");
+          break;
+        case '"':
+          out.write('"');
           break;
         case 's':
           out.write(' ');
           break;
-        case '0':
-          out.writeCharCode(0);
+        case '\\':
+          out.write('\\');
           break;
         default:
           out.write(next);

@@ -1,8 +1,7 @@
 #!/usr/bin/env bash
 set -euo pipefail
 
-SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
-REPO_ROOT="$(cd "$SCRIPT_DIR/.." && pwd)"
+source "$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)/_ff-common.sh"
 
 DEFAULT_RUNNER="bun"
 DEFAULT_PREPROCESSOR="bun"
@@ -10,10 +9,11 @@ DEFAULT_PREPROCESSOR="bun"
 usage() {
   cat <<'EOF' >&2
 Usage:
-  ./shell/ff-run.sh [--run <runner>] [--pp <preprocessor>] <file.ff|file.ffp>
+  ./shell/ff-run.sh [--quiet] [--run <runner>] [--pp <preprocessor>] <file.ff|file.ffp>
 
 Examples:
   ./shell/ff-run.sh ff/example.ff
+  ./shell/ff-run.sh --quiet ff/example.ff
   ./shell/ff-run.sh ff/hello.ffp
   ./shell/ff-run.sh --run ruby ff/hello.ffp
   ./shell/ff-run.sh --run node --pp deno ff/hello.ffp
@@ -39,25 +39,6 @@ Note:
 EOF
 }
 
-die() {
-  printf '%s\n' "$*" >&2
-  exit 1
-}
-
-is_runner() {
-  case "${1-}" in
-    python|ruby|dart|deno|node|bun|go) return 0 ;;
-    *) return 1 ;;
-  esac
-}
-
-is_preprocessor() {
-  case "${1-}" in
-    go|deno|bun|node) return 0 ;;
-    *) return 1 ;;
-  esac
-}
-
 runner="$DEFAULT_RUNNER"
 preprocessor="$DEFAULT_PREPROCESSOR"
 preprocessor_explicit=false
@@ -70,6 +51,10 @@ fi
 
 while [ "$#" -gt 0 ]; do
   case "$1" in
+    --quiet)
+      export FF_SHELL_TRACE=0
+      shift
+      ;;
     --run)
       [ "$#" -ge 2 ] || die "Missing value for --run"
       runner="$2"
@@ -130,8 +115,19 @@ if ! is_preprocessor "$preprocessor"; then
 fi
 
 if [ "$file_type" = "ff" ] && ! $preprocessor_explicit; then
+  print_command "$REPO_ROOT/shell/ff-execute.sh" --run "$runner" "$file"
   exec "$REPO_ROOT/shell/ff-execute.sh" --run "$runner" "$file"
 fi
 
+print_command \
+  "$REPO_ROOT/shell/ff-preprocess.sh" \
+  --pp \
+  "$preprocessor" \
+  "$file" \
+  "|" \
+  "$REPO_ROOT/shell/ff-execute.sh" \
+  --run \
+  "$runner" \
+  -
 "$REPO_ROOT/shell/ff-preprocess.sh" --pp "$preprocessor" "$file" | \
   "$REPO_ROOT/shell/ff-execute.sh" --run "$runner" -

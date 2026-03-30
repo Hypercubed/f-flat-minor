@@ -8,10 +8,11 @@ DEFAULT_PREPROCESSOR="bun"
 usage() {
   cat <<'EOF' >&2
 Usage:
-  ./shell/ff-preprocess.sh [--pp <preprocessor>] <file.ff|file.ffp>
+  ./shell/ff-preprocess.sh [--quiet] [--pp <preprocessor>] <file.ff|file.ffp>
 
 Examples:
   ./shell/ff-preprocess.sh ff/example.ff
+  ./shell/ff-preprocess.sh --quiet ff/example.ff
   ./shell/ff-preprocess.sh --pp deno ff/hello.ffp
 
 Preprocessors:
@@ -35,6 +36,10 @@ fi
 
 while [ "$#" -gt 0 ]; do
   case "$1" in
+    --quiet)
+      export FF_SHELL_TRACE=0
+      shift
+      ;;
     --pp)
       [ "$#" -ge 2 ] || die "Missing value for --pp"
       preprocessor="$2"

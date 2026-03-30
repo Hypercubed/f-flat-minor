@@ -69,8 +69,37 @@ def callOp (o)
   end
 end
 
-def unescape (text)
-  text.gsub("\\n", "\n").gsub("\\s", " ").gsub("\\0", "\0")
+def hex2char(hex)
+  n = hex.to_i(16)
+  if n <= 0xffff
+    n.chr('UTF-8')
+  elsif n <= 0x10ffff
+    adjusted = n - 0x10000
+    high = 0xd800 | (adjusted >> 10)
+    low = 0xdc00 | (adjusted & 0x3ff)
+    high.chr('UTF-8') + low.chr('UTF-8')
+  else
+    "[hex error: #{hex}]"
+  end
+end
+
+def unescape(text)
+  # Handle \UXXXXXXXX (8 hex digits) first
+  text = text.gsub(/\\U([0-9a-fA-F]{8})/) { |_| hex2char($1) }
+  # Handle \uXXXX (4 hex digits)
+  text = text.gsub(/\\u([0-9a-fA-F]{4})/) { |_| hex2char($1) }
+  # Handle standard escapes
+  text.gsub("\\0", "\0")
+    .gsub("\\b", "\b")
+    .gsub("\\t", "\t")
+    .gsub("\\n", "\n")
+    .gsub("\\v", "\v")
+    .gsub("\\f", "\f")
+    .gsub("\\r", "\r")
+    .gsub("\\'", "'")
+    .gsub('\\"', '"')
+    .gsub("\\s", " ")
+    .gsub("\\\\", "\\")
 end
 
 def trunc_divmod(lhs, rhs)

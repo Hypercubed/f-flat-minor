@@ -52,7 +52,7 @@ run = '''
   shopt -s nullglob
   shopt -s extglob
   shopt -s globstar
-  prove --exec '../shell/ff-run.sh --run dart' ../ff/**/*.test.ffp
+  prove --exec '../shell/ff-run.sh --quiet --run dart' ../ff/**/*.test.ffp
 '''
 
 [[task]]

@@ -249,8 +249,38 @@ defineSystem('~', bnot)
 
 systemOps = op
 
+def hex2char(hex_str):
+  """Convert a hex string to a character, handling code points beyond BMP."""
+  n = int(hex_str, 16)
+  if n <= 0xffff:
+    return chr(n)
+  elif n <= 0x10ffff:
+    n -= 0x10000
+    high = 0xd800 | (n >> 10)
+    low = 0xdc00 | (n & 0x3ff)
+    return chr(high) + chr(low)
+  else:
+    return f'[hex error: {hex_str}]'
+
 def unescape(text):
-  return text.replace('\\n', '\n').replace('\\s', ' ').replace('\\0', '\0')
+  # Handle \UXXXXXXXX (8 hex digits) first
+  import re
+  text = re.sub(r'\\U([0-9a-fA-F]{8})', lambda m: hex2char(m.group(1)), text)
+  # Handle \uXXXX (4 hex digits)
+  text = re.sub(r'\\u([0-9a-fA-F]{4})', lambda m: hex2char(m.group(1)), text)
+  # Handle standard escapes
+  return (text
+    .replace('\\0', '\0')
+    .replace('\\b', '\b')
+    .replace('\\t', '\t')
+    .replace('\\n', '\n')
+    .replace('\\v', '\v')
+    .replace('\\f', '\f')
+    .replace('\\r', '\r')
+    .replace("\\'", "'")
+    .replace('\\"', '"')
+    .replace('\\s', ' ')
+    .replace('\\\\', '\\'))
 
 def number(text):
   text = text.strip("_")

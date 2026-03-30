@@ -37,7 +37,7 @@ run = '''
   shopt -s nullglob
   shopt -s extglob
   shopt -s globstar
-  prove --exec '../shell/ff-run.sh --run python' ../ff/**/*.test.ffp
+  prove --exec '../shell/ff-run.sh --quiet --run python' ../ff/**/*.test.ffp
 '''
 
 [[task]]
@@ -51,7 +51,7 @@ validation = 'none'
 display = 'status-only'
 run = '''
   if [ -f ${DEP%.*}.ffp ]; then
-    ../shell/ff-run.sh --run python ${DEP%.*}.ffp | cmp - $DEP -s && ${{CHECK}};
+    ../shell/ff-run.sh --quiet --run python ${DEP%.*}.ffp | cmp - $DEP -s && ${{CHECK}};
   fi
   if [ -f ${DEP%.*}.ff ]; then
     cat ${DEP%.*}.ff | ${{BIN}} | cmp - $DEP -s && ${{CHECK}};
