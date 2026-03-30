@@ -7,34 +7,31 @@
  * introducing a circular import back through atan.ffp.
  */
 
-__m2: [ * ] dip * ; .inline /* a b c __m2 == a*b*c */
+__over3: q< q< over q> q> dig ; /* x a b c __over3 == x a b c x */
 
-__u2_newp:
-  /* Not queue-safe yet: this word intentionally consumes/rewrites queued v2. */
-  q< q<
-  over
-  q> q>
-  dig
-  q> dup q<
-  q<
-  dig
-  q<
-  __m2
-  q> q>
-  *
-  swap
-  -
-; .unsafe /* u2 p q odd __u2_newp == u2 p' with v2 on queue */
+__u2_newp: /* u2 p q odd v2 */
+  [ __over3 ] dip /* u2 p q odd u2 v2 */
+  dup             /* u2 p q odd u2 v2 v2 */
+  q< q<           /* u2 p q odd u2 | v2 v2 */
+  dig             /* u2 p odd u2 q | v2 v2 */
+  q<              /* u2 p odd u2 | v2 v2 q */
+  * *             /* u2 p*odd*u2 | v2 v2 q */
+  q> q>           /* u2 p*odd*u2 q v2 | v2 */
+  *               /* u2 p*odd*u2 q*v2 | v2 */
+  swap            /* u2 q*v2 p*odd*u2 | v2 */
+  -               /* u2 q*v2-p*odd*u2 | v2 */
+  q>              /* u2 q*v2-p*odd*u2 v2 */
+; /* u2 p q odd v2 __u2_newp == u2 p' v2 */
 
-__newq_stack:
-  dup
-  q<
-  q<
-  over
-  over
-  q>
-  __m2
-  q>
+__newq_stack: /* p q odd v2 */
+  dup   /* p q odd v2 v2 */
+  q<    /* p q odd v2 | v2 */
+  q<    /* p q odd | v2 v2 */
+  over  /* p q odd q | v2 v2 */
+  over  /* p q odd q odd | v2 v2 */
+  q>    /* p q odd q odd v2 | v2 */
+  * *   /* p q odd q*odd*v2 | v2 */
+  q>    /* p q odd q*odd*v2 v2 */
 ; /* p q odd v2 __newq_stack == p q odd q' v2 */
 
 __tail_loop:
@@ -44,7 +41,7 @@ __tail_loop:
     2 -
     [ __newq_stack ] dip
     swapd
-    [ [ q< __u2_newp q> ] dip ] dip
+    [ [ __u2_newp ] dip ] dip
     swapd
     swap
     __tail_loop
