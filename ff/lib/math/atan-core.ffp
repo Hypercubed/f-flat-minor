@@ -9,15 +9,18 @@
 
 __over3: q< q< over q> q> dig ; /* x a b c __over3 == x a b c x */
 
-__u2_newp: /* u2 p q odd v2 */
-  [ __over3 ] dip /* u2 p q odd u2 v2 */
-  dup
-  [ [ dig [ * * ] dip ] dip * swap - ] dip /* u2 q*v2-p*odd*u2 v2 */
-; /* u2 p q odd v2 __u2_newp == u2 p' v2 */
+__dbl_1: 2 * 1 - ; .inline /* n __dbl_1 == 2n-1 */
+__dbl1:  2 * 1 + ; .inline /* n __dbl1 == 2n+1 */
 
-__newq_stack: /* p q odd v2 */
-  dup [ [ dup2 ] dip * * ] dip /* p q odd q*odd*v2 v2 */
-; /* p q odd v2 __newq_stack == p q odd q' v2 */
+__u2_newp: /* u² p q odd v² */
+  [ __over3 ] dip /* u² p q odd u² v² */
+  dup
+  [ [ dig [ * * ] dip ] dip * swap - ] dip /* u² q*v²-p*odd*u² v² */
+; /* u² p q odd v² __u2_newp == u² p' v² */
+
+__newq_stack: /* p q odd v² */
+  dup [ [ dup2 ] dip * * ] dip /* p q odd q*odd*v² v² */
+; /* p q odd v² __newq_stack == p q odd q' v² */
 
 __tail_loop:
   over positive?
@@ -46,35 +49,21 @@ __odd_from_precision:
   swapd
 ; .inline /* n u v __odd_from_precision == u v odd */
 
-__seed_taylor_state:
-  dup
-  2 *
-  1 +
-  q<
-  2 *
-  1 -
-  q<
-  over
-  sqr
-  q>
-  q<
-  over
-  sqr
-  q>
-  q>
-  rot
-  1
-  rot
-  swap
-  q<
-  swapd
-  q>
+__seed_taylor_state: /* u v odd */
+  dup                                         /* u v odd odd */
+  __dbl1                                              /* u v odd (2*odd+1) */
+  [ __dbl_1 [ sqr2 ] dip ] dip                /* u v u² v² (2*odd-1) (2*odd+1) */
+  rot                                         /* u v u² (2*odd+1) (2*odd-1) v² */
+  1                                           /* u v u² (2*odd+1) (2*odd-1) v² 1 */
+  bury                                        /* u v u² (2*odd+1) 1 (2*odd-1) v² */
+  [ swapd ] dip                               /* u v u² 1 (2*odd+1) (2*odd-1) v² */
 ; /* u v odd __seed_taylor_state == u v u2 p q odd v2 */
+
+__sqr2: * [ * ] dip ; .inline /* a b __sqr2 == a b a² b² */
 
 __scale_tail_result:
   swapd
-  *
-  [ * ] dip
+  __sqr2
 ; .inline /* u v p q __scale_tail_result == p q */
 
 __parts:
@@ -86,10 +75,8 @@ __parts:
 
 _atan__core_scaled:
   rot
-  dup q<
-  rot
-  __parts
-  q>
+  dup
+  [ rot __parts ] dip
   p/q*S
 ; /* n u v _atan__core_scaled == floor(10^n*atan(u/v)) for reduced positive ratios */
 

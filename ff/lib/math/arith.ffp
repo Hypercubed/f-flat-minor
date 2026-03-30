@@ -5,6 +5,7 @@
 sgn: dup positive? swap negitive? - ; .inline /* n sgn == -1 or 0 or 1 */
 abs: dup negitive? [ -1 * ] ? ; .inline /* n abs == |n| */
 sqr: dup * ; /* n sqr == n^2 */
+sqr2: over sqr over sqr ; /* a b sqr2 == a b a² b² */
 
 /* Ordering utilities */
 
