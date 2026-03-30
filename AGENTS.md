@@ -153,3 +153,25 @@ implemented. Before starting any implementation task, check whether a relevant
 plan exists here.
 
 See `.agent/skills/plans/SKILL.md` for how to read, create, and update plan files.
+
+## Cursor Cloud specific instructions
+
+### Environment bootstrap
+
+The VM update script runs `mise install` and `npm install` (for the web playground). Ruby is installed via system apt. After that, all runtimes (Deno, Node, Bun, Go, Python, Ruby) and the `chomp` task runner are available via `mise exec -- ...`.
+
+### Running services
+
+- **Quick smoke-test**: `cat ff/example_v0.ff | python3 python/execute.py` (no mise needed).
+- **Primary test suite**: `mise exec -- chomp test:deno` (runs `.ff` + `.ffp` output comparisons and TAP tests).
+- **TAP library tests**: `cd bun && mise exec -- chomp test:tap`.
+- **Individual runtime tests**: `mise exec -- chomp test:{deno,node,bun,python,ruby}`.
+- **Go tests**: `cd go && mise exec -- go test ./...`.
+- **Web playground**: `cd web && mise exec -- npm run dev` (Vite on port 5173). Note: some `vitest` web tests fail due to a missing `path.relative` in the browser preprocessor host; this is a pre-existing issue, not an environment problem.
+- **Lint**: `cd deno && mise exec -- deno lint` (pre-existing `no-import-prefix` warnings on inline URL imports are expected).
+
+### Gotchas
+
+- Go commands must run from inside `go/` or use `mise exec` — the repo root has no `go.mod`.
+- `mise.toml` specifies tool versions as `"latest"` for some tools; `mise install` may pull newer versions than `mise.lock` pins. This is expected.
+- `nvm` is pre-installed on the VM but mise manages Node; both coexist because mise's shims take priority when the shell is activated.
