@@ -9,7 +9,7 @@ __simple-composite?: [ 2 divisor? ] [ 3 divisor? ] or_else ;
  * confirming probable primes with the existing trial-division path.
  */
 __(factor_by_2):
-  over 1 & 0 =
+  over 1 & zero?
   [ [ 1 >> ] dip ++ __(factor_by_2) ]
   ? ;
 __factor_by_2: 0 __(factor_by_2) ; /* n -> d s */
@@ -19,13 +19,10 @@ __nrand: over - rand + ;
 __mod: q> dup q< % ; .unsafe /* x -> x%n, with n on queue */
 
 __(powmod_loop): /* acc a d -> acc, with n on queue */
-  dup 0 =
+  dup zero?
   [ drop drop ]
   [
-    dup 1 & 0 !=
-    [ rot over * __mod rot ]
-    [ ]
-    branch
+    dup 1 & nz? [ rot over * __mod rot ] ?
     swap dup * __mod swap 1 >>
     __(powmod_loop)
   ]
@@ -73,7 +70,7 @@ __witness_composite: /* s n x __witness_composite == b */
 ;
 
 __witness_probable: /* s n x __witness_probable == false */
-  drop drop drop false
+  drop2 drop false
 ;
 
 __witness_loop: /* n -> n */

@@ -22,10 +22,9 @@ __num_zero:
 
 __den_zero:
   drop
-  dup sgn q<
-  drop
-  npi 2 /
-  q> *
+  dup sgn
+  [ drop npi 2 / ] dip
+  *
 ; /* n u v (v == 0) __den_zero == sign(u)*floor(pi/2*10^n) */
 
 __abs_scaled:
@@ -35,9 +34,7 @@ __abs_scaled:
     dup npi 2 /
     q> q>
     rot
-    q<
-    _atan__scaled
-    q>
+    [ _atan__scaled ] dip
     swap
     -
   ]
@@ -49,10 +46,7 @@ __abs_scaled:
       q> q>
       rot
       swapd
-      q<
-      [ swap - ] [ + ] bi2
-      _atan__scaled
-      q>
+      [ [ swap - ] [ + ] bi2 _atan__scaled ] dip
       swap
       -
     ]
@@ -72,9 +66,8 @@ __finite:
   abs
   swap
   q> q> *
-  q<
-  __abs_scaled
-  q> *
+  [ __abs_scaled ] dip
+  *
 ; /* n u v (u,v != 0) __finite == signed scaled atan(u/v) */
 
 _atan__scaled:
@@ -97,5 +90,5 @@ _atan__scaled:
 
 iatan: 0 swap 1 _atan__scaled ; /* x iatan == floor(atan(x)) */
 natan: 1 _atan__scaled ; /* n x natan == floor(10^n*atan(x)) */
-qatan: 0 swap swapd _atan__scaled ; /* u v qatan == floor(atan(u/v)) */
+qatan: 0 bury _atan__scaled ; /* u v qatan == floor(atan(u/v)) */
 atan-inv: 1 swap _atan__scaled ; /* n x atan-inv == floor(10^n*atan(1/x)) */

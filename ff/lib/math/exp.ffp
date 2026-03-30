@@ -16,7 +16,7 @@ __floor_half:
   dup 0 < q<
   dup 2 / q<
   2 %
-  0 !=
+  nz?
   q> q>
   dig
   and
