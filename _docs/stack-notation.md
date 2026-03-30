@@ -96,6 +96,39 @@ Within word bodies, use stack pictures without `==`:
   [ nip (_isqrt_newton) ] ? ;
 ```
 
+When a word uses the queue internally, show queue state after `|` in each snapshot:
+
+```ff
+__newq_stack: /* p q odd v2 */
+  dup   /* p q odd v2 v2 */
+  q<    /* p q odd v2 | v2 */
+  q<    /* p q odd | v2 v2 */
+  ...
+```
+
+The queue is written left-to-right in push order; `q>` pops from the right (LIFO).
+
+## Queue Safety
+
+A word is *queue-safe* if it treats the incoming queue as unknown and inconsequential — it leaves
+the queue in the same state it found it. All public and most internal words should be queue-safe.
+
+Words that are not queue-safe must be marked `.unsafe`.
+
+## `q< X q>` and `dip`
+
+The pattern `q< X q>` (push, operate, pop) is equivalent to `[ X ] dip` when `X` is a single
+word or quotation. However, the compiler's static queue-balance checker tracks `q<`/`q>` counts
+within each word definition. Because `dip` hides its internal `q<`/`q>` inside its own
+definition, the checker may not be able to verify balance at the call site.
+
+**Rule**: `[ X ] dip` is only safe to substitute for `q< X q>` when the `q<` is visible in the
+same word body as the call to `dip`. If the `q<` is inside a nested quotation or a helper word,
+keep the explicit `q< X q>` form.
+
+A useful collapsing pattern: `dup q< [ X ] dip q>` can be rewritten as `dup [ [ X ] dip ] dip`,
+since the outer `q<`/`q>` pair is now visible and balanced at the same word level.
+
 ## One-Line Definitions
 
 For single-line word definitions, place the stack effect comment at the end of the line:
