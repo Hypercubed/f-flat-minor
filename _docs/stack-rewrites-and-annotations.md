@@ -212,6 +212,16 @@ can become:
 [ [ X ] dip ] dip
 ```
 
+### Mechanical substitution
+
+The rewrite is a direct text substitution:
+
+- `q<` → `[`
+- `q>` → `] dip`
+
+Apply this mechanically at every nesting level without analyzing stack effects. The equivalence is
+definitional.
+
 ### Apply inside-out
 
 If multiple nested `q< ... q>` regions exist, collapse the innermost one first, then re-evaluate

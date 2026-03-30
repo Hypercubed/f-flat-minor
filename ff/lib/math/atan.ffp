@@ -30,9 +30,7 @@ __den_zero:
 __abs_scaled:
   dup2 >
   [
-    q< q<
-    dup npi 2 /
-    q> q>
+    [ [ dup npi 2 / ] dip ] dip
     rot
     [ _atan__scaled ] dip
     swap
@@ -41,48 +39,38 @@ __abs_scaled:
   [
     dup2 _atan__needs_pi4
     [
-      q< q<
-      dup npi 4 /
-      q> q>
+      [ [ dup npi 4 / ] dip ] dip
       rot
       swapd
       [ [ swap - ] [ + ] bi2 _atan__scaled ] dip
       swap
       -
     ]
-    [
-      _atan__core_scaled
-    ]
+    [ _atan__core_scaled ]
     branch
   ]
   branch
 ; /* n u v (u,v > 0) __abs_scaled == floor(10^n*atan(u/v)) */
 
 __finite:
-  over sgn q<
-  dup sgn q<
-  abs
-  swap
-  abs
-  swap
-  q> q> *
+  over sgn [
+  dup sgn [
+    abs
+    swap
+    abs
+    swap
+  ] dip ] dip *
   [ __abs_scaled ] dip
   *
 ; /* n u v (u,v != 0) __finite == signed scaled atan(u/v) */
 
 _atan__scaled:
   over zero?
-  [
-    __num_zero
-  ]
+  [ __num_zero ]
   [
     dup zero?
-    [
-      __den_zero
-    ]
-    [
-      __finite
-    ]
+    [ __den_zero ]
+    [ __finite ]
     branch
   ]
   branch
