@@ -110,7 +110,7 @@ Node, Bun, and Deno support structured tracing:
 - TAP-style testing helper and `.test.ffp` conventions: `_docs/tap-testing.md`
 - Math library naming conventions: `_docs/math-naming-convention.md`
 - Math library internal naming: `_docs/math-naming-internal.md`
-_
+
 ## Deno Implementation Notes
 
 For Deno-specific usage, tasks, CLI entrypoints, and implementation notes, see `deno/README.md`.
@@ -136,6 +136,7 @@ Reusable agent workflows have been extracted into local skills:
 - `.agent/skills/ff-library-web-refactor/SKILL.md`
 - `.agent/skills/ff-math-internal-naming/SKILL.md` (see `_docs/math-naming-internal.md`)
 - `.agent/skills/ff-lib-word-rankings/SKILL.md` (see `_docs/ff-lib-word-definition-rankings.md`)
+- `.agent/skills/ff-expand-reduce/SKILL.md` (expand → reduce → resynthesize stack refactors; see `_docs/stack-rewrites-and-annotations.md`)
 
 Use these when the task involves:
 
@@ -145,6 +146,7 @@ Use these when the task involves:
 - Wiring examples/libs into the web playground
 - Defining internal math functions with proper naming conventions
 - Regenerating the ff/lib word definition rankings table
+- Simplifying or auditing stack-heavy words (expand–reduce–resynthesize)
 
 ## Plans
 

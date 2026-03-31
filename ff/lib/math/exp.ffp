@@ -97,9 +97,7 @@ __series:
 ; /* u v K __series == p q */
 
 __parts:
-  [ [
-  __terms
-  ] dip ] dip
+  [ __terms ] dipd
   rot [ swap
   0 __reduce
   ] dip

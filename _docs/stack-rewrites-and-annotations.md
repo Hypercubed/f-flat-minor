@@ -361,6 +361,10 @@ It replaces ad hoc `__dup3`-style shuffles plus nested `dip` for patterns like �
 `n`, build `π/2` or `π/4` from `n`, then call `_atan__scaled` on the full ratio triple.” Prefer
 **one** named combinator in `ff/lib/core/core.ff` over repeating the queue sequence in each caller.
 
+`dipd` is **not** `.unsafe`: the queue use is **balanced**—the definition begins with `q<` and ends
+with matching `q>` so no queue state leaks to the caller. Unsafe patterns are those where queue
+operations pair across word boundaries or leave unmatched `q<`/`q>` relative to the caller.
+
 ### Integer-scaled subtraction is not `floor` of a real difference
 
 The implementation often computes **`floor(10ⁿ·offset) − floor(10ⁿ·atan(⋯))`** (two truncations), not
