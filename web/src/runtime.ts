@@ -49,6 +49,25 @@ function resolve(...parts: string[]): string {
   return normalizePath(joined);
 }
 
+function relative(from: string, to: string): string {
+  const fromParts = normalizePath(from).split("/").filter(Boolean);
+  const toParts = normalizePath(to).split("/").filter(Boolean);
+
+  let common = 0;
+  while (
+    common < fromParts.length &&
+    common < toParts.length &&
+    fromParts[common] === toParts[common]
+  ) {
+    common++;
+  }
+
+  const ups = fromParts.length - common;
+  const remainder = toParts.slice(common);
+  const parts = Array<string>(ups).fill("..").concat(remainder);
+  return parts.join("/") || ".";
+}
+
 export function createPreprocessHost(files: VirtualFiles): PreprocessHost {
   return {
     readTextFile(path: string) {
@@ -69,6 +88,7 @@ export function createPreprocessHost(files: VirtualFiles): PreprocessHost {
         return path.startsWith("/");
       },
       dirname,
+      relative,
       resolve,
     },
   };
