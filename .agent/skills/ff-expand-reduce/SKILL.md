@@ -154,6 +154,17 @@ For a `no-op` verdict, add one more check:
 
 If that audit finds a candidate pattern, downgrade the result from `success/no-op` to `needs review` unless you can explain why the pattern is intentionally unreduced.
 
+### Required pre-`no-op` checklist
+
+Before returning `success/no-op`, include this explicit checklist in the report:
+
+1. **Queue pair inventory:** list every local-balanced `q< ... q>` region seen in the target word/body.
+2. **Disposition for each pair:** mark each inventory item as either:
+   - `rewritten` -> show the exact `q< ... q>` -> `[ ... ] dip` (or equivalent canonical) replacement, or
+   - `kept-intentionally` -> give a one-line reason (for example cross-boundary ownership, readability tie-break, or proven canonical fixed point).
+3. **No silent omissions:** if any local-balanced pair is neither rewritten nor explicitly justified, the verdict is not `no-op`; return `needs review`.
+4. **Boundary sanity:** for every `kept-intentionally` item, state whether it is local-balanced or cross-boundary and why `.unsafe` rules prevent/allow rewrite.
+
 Legacy/non-TAP guidance:
 - If the area uses legacy `.ffp` golden/print tests, run the documented runtime via `mise exec -- chomp ...` for that area (see `AGENTS.md`), and compare produced output to expected `.out`/golden behavior.
 - If no harness exists, run a minimal direct invocation probe and report it explicitly as weaker evidence.
