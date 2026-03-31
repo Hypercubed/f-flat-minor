@@ -130,14 +130,15 @@ Use this checklist whenever queue words cross word boundaries or the word starts
 6. Stop condition:
    - If queue ownership becomes ambiguous, stop and return `status: blocked` with the ambiguous region called out.
 
-### Irreducible single-word queue wrappers
+### Irreducible single-word primitive queue wrappers
 
-Treat words of the exact form `x: q< Y q> ;` (where `Y` is exactly one word token) as an
-**irreducible queue-wrapper form**.
+Treat words of the exact form `x: q< Y q> ;` as irreducible **only when `Y` is a single
+primitive word**.
 
-- Do **not** rewrite this shape to `[ Y ] dip`.
-- Do **not** treat this as a readability tie-break candidate; keep queue form as canonical.
-- In reports, mark these as `kept-intentionally` with reason `irreducible single-word queue wrapper`.
+- Do **not** rewrite this shape to `[ Y ] dip` when `Y` is primitive.
+- If `Y` is not primitive (for example a user/core helper), normal ERS rules apply.
+- Do **not** treat the primitive-wrapper case as a readability tie-break candidate; keep queue form as canonical.
+- In reports, mark primitive-wrapper cases as `kept-intentionally` with reason `irreducible single-word primitive queue wrapper`.
 
 ## Phase 3 — Resynthesize (names and optional new words)
 
