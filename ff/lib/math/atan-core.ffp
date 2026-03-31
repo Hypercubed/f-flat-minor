@@ -28,15 +28,15 @@ __tail_loop:
   [
     over
     2 -
-    [ __newq_stack ] dip
+    [__newq_stack] dip
     swapd
-    [ [ __u2_newp ] dip ] dip
+    [__u2_newp] dipd
     dig
     __tail_loop
   ]
   [
     drop2
-    [ nip ] dip
+    [nip] dip
   ]
   branch
 ; /* u v u2 p q odd v2 __tail_loop == u v p q */
