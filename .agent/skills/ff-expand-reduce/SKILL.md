@@ -36,6 +36,10 @@ Treat these core words as semantic anchors during ERS:
 
 Default rule: do **not** rewrite, restyle, or inline-through the defining behavior of these words unless the user explicitly requests core-semantics changes. If encountered, report as `kept-intentionally: foundation freeze`.
 
+For clarity:
+- This freeze applies to the **definitions** of these semantic-anchor words.
+- Outside those definitions, equivalent queue sequences may still be canonicalized to the named core words when allowed by the rules below.
+
 ## Phase 1 — Expand (substitute toward primitives)
 
 1. Resolve the word body; follow `.import` chains from the **source file’s directory**.
@@ -140,6 +144,20 @@ primitive word**.
 - Do **not** treat the primitive-wrapper case as a readability tie-break candidate; keep queue form as canonical.
 - In reports, mark primitive-wrapper cases as `kept-intentionally` with reason `irreducible single-word primitive queue wrapper`.
 
+### Canonicalize wrapper uses to named words
+
+When `q< Y q>` appears **inside another word body** (not as the defining body of the wrapper word),
+prefer the named wrapper word when one exists and stack effects match.
+
+Examples:
+- `q< eval q>` -> `slip`
+- `q< dup q>` -> `dupd`
+- `q< swap q>` -> `swapd`
+- `q< sip q>` -> `sipd`
+
+This applies generally to all such wrapper words: keep the wrapper **definition** irreducible, but
+canonicalize wrapper **uses** to the named word.
+
 ## Phase 3 — Resynthesize (names and optional new words)
 
 1. Match the reduced sequence against **existing** words in `core.ff` and imports (prefer **longest** readable match).
@@ -193,6 +211,18 @@ Before returning `success/no-op`, include this explicit checklist in the report:
    - `kept-intentionally` -> give a one-line reason (for example cross-boundary ownership, readability tie-break, or proven canonical fixed point).
 3. **No silent omissions:** if any local-balanced pair is neither rewritten nor explicitly justified, the verdict is not `no-op`; return `needs review`.
 4. **Boundary sanity:** for every `kept-intentionally` item, state whether it is local-balanced or cross-boundary and why `.unsafe` rules prevent/allow rewrite.
+
+### Mandatory multi-pass closure loop
+
+ERS must run iteratively until closure, not as a single sweep.
+
+1. **Pass 1:** apply all legal rewrites found from the current body.
+2. **Re-scan:** after edits, rebuild inventories (queue pairs, pointer candidates, canonical redexes).
+3. **Pass N:** apply newly exposed legal rewrites.
+4. **Stop only when** one full pass produces zero eligible rewrites.
+5. **Report closure evidence:** include pass counts and per-pass rewrite counts (for example `pass1=3, pass2=1, pass3=0`).
+
+If a pass applies rewrites and no follow-up pass is run, the result is incomplete and must be reported as `needs review`, not `success`.
 
 Legacy/non-TAP guidance:
 - If the area uses legacy `.ffp` golden/print tests, run the documented runtime via `mise exec -- chomp ...` for that area (see `AGENTS.md`), and compare produced output to expected `.out`/golden behavior.
