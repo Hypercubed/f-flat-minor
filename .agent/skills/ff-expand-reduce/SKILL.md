@@ -40,6 +40,7 @@ For each target word, return:
 4. **Optional queue view:** expand **`[ X ] dip` → `q< X q>`** (inverse of mechanical rewrite in [`_docs/stack-rewrites-and-annotations.md`](../../../_docs/stack-rewrites-and-annotations.md)). Use this when queue pairing or `.unsafe` review matters.
 5. **`dip` definition:** `swap slip` with `slip` = `q< eval q>` — full expand may expose raw queue ops.
 6. In full-floor mode, continue expansion through convenience shuffles until reaching only floor words or an explicit stop boundary (`.unsafe`, user-capped depth, or black-boxed helper).
+7. **Single-word pointer normalization (expand phase):** when a pointer token is written as `[X]` (single word only, e.g. `[eval]`), normalize it to `[ X ]` before applying additional expansion rules. Do not apply this rule to multi-word quotations.
 
 ## Phase 2 — Reduce (apply documented rewrites)
 
@@ -131,6 +132,7 @@ Use this checklist whenever queue words cross word boundaries or the word starts
    - Prefer inlining tiny helpers or words marked inline.
    - Do **not** inline across `.unsafe` ownership boundaries.
    - Do **not** inline recursive cycles.
+6. **Single-word pointer normalization (resynthesis phase):** when the reduced output contains `[ X ]` with exactly one word inside, you may resynthesize it to `[X]`. Do not collapse multi-word quotations.
 
 ## Pitfalls
 
