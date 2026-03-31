@@ -16,22 +16,18 @@ __factor_by_2: 0 __(factor_by_2) ; /* n -> d s */
 
 __nrand: over - rand + ;
 
-__mod: q> dup q< % ; .unsafe /* x -> x%n, with n on queue */
-
 __(powmod_loop): /* acc a d -> acc, with n on queue */
   dup zero?
-  [ drop drop ]
+  [ drop2 ]
   [
-    dup 1 & nz? [ rot over * __mod rot ] ?
-    swap dup * __mod swap 1 >>
+    dup 1 & nz? [ rot over * q> dup q< % rot ] ?
+    swap dup *  q> dup q< % swap 1 >>
     __(powmod_loop)
   ]
-  branch ;
+  branch ; .unsafe
 
 __powmod:
-  rot q< swap 1 rot
-  __(powmod_loop)
-  q> swap
+  rot [ swap 1 rot __(powmod_loop) ] dip swap
 ;  /* n d a -> n a^d%n */
 
 __(inner_witness_loop): /* s n x -> */
@@ -47,7 +43,7 @@ __(inner_witness_loop): /* s n x -> */
 
 __inner_witness: /* s n x -> */
   rot -- dup
-  0 =
+  zero?
   [ true ]
   [ rot __(inner_witness_loop) ]
   branch

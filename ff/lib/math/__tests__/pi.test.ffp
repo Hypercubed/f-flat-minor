@@ -10,8 +10,8 @@ TAP-VERSION
   5 npi 314159 = OK
   10 npi 31415926535 = OK
 
-  5 tau nip 628318 = OK
-  5 half_pi nip 157079 = OK
+  5 tau 628318 = OK
+  5 half_pi 157079 = OK
   6 PLAN OK
 
 1 PLAN

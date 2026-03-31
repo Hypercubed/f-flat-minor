@@ -7,10 +7,11 @@
  * introducing a circular import back through atan.ffp.
  */
 
-__over3: q< q< over q> q> dig ; /* x a b c __over3 == x a b c x */
+__over3: [ [ over ] dip ] dip dig ; /* x a b c __over3 == x a b c x */
 
-__dbl_1: 2 * 1 - ; .inline /* n __dbl_1 == 2n-1 */
-__dbl1:  2 * 1 + ; .inline /* n __dbl1 == 2n+1 */
+__odd_prev: 2 * 1 - ; .inline /* n __odd_prev == 2n-1 */
+__odd_next: 2 * 1 + ; .inline /* n __odd_next == 2n+1 */
+__sqr_keep2: over sqr over sqr ; /* a b __sqr_keep2 == a b a² b² */
 
 __u2_newp: /* u² p q odd v² */
   [ __over3 ] dip /* u² p q odd u² v² */
@@ -47,13 +48,13 @@ __odd_from_precision:
 ; .inline /* n u v __odd_from_precision == u v odd */
 
 __seed_taylor_state: /* u v odd */
-  dup                                         /* u v odd odd */
-  __dbl1                                              /* u v odd (2*odd+1) */
-  [ __dbl_1 [ sqr2 ] dip ] dip                /* u v u² v² (2*odd-1) (2*odd+1) */
-  rot                                         /* u v u² (2*odd+1) (2*odd-1) v² */
-  1                                           /* u v u² (2*odd+1) (2*odd-1) v² 1 */
-  bury                                        /* u v u² (2*odd+1) 1 (2*odd-1) v² */
-  [ swapd ] dip                               /* u v u² 1 (2*odd+1) (2*odd-1) v² */
+  dup                                  /* u v odd odd */
+  __odd_next                           /* u v odd (2*odd+1) */
+  [ __odd_prev [ __sqr_keep2 ] dip ] dip /* u v u² v² (2*odd-1) (2*odd+1) */
+  rot                                  /* u v u² (2*odd+1) (2*odd-1) v² */
+  1                                    /* u v u² (2*odd+1) (2*odd-1) v² 1 */
+  bury                                 /* u v u² (2*odd+1) 1 (2*odd-1) v² */
+  [ swapd ] dip                        /* u v u² 1 (2*odd+1) (2*odd-1) v² */
 ; /* u v odd __seed_taylor_state == u v u2 p q odd v2 */
 
 __mul2_pairs: * [ * ] dip ; .inline /* a b c d __mul2_pairs == a*b c*d */

@@ -125,6 +125,8 @@ Prefer existing core words over equivalent expansions from `ff/lib/core/core.ff`
 - `swapd swap` -> `dig`
 - `swap swapd` -> `bury`
 - `swap swapd swap` -> `rot`
+- `rot swapd` -> `dig`
+- `rot dig` -> `swapd`
 - `dupd swap` -> `over`
 - `swap drop` -> `nip`
 - `swap over` -> `tuck`
@@ -151,6 +153,19 @@ Quoted shuffles under `dip` are often the cleanest way to express a deeper trans
 
 These are useful when you want to rewrite a suffix of the stack while keeping one value parked on
 top.
+
+### Unary words and redundant `dup` / inner `drop`
+
+Words like `sgn`, `abs`, and many others **consume** their operand. A sequence such as
+`dup` *unary* `[ drop ... ] dip` can look like it is “dup to compute, then drop the spare under
+`dip`,” but the spare may exist only because of `dup`. If *unary* alone on the same inputs already
+removes that operand, try the version **without** `dup` and **without** the leading `drop` in the
+quotation: the stack under `dip` may already be what you need (for example `n sgn(u)` instead of
+`n u sgn(u)` after `dup sgn`).
+
+**Sanity check:** from the real inputs, write the stack after the unary word by itself. If the
+value you meant to `drop` is already gone, the `dup`/`drop` pair is likely redundant—re-derive from
+the word contract instead of trusting the historical shape of the code.
 
 ### Tested example
 
@@ -237,6 +252,16 @@ For words marked `.unsafe`, the substitution can still be applied to innermost p
 inside-out and stop when no matching pairs remain — the leftover `q<`/`q>` are the ones that share
 queue state with the caller and must stay as-is.
 
+### `.unsafe` migration while inlining
+
+When queue operations are moved from helper `A` into caller `B` (for example by inlining), move the
+`.unsafe` marker with them.
+
+- If `A` no longer contains `q<`/`q>`, remove `.unsafe` from `A`.
+- If `B` now contains queue operations (or calls queue-using words in an unsafe context), add
+  `.unsafe` to `B`.
+- Keep `.unsafe` on the smallest word that still directly owns the unsafe queue behavior.
+
 ### Identifying innermost pairs
 
 When tracing pairs, match `q<` with its closest unmatched `q>`. Multiple queue operations on the
@@ -318,6 +343,45 @@ a b c d -> a*b c*d
 
 Both mention two multiplications. They are not interchangeable.
 
+## Lessons from `ff/lib/math/atan.ffp` (scaled range reduction)
+
+This refactor is a good end-to-end example of stack annotations, testing, and when queue-backed
+helpers are worth centralizing.
+
+### `dipd` vs nested `dip` + `dup` of the deep cell
+
+When the stack is `a b c [Q]` (quotation on top) and the quotation must run **only on `a`** while
+temporarily parking `b` and `c`, use core `dipd`:
+
+```ff
+dipd: swap q< swap q< eval q> q> ; /* stash top two; run [Q] on third; unstash */
+```
+
+It replaces ad hoc `__dup3`-style shuffles plus nested `dip` for patterns like “duplicate precision
+`n`, build `π/2` or `π/4` from `n`, then call `_atan__scaled` on the full ratio triple.” Prefer
+**one** named combinator in `ff/lib/core/core.ff` over repeating the queue sequence in each caller.
+
+### Integer-scaled subtraction is not `floor` of a real difference
+
+The implementation often computes **`floor(10ⁿ·offset) − floor(10ⁿ·atan(⋯))`** (two truncations), not
+**`floor(10ⁿ·(offset − atan(⋯)))`**. Goldens taken from `math.atan` in one step can disagree by **1**
+with the library’s integer path—**tests must use the same truncation model** as the code (or derive
+expected values from the same scaled words), not a single `floor(10ⁿ * atan(…))` from a float.
+
+### Branch coverage and mathematical identities
+
+Some ratios sit on **identities** that make two different reduction formulas yield the **same**
+scaled integer (for example `atan(1/2)` and complementary-angle rearrangements). Tests that only
+check those values **do not** distinguish half-π, quarter-π, and Taylor-only branches. Add **at
+least one golden per distinct code path** (e.g. `u > v`, `u ≤ v` with π/8 reduction, and a ratio that
+stays in the Taylor core).
+
+### Per-line annotations where `n` disappears
+
+After `_atan__scaled` (or any word that consumes the precision cell `n`), **do not** carry `n` in
+subsequent line comments—re-derive the stack from the word’s contract. Misleading `n` in comments
+was a recurring slip during review.
+
 ## Suggested workflow
 
 1. Write the word-level stack contract.
@@ -331,6 +395,7 @@ Both mention two multiplications. They are not interchangeable.
 ## References
 
 - `ff/lib/core/core.ff`
+- `ff/lib/math/atan.ffp` (scaled `dipd` range reduction, TAP branch coverage)
 - `ff/lib/math/atan-core.ffp`
 - `_docs/stack-notation.md`
 - `_docs/core-vocabulary.md`

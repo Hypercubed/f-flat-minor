@@ -21,7 +21,12 @@ TAP-VERSION
 '\0natan' SUBTEST
   5 1 natan 78_539 = OK
   20 1 natan 78_539_816_339_744_830_961 = OK
-  2 PLAN OK
+  5 2 natan 110_715 = OK
+  3 PLAN OK
+
+'\0_atan__scaled\sbranches' SUBTEST
+  10 2 3 _atan__scaled 5880026035 = OK
+  1 PLAN OK
 
 '\0consistency' SUBTEST
   0 2 natan 2 iatan = OK
@@ -32,4 +37,4 @@ TAP-VERSION
   5 2 atan-inv 5 1 2 _atan__scaled = OK
   6 PLAN OK
 
-4 PLAN
+5 PLAN

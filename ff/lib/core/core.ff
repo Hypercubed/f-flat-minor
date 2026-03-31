@@ -17,6 +17,7 @@ swapd: q< swap q> ; /* a b c swapd == b a c */
 dupd: q< dup q> ; /* a b dupd == a a b */
 
 dip: swap slip ; .inline /* a [B] dip == b* a */
+dipd: swap q< swap q< eval q> q> ; /* stash top two; run [Q] on third; unstash (queue) */
 dig: swapd swap ; .inline /* a b c dig == b c a */
 bury: swap swapd ; .inline /* a b c bury == c a b */
 rot: swap swapd swap ; .inline /* a b c rot == c b a */

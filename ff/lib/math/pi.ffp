@@ -3,7 +3,7 @@
 __guard_digits: 20 ;
 
 
-/* n -> floor(pi * 10^n) */
+/* n -> floor(π*10ⁿ) */
 npi:
   __guard_digits +
   dup 1 5 _atan__core_scaled
@@ -11,12 +11,12 @@ npi:
   swap 4 * swap -
   4 *
   __guard_digits n->S /
-; /* n _npi__ == floor(10^n*pi) */
+; /* n _npi__ == floor(10ⁿ*π) */
 
 tau:
-  dup npi 2 *
-; /* n tau == floor(10^n*2*pi) */
+  1 + npi 1 << 10 /
+; /* n tau == floor(10ⁿ*2*π) */
 
 half_pi:
-  dup npi 2 /
-; /* n half_pi == floor(10^n*pi/2) */
+  npi 1 >>
+; /* n half_pi == floor(10ⁿ*π/2) */
