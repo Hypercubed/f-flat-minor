@@ -79,7 +79,7 @@ __series_loop:
   [
     --
     q> q> dig [
-    [ [ __series_step ] dip ] dip
+    [ __series_step ] dipd
     ] dip bury q< q<
     __series_loop
   ]
