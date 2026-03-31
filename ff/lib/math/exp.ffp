@@ -20,7 +20,7 @@ __floor_half:
   ] dip ] dip
   dig
   and
-  [ -- ] ?
+  [--] ?
 ; /* x __floor_half == floor(x/2) */
 
 /*
@@ -79,11 +79,11 @@ __series_loop:
   [
     --
     q> q> dig [
-    [ __series_step ] dipd
+    [__series_step] dipd
     ] dip bury q< q<
     __series_loop
   ]
-  [ drop ]
+  [drop]
   branch
 ; .unsafe /* p q t k rem __series_loop == p q t k */
 

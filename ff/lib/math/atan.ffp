@@ -46,7 +46,7 @@ __atan_pos_scaled:
       _atan__scaled                    /* floor(10ⁿ*π/4) floor(10ⁿ*atan((v-u)/(v+u))) */
       -                                /* floor(10ⁿ*π/4)-floor(10ⁿ*atan((v-u)/(v+u))) */
     ]
-    [ _atan__core_scaled ]
+    [_atan__core_scaled]
     branch
   ]
   branch

@@ -40,7 +40,7 @@ TAP-VERSION: '\0TAP\sversion\s14' println clr __RESET ;
 
 /* Primary assertion word. */
 OK:
-  __INDENT [ __NEXT! ] dip truthy?
+  __INDENT [__NEXT!] dip truthy?
   [ '\0ok\s' prints putn cr ]
   [ '\0not\sok\s' prints putn cr __FAIL! ]
   branch ;
@@ -50,7 +50,7 @@ OK:
 
 /* Mark one assertion TODO. */
 #TODO:
-  __INDENT [ __NEXT! ] dip truthy?
+  __INDENT [__NEXT!] dip truthy?
   [ '\0ok\s' prints putn '\0\s#\sTODO' prints cr ]
   [ '\0not\sok\s' prints putn '\0\s#\sTODO' prints cr ]
   branch ;
