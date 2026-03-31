@@ -130,6 +130,15 @@ Use this checklist whenever queue words cross word boundaries or the word starts
 6. Stop condition:
    - If queue ownership becomes ambiguous, stop and return `status: blocked` with the ambiguous region called out.
 
+### Irreducible single-word queue wrappers
+
+Treat words of the exact form `x: q< Y q> ;` (where `Y` is exactly one word token) as an
+**irreducible queue-wrapper form**.
+
+- Do **not** rewrite this shape to `[ Y ] dip`.
+- Do **not** treat this as a readability tie-break candidate; keep queue form as canonical.
+- In reports, mark these as `kept-intentionally` with reason `irreducible single-word queue wrapper`.
+
 ## Phase 3 — Resynthesize (names and optional new words)
 
 1. Match the reduced sequence against **existing** words in `core.ff` and imports (prefer **longest** readable match).
