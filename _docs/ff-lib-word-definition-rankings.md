@@ -7,22 +7,22 @@ Ranking is by whitespace-separated token count in each word body (text between `
 | Rank | Word | Tokens in definition | File |
 |---:|---|---:|---|
 | 1 | `__series_step` | 40 | `ff/lib/math/exp.ffp` |
-| 2 | `__F_0_3` | 37 | `ff/lib/math/ack.ffp` |
-| 3 | `__atan_pos_scaled` | 34 | `ff/lib/math/atan.ffp` |
-| 4 | `__(powmod_loop)` | 34 | `ff/lib/math/primes.ffp` |
+| 2 | `__F_0_3` | 36 | `ff/lib/math/ack.ffp` |
+| 3 | `__(powmod_loop)` | 34 | `ff/lib/math/primes.ffp` |
+| 4 | `__atan_pos_scaled` | 32 | `ff/lib/math/atan.ffp` |
 | 5 | `__tail_loop` | 29 | `ff/lib/math/atan-core.ffp` |
 | 6 | `__ackn` | 26 | `ff/lib/math/ack.ffp` |
 | 7 | `__seq=` | 26 | `ff/lib/seq/seq.ffp` |
-| 8 | `__series_loop` | 25 | `ff/lib/math/exp.ffp` |
-| 9 | `#TODO` | 22 | `ff/lib/tap.ffp` |
-| 10 | `__floor_half` | 21 | `ff/lib/math/exp.ffp` |
-| 11 | `__u2_newp` | 20 | `ff/lib/math/atan-core.ffp` |
-| 12 | `__series` | 20 | `ff/lib/math/exp.ffp` |
-| 13 | `npi` | 20 | `ff/lib/math/pi.ffp` |
-| 14 | `OK` | 19 | `ff/lib/tap.ffp` |
-| 15 | `__(inner_witness_loop)` | 19 | `ff/lib/math/primes.ffp` |
-| 16 | `__(trial)` | 19 | `ff/lib/math/primes.ffp` |
-| 17 | `__reduce` | 18 | `ff/lib/math/exp.ffp` |
+| 8 | `#TODO` | 21 | `ff/lib/tap.ffp` |
+| 9 | `__u2_newp` | 20 | `ff/lib/math/atan-core.ffp` |
+| 10 | `__series` | 20 | `ff/lib/math/exp.ffp` |
+| 11 | `npi` | 20 | `ff/lib/math/pi.ffp` |
+| 12 | `__floor_half` | 19 | `ff/lib/math/exp.ffp` |
+| 13 | `__(inner_witness_loop)` | 19 | `ff/lib/math/primes.ffp` |
+| 14 | `__(trial)` | 19 | `ff/lib/math/primes.ffp` |
+| 15 | `OK` | 18 | `ff/lib/tap.ffp` |
+| 16 | `__reduce` | 18 | `ff/lib/math/exp.ffp` |
+| 17 | `__series_loop` | 18 | `ff/lib/math/exp.ffp` |
 | 18 | `maybe_prime?` | 18 | `ff/lib/math/primes.ffp` |
 | 19 | `__seed_taylor_state` | 17 | `ff/lib/math/atan-core.ffp` |
 | 20 | `_atan__scaled` | 17 | `ff/lib/math/atan.ffp` |
