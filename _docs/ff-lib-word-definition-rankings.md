@@ -6,15 +6,15 @@ Ranking is by whitespace-separated token count in each word body (text between `
 
 | Rank | Word | Tokens in definition | File |
 |---:|---|---:|---|
-| 1 | `__series_step` | 40 | `ff/lib/math/exp.ffp` |
+| 1 | `__series_step` | 38 | `ff/lib/math/exp.ffp` |
 | 2 | `__F_0_3` | 36 | `ff/lib/math/ack.ffp` |
-| 3 | `__(powmod_loop)` | 34 | `ff/lib/math/primes.ffp` |
-| 4 | `__atan_pos_scaled` | 32 | `ff/lib/math/atan.ffp` |
-| 5 | `__tail_loop` | 29 | `ff/lib/math/atan-core.ffp` |
-| 6 | `__ackn` | 26 | `ff/lib/math/ack.ffp` |
-| 7 | `__seq=` | 26 | `ff/lib/seq/seq.ffp` |
-| 8 | `#TODO` | 21 | `ff/lib/tap.ffp` |
-| 9 | `__u2_newp` | 20 | `ff/lib/math/atan-core.ffp` |
+| 3 | `__atan_pos_scaled` | 32 | `ff/lib/math/atan.ffp` |
+| 4 | `__(powmod_loop)` | 32 | `ff/lib/math/primes.ffp` |
+| 5 | `__ackn` | 26 | `ff/lib/math/ack.ffp` |
+| 6 | `__seq=` | 26 | `ff/lib/seq/seq.ffp` |
+| 7 | `#TODO` | 21 | `ff/lib/tap.ffp` |
+| 8 | `__u2_newp` | 20 | `ff/lib/math/atan-core.ffp` |
+| 9 | `__tail_loop` | 20 | `ff/lib/math/atan-core.ffp` |
 | 10 | `__series` | 20 | `ff/lib/math/exp.ffp` |
 | 11 | `npi` | 20 | `ff/lib/math/pi.ffp` |
 | 12 | `__floor_half` | 19 | `ff/lib/math/exp.ffp` |

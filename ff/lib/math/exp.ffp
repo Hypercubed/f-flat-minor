@@ -70,7 +70,7 @@ __series_step:
   dig [
   dig * +
   ] dip ] dip *
-  ] dip ] dip ] dip q> dup q< swap q< swap [ * ]
+  ] dip ] dip ] dip q> dup q< swap q< swap [*]
   dip ++
 ; .unsafe /* p q t k __series_step == p' q' t' k' */
 

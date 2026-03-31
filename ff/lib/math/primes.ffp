@@ -18,7 +18,7 @@ __nrand: over - rand + ;
 
 __(powmod_loop): /* acc a d -> acc, with n on queue */
   dup zero?
-  [ drop2 ]
+  [drop2]
   [
     dup 1 & nz? [ rot over * q> dup q< % rot ] ?
     swap dup *  q> dup q< % swap 1 >>
