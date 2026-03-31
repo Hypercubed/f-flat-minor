@@ -7,7 +7,7 @@ pair: unit cons ;
 compose: [ [eval] dip eval ] cons cons ;
 
 __map: depth 2 > [ swap q< __map dup slip q> swap ] ? ;
-map!: depth 1 > [ __map eval ] [ drop ] branch ;
+map!: depth 1 > [ __map eval ] [drop] branch ;
 
 reduce!: depth 2 - times ; /* a+ [B] reduce! == r */
 head!: [drop] reduce! ; /* a+ head! == a */
@@ -16,11 +16,11 @@ last!: [clr] dip ; /* .. a last! == a */
 
 __reduce_r: depth 3 > [ dup slip __reduce_r ] ? ;
 reduce_r!: __reduce_r eval ; /* a+ [B] reduce_r! == r */
-foldr!: depth 2 > [ pushtop reduce_r! ] [ nip ] branch ;  /* a* [B] z foldr! == r */
+foldr!: depth 2 > [ pushtop reduce_r! ] [nip] branch ;  /* a* [B] z foldr! == r */
  
 __reduce_l: depth 3 > [ swap q< __reduce_l dup slip q> swap ] ? ;
 reduce_l!: __reduce_l eval ; /* a+ [B] reduce_l! == r */
-foldl!: depth 2 > [ pushtop reduce_l! ] [ nip ] branch ; /* a* [B] z foldl! == r */
+foldl!: depth 2 > [ pushtop reduce_l! ] [nip] branch ; /* a* [B] z foldl! == r */
 
 reverse!: depth 1 > [ [reverse!] dip pushtop ] ? ;
 

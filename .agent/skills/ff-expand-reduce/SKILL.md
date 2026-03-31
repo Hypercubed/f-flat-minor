@@ -137,6 +137,10 @@ Use this checklist whenever queue words cross word boundaries or the word starts
 6. **Single-word pointer normalization (resynthesis phase):** when the reduced output contains `[ X ]` with exactly one word token inside, you may resynthesize it to `[X]`.
    - Never compact quotes that contain multiple words, nested quotes, or interior whitespace-separated tokens.
    - Invalid examples (must stay quoted): `[ dig [ * * ] dip ]`, `[ * * ]`, `[ rot __parts ]`.
+7. **Required pointer inventory pass (before final output):**
+   - For each touched word/file, enumerate every single-word quote candidate in source form (`[ x ]` or `[x]` where `x` is one token).
+   - Mark each candidate as `normalized` or `kept` with a one-line reason.
+   - Do not return success if any eligible single-word candidate is omitted from this checklist.
 
 ## Pitfalls
 
