@@ -1,12 +1,12 @@
 /* String output */
 
 /* Simple stack strings, characters on the stack, initiated with a null (0) */
-__prints: dup [ q< __prints q> putc ] ? ;   /* 0 n* __prints == 0 {prints chars} */
+__prints: dup [ [__prints] dip putc ] ? ;   /* 0 n* __prints == 0 {prints chars} */
 prints: __prints drop ;                      /* 0 n* prints == {prints chars} */
 println: prints cr ;                         /* 0 n* println == {prints chars, newline} */
 
 /* Improved strings (WIP) are quoted stack strings with no initiated null */
-__lens: dup [ q< __lens q> drop 1 + ] ? ;    /* 0 n* __lens == 0 n */
+__lens: dup [ [__lens] dip drop 1 + ] ? ;    /* 0 n* __lens == 0 n */
 sprint: 0 swap eval prints ;                 /* [S] sprint == {prints string} */
 sprintln: sprint cr ;                        /* [S] sprintln == {prints string, newline} */
 slen: 0 swap eval __lens ;                   /* [S] slen == n */
