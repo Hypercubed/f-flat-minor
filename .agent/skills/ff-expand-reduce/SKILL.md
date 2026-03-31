@@ -27,6 +27,15 @@ For each target word, return:
 5. Verification result (tests/probes run).
 6. `status: success|blocked` with blocker reason.
 
+### Core foundation freeze (do not rewrite unless explicitly requested)
+
+Treat these core words as semantic anchors during ERS:
+- `swap` (VM primitive)
+- `slip`
+- `dupd`
+
+Default rule: do **not** rewrite, restyle, or inline-through the defining behavior of these words unless the user explicitly requests core-semantics changes. If encountered, report as `kept-intentionally: foundation freeze`.
+
 ## Phase 1 — Expand (substitute toward primitives)
 
 1. Resolve the word body; follow `.import` chains from the **source file’s directory**.

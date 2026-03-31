@@ -10,6 +10,8 @@ pred: dup -- ; /* n pred == n n-1 */
 succ: dup ++ ; /* n succ == n n+1 */
 
 /* shuffle words */
+/* Semantic anchors: slip/swap/dupd are foundational contracts.
+ * Routine ERS cleanup should not rewrite these definitions unless explicitly requested. */
 
 slip: q< eval q> ; /* [A] b slip == a* b */
 drop2: drop drop ; /* a b drop2 == */
