@@ -23,7 +23,7 @@ dupd: q< dup q> ; /* a b dupd == a a b */
 
 drop2: drop drop ; /* a b drop2 == */
 dip: swap slip ; .inline /* a [B] dip == b* a */
-dipd: swap q< swap slip q> ; /* stash top two; run [Q] on third; unstash (queue) */
+dipd: swap [ swap slip ] dip ; /* stash top two; run [Q] on third; unstash (queue) */
 dig: swapd swap ; .inline /* a b c dig == b c a */
 bury: swap swapd ; .inline /* a b c bury == c a b */
 rot: swap swapd swap ; .inline /* a b c rot == c b a */
@@ -34,7 +34,7 @@ nip: swap drop ; .inline /* a b nip == b */
 tuck: swap over ; .inline /* a b tuck == b a b */
 sip: over slip ; .inline /* a [B] sip == a b* a */
 sipd: q< sip q> ; .inline /* a [B] c sipd == a b* a c */
-bi: q< over slip q> dig slip swap ; .inline /* a [B] [C] bi == b c */
+bi: [ over slip ] dip dig slip swap ; .inline /* a [B] [C] bi == b c */
 bi2: q< q< dup2 q> eval bury q> eval ; .inline /* a b [C] [D] bi2 == c d */
 
 /* inquisitive */
