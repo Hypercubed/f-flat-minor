@@ -2,7 +2,7 @@
 
 /* Buck's functions used for m <= 5 */
 __F_0_3:
-  over 0 = [ nip 1 + ] [
+  over zero? [ nip 1 + ] [
     over 1 = [ nip 2 + ] [
       over 2 = [ nip 2 * ]
       [ nip 2 swap ^ ] branch
