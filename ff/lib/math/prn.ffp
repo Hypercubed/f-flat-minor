@@ -10,4 +10,4 @@ __putn0: dup2 __needs-zero [ __zero -- __putn0 ] [ drop putn ] branch ; /* x n _
 nputn: dup2 ntrunc putn __dot tuck nfrac swap __putn0 ;
 
 __slash: '/' putc ;
-qputn: dup2 gcd tuck [ [ / putn ] dip ] dip __slash / putn ;
+qputn: dup2 gcd tuck [ / putn ] dipd __slash / putn ;

@@ -14,7 +14,7 @@ npi:
 ; /* n _npi__ == floor(10ⁿ*π) */
 
 tau:
-  1 + npi 1 << 10 /
+  1 + npi 5 /
 ; /* n tau == floor(10ⁿ*2*π) */
 
 half_pi:

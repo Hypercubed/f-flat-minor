@@ -23,12 +23,10 @@ __next:
 /* x -- floor(sqrt(x)) | errors on negative x (division by zero) */
 isqrt:
   dup 0 < [ 1 0 / ] ? /* error: negative input */
-  dup 1 > [
-    __next
-  ] ? ;
+  __next ;
 
 /* x -- floor(sqrt(x)) x-floor(sqrt(x))^2 */
-isqrtrem: dup isqrt dup bury 2 ^ - ;
+isqrtrem: dup isqrt tuck 2 ^ - ;
 
 /* n x -- floor(10^n*sqrt(x)) | errors on negative x (division by zero) */
 nsqrt:

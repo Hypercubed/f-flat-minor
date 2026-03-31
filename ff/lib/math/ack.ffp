@@ -25,7 +25,7 @@ __F:
 
 /* Recursive function for m > 5 */
 __ackn: over [ dup
-  [ [ dup -- swap ] dip -- ack ack ]
+  [ [ pred swap ] dip -- ack ack ]
   [ drop -- 1 ack ] branch ] [ nip ++ ] branch ;
 
 /* Ackermann function */
