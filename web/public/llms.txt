@@ -12,7 +12,7 @@ This web app supports automatic execution from a URL query parameter:
   - `c64.` for deflate-compressed + URL-safe base64 source
   - `bc.` for raw FF bytecode (base64 VLQ), decoded to FF-compatible IR source
 - Raw source in `?code=` is not supported.
-- On page load, the app decodes `code`, fills the editor, and runs it automatically.
+- On page load, the app decodes `code` and fills the editor; use **Run Program** to compile and execute.
 - The URL query parameter updates only when code is run.
 
 ## DOM landmarks for agents

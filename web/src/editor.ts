@@ -1,9 +1,10 @@
 import { history, historyKeymap, indentWithTab, defaultKeymap } from "@codemirror/commands";
 import { syntaxHighlighting, HighlightStyle, StreamLanguage } from "@codemirror/language";
-import { EditorState, Prec } from "@codemirror/state";
+import { EditorState, Prec, type Extension } from "@codemirror/state";
 import type { StreamParser } from "@codemirror/stream-parser";
 import { EditorView, drawSelection, highlightActiveLine, keymap, lineNumbers, placeholder } from "@codemirror/view";
 import { tags } from "@lezer/highlight";
+import { triggerEditorKeyFlatFeedback } from "./run-fx.ts";
 
 interface FfStreamState {
   inBlockComment: boolean;
@@ -240,7 +241,22 @@ export interface SourceEditor {
   focus(): void;
 }
 
-export function mountSourceEditor(parent: HTMLElement, initialValue: string): SourceEditor {
+export interface MountSourceEditorOptions {
+  extraExtensions?: readonly Extension[];
+}
+
+/** Main + tutorial source editors: one ♭ from the caret on qualifying keypresses (see run-fx). */
+export const tutorialEditorFlatFeedback = EditorView.domEventHandlers({
+  keydown(event, view) {
+    triggerEditorKeyFlatFeedback(view, event);
+  },
+});
+
+export function mountSourceEditor(
+  parent: HTMLElement,
+  initialValue: string,
+  options?: MountSourceEditorOptions,
+): SourceEditor {
   const view = new EditorView({
     state: EditorState.create({
       doc: initialValue,
@@ -251,6 +267,7 @@ export function mountSourceEditor(parent: HTMLElement, initialValue: string): So
         EditorView.lineWrapping,
         ffTheme,
         sourceTheme,
+        ...(options?.extraExtensions ?? []),
       ],
     }),
     parent,

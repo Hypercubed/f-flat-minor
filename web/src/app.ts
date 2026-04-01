@@ -1,4 +1,4 @@
-import { mountReadonlySourceViewer, mountSourceEditor } from "./editor.ts";
+import { mountReadonlySourceViewer, mountSourceEditor, tutorialEditorFlatFeedback } from "./editor.ts";
 import { DEFAULT_SOURCE, EXAMPLES, EXAMPLE_OPTIONS_HTML } from "./examples.ts";
 import { compileProgram } from "./program-runner.ts";
 import { ReplSession } from "./repl-session.ts";
@@ -6,6 +6,8 @@ import { buildAppUrl, parseAppTab, type AppTab } from "./app-url-state.ts";
 import appShellTemplate from "./templates/app-shell.html?raw";
 import helpTemplate from "./templates/help.html?raw";
 import { mountTutorial } from "./tutorial.ts";
+import { triggerReplKeyFeedback, triggerRunProgramFeedback } from "./run-fx.ts";
+import { syncRunFeedbackToggleButton, toggleRunFeedback } from "./run-feedback.ts";
 import { decodeCodeFromUrlParam, encodeCodeForUrlParam } from "./url-codec.ts";
 import type { ValueInspection } from "../../typescript/core/src/engine.ts";
 import type { StackItem } from "./repl-session.ts";
@@ -71,6 +73,13 @@ function renderAppShell() {
 export function mountApp(root: HTMLElement) {
   root.innerHTML = renderAppShell();
 
+  const runFeedbackToggle = requireElement<HTMLButtonElement>(root, "#run-feedback-toggle");
+  runFeedbackToggle.addEventListener("click", () => {
+    toggleRunFeedback();
+    syncRunFeedbackToggleButton(runFeedbackToggle);
+  });
+  syncRunFeedbackToggleButton(runFeedbackToggle);
+
   const source = requireElement<HTMLElement>(root, "#source");
   const stdin = requireElement<HTMLInputElement>(root, "#stdin");
   const optimize = requireElement<HTMLInputElement>(root, "#optimize");
@@ -101,7 +110,9 @@ export function mountApp(root: HTMLElement) {
 
   const searchParams = new URLSearchParams(window.location.search);
   const sourceFromUrl = decodeCodeFromUrlParam(searchParams.get("code"));
-  const sourceEditor = mountSourceEditor(source, sourceFromUrl ?? DEFAULT_SOURCE);
+  const sourceEditor = mountSourceEditor(source, sourceFromUrl ?? DEFAULT_SOURCE, {
+    extraExtensions: [tutorialEditorFlatFeedback],
+  });
   const preprocessedViewer = mountReadonlySourceViewer(preprocessed, "");
   const irViewer = mountReadonlySourceViewer(ir, "");
   let activeTab: AppTab = parseAppTab(window.location.hash);
@@ -280,6 +291,21 @@ export function mountApp(root: HTMLElement) {
       setPlaygroundRunningState(false);
       document.body.dataset.ready = "true";
     }
+  }
+
+  function setPlaygroundIdle() {
+    summary.innerHTML = renderSummary([
+      { label: "compile", value: "—", tone: "pending" },
+      { label: "execute", value: "—", tone: "pending" },
+      { label: "exit", value: "—", tone: "pending" },
+    ]);
+    summary.dataset.state = "idle";
+    output.innerHTML = escapeHtml("(Click Run Program to execute.)");
+    errorOutput.textContent = "";
+    preprocessedViewer.setValue("");
+    irViewer.setValue("");
+    bytecode.innerHTML = "";
+    document.body.dataset.ready = "true";
   }
 
   const replSession = new ReplSession();
@@ -490,20 +516,23 @@ export function mountApp(root: HTMLElement) {
   example.addEventListener("change", () => {
     sourceEditor.setValue(EXAMPLES[example.value] ?? DEFAULT_SOURCE);
     syncUrlToAppState();
-    void renderPlayground();
+    setPlaygroundIdle();
   });
 
   run.addEventListener("click", () => {
+    triggerRunProgramFeedback(run);
     syncUrlToAppState();
     void renderPlayground();
   });
 
   optimize.addEventListener("change", () => {
     syncUrlToAppState();
-    void renderPlayground();
+    setPlaygroundIdle();
   });
 
   replCommand.addEventListener("keydown", (event) => {
+    triggerReplKeyFeedback(replCommand, event);
+
     if (event.key === "Enter") {
       event.preventDefault();
       void runReplLine();
@@ -594,7 +623,7 @@ export function mountApp(root: HTMLElement) {
     replInspect.classList.remove("is-visible");
   });
 
-  void renderPlayground();
+  setPlaygroundIdle();
   mountTutorial(tutorialRoot);
   renderReplStack([]);
   renderReplTranscript();

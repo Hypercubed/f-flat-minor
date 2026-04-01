@@ -1,19 +1,33 @@
 <main class="shell">
-  <section class="hero">
-    <p class="eyebrow">f-flat-minor / web</p>
-    <h1>Run F-flat-minor in the browser.</h1>
-    <p class="lede">
-      Playground, REPL, and language help powered by the shared TypeScript core.
-    </p>
-    <p class="hero-links">
-      <a
-        class="repo-link"
-        href="https://github.com/Hypercubed/f-flat-minor"
-        target="_blank"
-        rel="noreferrer"
-      >View the GitHub repository</a>
-    </p>
-  </section>
+  <div class="shell-hero-row">
+    <section class="hero">
+      <p class="eyebrow">f-flat-minor / web</p>
+      <h1>Run F♭m in the browser.</h1>
+      <p class="lede">
+        Playground, REPL, and language help powered by the shared TypeScript core.
+      </p>
+      <p class="hero-links">
+        <a
+          class="repo-link"
+          href="https://github.com/Hypercubed/f-flat-minor"
+          target="_blank"
+          rel="noreferrer"
+        >View the GitHub repository</a>
+      </p>
+    </section>
+    <div class="shell-hero-toolbar">
+      <button
+        type="button"
+        id="run-feedback-toggle"
+        class="run-feedback-toggle"
+        aria-label="Run sound and animations on"
+        aria-pressed="true"
+        title="Turn off run sound and animations"
+      >
+        <span class="run-feedback-toggle__glyph" aria-hidden="true">♭</span>
+      </button>
+    </div>
+  </div>
 
   <nav class="mode-tabs" aria-label="Application modes">
     <button class="mode-tab mode-tab--playground is-active" data-tab="playground">Playground</button>

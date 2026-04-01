@@ -1,5 +1,6 @@
-import { mountSourceEditor } from "./editor.ts";
+import { mountSourceEditor, tutorialEditorFlatFeedback } from "./editor.ts";
 import { compileProgram, type RunResult } from "./program-runner.ts";
+import { triggerRunProgramFeedback } from "./run-fx.ts";
 import { TUTORIAL_PROBLEMS, type TutorialProblem } from "./tutorial-problems.ts";
 
 function escapeHtml(value: string): string {
@@ -194,7 +195,9 @@ export function mountTutorial(root: HTMLElement) {
     const diagnostics = requireElement<HTMLElement>(card, "[data-role='diagnostics']");
     const error = requireElement<HTMLElement>(card, "[data-role='error']");
     const stdin = card.querySelector<HTMLInputElement>("[data-role='stdin']");
-    const sourceEditor = mountSourceEditor(editorHost, problem.source);
+    const sourceEditor = mountSourceEditor(editorHost, problem.source, {
+      extraExtensions: [tutorialEditorFlatFeedback],
+    });
 
     function resetCard() {
       sourceEditor.setValue(problem.source);
@@ -210,6 +213,7 @@ export function mountTutorial(root: HTMLElement) {
     }
 
     runButton.addEventListener("click", async () => {
+      triggerRunProgramFeedback(runButton);
       runButton.disabled = true;
       resetButton.disabled = true;
       if (stdin) {
