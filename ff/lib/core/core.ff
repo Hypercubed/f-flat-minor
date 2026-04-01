@@ -23,35 +23,35 @@ dupd: q< dup q> ; /* a b dupd == a a b */
 
 drop2: drop drop ; /* a b drop2 == */
 dip: swap slip ; .inline /* a [B] dip == b* a */
-dipd: swap [ swap slip ] dip ; /* stash top two; run [Q] on third; unstash (queue) */
+dipd: swap [dip] dip ; .inline /* stash top two; run [Q] on third; unstash (queue) */
 dig: swapd swap ; .inline /* a b c dig == b c a */
 bury: swap swapd ; .inline /* a b c bury == c a b */
-rot: swap swapd swap ; .inline /* a b c rot == c b a */
+rot: bury swap ; .inline /* a b c rot == c b a */
 over: dupd swap ; .inline /* a b over == a b a */
 dup2: over over ; .inline /* a b dup2 == a b a b */
 run: dup slip ; .inline /* [A] run == a* [A] */
 nip: swap drop ; .inline /* a b nip == b */
 tuck: swap over ; .inline /* a b tuck == b a b */
 sip: over slip ; .inline /* a [B] sip == a b* a */
-sipd: q< sip q> ; .inline /* a [B] c sipd == a b* a c */
-bi: [ over slip ] dip dig slip swap ; .inline /* a [B] [C] bi == b c */
-bi2: q< q< dup2 q> eval bury q> eval ; .inline /* a b [C] [D] bi2 == c d */
+sipd: [sip] dip ; .inline /* a [B] c sipd == a b* a c */
+bi: sipd dig slip swap ; .inline /* a [B] [C] bi == b c */
+bi2: [ [dup2] dip eval bury ] dip eval ; .inline /* a b [C] [D] bi2 == c d */
 
 /* inquisitive */
 
-not: 0 = ; /* flag not == flag' */
 zero?: 0 = ; /* n zero? == flag */
-truthy?: zero? not ; .inline /* n truthy? == flag */
+not: zero? ; .inline /* flag not == flag' */
+nz?: zero? not ; .inline /* n nz? == flag */
+truthy?: nz? ; .inline /* n truthy? == flag */
 falsey?: zero? ; .inline /* n falsey? == flag */
 !=: = not ; .inline /* a b != == flag */
-nz?: zero? not ; .inline /* n nz? == flag */
 
 /* comparison */
 <=: > not ; .inline /* a b <= == flag */
 >=: < not ; .inline /* a b >= == flag */
 
-sort2: dup2 > [ swap ] ? ; .inline /* a b sort2 == min max */
-between?: [ sort2 ] dip swap dupd < bury < and ; .inline /* lo hi n between? == flag */
+sort2: dup2 > [swap] ? ; .inline /* a b sort2 == min max */
+between?: [sort2] dip swap dupd < bury < and ; .inline /* lo hi n between? == flag */
 
 /* binary operators */
 
@@ -66,28 +66,26 @@ nor: + zero? ; /* a b nor == flag */
 
 /* short circuit */
 
-or_else: q< over slip swap q> swap [ drop2 true ] [ eval ] branch ; .inline /* a [B] [C] or_else == flag */
-and_also: q< over slip swap q> swap [ eval ] [ drop2 false ] branch ; .inline /* a [B] [C] and_also == flag */
+or_else: [ sip swap ] dip swap [ drop2 true ] [eval] branch ; .inline /* a [B] [C] or_else == flag */
+and_also: [ sip swap ] dip swap [eval] [ drop2 false ] branch ; .inline /* a [B] [C] and_also == flag */
 
 /* branching */
 
-choose: rot [ swap ] ? drop ; /* a b flag choose == a or b */
+choose: rot [swap] ? drop ; /* a b flag choose == a or b */
 branch: choose eval ; /* a flag [B] [C] branch == b* or c* */
-if: slip ? ; /* a flag [B] if == a or b* */
-ifte: slipd branch ; /* a flag [B] [C] ifte == b* or c* */
 
 /* stack */
 
 empty?: depth zero? ; /* .. empty? == .. flag */
-pushtop: depth 1 > [ swap q< pushtop q> ] ? ; /* .. a pushtop == a .. */
+pushtop: depth 1 > [ swap [pushtop] dip ] ? ; /* .. a pushtop == a .. */
 
 /* counters */
 
-_loop: dup [ -- q< dup q< eval q> q> _loop ] ? ; /* a [B] n _loop == a b* n */
+_loop: dup [ -- [ dup slip ] dip _loop ] ? ; /* a [B] n _loop == a b* n */
 loop: _loop drop ; /* a [B] n loop == a b* [B] */
 
 times: loop drop ; /* a [B] n times == a b* */
 seq: swap times ; /* a n [B] seq == a b* */
 
-range: dupd swap - [ succ ] seq ; /* a b range == a..b */
-count: 0 swap ++ [ succ ] seq drop ; /* n count == 1..n */
+range: over - [succ] seq ; /* a b range == a..b */
+count: 0 swap ++ [succ] seq drop ; /* n count == 1..n */
