@@ -488,6 +488,14 @@ textarea {
   flex-wrap: wrap;
 }
 
+/* Keep width stable when label swaps Run Program ↔ Running... */
+#run {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-inline-size: 12rem;
+}
+
 button {
   min-height: 44px;
   padding: 0.75rem 1rem;
