@@ -32,6 +32,7 @@ export interface PreparedProgram {
   issues: string[];
   compileMs: number;
   execute: () => ExecuteResult;
+  executeAsync: (options?: ExecuteAsyncOptions) => Promise<ExecuteResult>;
 }
 
 export interface ExecuteResult {
@@ -40,6 +41,11 @@ export interface ExecuteResult {
   logs: string[];
   exitCode: number;
   executeMs: number;
+}
+
+export interface ExecuteAsyncOptions {
+  yieldEvery?: number;
+  scheduler?: () => void | Promise<void>;
 }
 
 function withCapturedConsole<T>(
@@ -53,6 +59,22 @@ function withCapturedConsole<T>(
 
   try {
     return fn();
+  } finally {
+    console.log = originalConsoleLog;
+  }
+}
+
+async function withCapturedConsoleAsync<T>(
+  collector: (message: string) => void,
+  fn: () => Promise<T>,
+): Promise<T> {
+  const originalConsoleLog = console.log;
+  console.log = (...args: unknown[]) => {
+    collector(args.map(String).join(" "));
+  };
+
+  try {
+    return await fn();
   } finally {
     console.log = originalConsoleLog;
   }
@@ -144,6 +166,23 @@ export function compileProgram(source: string, stdin: string, optimize: boolean)
 
       withCapturedConsole((message) => context.logs.push(message), () => {
         context.engine.run();
+      });
+
+      const executeEnd = performance.now();
+
+      return {
+        output: context.getOutput(),
+        stack: context.engine.getStack().map(String),
+        logs: [...context.logs],
+        exitCode: context.getExitCode(),
+        executeMs: executeEnd - executeStart,
+      };
+    },
+    async executeAsync(options: ExecuteAsyncOptions = {}) {
+      const executeStart = performance.now();
+
+      await withCapturedConsoleAsync((message) => context.logs.push(message), async () => {
+        await context.engine.runAsync(options);
       });
 
       const executeEnd = performance.now();

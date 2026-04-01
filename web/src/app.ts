@@ -234,7 +234,7 @@ export function mountApp(root: HTMLElement) {
 
       await waitForPaint();
 
-      const executed = compiled.execute();
+      const executed = await compiled.executeAsync();
       const issueCount = compiled.issues.length;
       const stdoutParts: string[] = [];
 

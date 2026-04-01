@@ -242,7 +242,7 @@ export function mountTutorial(root: HTMLElement) {
 
         await waitForPaint();
 
-        const executed = compiled.execute();
+        const executed = await compiled.executeAsync();
         const result: RunResult = {
           output: executed.output,
           preprocessed: compiled.preprocessed,

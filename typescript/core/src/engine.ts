@@ -35,6 +35,13 @@ interface TraceEvent {
   queue_depth: number;
 }
 
+export interface EngineRunAsyncOptions {
+  /** Number of VM cycles to run before yielding. Must be >= 1. */
+  yieldEvery?: number;
+  /** Callback awaited between chunks when work remains. */
+  scheduler?: () => void | Promise<void>;
+}
+
 export interface InspectableToken {
   /** The bigint value */
   value: bigint;
@@ -254,12 +261,13 @@ export class Engine {
     return this.stack;
   }
 
-  run() {
+  private runChunk(maxSteps: number, initialStep: number) {
     const queue = this.queue;
     let immediate = false;
-    let step = 0;
+    let step = initialStep;
+    let stepsRun = 0;
 
-    while (queue.length > 0) {
+    while (queue.length > 0 && stepsRun < maxSteps) {
       const [tag, value] = this.queueShift();
       const isCall = tag === Q_CALL;
       const stackBefore = this.stack.slice();
@@ -291,7 +299,35 @@ export class Engine {
         stackBefore,
         stackAfter: this.traceVerbose || this.traceFormat === "jsonl" ? this.stack.slice() : undefined,
       });
+      stepsRun++;
     }
+
+    return step;
+  }
+
+  run() {
+    this.runChunk(Number.POSITIVE_INFINITY, 0);
+    return this.stack;
+  }
+
+  async runAsync(options: EngineRunAsyncOptions = {}) {
+    const yieldEvery = options.yieldEvery ?? 2048;
+    if (!Number.isFinite(yieldEvery) || yieldEvery < 1) {
+      throw new Error(`runAsync: yieldEvery must be a positive finite number (received ${yieldEvery})`);
+    }
+
+    const scheduler = options.scheduler ?? (() => new Promise<void>((resolve) => {
+      globalThis.setTimeout(resolve, 0);
+    }));
+
+    let step = 0;
+    while (this.queue.length > 0) {
+      step = this.runChunk(yieldEvery, step);
+      if (this.queue.length > 0) {
+        await scheduler();
+      }
+    }
+
     return this.stack;
   }
 
