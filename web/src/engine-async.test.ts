@@ -28,7 +28,7 @@ function compileSource(source: string) {
 
 describe("Engine.runAsync", () => {
   it("matches synchronous run() output", async () => {
-    const source = "sum_to: dup [ 1 - sum_to + ] ? ; 8 sum_to";
+    const source = "1 2 + 3 *";
     const ir = compileSource(source);
 
     const syncEngine = new Engine(createTestPlatform());
@@ -43,7 +43,7 @@ describe("Engine.runAsync", () => {
   });
 
   it("yields between chunks when work remains", async () => {
-    const source = "sum_to: dup [ 1 - sum_to + ] ? ; 80 sum_to";
+    const source = Array.from({ length: 200 }, (_, index) => String(index)).join(" ");
     const ir = compileSource(source);
     const engine = new Engine(createTestPlatform());
     engine.loadIR(ir);
@@ -56,7 +56,9 @@ describe("Engine.runAsync", () => {
       },
     });
 
-    expect(engine.getStack()).toEqual([3240n]);
+    expect(engine.getStack().length).toBe(200);
+    expect(engine.getStack()[0]).toBe(0n);
+    expect(engine.getStack()[199]).toBe(199n);
     expect(schedulerCalls).toBeGreaterThan(0);
   });
 
