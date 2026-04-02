@@ -3,7 +3,12 @@ import type { IrInstruction } from "../../core/src/ir.ts";
 import { IROp } from "../../core/src/ir.ts";
 import { OpCodes, systemWords } from "../../core/src/opcodes.ts";
 import { analyzeIr, type Diagnostic } from "./analyzer.ts";
-import { CompileSourceMap, type SourcePosition, type SourceRange } from "./source-map.ts";
+import {
+  createSourceMap,
+  type SourceMap,
+  type SourcePosition,
+  type SourceRange,
+} from "./source-map.ts";
 import { tokenizeSource, type SourceToken } from "./tokenizer.ts";
 
 export interface DefinitionToken {
@@ -24,7 +29,7 @@ export interface Definition {
 export interface CompileResult {
   definitions: Map<string, Definition>;
   diagnostics: Diagnostic[];
-  sourceMap: CompileSourceMap;
+  sourceMap: SourceMap;
   tokens: SourceToken[];
   ir: IrInstruction[];
 }
@@ -65,7 +70,7 @@ function buildDefinition(
   filename: string | undefined,
   definingInstruction: IrInstruction,
   bodyInstructions: IrInstruction[],
-  sourceMap: CompileSourceMap,
+  sourceMap: SourceMap,
 ): Definition | null {
   const name = definitionNameFromInstruction(definingInstruction);
   if (!name) {
@@ -111,7 +116,7 @@ function buildDefinition(
   };
 }
 
-function extractDefinitions(ir: IrInstruction[], sourceMap: CompileSourceMap): Map<string, Definition> {
+function extractDefinitions(ir: IrInstruction[], sourceMap: SourceMap): Map<string, Definition> {
   const definitions = new Map<string, Definition>();
 
   for (let index = 0; index < ir.length; index++) {
@@ -176,7 +181,7 @@ export function compileSource(source: string, uri = "/main.ffp"): CompileResult 
   const tokens = tokenizeSource(source);
   const compiler = new Compiler();
   const ir = compiler.compileToIR(tokens, uri);
-  const sourceMap = CompileSourceMap.fromCompilerTokens(tokens);
+  const sourceMap = createSourceMap(tokens);
   const definitions = coreWordDefinitions();
 
   for (const [name, definition] of extractDefinitions(ir, sourceMap)) {
