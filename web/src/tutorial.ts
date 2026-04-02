@@ -1,5 +1,6 @@
 import { mountSourceEditor, tutorialEditorFlatFeedback } from "./editor.ts";
-import { compileProgram, type RunResult } from "./program-runner.ts";
+import { type RunResult } from "./program-runner.ts";
+import { runPlaygroundProgram } from "./run-playground.ts";
 import { triggerRunProgramFeedback } from "./run-fx.ts";
 import { TUTORIAL_PROBLEMS, type TutorialProblem } from "./tutorial-problems.ts";
 
@@ -116,7 +117,7 @@ function renderProblemCard(problem: TutorialProblem) {
             <div class="tutorial-controls">
               ${stdinHtml}
               <div class="actions tutorial-actions">
-                <button type="button" data-role="run" class="primary">Run</button>
+                <button type="button" data-role="run" class="primary tutorial-run-btn" aria-label="Run">Run</button>
                 <button type="button" data-role="reset" class="ghost">Reset</button>
               </div>
             </div>
@@ -212,9 +213,17 @@ export function mountTutorial(root: HTMLElement) {
       error.hidden = true;
     }
 
+    let runAbort: AbortController | null = null;
+
     runButton.addEventListener("click", async () => {
+      if (runAbort !== null) {
+        runAbort.abort();
+        return;
+      }
       triggerRunProgramFeedback(runButton);
-      runButton.disabled = true;
+      runButton.textContent = "Cancel";
+      runButton.setAttribute("aria-label", "Cancel run");
+      runButton.classList.add("is-cancel");
       resetButton.disabled = true;
       if (stdin) {
         stdin.disabled = true;
@@ -227,82 +236,110 @@ export function mountTutorial(root: HTMLElement) {
       error.textContent = "";
       error.hidden = true;
 
-      let compiled: ReturnType<typeof compileProgram> | null = null;
+      const abortController = new AbortController();
+      runAbort = abortController;
 
       try {
         await waitForPaint();
 
-        compiled = compileProgram(sourceEditor.getValue(), stdin?.value ?? "", true);
-
         summary.innerHTML = renderTutorialSummaryItems([
-          { label: "compile", value: `${compiled.compileMs.toFixed(2)} ms` },
-          { label: "execute", value: "Running...", tone: "running", showDot: true },
+          { label: "compile", value: "Running...", tone: "running", showDot: true },
+          { label: "execute", value: "pending", tone: "pending" },
           { label: "exit", value: "pending", tone: "pending" },
         ]);
 
         await waitForPaint();
 
-        const executed = await compiled.executeAsync();
-        const result: RunResult = {
-          output: executed.output,
-          preprocessed: compiled.preprocessed,
-          ir: compiled.ir,
-          bytecode: compiled.bytecode,
-          issues: compiled.issues,
-          stack: executed.stack,
-          logs: executed.logs,
-          exitCode: executed.exitCode,
-          compileMs: compiled.compileMs,
-          executeMs: executed.executeMs,
-        };
+        const result = await runPlaygroundProgram(sourceEditor.getValue(), stdin?.value ?? "", true, {
+          signal: abortController.signal,
+          onProgress: ({ vmCyclesExecuted, compileMs }) => {
+            summary.innerHTML = renderTutorialSummaryItems([
+              {
+                label: "compile",
+                value: compileMs !== undefined ? `${compileMs.toFixed(2)} ms` : "…",
+                tone: "running",
+              },
+              { label: "execute", value: `${vmCyclesExecuted.toLocaleString()} vm steps`, tone: "running", showDot: true },
+              { label: "exit", value: "pending", tone: "pending" },
+            ]);
+          },
+        });
+
+        const exitLabel =
+          result.terminal === "cancelled"
+            ? "cancelled"
+            : result.terminal === "error"
+            ? "error"
+            : String(result.exitCode);
+        const exitTone =
+          result.terminal === "cancelled"
+            ? "pending"
+            : result.terminal === "error"
+            ? "error"
+            : result.exitCode === 0
+            ? "success"
+            : "error";
 
         summary.innerHTML = renderTutorialSummaryItems([
           { label: "compile", value: `${result.compileMs.toFixed(2)} ms` },
           { label: "execute", value: `${result.executeMs.toFixed(2)} ms` },
           {
             label: "exit",
-            value: String(result.exitCode),
-            tone: result.exitCode === 0 ? "success" : "error",
+            value: exitLabel,
+            tone: exitTone,
           },
           {
             label: "issues",
             value: result.issues.length === 1 ? "1 compiler issue" : `${result.issues.length} compiler issues`,
             tone: result.issues.length ? "error" : "default",
           },
+          ...(result.vmCyclesExecuted !== undefined
+            ? [{
+              label: "vm steps",
+              value: result.vmCyclesExecuted.toLocaleString(),
+              tone: "default" as const,
+            }]
+            : []),
         ]);
         output.textContent = renderOutput(result);
 
-        if (result.issues.length) {
+        if (result.terminal === "error") {
+          diagnostics.textContent = "";
+          diagnostics.hidden = true;
+          error.textContent = result.logs.join("\n") || "Run failed.";
+          error.hidden = false;
+        } else if (result.issues.length) {
           diagnostics.textContent = `Compiler issues:\n${result.issues.join("\n")}`;
           diagnostics.hidden = false;
+          error.textContent = "";
+          error.hidden = true;
         } else {
           diagnostics.textContent = "";
           diagnostics.hidden = true;
+          error.textContent = "";
+          error.hidden = true;
         }
       } catch (runError) {
         const message = runError instanceof Error ? runError.message : String(runError);
 
-        summary.innerHTML = compiled
-          ? renderTutorialSummaryItems([
-            { label: "compile", value: `${compiled.compileMs.toFixed(2)} ms` },
-            { label: "execute", value: "failed", tone: "error" },
-            { label: "exit", value: "error", tone: "error" },
-          ])
-          : renderTutorialSummaryItems([
-            { label: "compile", value: "failed", tone: "error" },
-            { label: "execute", value: "pending", tone: "pending" },
-            { label: "exit", value: "pending", tone: "pending" },
-          ]);
+        summary.innerHTML = renderTutorialSummaryItems([
+          { label: "compile", value: "failed", tone: "error" },
+          { label: "execute", value: "pending", tone: "pending" },
+          { label: "exit", value: "pending", tone: "pending" },
+        ]);
         output.textContent = "";
         diagnostics.textContent = "";
         diagnostics.hidden = true;
         error.textContent = message;
         error.hidden = false;
       } finally {
+        runAbort = null;
         if (stdin) {
           stdin.disabled = false;
         }
-        runButton.disabled = false;
+        runButton.textContent = "Run";
+        runButton.setAttribute("aria-label", "Run");
+        runButton.classList.remove("is-cancel");
         resetButton.disabled = false;
       }
     });

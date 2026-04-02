@@ -40,6 +40,18 @@ export interface EngineRunAsyncOptions {
   yieldEvery?: number;
   /** Callback awaited between chunks when work remains. */
   scheduler?: () => void | Promise<void>;
+  /** If false, stops before the next scheduler tick (cooperative cancellation). */
+  shouldContinue?: () => boolean;
+  /** Called after each chunk when more work remains (for progress / diagnostics). */
+  onChunk?: (state: { vmCyclesExecuted: number }) => void;
+}
+
+export interface RunAsyncResult {
+  stack: bigint[];
+  /** True when {@link EngineRunAsyncOptions.shouldContinue} returned false while work remained. */
+  cancelled: boolean;
+  /** Total VM steps executed during this run (including partial chunks). */
+  vmCyclesExecuted: number;
 }
 
 export interface InspectableToken {
@@ -291,8 +303,9 @@ export class Engine {
         this.stats.max_queue_depth = Math.max(this.stats.max_queue_depth, queue.length / 2);
       }
 
+      const traceStep = step++;
       this.traceOn && this.trace({
-        step: step++,
+        step: traceStep,
         immediate,
         tag,
         value,
@@ -310,7 +323,7 @@ export class Engine {
     return this.stack;
   }
 
-  async runAsync(options: EngineRunAsyncOptions = {}) {
+  async runAsync(options: EngineRunAsyncOptions = {}): Promise<RunAsyncResult> {
     const yieldEvery = options.yieldEvery ?? 2048;
     if (!Number.isFinite(yieldEvery) || yieldEvery < 1) {
       throw new Error(`runAsync: yieldEvery must be a positive finite number (received ${yieldEvery})`);
@@ -321,14 +334,25 @@ export class Engine {
     }));
 
     let step = 0;
+    let vmCyclesExecuted = 0;
+    let cancelled = false;
+
     while (this.queue.length > 0) {
+      const stepBefore = step;
       step = this.runChunk(yieldEvery, step);
+      vmCyclesExecuted += step - stepBefore;
+
       if (this.queue.length > 0) {
+        options.onChunk?.({ vmCyclesExecuted });
+        if (options.shouldContinue && !options.shouldContinue()) {
+          cancelled = true;
+          break;
+        }
         await scheduler();
       }
     }
 
-    return this.stack;
+    return { stack: this.stack.slice(), cancelled, vmCyclesExecuted };
   }
 
   private trace({

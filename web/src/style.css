@@ -646,6 +646,22 @@ button:disabled {
   box-shadow: 0 12px 24px rgba(32, 22, 17, 0.18);
 }
 
+/* Run ↔ Cancel: distinct color while a program is executing */
+.primary.is-cancel {
+  background: #a13c30;
+  color: #fff8ef;
+  box-shadow: 0 12px 24px rgba(161, 60, 48, 0.32);
+}
+
+.primary.is-cancel:hover {
+  background: #b5473a;
+}
+
+.primary.is-cancel:focus-visible {
+  outline: 2px solid #d47566;
+  outline-offset: 2px;
+}
+
 .ghost {
   background: transparent;
   color: var(--ink);
@@ -907,6 +923,18 @@ button:disabled {
 
 .tutorial-actions {
   margin-left: auto;
+}
+
+/* Stable width when label swaps Run ↔ Cancel (matches playground #run) */
+.tutorial-actions .tutorial-run-btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  box-sizing: border-box;
+  width: 12rem;
+  min-width: 12rem;
+  max-width: 12rem;
+  flex: 0 0 auto;
 }
 
 .tutorial-result {
@@ -1231,6 +1259,12 @@ button:disabled {
 
   .actions button {
     flex: 1;
+  }
+
+  .tutorial-actions .tutorial-run-btn {
+    flex: 0 0 12rem;
+    width: 12rem;
+    max-width: 12rem;
   }
 
   .summary-grid {

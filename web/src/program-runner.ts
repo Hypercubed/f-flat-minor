@@ -12,6 +12,9 @@ import { createBrowserPlatform, createPreprocessHost } from "./runtime.ts";
 
 const PRELUDE = "/lib/prelude.ffp";
 
+/** How the run finished (playground / worker). */
+export type RunTerminalState = "done" | "cancelled" | "error";
+
 export interface RunResult {
   output: string;
   preprocessed: string;
@@ -23,6 +26,8 @@ export interface RunResult {
   exitCode: number;
   compileMs: number;
   executeMs: number;
+  terminal: RunTerminalState;
+  vmCyclesExecuted?: number;
 }
 
 export interface PreparedProgram {
@@ -41,11 +46,15 @@ export interface ExecuteResult {
   logs: string[];
   exitCode: number;
   executeMs: number;
+  cancelled: boolean;
+  vmCyclesExecuted: number;
 }
 
 export interface ExecuteAsyncOptions {
   yieldEvery?: number;
   scheduler?: () => void | Promise<void>;
+  shouldContinue?: () => boolean;
+  onChunk?: (state: { vmCyclesExecuted: number }) => void;
 }
 
 function withCapturedConsole<T>(
@@ -176,13 +185,15 @@ export function compileProgram(source: string, stdin: string, optimize: boolean)
         logs: [...context.logs],
         exitCode: context.getExitCode(),
         executeMs: executeEnd - executeStart,
+        cancelled: false,
+        vmCyclesExecuted: 0,
       };
     },
     async executeAsync(options: ExecuteAsyncOptions = {}) {
       const executeStart = performance.now();
 
-      await withCapturedConsoleAsync((message) => context.logs.push(message), async () => {
-        await context.engine.runAsync(options);
+      const runResult = await withCapturedConsoleAsync((message) => context.logs.push(message), async () => {
+        return await context.engine.runAsync(options);
       });
 
       const executeEnd = performance.now();
@@ -193,6 +204,8 @@ export function compileProgram(source: string, stdin: string, optimize: boolean)
         logs: [...context.logs],
         exitCode: context.getExitCode(),
         executeMs: executeEnd - executeStart,
+        cancelled: runResult.cancelled,
+        vmCyclesExecuted: runResult.vmCyclesExecuted,
       };
     },
   };
@@ -213,5 +226,7 @@ export function runProgram(source: string, stdin: string, optimize: boolean): Ru
     exitCode: executed.exitCode,
     compileMs: compiled.compileMs,
     executeMs: executed.executeMs,
+    terminal: "done",
+    vmCyclesExecuted: executed.vmCyclesExecuted,
   };
 }

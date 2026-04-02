@@ -1,0 +1,94 @@
+/// <reference lib="webworker" />
+
+import { compileProgram, type ExecuteResult, type RunResult } from "./program-runner.ts";
+import type { PlaygroundWorkerInbound, PlaygroundWorkerOutbound } from "./playground-worker-protocol.ts";
+
+function post(message: PlaygroundWorkerOutbound) {
+  (self as DedicatedWorkerGlobalScope).postMessage(message);
+}
+
+let cancelRequested = false;
+let activeRunId: number | null = null;
+
+function buildRunResult(
+  compiled: ReturnType<typeof compileProgram>,
+  executed: ExecuteResult,
+): RunResult {
+  const terminal = executed.cancelled ? "cancelled" : "done";
+  return {
+    output: executed.output,
+    preprocessed: compiled.preprocessed,
+    ir: compiled.ir,
+    bytecode: compiled.bytecode,
+    issues: compiled.issues,
+    stack: executed.stack,
+    logs: executed.logs,
+    exitCode: executed.exitCode,
+    compileMs: compiled.compileMs,
+    executeMs: executed.executeMs,
+    terminal,
+    vmCyclesExecuted: executed.vmCyclesExecuted,
+  };
+}
+
+self.onmessage = (event: MessageEvent<PlaygroundWorkerInbound>) => {
+  const msg = event.data;
+  if (msg.type === "CANCEL") {
+    if (activeRunId === msg.runId) {
+      cancelRequested = true;
+    }
+    return;
+  }
+
+  if (msg.type !== "RUN") {
+    return;
+  }
+
+  const { runId, source, stdin, optimize, yieldEvery } = msg;
+
+  void (async () => {
+    cancelRequested = false;
+    activeRunId = runId;
+
+    try {
+      const compiled = compileProgram(source, stdin, optimize);
+
+      if (activeRunId !== runId) {
+        return;
+      }
+
+      post({ type: "COMPILED", runId, compileMs: compiled.compileMs });
+
+      const executed = await compiled.executeAsync({
+        yieldEvery,
+        shouldContinue: () => !cancelRequested && activeRunId === runId,
+        onChunk: ({ vmCyclesExecuted }) => {
+          if (activeRunId === runId) {
+            post({ type: "PROGRESS", runId, vmCyclesExecuted });
+          }
+        },
+        scheduler: () =>
+          new Promise<void>((resolve) => {
+            globalThis.setTimeout(resolve, 0);
+          }),
+      });
+
+      if (activeRunId !== runId) {
+        return;
+      }
+
+      const result = buildRunResult(compiled, executed);
+      post({ type: "RESULT", runId, result });
+    } catch (error) {
+      if (activeRunId !== runId) {
+        return;
+      }
+      const message = error instanceof Error ? error.message : String(error);
+      post({ type: "ERROR", runId, message });
+    } finally {
+      if (activeRunId === runId) {
+        activeRunId = null;
+      }
+    }
+  })();
+};

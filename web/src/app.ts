@@ -1,6 +1,6 @@
 import { mountReadonlySourceViewer, mountSourceEditor, tutorialEditorFlatFeedback } from "./editor.ts";
 import { DEFAULT_SOURCE, EXAMPLES, EXAMPLE_OPTIONS_HTML } from "./examples.ts";
-import { compileProgram } from "./program-runner.ts";
+import { runPlaygroundProgram } from "./run-playground.ts";
 import { ReplSession } from "./repl-session.ts";
 import { buildAppUrl, parseAppTab, type AppTab } from "./app-url-state.ts";
 import appShellTemplate from "./templates/app-shell.html?raw";
@@ -121,8 +121,9 @@ export function mountApp(root: HTMLElement) {
     example.disabled = isRunning;
     stdin.disabled = isRunning;
     optimize.disabled = isRunning;
-    run.disabled = isRunning;
-    run.textContent = isRunning ? "Running..." : "Run Program";
+    run.textContent = isRunning ? "Cancel" : "Run Program";
+    run.setAttribute("aria-label", isRunning ? "Cancel run" : "Run program");
+    run.classList.toggle("is-cancel", isRunning);
     summary.dataset.state = isRunning ? "running" : "idle";
   }
 
@@ -209,6 +210,8 @@ export function mountApp(root: HTMLElement) {
     });
   });
 
+  let playgroundAbort: AbortController | null = null;
+
   async function renderPlayground() {
     document.body.dataset.ready = "false";
     setPlaygroundRunningState(true);
@@ -219,68 +222,105 @@ export function mountApp(root: HTMLElement) {
     ]);
     errorOutput.textContent = "";
 
+    const abortController = new AbortController();
+    playgroundAbort = abortController;
+
     await waitForPaint();
 
-    let compiled: ReturnType<typeof compileProgram> | null = null;
-
     try {
-      compiled = compileProgram(sourceEditor.getValue(), stdin.value, optimize.checked);
+      const result = await runPlaygroundProgram(sourceEditor.getValue(), stdin.value, optimize.checked, {
+        signal: abortController.signal,
+        onProgress: ({ vmCyclesExecuted, compileMs }) => {
+          summary.innerHTML = renderSummary([
+            {
+              label: "compile",
+              value: compileMs !== undefined ? `${compileMs.toFixed(2)} ms` : "…",
+              tone: "running",
+            },
+            {
+              label: "execute",
+              value: `${vmCyclesExecuted.toLocaleString()} vm steps`,
+              tone: "running",
+              showDot: true,
+            },
+            { label: "exit", value: "pending", tone: "pending" },
+          ]);
+        },
+      });
 
-      summary.innerHTML = renderSummary([
-        { label: "compile", value: `${compiled.compileMs.toFixed(2)} ms` },
-        { label: "execute", value: "Running...", tone: "running", showDot: true },
-        { label: "exit", value: "pending", tone: "pending" },
-      ]);
-
-      await waitForPaint();
-
-      const executed = await compiled.executeAsync();
-      const issueCount = compiled.issues.length;
+      const issueCount = result.issues.length;
       const stdoutParts: string[] = [];
 
-      if (executed.output) {
-        stdoutParts.push(executed.output.trimEnd());
+      if (result.output) {
+        stdoutParts.push(result.output.trimEnd());
       }
-      if (executed.logs.length) {
-        stdoutParts.push(executed.logs.join("\n"));
+      if (result.logs.length) {
+        stdoutParts.push(result.logs.join("\n"));
       }
 
       const stdoutContent = stdoutParts.length ? stdoutParts.join("\n") : "(no output)";
       const diagnostics = [
         stdoutContent,
-        issueCount ? `\n\n${issueCount} compiler issue(s):\n${compiled.issues.join("\n")}` : "",
+        issueCount ? `\n\n${issueCount} compiler issue(s):\n${result.issues.join("\n")}` : "",
       ].join("");
 
-      summary.innerHTML = renderSummary([
-        { label: "compile", value: `${compiled.compileMs.toFixed(2)} ms` },
-        { label: "execute", value: `${executed.executeMs.toFixed(2)} ms` },
+      const exitLabel =
+        result.terminal === "cancelled"
+          ? "cancelled"
+          : result.terminal === "error"
+          ? "error"
+          : String(result.exitCode);
+      const exitTone =
+        result.terminal === "cancelled"
+          ? "pending"
+          : result.terminal === "error"
+          ? "error"
+          : result.exitCode === 0
+          ? "success"
+          : "error";
+
+      const summaryItems: SummaryItem[] = [
+        { label: "compile", value: `${result.compileMs.toFixed(2)} ms` },
+        { label: "execute", value: `${result.executeMs.toFixed(2)} ms` },
         {
           label: "exit",
-          value: String(executed.exitCode),
-          tone: executed.exitCode === 0 ? "success" : "error",
+          value: exitLabel,
+          tone: exitTone,
         },
-      ]);
+      ];
+      if (result.vmCyclesExecuted !== undefined) {
+        summaryItems.push({
+          label: "vm steps",
+          value: result.vmCyclesExecuted.toLocaleString(),
+          tone: "default",
+        });
+      }
 
-      output.innerHTML = escapeHtml(diagnostics);
-      errorOutput.textContent = "";
-      preprocessedViewer.setValue(compiled.preprocessed);
-      irViewer.setValue(compiled.ir);
-      bytecode.innerHTML = escapeHtml(compiled.bytecode);
-      scrollToBottom(output);
+      summary.innerHTML = renderSummary(summaryItems);
+
+      if (result.terminal === "error") {
+        output.innerHTML = "";
+        errorOutput.innerHTML = escapeHtml(result.logs.join("\n") || "Run failed.");
+        preprocessedViewer.setValue("");
+        irViewer.setValue("");
+        bytecode.innerHTML = "";
+        scrollToBottom(errorOutput);
+      } else {
+        output.innerHTML = escapeHtml(diagnostics);
+        errorOutput.textContent = "";
+        preprocessedViewer.setValue(result.preprocessed);
+        irViewer.setValue(result.ir);
+        bytecode.innerHTML = escapeHtml(result.bytecode);
+        scrollToBottom(output);
+      }
     } catch (error) {
       const message = error instanceof Error ? error.message : String(error);
 
-      summary.innerHTML = compiled
-        ? renderSummary([
-          { label: "compile", value: `${compiled.compileMs.toFixed(2)} ms` },
-          { label: "execute", value: "failed", tone: "error" },
-          { label: "exit", value: "error", tone: "error" },
-        ])
-        : renderSummary([
-          { label: "compile", value: "failed", tone: "error" },
-          { label: "execute", value: "pending", tone: "pending" },
-          { label: "exit", value: "pending", tone: "pending" },
-        ]);
+      summary.innerHTML = renderSummary([
+        { label: "compile", value: "failed", tone: "error" },
+        { label: "execute", value: "pending", tone: "pending" },
+        { label: "exit", value: "pending", tone: "pending" },
+      ]);
       output.innerHTML = "";
       errorOutput.innerHTML = escapeHtml(message);
       preprocessedViewer.setValue("");
@@ -288,6 +328,7 @@ export function mountApp(root: HTMLElement) {
       bytecode.innerHTML = "";
       scrollToBottom(errorOutput);
     } finally {
+      playgroundAbort = null;
       setPlaygroundRunningState(false);
       document.body.dataset.ready = "true";
     }
@@ -520,6 +561,10 @@ export function mountApp(root: HTMLElement) {
   });
 
   run.addEventListener("click", () => {
+    if (playgroundAbort !== null) {
+      playgroundAbort.abort();
+      return;
+    }
     triggerRunProgramFeedback(run);
     syncUrlToAppState();
     void renderPlayground();

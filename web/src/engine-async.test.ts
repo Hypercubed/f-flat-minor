@@ -70,4 +70,20 @@ describe("Engine.runAsync", () => {
       "runAsync: yieldEvery must be a positive finite number",
     );
   });
+
+  it("stops early when shouldContinue returns false", async () => {
+    const source = Array.from({ length: 100 }, (_, index) => String(index)).join(" ");
+    const ir = compileSource(source);
+    const engine = new Engine(createTestPlatform());
+    engine.loadIR(ir);
+
+    const result = await engine.runAsync({
+      yieldEvery: 5,
+      shouldContinue: () => engine.getStack().length < 20,
+    });
+
+    expect(result.cancelled).toBe(true);
+    expect(result.vmCyclesExecuted).toBeGreaterThan(0);
+    expect(engine.getStack().length).toBeLessThan(100);
+  });
 });
