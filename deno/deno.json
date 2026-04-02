@@ -27,7 +27,8 @@
     "ff:compile": "deno run --no-check --allow-read bin/ff-compile.ts",
     "ff:execute": "deno run --no-check --allow-read --allow-env bin/ff-execute.ts",
     "ff:preprocess": "deno run --no-check --allow-read bin/ff-preprocess.ts",
-    "ff:repl": "deno run --no-check --allow-read --allow-env bin/ff-repl.ts"
+    "ff:repl": "deno run --no-check --allow-read --allow-env bin/ff-repl.ts",
+    "ers": "deno run --no-check --allow-read bin/ers.ts"
   },
   "lint": {
     "include": ["src/", "bin/"]
