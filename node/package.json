@@ -3,6 +3,7 @@
   "private": true,
   "type": "module",
   "scripts": {
-    "run": "node bin/ff-run.ts"
+    "run": "node bin/ff-run.ts",
+    "ers": "node --experimental-transform-types --disable-warning=ExperimentalWarning bin/ers.ts"
   }
 }

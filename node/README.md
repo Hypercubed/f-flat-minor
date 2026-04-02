@@ -5,6 +5,7 @@ This directory contains the Node.js/TypeScript implementation of f-flat-minor.
 Current scope:
 - Shared-core runtime/compiler/preprocessor wiring for Node
 - `ff-run` source runner in `node/bin`
+- `ers` audit CLI wrapper in `node/bin`
 - Node platform shims in `node/src`
 
 ## Quick Start
@@ -14,6 +15,7 @@ From this directory:
 ```bash
 npm run run -- ../ff/hello.ffp
 node bin/ff-run.ts ../ff/hello.ffp
+node bin/ers.ts audit ../ff/lib/core/core.ff --word or_else
 ```
 
 Both commands:
@@ -25,7 +27,7 @@ Both commands:
 
 ## Build, Test, and Benchmark
 
-These tasks cover the `ff-run` source runner. The Node implementation focuses on `ff-run`, which shares the same CLI contract as Deno and Bun.
+These tasks cover the Node CLI wrappers. `ff-run` remains the main runtime CLI, and `ers` provides the Node-native audit surface for editor integration and local tooling.
 
 ### Build
 
@@ -45,6 +47,13 @@ Runs the full test suite in this order:
 1. Builds `node/build/ff-run`
 2. Smoke-tests `ff-run` against `../ff/example.ff` and `../ff/hello.ffp`
 3. Runs the full corpus of `../ff/*.ff` and `../ff/*.ffp` files, including the `--opt` path for each
+
+For the ERS wrapper specifically:
+
+```bash
+node --experimental-transform-types --disable-warning=ExperimentalWarning \
+  bin/ers.ts audit ../ff/lib/core/core.ff --word or_else
+```
 
 ### Benchmark
 
@@ -97,6 +106,22 @@ Common flags:
 - `-P, --preprocessor-prelude, --prelude` — Load the preprocessor prelude macros
 - `--base` — Numeric base for output (default: 10)
 
+### `bin/ers.ts`
+
+Read-only ERS audit CLI for a single definition:
+1. Reads a source file from disk
+2. Resolves one user-defined word in that file
+3. Runs the shared `tools/ers` audit engine
+4. Prints either human-readable or JSON output
+
+Primary use: Node-native audit entrypoint for future VSCode/editor integration and local review.
+
+Current command surface:
+- `ers audit <file> --word <name>`
+- `--mode full-floor|structural`
+- `--json`
+- `--help`
+
 ## What Each `node/src` File Does
 
 ### `src/runtime.ts`
@@ -138,6 +163,7 @@ Re-exports the shared optimizer from the TypeScript core.
 
 ## Notes
 
-- The Node implementation focuses on `ff-run`, sharing the same CLI contract as Deno and Bun.
+- The Node implementation now includes a Node-native `ers` audit wrapper in addition to `ff-run`.
 - Shared language logic lives in `typescript/core/src`.
+- Shared ERS logic lives in `tools/ers`.
 - This implementation uses only erasable TypeScript syntax, so it can run directly on modern Node without `--experimental-transform-types`.

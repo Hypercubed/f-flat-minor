@@ -10,6 +10,7 @@ BLUE = '\033[0;34m'
 NC = '\033[0m'
 GRN = '\033[0;32m'
 BIN = 'node --experimental-transform-types --disable-warning=ExperimentalWarning ./bin/ff-run.ts'
+ERS = 'node --experimental-transform-types --disable-warning=ExperimentalWarning ./bin/ers.ts'
 
 [[task]]
 name = 'test:interpret'
@@ -82,3 +83,9 @@ run = '''
     '$BIN ../ff/example.ff'\
     '$BIN ../ff/example.ff --opt'
 '''
+
+[[task]]
+name = 'ers:audit'
+dep = './bin/ers.ts'
+validation = 'none'
+run = '$ERS audit ../ff/lib/core/core.ff --word or_else'
