@@ -6,7 +6,8 @@
   "publisher": "hypercubed",
   "main": "./out/extension.js",
   "activationEvents": [
-    "onLanguage:f-flat-minor"
+    "onLanguage:f-flat-minor",
+    "onCommand:f-flat-minor.auditCurrentDefinition"
   ],
   "repository": {
     "type": "git",
@@ -36,6 +37,12 @@
     "vsce": "^2.0.0"
   },
   "contributes": {
+    "commands": [
+      {
+        "command": "f-flat-minor.auditCurrentDefinition",
+        "title": "F-flat-minor: Audit Current Definition"
+      }
+    ],
     "languages": [
       {
         "id": "f-flat-minor",

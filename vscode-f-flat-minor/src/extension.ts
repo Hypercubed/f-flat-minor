@@ -1,4 +1,6 @@
 import * as path from "path";
+import { execFile } from "node:child_process";
+import { promisify } from "node:util";
 import * as vscode from "vscode";
 
 /**
@@ -49,6 +51,8 @@ function uriForResolvedPath(documentUri: vscode.Uri, resolvedFsPath: string): vs
 }
 
 const IMPORT_LINE = /^\.(import|load)\s+/;
+const ERS_OUTPUT_CHANNEL_NAME = "F-flat-minor ERS";
+const execFileAsync = promisify(execFile);
 
 function pathRangeInLine(line: vscode.TextLine): {
   range: vscode.Range;
@@ -87,6 +91,34 @@ function sourcePathOrNull(document: vscode.TextDocument): string | null {
 
 const docSelector: vscode.DocumentSelector = { language: "f-flat-minor" };
 
+function ersCliPath(context: vscode.ExtensionContext) {
+  return path.resolve(context.extensionPath, "../node/bin/ers.ts");
+}
+
+async function runErsAuditForCursor(
+  context: vscode.ExtensionContext,
+  document: vscode.TextDocument,
+  position: vscode.Position,
+) {
+  const cli = ersCliPath(context);
+  const args = [
+    "--experimental-transform-types",
+    "--disable-warning=ExperimentalWarning",
+    cli,
+    "audit",
+    document.uri.fsPath,
+    "--line",
+    String(position.line),
+    "--character",
+    String(position.character),
+    "--json",
+  ];
+  const { stdout } = await execFileAsync("node", args, {
+    cwd: vscode.workspace.workspaceFolders?.[0]?.uri.fsPath ?? path.dirname(document.uri.fsPath),
+  });
+  return stdout.trim();
+}
+
 async function documentLinksForImports(
   document: vscode.TextDocument,
   sourcePath: string,
@@ -110,6 +142,7 @@ async function documentLinksForImports(
 }
 
 export function activate(context: vscode.ExtensionContext): void {
+  const ersOutput = vscode.window.createOutputChannel(ERS_OUTPUT_CHANNEL_NAME);
   const linkProvider: vscode.DocumentLinkProvider = {
     provideDocumentLinks(
       document: vscode.TextDocument,
@@ -148,7 +181,38 @@ export function activate(context: vscode.ExtensionContext): void {
     },
   };
 
+  const auditCurrentDefinition = vscode.commands.registerCommand(
+    "f-flat-minor.auditCurrentDefinition",
+    async () => {
+      const editor = vscode.window.activeTextEditor;
+      if (!editor || editor.document.languageId !== "f-flat-minor") {
+        void vscode.window.showErrorMessage("Open an f-flat-minor file to audit the current definition.");
+        return;
+      }
+
+      const sourcePath = sourcePathOrNull(editor.document);
+      if (!sourcePath) {
+        void vscode.window.showInformationMessage(
+          "Save the current f-flat-minor file before running ERS audit.",
+        );
+        return;
+      }
+
+      try {
+        ersOutput.clear();
+        const stdout = await runErsAuditForCursor(context, editor.document, editor.selection.active);
+        ersOutput.append(stdout);
+        ersOutput.show(true);
+      } catch (error) {
+        const message = error instanceof Error ? error.message : String(error);
+        void vscode.window.showErrorMessage(`ERS audit failed: ${message}`);
+      }
+    },
+  );
+
   context.subscriptions.push(
+    ersOutput,
+    auditCurrentDefinition,
     vscode.languages.registerDocumentLinkProvider(docSelector, linkProvider),
     vscode.languages.registerDefinitionProvider(docSelector, definitionProvider),
   );

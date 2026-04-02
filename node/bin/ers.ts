@@ -3,11 +3,18 @@
 import fs from "node:fs";
 import { parseArgs } from "node:util";
 
+import {
+  compileSource,
+  type Definition,
+  type SourcePosition,
+} from "../../typescript/compile-service/src/mod.ts";
 import { auditSource, type ErsAuditMode, type ErsAuditResult } from "../../tools/ers/mod.ts";
 
 interface AuditCliArgs {
   _: string[];
   word?: string;
+  line?: string;
+  character?: string;
   mode?: string;
   json?: boolean;
   help?: boolean;
@@ -21,13 +28,68 @@ function usage() {
   console.log(
     [
       "Usage:",
-      "  ers audit <file> --word <name> [--mode full-floor|structural] [--json]",
+      "  ers audit <file> (--word <name> | --line <n> --character <n>) [--mode full-floor|structural] [--json]",
       "",
       "Examples:",
       "  ers audit ff/lib/core/core.ff --word slip",
+      "  ers audit ff/lib/core/core.ff --line 69 --character 4 --json",
       "  ers audit ff/optimize.ffp --word demo --mode structural --json",
     ].join("\n"),
   );
+}
+
+function comparePosition(left: SourcePosition, right: SourcePosition) {
+  if (left.line !== right.line) {
+    return left.line - right.line;
+  }
+  return left.character - right.character;
+}
+
+function containsPosition(
+  range: { start: SourcePosition; end: SourcePosition },
+  position: SourcePosition,
+) {
+  return comparePosition(range.start, position) <= 0 && comparePosition(position, range.end) <= 0;
+}
+
+function isSyntheticCoreDefinition(definition: Definition) {
+  return definition.bodyRange === null && definition.tokens.length === 0;
+}
+
+function parseOneBasedInteger(name: string, value: string | undefined) {
+  if (!value) {
+    throw new Error(`Missing required \`--${name}\` argument.`);
+  }
+
+  const parsed = Number(value);
+  if (!Number.isInteger(parsed) || parsed < 1) {
+    throw new Error(`\`--${name}\` must be a positive 1-based integer.`);
+  }
+
+  return parsed;
+}
+
+function resolveTargetWord(file: string, source: string, argv: AuditCliArgs) {
+  if (argv.word) {
+    return argv.word;
+  }
+
+  const line = parseOneBasedInteger("line", argv.line);
+  const character = parseOneBasedInteger("character", argv.character);
+  const position: SourcePosition = { line: line - 1, character: character - 1 };
+  const compileResult = compileSource(source, file);
+
+  for (const definition of compileResult.definitions.values()) {
+    if (isSyntheticCoreDefinition(definition)) {
+      continue;
+    }
+
+    if (containsPosition(definition.range, position)) {
+      return definition.name;
+    }
+  }
+
+  throw new Error("Place the cursor inside a user-defined word.");
 }
 
 function formatRange(range: ErsAuditResult["definitionRange"]) {
@@ -115,17 +177,14 @@ export function run(argv: AuditCliArgs, runtime: ErsCliRuntime = {}) {
     throw new Error("Missing file path for `ers audit`.");
   }
 
-  if (!argv.word) {
-    throw new Error("Missing required `--word` argument.");
-  }
-
   const mode = argv.mode === "structural" ? "structural" : "full-floor" satisfies ErsAuditMode;
   const readTextFileSync = runtime.readTextFileSync ?? ((path: string) => fs.readFileSync(path, "utf8"));
   const source = readTextFileSync(file);
+  const word = resolveTargetWord(file, source, argv);
   const result = auditSource({
     file,
     source,
-    word: argv.word,
+    word,
     mode,
   });
 
@@ -142,6 +201,8 @@ if (import.meta.main) {
     args: process.argv.slice(2),
     options: {
       word: { type: "string", short: "w" },
+      line: { type: "string" },
+      character: { type: "string" },
       mode: { type: "string", short: "m", default: "full-floor" },
       json: { type: "boolean", short: "j", default: false },
       help: { type: "boolean", short: "h", default: false },
