@@ -1,25 +1,18 @@
 .import ./num.ffp
 
-/* Buck's functions used for m <= 5 */
-__F_0_3:
-  over zero? [ nip 1 + ] [
-    over 1 = [ nip 2 + ] [
-      over 2 = [ nip 2 * ]
-      [ nip 2 swap ^ ] branch
-    ] branch
-  ] branch
-;
+/* Buck's F0–F5: n __F_M -- F(M,n) */
+__F_0: 1 + ;
+__F_1: 2 + ;
+__F_2: 2 * ;
+__F_3: 2 swap ^ ;
+__F_4: 2 swap ^^ ;
+__F_5: 2 swap ^^^ ;
 
-__F_4_5:
-  over 4 = [ nip 2 swap ^^ ]
-  [ nip 2 swap ^^^ ]
-  branch
-;
-
+/* m n -- F(m,n) */
 __F:
-  over 4 >=
-  [ __F_4_5 ]
-  [ __F_0_3 ]
+  over 3 <
+  [ over zero? [ nip __F_0 ] [ swap 1 = [ __F_1 ] [ __F_2 ] branch ] branch ]
+  [ over 4 < [ nip __F_3 ] [ swap 4 = [ __F_4 ] [ __F_5 ] branch ] branch ]
   branch
 ;
 
