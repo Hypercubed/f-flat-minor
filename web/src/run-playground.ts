@@ -31,6 +31,8 @@ export function playgroundUseWorker(): boolean {
 
 export interface RunPlaygroundProgress {
   vmCyclesExecuted: number;
+  /** Wall-clock ms elapsed since execute started (0 right after compile). */
+  executeElapsedMs?: number;
   /** Present after preprocess+compile completes (worker sends this before VM progress). */
   compileMs?: number;
   /** Present right after compile so Expanded Source / IR / Bytecode can update before execution finishes. */
@@ -106,14 +108,19 @@ export async function runPlaygroundProgram(
   try {
     const compiled = compileProgram(source, stdin, optimize);
     const compileMs = compiled.compileMs;
-    options.onProgress?.({ vmCyclesExecuted: 0, compileMs });
+    options.onProgress?.({ vmCyclesExecuted: 0, compileMs, executeElapsedMs: 0 });
 
+    const executeStart = performance.now();
     const executed = await compiled.executeAsync({
       yieldIntervalMs,
       yieldSliceMax,
       shouldContinue: () => !options.signal?.aborted,
       onChunk: ({ vmCyclesExecuted }) => {
-        options.onProgress?.({ vmCyclesExecuted, compileMs });
+        options.onProgress?.({
+          vmCyclesExecuted,
+          compileMs,
+          executeElapsedMs: performance.now() - executeStart,
+        });
       },
       scheduler: () =>
         new Promise<void>((resolve) => {

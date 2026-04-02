@@ -1,7 +1,8 @@
 import { mountSourceEditor, tutorialEditorFlatFeedback } from "./editor.ts";
 import { type RunResult } from "./program-runner.ts";
+import { formatVmStepCount } from "./format-vm-steps.ts";
 import { runPlaygroundProgram } from "./run-playground.ts";
-import { triggerRunProgramFeedback } from "./run-fx.ts";
+import { startRunProgramRunFeedback, stopRunProgramRunFeedback } from "./run-fx.ts";
 import { TUTORIAL_PROBLEMS, type TutorialProblem } from "./tutorial-problems.ts";
 
 function escapeHtml(value: string): string {
@@ -220,7 +221,7 @@ export function mountTutorial(root: HTMLElement) {
         runAbort.abort();
         return;
       }
-      triggerRunProgramFeedback(runButton);
+      startRunProgramRunFeedback(runButton);
       runButton.textContent = "Cancel";
       runButton.setAttribute("aria-label", "Cancel run");
       runButton.classList.add("is-cancel");
@@ -259,7 +260,7 @@ export function mountTutorial(root: HTMLElement) {
                 value: compileMs !== undefined ? `${compileMs.toFixed(2)} ms` : "…",
                 tone: "running",
               },
-              { label: "execute", value: `${vmCyclesExecuted.toLocaleString()} vm steps`, tone: "running", showDot: true },
+              { label: "execute", value: `${formatVmStepCount(vmCyclesExecuted)} vm steps`, tone: "running", showDot: true },
               { label: "exit", value: "pending", tone: "pending" },
             ]);
           },
@@ -296,7 +297,7 @@ export function mountTutorial(root: HTMLElement) {
           ...(result.vmCyclesExecuted !== undefined
             ? [{
               label: "vm steps",
-              value: result.vmCyclesExecuted.toLocaleString(),
+              value: formatVmStepCount(result.vmCyclesExecuted),
               tone: "default" as const,
             }]
             : []),
@@ -334,6 +335,7 @@ export function mountTutorial(root: HTMLElement) {
         error.hidden = false;
       } finally {
         runAbort = null;
+        stopRunProgramRunFeedback();
         if (stdin) {
           stdin.disabled = false;
         }

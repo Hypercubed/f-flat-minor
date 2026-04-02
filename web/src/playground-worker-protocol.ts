@@ -23,6 +23,6 @@ export type PlaygroundWorkerOutbound =
     ir: string;
     bytecode: string;
   }
-  | { type: "PROGRESS"; runId: number; vmCyclesExecuted: number }
+  | { type: "PROGRESS"; runId: number; vmCyclesExecuted: number; executeElapsedMs: number }
   | { type: "RESULT"; runId: number; result: RunResult }
   | { type: "ERROR"; runId: number; message: string };

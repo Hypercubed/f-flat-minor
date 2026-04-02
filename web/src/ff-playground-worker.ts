@@ -66,13 +66,19 @@ self.onmessage = (event: MessageEvent<PlaygroundWorkerInbound>) => {
         bytecode: compiled.bytecode,
       });
 
+      const executeStart = performance.now();
       const executed = await compiled.executeAsync({
         yieldIntervalMs,
         yieldSliceMax,
         shouldContinue: () => !cancelRequested && activeRunId === runId,
         onChunk: ({ vmCyclesExecuted }) => {
           if (activeRunId === runId) {
-            post({ type: "PROGRESS", runId, vmCyclesExecuted });
+            post({
+              type: "PROGRESS",
+              runId,
+              vmCyclesExecuted,
+              executeElapsedMs: performance.now() - executeStart,
+            });
           }
         },
         scheduler: () =>

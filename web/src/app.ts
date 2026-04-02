@@ -17,8 +17,9 @@ import {
 import appShellTemplate from "./templates/app-shell.html?raw";
 import helpTemplate from "./templates/help.html?raw";
 import { mountTutorial } from "./tutorial.ts";
-import { triggerReplKeyFeedback, triggerRunProgramFeedback } from "./run-fx.ts";
+import { startRunProgramRunFeedback, stopRunProgramRunFeedback, triggerReplKeyFeedback } from "./run-fx.ts";
 import { syncRunFeedbackToggleButton, toggleRunFeedback } from "./run-feedback.ts";
+import { formatVmStepCount } from "./format-vm-steps.ts";
 import { decodeCodeFromUrlParam, encodeCodeForUrlParam } from "./url-codec.ts";
 import type { ValueInspection } from "../../typescript/core/src/engine.ts";
 import type { StackItem } from "./repl-session.ts";
@@ -259,7 +260,8 @@ export function mountApp(root: HTMLElement) {
     setPlaygroundRunningState(true);
     summary.innerHTML = renderSummary([
       { label: "compile", value: "Running...", tone: "running", showDot: true },
-      { label: "execute", value: "pending", tone: "pending" },
+      { label: "execute", value: "…", tone: "pending" },
+      { label: "vm steps", value: "…", tone: "pending" },
       { label: "exit", value: "pending", tone: "pending" },
     ]);
     errorOutput.textContent = "";
@@ -272,7 +274,14 @@ export function mountApp(root: HTMLElement) {
     try {
       const result = await runPlaygroundProgram(sourceEditor.getValue(), stdin.value, optimize.checked, {
         signal: abortController.signal,
-        onProgress: ({ vmCyclesExecuted, compileMs, preprocessed: expandedSrc, ir: irText, bytecode: bcText }) => {
+        onProgress: ({
+          vmCyclesExecuted,
+          compileMs,
+          executeElapsedMs,
+          preprocessed: expandedSrc,
+          ir: irText,
+          bytecode: bcText,
+        }) => {
           if (expandedSrc !== undefined) {
             preprocessedViewer.setValue(expandedSrc);
             irViewer.setValue(irText ?? "");
@@ -286,9 +295,15 @@ export function mountApp(root: HTMLElement) {
             },
             {
               label: "execute",
-              value: `${vmCyclesExecuted.toLocaleString()} vm steps`,
+              value:
+                executeElapsedMs !== undefined ? `${executeElapsedMs.toFixed(2)} ms` : "…",
               tone: "running",
               showDot: true,
+            },
+            {
+              label: "vm steps",
+              value: formatVmStepCount(vmCyclesExecuted),
+              tone: "running",
             },
             { label: "exit", value: "pending", tone: "pending" },
           ]);
@@ -330,18 +345,18 @@ export function mountApp(root: HTMLElement) {
         { label: "compile", value: `${result.compileMs.toFixed(2)} ms` },
         { label: "execute", value: `${result.executeMs.toFixed(2)} ms` },
         {
+          label: "vm steps",
+          value:
+            result.vmCyclesExecuted !== undefined
+              ? formatVmStepCount(result.vmCyclesExecuted)
+              : "—",
+        },
+        {
           label: "exit",
           value: exitLabel,
           tone: exitTone,
         },
       ];
-      if (result.vmCyclesExecuted !== undefined) {
-        summaryItems.push({
-          label: "vm steps",
-          value: result.vmCyclesExecuted.toLocaleString(),
-          tone: "default",
-        });
-      }
 
       summary.innerHTML = renderSummary(summaryItems);
 
@@ -365,7 +380,8 @@ export function mountApp(root: HTMLElement) {
 
       summary.innerHTML = renderSummary([
         { label: "compile", value: "failed", tone: "error" },
-        { label: "execute", value: "pending", tone: "pending" },
+        { label: "execute", value: "—", tone: "pending" },
+        { label: "vm steps", value: "—", tone: "pending" },
         { label: "exit", value: "pending", tone: "pending" },
       ]);
       output.innerHTML = "";
@@ -376,6 +392,7 @@ export function mountApp(root: HTMLElement) {
       scrollToBottom(errorOutput);
     } finally {
       playgroundAbort = null;
+      stopRunProgramRunFeedback();
       setPlaygroundRunningState(false);
       document.body.dataset.ready = "true";
     }
@@ -385,6 +402,7 @@ export function mountApp(root: HTMLElement) {
     summary.innerHTML = renderSummary([
       { label: "compile", value: "—", tone: "pending" },
       { label: "execute", value: "—", tone: "pending" },
+      { label: "vm steps", value: "—", tone: "pending" },
       { label: "exit", value: "—", tone: "pending" },
     ]);
     summary.dataset.state = "idle";
@@ -620,7 +638,7 @@ export function mountApp(root: HTMLElement) {
       playgroundAbort.abort();
       return;
     }
-    triggerRunProgramFeedback(run);
+    startRunProgramRunFeedback(run);
     syncUrlToAppState();
     void renderPlayground();
   });

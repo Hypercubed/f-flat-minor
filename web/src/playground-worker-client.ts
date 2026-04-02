@@ -37,6 +37,8 @@ function workerErrorResult(message: string): RunResult {
 
 export interface PlaygroundRunProgress {
   vmCyclesExecuted: number;
+  /** Wall-clock ms elapsed since execute started (0 right after compile). */
+  executeElapsedMs?: number;
   /** Set once preprocess+compile has finished (same ms as final result). */
   compileMs?: number;
   /** Present after preprocess+compile so UI can show IR/bytecode while the VM runs. */
@@ -88,6 +90,7 @@ export class PlaygroundWorkerHost {
         this.pending.onProgress?.({
           vmCyclesExecuted: 0,
           compileMs: msg.compileMs,
+          executeElapsedMs: 0,
           preprocessed: msg.preprocessed,
           ir: msg.ir,
           bytecode: msg.bytecode,
@@ -99,7 +102,11 @@ export class PlaygroundWorkerHost {
     if (msg.type === "PROGRESS") {
       if (this.pending?.runId === msg.runId) {
         const compileMs = this.pending.compileMs;
-        this.pending.onProgress?.({ vmCyclesExecuted: msg.vmCyclesExecuted, compileMs });
+        this.pending.onProgress?.({
+          vmCyclesExecuted: msg.vmCyclesExecuted,
+          compileMs,
+          executeElapsedMs: msg.executeElapsedMs,
+        });
       }
       return;
     }
