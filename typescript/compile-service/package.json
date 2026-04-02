@@ -1,0 +1,5 @@
+{
+  "name": "@f-flat-minor/compile-service",
+  "private": true,
+  "type": "module"
+}

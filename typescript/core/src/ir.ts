@@ -13,6 +13,9 @@ interface Meta {
   unsafe: boolean;
   filename: string;
   line: number;
+  character: number;
+  length: number;
+  offset: number;
   uid: number;
 }
 

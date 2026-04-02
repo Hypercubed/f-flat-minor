@@ -10,6 +10,20 @@ import type { CompilerHost } from "./platform.ts";
 const COMMENT_START = "/*";
 const COMMENT_END = "*/";
 
+export interface TokenSpan {
+  line: number;
+  character: number;
+  length: number;
+  offset: number;
+}
+
+export interface CompilerToken extends TokenSpan {
+  raw: string;
+  value: string | bigint;
+}
+
+type CompileInputToken = string | bigint | CompilerToken;
+
 function toNumber(str: string) {
   // A bare "+" or "-" is an operator token in F-flat-minor, not a numeric
   // literal. This guard also avoids relying on runtime-specific BigInt parsing:
@@ -43,6 +57,52 @@ export class Compiler {
       }
       return x;
     });
+  }
+
+  static tokenizeWithSpans(source: string): CompilerToken[] {
+    const tokens: CompilerToken[] = [];
+    const tokenPattern = /\S+/g;
+    let line = 0;
+    let character = 0;
+    let cursor = 0;
+
+    const advance = (end: number) => {
+      while (cursor < end) {
+        const char = source[cursor];
+        if (char === "\r") {
+          if (source[cursor + 1] === "\n") {
+            cursor++;
+          }
+          line++;
+          character = 0;
+        } else if (char === "\n") {
+          line++;
+          character = 0;
+        } else {
+          character++;
+        }
+        cursor++;
+      }
+    };
+
+    let match: RegExpExecArray | null;
+    while ((match = tokenPattern.exec(source)) !== null) {
+      const offset = match.index;
+      advance(offset);
+      const raw = match[0] ?? "";
+      const value = toNumber(raw);
+      tokens.push({
+        raw,
+        value: value !== undefined ? value : raw,
+        line,
+        character,
+        length: raw.length,
+        offset,
+      });
+      advance(offset + raw.length);
+    }
+
+    return tokens;
   }
 
   /**
@@ -87,13 +147,15 @@ export class Compiler {
     return code;
   }
 
-  compileToIR(s: Array<string | bigint>, filename = ""): IrInstruction[] {
+  compileToIR(s: Array<CompileInputToken>, filename = ""): IrInstruction[] {
     let i = 0;
     const l = s.length;
     let ss: string | bigint = "";
     const ret: IrInstruction[] = [];
+    let currentToken: CompileInputToken | undefined;
     while (i < l) {
-      ss = s[i++];   
+      currentToken = s[i++];
+      ss = this.unwrapTokenValue(currentToken);
 
       if (typeof ss === "bigint") {
         push(ss);
@@ -148,15 +210,17 @@ export class Compiler {
         push(this.getSymbol(name), { name: `${name}`, pointer: true });
         call(OpCodes.MARK, { name: ":" });
       } else if (ss === COMMENT_START) { // Comment
+        const commentStartToken = currentToken;
         const comment = [];
         while (i < s.length) {
-          ss = s[i++];
+          currentToken = s[i++];
+          ss = this.unwrapTokenValue(currentToken);
           if (ss === COMMENT_END) {
             break;
           }
           comment.push(ss);
         }
-        call(0n, { comment: comment.join(" ") });
+        call(0n, { comment: comment.join(" ") }, commentStartToken);
       } else if (ss.startsWith("[") && ss.endsWith("]")) { // Symbol
         const name = ss.replace(/^\[/, "").replace(/\]$/, "");
         const value = toNumber(name);
@@ -171,13 +235,41 @@ export class Compiler {
     }
     return ret;
 
-    function push(value: bigint | number, meta = {}) {
-      ret.push({ value: BigInt(value), op: IROp.push, meta: { ...meta, filename } });
+    function push(value: bigint | number, meta = {}, token = currentToken) {
+      ret.push({
+        value: BigInt(value),
+        op: IROp.push,
+        meta: { ...meta, ...Compiler.toInstructionMeta(token, filename) },
+      });
     }
 
-    function call(value: bigint | number, meta = {}) {
-      ret.push({ value: BigInt(value), op: IROp.call, meta:{ ...meta, filename } });
+    function call(value: bigint | number, meta = {}, token = currentToken) {
+      ret.push({
+        value: BigInt(value),
+        op: IROp.call,
+        meta: { ...meta, ...Compiler.toInstructionMeta(token, filename) },
+      });
     }
+  }
+
+  private unwrapTokenValue(token: CompileInputToken): string | bigint {
+    if (typeof token === "string" || typeof token === "bigint") {
+      return token;
+    }
+    return token.value;
+  }
+
+  private static toInstructionMeta(token: CompileInputToken | undefined, filename: string) {
+    if (!token || typeof token === "string" || typeof token === "bigint") {
+      return { filename };
+    }
+    return {
+      filename,
+      line: token.line,
+      character: token.character,
+      length: token.length,
+      offset: token.offset,
+    };
   }
 
   validate(ir: IrInstruction[]): string[] {
