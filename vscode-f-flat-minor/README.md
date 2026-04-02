@@ -4,8 +4,9 @@ Syntax highlighting and language support for [f-flat-minor](https://github.com/H
 
 ## Features
 
-- Syntax highlighting for `.ff` and `.ffp` files
-- Preprocessor command-line highlighting in `.ffp` files (lines that begin with `.`)
+- Syntax highlighting for `.ff` and `.ffp` under one language id (`f-flat-minor`)
+- Preprocessor lines (`.import`, `.load`, `.m`, `.ff`, `.ffp`, `.exit` at line start) use preprocessor styling
+- Compiler annotations (e.g. `.inline`, `.unsafe` after `;` or elsewhere) use muted gray styling (preprocessor lines are italic)
 - Block comment support (`/* */`)
 - Bracket matching for code blocks (`[ ]`)
 - Language configuration for editor features
@@ -40,8 +41,18 @@ npm install
 npm run package
 
 # This creates a .vsix file that can be installed via:
-# VS Code: Extensions > Install from VSIX...
+# VS Code / Cursor: Extensions > … menu > Install from VSIX...
 ```
+
+After installing or updating, run **Developer: Reload Window** so grammars and default token colors reload.
+
+### Cursor / VS Code: confirm you have the right build
+
+1. **Extensions** panel: find **F♭m (f-flat-minor) Language Support** and check the **version** (must match the `.vsix` you installed, e.g. `0.0.3`).
+2. Status bar (bottom right): open an `.ff` / `.ffp` file and confirm the language mode is **F♭m** or **f-flat-minor** (not Plain Text). Set **Change Language Mode** if needed.
+3. Cursor keeps extensions under `~/.cursor/extensions/` (VS Code uses `~/.vscode/extensions/`). If colors never change, uninstall the extension, quit the app, confirm the old `hypercubed.vscode-f-flat-minor-*` folder is gone, then install the new `.vsix` again and reload.
+
+Muted gray for `.inline` / preprocessor lines comes from **default token color rules** in this extension. If you have **`editor.tokenColorCustomizations`** in user or workspace settings, those can override extension defaults.
 
 ## Supported File Types
 
@@ -54,7 +65,8 @@ npm run package
 
 - **Strings**: Single quotes only (`'Hello\sWorld'` - use `\s` for space)
 - **Numbers**: Decimal, binary (`0b111`), octal (`0o111`), hex (`0x111`), with underscore separators (`1_000_000`)
-- **Directives**: `.load`, `.m`, `.inline`, etc.
+- **Preprocessor** (line-leading): `.import`, `.load`, `.m`, `.ff`, `.ffp`, `.exit`
+- **Compiler annotations** (dot-words): `.inline`, `.unsafe`, etc.
 - **Word definitions**: End with colon (`word:`)
 - **Code blocks**: Square brackets (`[ ]`)
 

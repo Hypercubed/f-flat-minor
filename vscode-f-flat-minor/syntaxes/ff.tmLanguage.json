@@ -3,6 +3,9 @@
   "name": "F♭m",
   "patterns": [
     {
+      "include": "#preprocessorLines"
+    },
+    {
       "include": "#comments"
     },
     {
@@ -12,7 +15,7 @@
       "include": "#numbers"
     },
     {
-      "include": "#directives"
+      "include": "#compilerAnnotations"
     },
     {
       "include": "#definitions"
@@ -28,6 +31,10 @@
     }
   ],
   "repository": {
+    "preprocessorLines": {
+      "name": "meta.preprocessor.f-flat-minor",
+      "match": "^\\.(?:exit|import|load|m|ffp|ff)\\b[^\\n]*$"
+    },
     "comments": {
       "patterns": [
         {
@@ -60,8 +67,8 @@
         }
       ]
     },
-    "directives": {
-      "name": "keyword.directive.f-flat-minor",
+    "compilerAnnotations": {
+      "name": "meta.compiler.annotation.f-flat-minor",
       "match": "\\.[a-zA-Z_][a-zA-Z0-9_]*"
     },
     "definitions": {

@@ -2,7 +2,7 @@
   "name": "vscode-f-flat-minor",
   "displayName": "F♭m (f-flat-minor) Language Support",
   "description": "Syntax highlighting and language support for f-flat-minor, a minimal stack-oriented programming language",
-  "version": "0.0.1",
+  "version": "0.0.3",
   "publisher": "hypercubed",
   "repository": {
     "type": "git",
@@ -25,14 +25,8 @@
     "languages": [
       {
         "id": "f-flat-minor",
-        "aliases": ["F♭m", "f-flat-minor", "ff"],
-        "extensions": [".ff"],
-        "configuration": "./language-configuration.json"
-      },
-      {
-        "id": "f-flat-minor-preprocessed",
-        "aliases": ["F♭m Preprocessed", "f-flat-minor preprocessed", "ffp"],
-        "extensions": [".ffp"],
+        "aliases": ["F♭m", "f-flat-minor", "ff", "ffp"],
+        "extensions": [".ff", ".ffp"],
         "configuration": "./language-configuration.json"
       }
     ],
@@ -41,12 +35,26 @@
         "language": "f-flat-minor",
         "scopeName": "source.f-flat-minor",
         "path": "./syntaxes/ff.tmLanguage.json"
-      },
-      {
-        "language": "f-flat-minor-preprocessed",
-        "scopeName": "source.f-flat-minor.preprocessed",
-        "path": "./syntaxes/ffp.tmLanguage.json"
       }
-    ]
+    ],
+    "configurationDefaults": {
+      "editor.tokenColorCustomizations": {
+        "textMateRules": [
+          {
+            "scope": ["meta.preprocessor.f-flat-minor"],
+            "settings": {
+              "foreground": "#808080",
+              "fontStyle": "italic"
+            }
+          },
+          {
+            "scope": ["meta.compiler.annotation.f-flat-minor"],
+            "settings": {
+              "foreground": "#808080"
+            }
+          }
+        ]
+      }
+    }
   }
 }
