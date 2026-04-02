@@ -80,7 +80,7 @@
 
 (define (mod!)
   (define rhs (pop! stack))
-  (push! stack (modulo (pop! stack) rhs)))
+  (push! stack (remainder (pop! stack) rhs)))
 
 (define (and!)
   (define rhs (pop! stack))
@@ -320,4 +320,20 @@
   (call op_pow)
   (call op_mod)
 
-  (check-equal? stack '[91686]))
+  (check-equal? stack '[91686])
+
+  ;; Truncate-toward-zero `/` and matching `%` (aligned with TS core / Go)
+  (define (check-div-rem lhs rhs want-q want-r)
+    (call op_clr)
+    (push lhs)
+    (push rhs)
+    (call op_div)
+    (check-equal? stack (list want-q))
+    (call op_clr)
+    (push lhs)
+    (push rhs)
+    (call op_mod)
+    (check-equal? stack (list want-r)))
+  (check-div-rem -3 2 -1 -1)
+  (check-div-rem 3 -2 -1 1)
+  (check-div-rem -3 -2 1 -1))

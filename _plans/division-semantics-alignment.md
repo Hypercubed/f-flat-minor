@@ -21,7 +21,7 @@ negative operands.
 - Deno/Node/Bun already implement the desired pair through the shared TypeScript core.
 - Python is now aligned in [`python/execute.py`](python/execute.py): it uses truncate-toward-zero division and matching remainder semantics via an integer-only helper, eliminating the prior large-integer float-conversion risk.
 - Dart is now aligned in [`dart/bin/dart.dart`](dart/bin/dart.dart): `/` and `%` use paired truncate-toward-zero quotient and remainder logic matching the project rule.
-- Racket truncates `/` toward zero, but `%` still uses `modulo`, which is also divisor-signed.
+- Racket: **`%` now uses `remainder`** (paired with `quotient`) in [`racket/private/engine.rkt`](racket/private/engine.rkt); unit tests cover the canonical cases.
 - Go is already aligned with the desired semantics: `/` uses `big.Int.Quo`, `%` uses
   `big.Int.Rem`, and regression coverage already exists in [`go/src/engine/engine_test.go`](go/src/engine/engine_test.go).
 - Ruby is now aligned in [`ruby/execute.rb`](ruby/execute.rb): `/` and `%` use paired truncate-toward-zero quotient and remainder logic instead of raw Ruby floor-division behavior.
@@ -85,8 +85,26 @@ drifting runtime to it.
   Racket; change those runtimes to match the project rule instead.
 - The plan covers `/` and `%` together. Fixing only `/` would keep `divrem` and related math words
   inconsistent.
-- Documentation should describe the canonical semantics now, while only noting the remaining
-  Racket implementation drift until that runtime is aligned.
+- Documentation should describe the canonical semantics now, while only noting any remaining
+  implementation drift until each runtime is aligned.
+
+## WASM / AssemblyScript (code review, no runtime tests relied on)
+
+### WebAssembly (`wasm/`)
+
+- [`wasm/include/core.wat`](wasm/include/core.wat) / [`wasm/build/interpret.wat`](wasm/build/interpret.wat): **`/`** is implemented with **`i64.div_s`**: divisor is popped first, dividend is `peek`, so the operation is signed division with **truncate toward zero** (WebAssembly semantics). **There is no `%` opcode** in the `elem` table (no `OP_MOD`; ASCII `%` / 37 is not wired). Programs that use `%` are not supported by this interpreter at all.
+- If **`%`** is added, it must use **`i64.rem_s`** with the **same `(dividend, divisor)` order** as **`i64.div_s`** so quotient and remainder stay paired.
+
+### AssemblyScript (`assemblyscript/`)
+
+- [`assemblyscript/assembly/mp.ts`](assemblyscript/assembly/mp.ts): **`MpZ.div`** implements truncate-toward-zero via unsigned magnitude division and sign XOR; **`MpZ.mod`** derives a remainder from **`q = div`** using **`_usub`** / **`rhs._umul(q)`** plus a sign adjustment. **`MpZ.rem`** is **`this.sub(rhs.mul(q))`**, i.e. **`a - b*q`**, which is the canonical paired remainder. By inspection the **`div`/`mod`** pair is intended to match that rule; **`mod`** is harder to audit than **`rem`** because **`_umul`** is magnitude-only.
+- [`assemblyscript/assembly/vm.ts`](assemblyscript/assembly/vm.ts): **`div`** / **`mod`** pop **`rhs`** then **`lhs`** and call **`MpZ.div`** / **`MpZ.mod`**, consistent with other runtimes.
+- [`assemblyscript/assembly/__tests__/mod.spec.ts`](assemblyscript/assembly/__tests__/mod.spec.ts): Negative cases include **`// TODO: check this`** comments; the six canonical plan cases are not spelled out as named assertions.
+
+### Todos (WASM / AssemblyScript)
+
+- [ ] **WASM**: Implement **`%`** (e.g. **`OP_MOD`** + **`$MOD`** using **`i64.rem_s`**, mirroring **`$DIV`** stack order). Rebuild or sync **`wasm/build/interpret.wat`** if it is generated from includes.
+- [ ] **AssemblyScript**: Add explicit regression coverage for the six canonical **`/`** / **`%`** cases on **`MpZ`** (and/or resolve the **`TODO`** comments in **`mod.spec.ts`**). Optionally **rewrite `MpZ.mod`** to delegate to **`rem`** (or **`this.sub(rhs.mul(this.div(rhs)))`**) so **`%`** matches one obvious definition and stays in lockstep with **`div`**.
 
 ## Open questions
 
@@ -114,3 +132,6 @@ None — ready to implement.
 - [`ruby/execute.rb`](ruby/execute.rb)
 - [`racket/private/engine.rkt`](racket/private/engine.rkt)
 - [`go/src/engine/engine.go`](go/src/engine/engine.go)
+- [`wasm/include/core.wat`](wasm/include/core.wat)
+- [`assemblyscript/assembly/mp.ts`](assemblyscript/assembly/mp.ts)
+- [`assemblyscript/assembly/vm.ts`](assemblyscript/assembly/vm.ts)
