@@ -32,9 +32,9 @@ __powmod:
 
 __(inner_witness_loop): /* s n x -> */
   dup2 swap %  /* s n x x%n */
-  [ over ] dip swap /* s n x x%n n */
+  [over] dip swap /* s n x x%n n */
   -- = /* s n x x%n=n-1 */
-  [ false ]
+  [false]
   [
     dup * /* s n x^2 */
     __inner_witness
@@ -44,7 +44,7 @@ __(inner_witness_loop): /* s n x -> */
 __inner_witness: /* s n x -> */
   rot -- dup
   zero?
-  [ true ]
+  [true]
   [ rot __(inner_witness_loop) ]
   branch
 ;
@@ -53,7 +53,7 @@ __inner_witness: /* s n x -> */
 __witness_seed: /* n __witness_seed == s n a^d%n */
   pred dup __factor_by_2 /* n n-1 d s */
   dig 2 swap __nrand /* n d s a */
-  [ bury ] dip /* s n d a */
+  [bury] dip /* s n d a */
   __powmod
 ;
 
@@ -76,7 +76,7 @@ __witness_loop: /* n -> n */
   [ __witness_composite ]
   branch ;
 
-__witness_loop2: [ __witness_loop ] dup or_else ;
+__witness_loop2: [__witness_loop] dup or_else ;
 
 /* Exact odd-divisor trial loop.
    Keep this independent from public next-prime/prime? to avoid recursive
@@ -91,20 +91,20 @@ __next: dup 2 < [ drop 2 ] [ 1 + dup even? + __(next) ] branch ;
    false means definitely composite; true means probably prime. */
 maybe_prime?: dup 4 <
   [ 1 > ]
-  [ [ __simple-composite? ] [ __witness_loop2 ] or_else not ]
+  [ [__simple-composite?] [__witness_loop2] or_else not ]
   branch ;
 
 /* Exact primality test: use maybe_prime? as a fast screen, then confirm. */
 prime?: 
   dup maybe_prime?
-  [ __trial ]
+  [__trial]
   [ drop false ]
   branch
 ;
 
 next-prime: 
   dup 2 < [ drop 2 ]
-  [ __next ]
+  [__next]
   branch ;
 
-th-prime: 0 swap [ next-prime ] swap times ;
+th-prime: 0 swap [next-prime] swap times ;

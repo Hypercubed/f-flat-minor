@@ -37,7 +37,7 @@ describe("Engine.runAsync", () => {
 
     const asyncEngine = new Engine(createTestPlatform());
     asyncEngine.loadIR(ir);
-    await asyncEngine.runAsync({ yieldEvery: 2 });
+    await asyncEngine.runAsync({ yieldIntervalMs: 0, yieldEvery: 2 });
 
     expect(asyncEngine.getStack()).toEqual(syncEngine.getStack());
   });
@@ -50,6 +50,7 @@ describe("Engine.runAsync", () => {
 
     let schedulerCalls = 0;
     await engine.runAsync({
+      yieldIntervalMs: 0,
       yieldEvery: 1,
       scheduler: () => {
         schedulerCalls++;
@@ -67,7 +68,7 @@ describe("Engine.runAsync", () => {
     engine.loadIR(compileSource("1"));
 
     await expect(engine.runAsync({ yieldEvery: 0 })).rejects.toThrow(
-      "runAsync: yieldEvery must be a positive finite number",
+      "runAsync: yieldSliceMax / yieldEvery must be a positive finite number",
     );
   });
 
@@ -78,6 +79,7 @@ describe("Engine.runAsync", () => {
     engine.loadIR(ir);
 
     const result = await engine.runAsync({
+      yieldIntervalMs: 0,
       yieldEvery: 5,
       shouldContinue: () => engine.getStack().length < 20,
     });

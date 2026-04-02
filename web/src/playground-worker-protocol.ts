@@ -8,13 +8,21 @@ export type PlaygroundWorkerInbound =
     source: string;
     stdin: string;
     optimize: boolean;
-    yieldEvery: number;
+    yieldIntervalMs: number;
+    yieldSliceMax: number;
   }
   | { type: "CANCEL"; runId: number };
 
 /** Worker → main thread */
 export type PlaygroundWorkerOutbound =
-  | { type: "COMPILED"; runId: number; compileMs: number }
+  | {
+    type: "COMPILED";
+    runId: number;
+    compileMs: number;
+    preprocessed: string;
+    ir: string;
+    bytecode: string;
+  }
   | { type: "PROGRESS"; runId: number; vmCyclesExecuted: number }
   | { type: "RESULT"; runId: number; result: RunResult }
   | { type: "ERROR"; runId: number; message: string };

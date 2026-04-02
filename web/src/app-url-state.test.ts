@@ -11,6 +11,7 @@ describe("app-url-state", () => {
 
   it("parses known tabs from hashes and raw names", () => {
     expect(parseAppTab("#playground")).toBe("playground");
+    expect(parseAppTab("#playground?code=txt.dup")).toBe("playground");
     expect(parseAppTab("#repl")).toBe("repl");
     expect(parseAppTab("tutorial")).toBe("tutorial");
     expect(parseAppTab(" HELP ")).toBe("help");
@@ -22,7 +23,28 @@ describe("app-url-state", () => {
       search: "?foo=bar",
       tab: "playground",
       codeParam: "txt.dup",
-    })).toBe("/app?foo=bar&code=txt.dup#playground");
+      exampleParam: null,
+    })).toBe("/app#playground?foo=bar&code=txt.dup");
+  });
+
+  it("keeps the example param on the playground tab when there is no custom code", () => {
+    expect(buildAppUrl({
+      pathname: "/app",
+      search: "?foo=bar",
+      tab: "playground",
+      codeParam: null,
+      exampleParam: "/examples/fact.ffp",
+    })).toBe("/app#playground?foo=bar&example=%2Fexamples%2Ffact.ffp");
+  });
+
+  it("drops example when code param is set", () => {
+    expect(buildAppUrl({
+      pathname: "/app",
+      search: "?foo=bar&example=%2Fexamples%2Ffib.ffp",
+      tab: "playground",
+      codeParam: "txt.dup",
+      exampleParam: null,
+    })).toBe("/app#playground?foo=bar&code=txt.dup");
   });
 
   it("removes the code param on non-playground tabs", () => {
@@ -31,7 +53,18 @@ describe("app-url-state", () => {
       search: "?foo=bar&code=txt.dup",
       tab: "help",
       codeParam: "txt.swap",
-    })).toBe("/app?foo=bar#help");
+      exampleParam: null,
+    })).toBe("/app#help?foo=bar");
+  });
+
+  it("removes the example param on non-playground tabs", () => {
+    expect(buildAppUrl({
+      pathname: "/app",
+      search: "?foo=bar&example=%2Fexamples%2Ffact.ffp",
+      tab: "help",
+      codeParam: null,
+      exampleParam: "/examples/fact.ffp",
+    })).toBe("/app#help?foo=bar");
   });
 
   it("removes the code param for an empty playground source", () => {
@@ -40,6 +73,7 @@ describe("app-url-state", () => {
       search: "?code=txt.dup",
       tab: "playground",
       codeParam: null,
+      exampleParam: null,
     })).toBe("/app#playground");
   });
 });

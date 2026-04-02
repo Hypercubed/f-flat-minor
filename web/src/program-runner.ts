@@ -4,6 +4,7 @@ import {
   Optimizer,
   Preprocessor,
   formatFfCompatibleIr,
+  type EngineRunAsyncOptions,
   type IrInstruction,
 } from "../../typescript/core/src/mod.ts";
 
@@ -40,6 +41,9 @@ export interface PreparedProgram {
   executeAsync: (options?: ExecuteAsyncOptions) => Promise<ExecuteResult>;
 }
 
+/** Async VM execution options (see {@link EngineRunAsyncOptions}). */
+export type ExecuteAsyncOptions = EngineRunAsyncOptions;
+
 export interface ExecuteResult {
   output: string;
   stack: string[];
@@ -48,13 +52,6 @@ export interface ExecuteResult {
   executeMs: number;
   cancelled: boolean;
   vmCyclesExecuted: number;
-}
-
-export interface ExecuteAsyncOptions {
-  yieldEvery?: number;
-  scheduler?: () => void | Promise<void>;
-  shouldContinue?: () => boolean;
-  onChunk?: (state: { vmCyclesExecuted: number }) => void;
 }
 
 function withCapturedConsole<T>(

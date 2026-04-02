@@ -44,7 +44,7 @@ self.onmessage = (event: MessageEvent<PlaygroundWorkerInbound>) => {
     return;
   }
 
-  const { runId, source, stdin, optimize, yieldEvery } = msg;
+  const { runId, source, stdin, optimize, yieldIntervalMs, yieldSliceMax } = msg;
 
   void (async () => {
     cancelRequested = false;
@@ -57,10 +57,18 @@ self.onmessage = (event: MessageEvent<PlaygroundWorkerInbound>) => {
         return;
       }
 
-      post({ type: "COMPILED", runId, compileMs: compiled.compileMs });
+      post({
+        type: "COMPILED",
+        runId,
+        compileMs: compiled.compileMs,
+        preprocessed: compiled.preprocessed,
+        ir: compiled.ir,
+        bytecode: compiled.bytecode,
+      });
 
       const executed = await compiled.executeAsync({
-        yieldEvery,
+        yieldIntervalMs,
+        yieldSliceMax,
         shouldContinue: () => !cancelRequested && activeRunId === runId,
         onChunk: ({ vmCyclesExecuted }) => {
           if (activeRunId === runId) {
