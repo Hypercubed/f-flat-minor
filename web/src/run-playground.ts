@@ -1,3 +1,4 @@
+import { getSearchStringForStateMerge } from "./app-url-state.ts";
 import { PlaygroundWorkerHost } from "./playground-worker-client.ts";
 import { compileProgram, type RunResult } from "./program-runner.ts";
 
@@ -16,7 +17,9 @@ export function playgroundUseWorker(): boolean {
     return false;
   }
   try {
-    const params = new URLSearchParams(window.location.search);
+    const params = new URLSearchParams(
+      getSearchStringForStateMerge(window.location).replace(/^\?/, ""),
+    );
     if (params.get("worker") === "0") {
       return false;
     }
@@ -28,11 +31,25 @@ export function playgroundUseWorker(): boolean {
 
 export interface RunPlaygroundProgress {
   vmCyclesExecuted: number;
+  /** Wall-clock ms elapsed since execute started (0 right after compile). */
+  executeElapsedMs?: number;
   /** Present after preprocess+compile completes (worker sends this before VM progress). */
   compileMs?: number;
+  /** Present right after compile so Expanded Source / IR / Bytecode can update before execution finishes. */
+  preprocessed?: string;
+  ir?: string;
+  bytecode?: string;
 }
 
 export interface RunPlaygroundOptions {
+  /**
+   * Wall-clock ms between yielding to the async scheduler (smaller = more responsive UI, more overhead).
+   * Default 160. Use `0` to yield after every {@link yieldSliceMax} VM steps instead.
+   */
+  yieldIntervalMs?: number;
+  /** Max VM steps per inner batch; default 655360. When {@link yieldIntervalMs} is `0`, yields after each batch. */
+  yieldSliceMax?: number;
+  /** @deprecated Prefer {@link yieldSliceMax}. */
   yieldEvery?: number;
   signal?: AbortSignal;
   onProgress?: (state: RunPlaygroundProgress) => void;
@@ -65,7 +82,8 @@ export async function runPlaygroundProgram(
   optimize: boolean,
   options: RunPlaygroundOptions = {},
 ): Promise<RunResult> {
-  const yieldEvery = options.yieldEvery ?? 2048;
+  const yieldIntervalMs = options.yieldIntervalMs ?? 160;
+  const yieldSliceMax = options.yieldSliceMax ?? options.yieldEvery ?? 655360;
 
   if (playgroundUseWorker()) {
     try {
@@ -73,7 +91,8 @@ export async function runPlaygroundProgram(
         source,
         stdin,
         optimize,
-        yieldEvery,
+        yieldIntervalMs,
+        yieldSliceMax,
         signal: options.signal,
         onProgress: options.onProgress,
       });
@@ -89,13 +108,19 @@ export async function runPlaygroundProgram(
   try {
     const compiled = compileProgram(source, stdin, optimize);
     const compileMs = compiled.compileMs;
-    options.onProgress?.({ vmCyclesExecuted: 0, compileMs });
+    options.onProgress?.({ vmCyclesExecuted: 0, compileMs, executeElapsedMs: 0 });
 
+    const executeStart = performance.now();
     const executed = await compiled.executeAsync({
-      yieldEvery,
+      yieldIntervalMs,
+      yieldSliceMax,
       shouldContinue: () => !options.signal?.aborted,
       onChunk: ({ vmCyclesExecuted }) => {
-        options.onProgress?.({ vmCyclesExecuted, compileMs });
+        options.onProgress?.({
+          vmCyclesExecuted,
+          compileMs,
+          executeElapsedMs: performance.now() - executeStart,
+        });
       },
       scheduler: () =>
         new Promise<void>((resolve) => {

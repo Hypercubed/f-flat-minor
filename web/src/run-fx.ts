@@ -3,8 +3,8 @@ import type { EditorView } from "@codemirror/view";
 import { RUN_FEEDBACK } from "./run-feedback.ts";
 
 /**
- * Feedback when the user runs a program: F♭ minor chord (12-TET: F♭–A♭♭–C♭ ≈ E4–G4–B4)
- * and floating ♭ symbols rising from the run button.
+ * Feedback when the user runs a program: floating ♭ symbols rise from the run button
+ * for the whole run; the F♭ minor chord plays when execution finishes.
  *
  * REPL: one ♭ per qualifying keypress from the caret; chord only on Enter.
  *
@@ -23,12 +23,62 @@ const FB_MINOR_HZ = [329.6275569128699, 391.99543598174927, 493.8833013781249] a
 
 const FLAT_COUNT = 10;
 
-export function triggerRunProgramFeedback(button: HTMLButtonElement): void {
+/** How often new ♭ particles spawn while a program run is in progress. */
+const RUN_PROGRAM_FEEDBACK_TICK_MS = 420;
+
+/** Particles per tick during a run (continuous stream; smaller bursts than a one-shot burst). */
+const RUN_PROGRAM_FEEDBACK_PARTICLES_PER_TICK = 3;
+
+let runProgramFeedbackInterval: ReturnType<typeof setInterval> | null = null;
+let runProgramFeedbackButton: HTMLButtonElement | null = null;
+let runProgramFeedbackSessionActive = false;
+
+function stopRunProgramFeedbackInterval(): void {
+  if (runProgramFeedbackInterval !== null) {
+    clearInterval(runProgramFeedbackInterval);
+    runProgramFeedbackInterval = null;
+  }
+  runProgramFeedbackButton = null;
+}
+
+/**
+ * Starts floating ♭ feedback from the run button for an in-flight program run.
+ * Call {@link stopRunProgramRunFeedback} when the run completes (success, error, or cancel).
+ */
+export function startRunProgramRunFeedback(button: HTMLButtonElement): void {
+  stopRunProgramFeedbackInterval();
   if (!RUN_FEEDBACK.enabled) {
     return;
   }
-  playFlatMinorChord();
-  spawnFloatingFlatsFromButton(button);
+  runProgramFeedbackSessionActive = true;
+
+  if (window.matchMedia("(prefers-reduced-motion: reduce)").matches) {
+    return;
+  }
+
+  runProgramFeedbackButton = button;
+
+  const tick = (): void => {
+    if (!RUN_FEEDBACK.enabled) {
+      stopRunProgramFeedbackInterval();
+      return;
+    }
+    if (runProgramFeedbackButton) {
+      spawnFloatingFlatsFromButton(runProgramFeedbackButton, RUN_PROGRAM_FEEDBACK_PARTICLES_PER_TICK);
+    }
+  };
+  tick();
+  runProgramFeedbackInterval = setInterval(tick, RUN_PROGRAM_FEEDBACK_TICK_MS);
+}
+
+/** Ends run feedback: stops ♭ animation and plays the completion chord (if feedback is on). */
+export function stopRunProgramRunFeedback(): void {
+  const hadSession = runProgramFeedbackSessionActive;
+  runProgramFeedbackSessionActive = false;
+  stopRunProgramFeedbackInterval();
+  if (hadSession) {
+    playFlatMinorChord();
+  }
 }
 
 export function playFlatMinorChord(): void {
@@ -196,7 +246,7 @@ function spawnOneFloatingFlat(x: number, y: number, options?: SpawnFlatOptions):
   );
 }
 
-function spawnFloatingFlatsFromButton(button: HTMLButtonElement): void {
+function spawnFloatingFlatsFromButton(button: HTMLButtonElement, particleCount: number = FLAT_COUNT): void {
   if (!RUN_FEEDBACK.enabled) {
     return;
   }
@@ -209,7 +259,7 @@ function spawnFloatingFlatsFromButton(button: HTMLButtonElement): void {
     return;
   }
 
-  for (let i = 0; i < FLAT_COUNT; i++) {
+  for (let i = 0; i < particleCount; i++) {
     const x = rect.left + Math.random() * rect.width;
     const y = rect.top + rect.height * (0.35 + Math.random() * 0.35);
     spawnOneFloatingFlat(x, y, { animationDelay: `${i * 0.045}s` });

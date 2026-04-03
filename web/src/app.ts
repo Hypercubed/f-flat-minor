@@ -1,13 +1,25 @@
 import { mountReadonlySourceViewer, mountSourceEditor, tutorialEditorFlatFeedback } from "./editor.ts";
-import { DEFAULT_SOURCE, EXAMPLES, EXAMPLE_OPTIONS_HTML } from "./examples.ts";
+import {
+  CUSTOM_EXAMPLE_VALUE,
+  DEFAULT_EXAMPLE_PATH,
+  DEFAULT_SOURCE,
+  EXAMPLES,
+  EXAMPLE_OPTIONS_HTML,
+} from "./examples.ts";
 import { runPlaygroundProgram } from "./run-playground.ts";
 import { ReplSession } from "./repl-session.ts";
-import { buildAppUrl, parseAppTab, type AppTab } from "./app-url-state.ts";
+import {
+  buildAppUrl,
+  getSearchStringForStateMerge,
+  parseAppTab,
+  type AppTab,
+} from "./app-url-state.ts";
 import appShellTemplate from "./templates/app-shell.html?raw";
 import helpTemplate from "./templates/help.html?raw";
 import { mountTutorial } from "./tutorial.ts";
-import { triggerReplKeyFeedback, triggerRunProgramFeedback } from "./run-fx.ts";
+import { startRunProgramRunFeedback, stopRunProgramRunFeedback, triggerReplKeyFeedback } from "./run-fx.ts";
 import { syncRunFeedbackToggleButton, toggleRunFeedback } from "./run-feedback.ts";
+import { formatVmStepCount } from "./format-vm-steps.ts";
 import { decodeCodeFromUrlParam, encodeCodeForUrlParam } from "./url-codec.ts";
 import type { ValueInspection } from "../../typescript/core/src/engine.ts";
 import type { StackItem } from "./repl-session.ts";
@@ -108,14 +120,39 @@ export function mountApp(root: HTMLElement) {
   const detailTabs = Array.from(root.querySelectorAll<HTMLButtonElement>(".subtab"));
   const detailPanels = Array.from(root.querySelectorAll<HTMLElement>(".detail-panel"));
 
-  const searchParams = new URLSearchParams(window.location.search);
+  const searchParams = new URLSearchParams(
+    getSearchStringForStateMerge(window.location).replace(/^\?/, ""),
+  );
   const sourceFromUrl = decodeCodeFromUrlParam(searchParams.get("code"));
-  const sourceEditor = mountSourceEditor(source, sourceFromUrl ?? DEFAULT_SOURCE, {
+  const exampleFromUrl = searchParams.get("example");
+
+  let initialPlaygroundSource = DEFAULT_SOURCE;
+  let initialExampleValue = DEFAULT_EXAMPLE_PATH;
+
+  if (sourceFromUrl != null) {
+    initialPlaygroundSource = sourceFromUrl;
+    initialExampleValue = CUSTOM_EXAMPLE_VALUE;
+  } else if (exampleFromUrl !== null && exampleFromUrl in EXAMPLES) {
+    initialPlaygroundSource = EXAMPLES[exampleFromUrl];
+    initialExampleValue = exampleFromUrl;
+  }
+
+  let activeTab: AppTab = parseAppTab(window.location.hash);
+
+  let skipProgrammaticExampleSync = false;
+  const sourceEditor = mountSourceEditor(source, initialPlaygroundSource, {
     extraExtensions: [tutorialEditorFlatFeedback],
+    onDocumentChange: () => {
+      if (skipProgrammaticExampleSync) {
+        return;
+      }
+      example.value = CUSTOM_EXAMPLE_VALUE;
+      syncUrlToAppState();
+    },
   });
+  example.value = initialExampleValue;
   const preprocessedViewer = mountReadonlySourceViewer(preprocessed, "");
   const irViewer = mountReadonlySourceViewer(ir, "");
-  let activeTab: AppTab = parseAppTab(window.location.hash);
 
   function setPlaygroundRunningState(isRunning: boolean) {
     example.disabled = isRunning;
@@ -129,26 +166,32 @@ export function mountApp(root: HTMLElement) {
 
   function syncUrlToAppState() {
     let codeParam: string | null = null;
+    let exampleParam: string | null = null;
 
     if (activeTab === "playground") {
-      const sourceValue = sourceEditor.getValue();
+      if (example.value === CUSTOM_EXAMPLE_VALUE) {
+        const sourceValue = sourceEditor.getValue();
 
-      if (sourceValue) {
-        codeParam = encodeCodeForUrlParam(sourceValue);
+        if (sourceValue) {
+          codeParam = encodeCodeForUrlParam(sourceValue);
 
-        if (codeParam === null) {
-          return;
+          if (codeParam === null) {
+            return;
+          }
         }
+      } else {
+        exampleParam = example.value;
       }
     }
 
     const nextUrl = buildAppUrl({
       pathname: window.location.pathname,
-      search: window.location.search,
+      search: getSearchStringForStateMerge(window.location),
       tab: activeTab,
       codeParam,
+      exampleParam,
     });
-    const currentUrl = `${window.location.pathname}${window.location.search}${window.location.hash}`;
+    const currentUrl = `${window.location.pathname}${window.location.hash}`;
 
     if (nextUrl !== currentUrl) {
       window.history.replaceState(window.history.state, "", nextUrl);
@@ -217,7 +260,8 @@ export function mountApp(root: HTMLElement) {
     setPlaygroundRunningState(true);
     summary.innerHTML = renderSummary([
       { label: "compile", value: "Running...", tone: "running", showDot: true },
-      { label: "execute", value: "pending", tone: "pending" },
+      { label: "execute", value: "…", tone: "pending" },
+      { label: "vm steps", value: "…", tone: "pending" },
       { label: "exit", value: "pending", tone: "pending" },
     ]);
     errorOutput.textContent = "";
@@ -230,7 +274,19 @@ export function mountApp(root: HTMLElement) {
     try {
       const result = await runPlaygroundProgram(sourceEditor.getValue(), stdin.value, optimize.checked, {
         signal: abortController.signal,
-        onProgress: ({ vmCyclesExecuted, compileMs }) => {
+        onProgress: ({
+          vmCyclesExecuted,
+          compileMs,
+          executeElapsedMs,
+          preprocessed: expandedSrc,
+          ir: irText,
+          bytecode: bcText,
+        }) => {
+          if (expandedSrc !== undefined) {
+            preprocessedViewer.setValue(expandedSrc);
+            irViewer.setValue(irText ?? "");
+            bytecode.innerHTML = escapeHtml(bcText ?? "");
+          }
           summary.innerHTML = renderSummary([
             {
               label: "compile",
@@ -239,9 +295,15 @@ export function mountApp(root: HTMLElement) {
             },
             {
               label: "execute",
-              value: `${vmCyclesExecuted.toLocaleString()} vm steps`,
+              value:
+                executeElapsedMs !== undefined ? `${executeElapsedMs.toFixed(2)} ms` : "…",
               tone: "running",
               showDot: true,
+            },
+            {
+              label: "vm steps",
+              value: formatVmStepCount(vmCyclesExecuted),
+              tone: "running",
             },
             { label: "exit", value: "pending", tone: "pending" },
           ]);
@@ -283,18 +345,18 @@ export function mountApp(root: HTMLElement) {
         { label: "compile", value: `${result.compileMs.toFixed(2)} ms` },
         { label: "execute", value: `${result.executeMs.toFixed(2)} ms` },
         {
+          label: "vm steps",
+          value:
+            result.vmCyclesExecuted !== undefined
+              ? formatVmStepCount(result.vmCyclesExecuted)
+              : "—",
+        },
+        {
           label: "exit",
           value: exitLabel,
           tone: exitTone,
         },
       ];
-      if (result.vmCyclesExecuted !== undefined) {
-        summaryItems.push({
-          label: "vm steps",
-          value: result.vmCyclesExecuted.toLocaleString(),
-          tone: "default",
-        });
-      }
 
       summary.innerHTML = renderSummary(summaryItems);
 
@@ -318,7 +380,8 @@ export function mountApp(root: HTMLElement) {
 
       summary.innerHTML = renderSummary([
         { label: "compile", value: "failed", tone: "error" },
-        { label: "execute", value: "pending", tone: "pending" },
+        { label: "execute", value: "—", tone: "pending" },
+        { label: "vm steps", value: "—", tone: "pending" },
         { label: "exit", value: "pending", tone: "pending" },
       ]);
       output.innerHTML = "";
@@ -329,6 +392,7 @@ export function mountApp(root: HTMLElement) {
       scrollToBottom(errorOutput);
     } finally {
       playgroundAbort = null;
+      stopRunProgramRunFeedback();
       setPlaygroundRunningState(false);
       document.body.dataset.ready = "true";
     }
@@ -338,6 +402,7 @@ export function mountApp(root: HTMLElement) {
     summary.innerHTML = renderSummary([
       { label: "compile", value: "—", tone: "pending" },
       { label: "execute", value: "—", tone: "pending" },
+      { label: "vm steps", value: "—", tone: "pending" },
       { label: "exit", value: "—", tone: "pending" },
     ]);
     summary.dataset.state = "idle";
@@ -555,7 +620,15 @@ export function mountApp(root: HTMLElement) {
   }
 
   example.addEventListener("change", () => {
+    if (example.value === CUSTOM_EXAMPLE_VALUE) {
+      syncUrlToAppState();
+      setPlaygroundIdle();
+      return;
+    }
+
+    skipProgrammaticExampleSync = true;
     sourceEditor.setValue(EXAMPLES[example.value] ?? DEFAULT_SOURCE);
+    skipProgrammaticExampleSync = false;
     syncUrlToAppState();
     setPlaygroundIdle();
   });
@@ -565,7 +638,7 @@ export function mountApp(root: HTMLElement) {
       playgroundAbort.abort();
       return;
     }
-    triggerRunProgramFeedback(run);
+    startRunProgramRunFeedback(run);
     syncUrlToAppState();
     void renderPlayground();
   });

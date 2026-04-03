@@ -37,15 +37,22 @@ function workerErrorResult(message: string): RunResult {
 
 export interface PlaygroundRunProgress {
   vmCyclesExecuted: number;
+  /** Wall-clock ms elapsed since execute started (0 right after compile). */
+  executeElapsedMs?: number;
   /** Set once preprocess+compile has finished (same ms as final result). */
   compileMs?: number;
+  /** Present after preprocess+compile so UI can show IR/bytecode while the VM runs. */
+  preprocessed?: string;
+  ir?: string;
+  bytecode?: string;
 }
 
 export interface PlaygroundWorkerRunOptions {
   source: string;
   stdin: string;
   optimize: boolean;
-  yieldEvery: number;
+  yieldIntervalMs: number;
+  yieldSliceMax: number;
   signal?: AbortSignal;
   onProgress?: (state: PlaygroundRunProgress) => void;
 }
@@ -80,7 +87,14 @@ export class PlaygroundWorkerHost {
     if (msg.type === "COMPILED") {
       if (this.pending?.runId === msg.runId) {
         this.pending.compileMs = msg.compileMs;
-        this.pending.onProgress?.({ vmCyclesExecuted: 0, compileMs: msg.compileMs });
+        this.pending.onProgress?.({
+          vmCyclesExecuted: 0,
+          compileMs: msg.compileMs,
+          executeElapsedMs: 0,
+          preprocessed: msg.preprocessed,
+          ir: msg.ir,
+          bytecode: msg.bytecode,
+        });
       }
       return;
     }
@@ -88,7 +102,11 @@ export class PlaygroundWorkerHost {
     if (msg.type === "PROGRESS") {
       if (this.pending?.runId === msg.runId) {
         const compileMs = this.pending.compileMs;
-        this.pending.onProgress?.({ vmCyclesExecuted: msg.vmCyclesExecuted, compileMs });
+        this.pending.onProgress?.({
+          vmCyclesExecuted: msg.vmCyclesExecuted,
+          compileMs,
+          executeElapsedMs: msg.executeElapsedMs,
+        });
       }
       return;
     }
@@ -157,7 +175,8 @@ export class PlaygroundWorkerHost {
         source: options.source,
         stdin: options.stdin,
         optimize: options.optimize,
-        yieldEvery: options.yieldEvery,
+        yieldIntervalMs: options.yieldIntervalMs,
+        yieldSliceMax: options.yieldSliceMax,
       });
     }).finally(() => {
       if (signal) {

@@ -243,6 +243,8 @@ export interface SourceEditor {
 
 export interface MountSourceEditorOptions {
   extraExtensions?: readonly Extension[];
+  /** Called after the document text changes (not on selection-only updates). */
+  onDocumentChange?: () => void;
 }
 
 /** Main + tutorial source editors: one ♭ from the caret on qualifying keypresses (see run-fx). */
@@ -257,6 +259,7 @@ export function mountSourceEditor(
   initialValue: string,
   options?: MountSourceEditorOptions,
 ): SourceEditor {
+  const onDocumentChange = options?.onDocumentChange;
   const view = new EditorView({
     state: EditorState.create({
       doc: initialValue,
@@ -267,6 +270,15 @@ export function mountSourceEditor(
         EditorView.lineWrapping,
         ffTheme,
         sourceTheme,
+        ...(onDocumentChange
+          ? [
+              EditorView.updateListener.of((update) => {
+                if (update.docChanged) {
+                  onDocumentChange();
+                }
+              }),
+            ]
+          : []),
         ...(options?.extraExtensions ?? []),
       ],
     }),

@@ -36,13 +36,23 @@ interface TraceEvent {
 }
 
 export interface EngineRunAsyncOptions {
-  /** Number of VM cycles to run before yielding. Must be >= 1. */
+  /**
+   * Wall-clock milliseconds to spend in the VM before awaiting the scheduler (when {@link yieldIntervalMs} > 0).
+   * Default 160. Use `0` to yield after every {@link yieldSliceMax} VM steps (legacy timing).
+   */
+  yieldIntervalMs?: number;
+  /**
+   * Max VM steps per inner batch before re-checking the clock or yielding (when {@link yieldIntervalMs} is `0`).
+   * Default 655360. Ignored for timing when {@link yieldIntervalMs} > 0 except as the per-slice step cap.
+   */
+  yieldSliceMax?: number;
+  /** @deprecated Prefer {@link yieldSliceMax}. */
   yieldEvery?: number;
   /** Callback awaited between chunks when work remains. */
   scheduler?: () => void | Promise<void>;
   /** If false, stops before the next scheduler tick (cooperative cancellation). */
   shouldContinue?: () => boolean;
-  /** Called after each chunk when more work remains (for progress / diagnostics). */
+  /** Called after each slice when more work remains (for progress / diagnostics). */
   onChunk?: (state: { vmCyclesExecuted: number }) => void;
 }
 
@@ -324,30 +334,58 @@ export class Engine {
   }
 
   async runAsync(options: EngineRunAsyncOptions = {}): Promise<RunAsyncResult> {
-    const yieldEvery = options.yieldEvery ?? 2048;
-    if (!Number.isFinite(yieldEvery) || yieldEvery < 1) {
-      throw new Error(`runAsync: yieldEvery must be a positive finite number (received ${yieldEvery})`);
+    const yieldIntervalMs = options.yieldIntervalMs ?? 160;
+    const sliceMax = options.yieldSliceMax ?? options.yieldEvery ?? 655360;
+
+    if (!Number.isFinite(yieldIntervalMs) || yieldIntervalMs < 0) {
+      throw new Error(
+        `runAsync: yieldIntervalMs must be a non-negative finite number (received ${yieldIntervalMs})`,
+      );
+    }
+    if (!Number.isFinite(sliceMax) || sliceMax < 1) {
+      throw new Error(
+        `runAsync: yieldSliceMax / yieldEvery must be a positive finite number (received ${sliceMax})`,
+      );
     }
 
     const scheduler = options.scheduler ?? (() => new Promise<void>((resolve) => {
       globalThis.setTimeout(resolve, 0);
     }));
 
+    const now =
+      typeof globalThis.performance !== "undefined" && typeof globalThis.performance.now === "function"
+        ? () => globalThis.performance.now()
+        : () => globalThis.Date.now();
+
     let step = 0;
     let vmCyclesExecuted = 0;
     let cancelled = false;
 
-    while (this.queue.length > 0) {
-      const stepBefore = step;
-      step = this.runChunk(yieldEvery, step);
-      vmCyclesExecuted += step - stepBefore;
+    while (this.queue.length > 0 && !cancelled) {
+      const chunkStart = now();
+      const deadline = yieldIntervalMs > 0 ? chunkStart + yieldIntervalMs : chunkStart;
 
-      if (this.queue.length > 0) {
+      while (this.queue.length > 0 && !cancelled) {
+        if (yieldIntervalMs > 0 && now() >= deadline) {
+          break;
+        }
+
+        const stepBefore = step;
+        step = this.runChunk(sliceMax, step);
+        vmCyclesExecuted += step - stepBefore;
+
         options.onChunk?.({ vmCyclesExecuted });
         if (options.shouldContinue && !options.shouldContinue()) {
           cancelled = true;
           break;
         }
+
+        if (yieldIntervalMs === 0) {
+          break;
+        }
+      }
+
+      if (this.queue.length > 0 && !cancelled) {
         await scheduler();
       }
     }

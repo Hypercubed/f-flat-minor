@@ -70,9 +70,16 @@ export const EXAMPLES: Record<string, string> = Object.fromEntries(
   EXAMPLE_ENTRIES.map(({ path, source }) => [path, source]),
 );
 
-export const EXAMPLE_OPTIONS_HTML = EXAMPLE_ENTRIES
-  .map(({ path, label }) => `<option value="${path}">${label}</option>`)
-  .join("\n");
+/** Sentinel value for the playground “Custom” row (not a real file path). */
+export const CUSTOM_EXAMPLE_VALUE = "__custom__";
+
+/** Path for the default starter snippet (`DEFAULT_SOURCE` / fact). */
+export const DEFAULT_EXAMPLE_PATH = "/examples/fact.ffp";
+
+export const EXAMPLE_OPTIONS_HTML = [
+  ...EXAMPLE_ENTRIES.map(({ path, label }) => `<option value="${path}">${label}</option>`),
+  `<option value="${CUSTOM_EXAMPLE_VALUE}">Custom</option>`,
+].join("\n");
 
 export const DEFAULT_SOURCE = factExample;
 
