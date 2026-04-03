@@ -2,12 +2,13 @@
   "name": "vscode-f-flat-minor",
   "displayName": "F♭m (f-flat-minor) Language Support",
   "description": "Syntax highlighting and language support for f-flat-minor, a minimal stack-oriented programming language",
-  "version": "0.0.6",
+  "version": "0.0.7",
   "publisher": "hypercubed",
   "main": "./out/extension.js",
   "activationEvents": [
     "onLanguage:f-flat-minor",
-    "onCommand:f-flat-minor.auditCurrentDefinition"
+    "onCommand:f-flat-minor.auditCurrentDefinition",
+    "onCommand:f-flat-minor.auditDefinitionByWord"
   ],
   "repository": {
     "type": "git",
@@ -24,23 +25,55 @@
     "Programming Languages"
   ],
   "scripts": {
-    "compile": "tsc -p .",
+    "sync-core-vocab": "node -e \"require('fs').copyFileSync(require('path').join('..','_shared','core-vocabulary.json'), require('path').join('src','core-vocabulary.json'))\"",
+    "bundle-ers": "esbuild ../node/bin/ers.ts --bundle --platform=node --format=esm --outfile=out/ers-cli.mjs",
+    "compile": "npm run sync-core-vocab && npm run bundle-ers && tsc -p .",
     "watch": "tsc -watch -p .",
     "vscode:prepublish": "npm run compile",
-    "package": "vsce package",
-    "publish": "vsce publish"
+    "package": "vsce package"
   },
   "devDependencies": {
     "@types/node": "^20.10.0",
     "@types/vscode": "^1.85.0",
+    "esbuild": "^0.25.0",
     "typescript": "^5.3.0",
     "vsce": "^2.0.0"
   },
   "contributes": {
+    "configuration": {
+      "title": "F-flat-minor",
+      "properties": {
+        "f-flat-minor.ersScript": {
+          "type": "string",
+          "default": "",
+          "description": "Optional absolute path to the ERS entry script (`ers.ts` from the f-flat-minor repo, or a pre-bundled `ers-cli.mjs`). When empty, the extension uses its bundled CLI or searches upward from the open file / workspace folders for `node/bin/ers.ts`."
+        },
+        "f-flat-minor.ersOutputFormat": {
+          "type": "string",
+          "enum": ["text", "json"],
+          "default": "text",
+          "description": "ERS audit output in the output panel: plain text (same as `ers audit` without `--json`) or pretty-printed JSON (`-j`)."
+        },
+        "f-flat-minor.ersHover": {
+          "type": "boolean",
+          "default": true,
+          "description": "When true, hovering a definition name (`word:`) shows ERS body, safety verdict, and reasons (runs `ers audit --word … --json`)."
+        },
+        "f-flat-minor.coreVocabHover": {
+          "type": "boolean",
+          "default": true,
+          "description": "When true, hovering a core/primitive token shows mnemonic, opcode, stack effect, and description (from embedded `_shared/core-vocabulary.json`, web-inspector style)."
+        }
+      }
+    },
     "commands": [
       {
         "command": "f-flat-minor.auditCurrentDefinition",
         "title": "F-flat-minor: Audit Current Definition"
+      },
+      {
+        "command": "f-flat-minor.auditDefinitionByWord",
+        "title": "F-flat-minor: Audit Definition by Word"
       }
     ],
     "languages": [

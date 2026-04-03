@@ -1,5 +1,5 @@
 ---
-status: ready
+status: in_progress
 status_date: 2026-04-02
 creator: GPT-5.4
 ---
@@ -8,6 +8,30 @@ creator: GPT-5.4
 
 ## Summary
 Add three VSCode commands — `Expand Current Definition`, `Collapse Current Definition`, and `Audit Current Definition` — that operate on the definition under the cursor by delegating analysis and rewrites to the ERS toolchain rather than requiring a full language server.
+
+## Progress (as of 2026-04-02)
+
+### Shipped in `vscode-f-flat-minor`
+
+- **`f-flat-minor.auditCurrentDefinition`** — Runs `ers audit` on the saved file using the cursor’s **1-based** line/character; writes to output channel **F-flat-minor ERS**. Output format follows setting **`f-flat-minor.ersOutputFormat`** (`text` | `json`).
+- **ERS CLI resolution** — Bundled **`out/ers-cli.mjs`** (esbuild bundle of `node/bin/ers.ts`) ships in the `.vsix` so audit works without a monorepo checkout; optional **`f-flat-minor.ersScript`** override; fallback discovery via workspace roots / walk-up from the open file for `node/bin/ers.ts`.
+- **Definition hover (ERS summary)** — When **`f-flat-minor.ersHover`** is true, hovering a **`word:`** definition name (regex-based span detection) runs `ers audit --word … --json`, caches by `(uri, version, word)`, and shows **definition body**, **safety verdict**, and **reasons** in the hover markdown.
+- **Hover action: Run ERS audit** — The hover ends with a trusted markdown link **`[Run ERS audit](command:…)`** that invokes **`f-flat-minor.auditDefinitionByWord`** with `[documentUri.toString(), word]`, so the full audit (respecting `ersOutputFormat`) opens in the output channel **without** relying on cursor position. `MarkdownString.isTrusted` uses **`enabledCommands: ['f-flat-minor.auditDefinitionByWord']`** only.
+- **Command palette** also lists **Audit Definition by Word**; if invoked without arguments, shows a hint to use the hover link or Audit Current Definition.
+
+### Not started (this plan)
+
+- **Expand / Collapse current definition** commands (Phases 3–4).
+- **Phase 1 as originally written** — Extension does not yet call `compileSource` to resolve the current definition; the audit command delegates line/character to the ERS CLI, and hover uses `--word` after regex detection.
+
+### Pattern for future ERS commands (expand, collapse, suggest, …)
+
+Reuse the same two integration styles:
+
+1. **Palette / context menu** — Command with cursor-based targeting (eventually: shared `CurrentDefinitionTarget` from compile-service when implemented).
+2. **Hover (or later: diagnostics)** — Trusted **`command:`** link in `MarkdownString` with **`enabledCommands`** listing only the new command ID; handler accepts **(uri string, word string)** (and any extra args later) so behavior matches the palette flow without depending on selection.
+
+Keep **one implementation** per operation (shared function that runs ERS / applies edits); hover links only serialize **uri + word** (or equivalent stable args) into the query string.
 
 ## Context
 The hybrid ERS plan already defines the right semantic substrate for auditing and rewriting a single F-flat-minor definition: a parser/analyzer that can target one word, a rewrite engine with exact spans and before/after edits, and a CLI-oriented command surface (`ers audit`, `ers rewrite`, `ers suggest`). That plan explicitly treats the tool as the mechanical layer and keeps judgment-heavy choices outside the core engine.
@@ -99,15 +123,17 @@ Important details:
 - Restrict the initial implementation to saved file-backed documents.
 - Restrict the initial implementation to current-file definitions only; no cross-`.import` or included-file ownership.
 
-### Phase 2: Add `Audit Current Definition`
+### Phase 2: Add `Audit Current Definition` — **partially done**
 
 Implement `f-flat-minor.auditCurrentDefinition` first because it is read-only and matches Phase 1 of the hybrid ERS plan.
 
 Command flow:
 
-1. Resolve the current definition target.
+1. Resolve the current definition target. **Current implementation:** pass cursor line/character to `ers audit` (CLI resolves the word). **Planned refinement:** resolve via `compileSource` in the extension as in Phase 1.
 2. Invoke ERS audit in default mode `full-floor`.
 3. Present the result in a deterministic, reviewable UI.
+
+**Also done:** hover summary + **Run ERS audit** link (see **Progress** above).
 
 Initial UI:
 
@@ -209,13 +235,15 @@ The editor must never partially apply a rewrite:
 Once the core commands work, improve discoverability:
 
 - add command palette titles:
-  - `F-flat-minor: Audit Current Definition`
+  - `F-flat-minor: Audit Current Definition` *(done)*
+  - `F-flat-minor: Audit Definition by Word` *(done; primarily for hover link invocation)*
   - `F-flat-minor: Expand Current Definition`
   - `F-flat-minor: Collapse Current Definition`
 - add editor context-menu entries when the active language is `f-flat-minor`
 - optionally add code actions that invoke the same command implementations
+- **Hover command links** for audit are implemented; repeat the same **`command:` + `enabledCommands`** pattern for expand/collapse when those commands exist.
 
-These improvements should reuse the exact same backend command handlers. Do not fork behavior between command palette, context menu, and code action entrypoints.
+These improvements should reuse the exact same backend command handlers. Do not fork behavior between command palette, context menu, code action entrypoints, or hover links.
 
 ## Decisions already made
 
@@ -239,7 +267,7 @@ These improvements should reuse the exact same backend command handlers. Do not 
 - Full language-server or LSP implementation for these commands
 - Batch expand/collapse across multiple definitions or files
 - Automatic application of `review-required` rewrites
-- Rename/references/hover/completion features
+- Rename/references/completion features *(ERS-backed **definition-name hover** and **run-audit from hover** are in scope for audit only; import-aware hover at use sites remains deferred.)*
 - Rewriting definitions in imported or included files from the current editor buffer
 - Runtime-aware or engine-state-aware auditing
 - Encoding the full ERS skill inside the VSCode extension

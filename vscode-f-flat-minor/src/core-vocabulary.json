@@ -1,0 +1,263 @@
+{
+  "words": [
+    {
+      "mnemonic": "NOP",
+      "syntax": "nop",
+      "stackEffect": "… nop == …",
+      "description": "No operation; does nothing.",
+      "opcode": 0
+    },
+    {
+      "mnemonic": "EVAL",
+      "syntax": "eval",
+      "stackEffect": "[A] eval == a*",
+      "description": "Evaluates a quotation, executing its contents.",
+      "opcode": 1
+    },
+    {
+      "mnemonic": "PUTC",
+      "syntax": "putc",
+      "stackEffect": "n putc == {prints char(n)}",
+      "description": "Prints a character given by its numeric code.",
+      "opcode": 2
+    },
+    {
+      "mnemonic": "GETC",
+      "syntax": "getc",
+      "stackEffect": "getc == n {reads char}",
+      "description": "Reads a single character from input and pushes its code.",
+      "opcode": 3
+    },
+    {
+      "mnemonic": "PUTN",
+      "syntax": "putn",
+      "stackEffect": "n putn == {prints n}",
+      "description": "Prints a number to output.",
+      "opcode": 5
+    },
+    {
+      "mnemonic": "CLOCK",
+      "syntax": "clock",
+      "stackEffect": "clock == n {reads clock}",
+      "description": "Returns the current time as a Unix timestamp.",
+      "opcode": 6
+    },
+    {
+      "mnemonic": "DROP",
+      "syntax": "drop",
+      "stackEffect": "a drop ==",
+      "description": "Removes the top value from the stack.",
+      "opcode": 8
+    },
+    {
+      "mnemonic": "PUSHR",
+      "syntax": "q<",
+      "stackEffect": "a q< == | …a",
+      "description": "Pushes a value onto the return stack.",
+      "opcode": 14
+    },
+    {
+      "mnemonic": "PULLR",
+      "syntax": "q>",
+      "stackEffect": "q> == a | a…",
+      "description": "Pops a value from the return stack onto the main stack.",
+      "opcode": 15
+    },
+    {
+      "mnemonic": "SHIFTL",
+      "syntax": "<<",
+      "stackEffect": "a b << == n",
+      "description": "Left-shifts a by b bits.",
+      "opcode": 16
+    },
+    {
+      "mnemonic": "SHIFTR",
+      "syntax": ">>",
+      "stackEffect": "a b >> == n",
+      "description": "Right-shifts a by b bits.",
+      "opcode": 17
+    },
+    {
+      "mnemonic": "CLR",
+      "syntax": "clr",
+      "stackEffect": "… clr ==",
+      "description": "Clears the entire stack.",
+      "opcode": 24
+    },
+    {
+      "mnemonic": "RAND",
+      "syntax": "rand",
+      "stackEffect": "n rand == r {0 <= r < n}",
+      "description": "Generates a random number between 0 and n-1.",
+      "opcode": 26
+    },
+    {
+      "mnemonic": "EXIT",
+      "syntax": "exit",
+      "stackEffect": "n exit == {exits with code n}",
+      "description": "Exits the program with the given exit code.",
+      "opcode": 27
+    },
+    {
+      "mnemonic": "DUP",
+      "syntax": "dup",
+      "stackEffect": "a dup == a a",
+      "description": "Duplicates the top value on the stack.",
+      "opcode": 33
+    },
+    {
+      "mnemonic": "DEPTH",
+      "syntax": "depth",
+      "stackEffect": "… depth == … n",
+      "description": "Pushes the current stack depth.",
+      "opcode": 35
+    },
+    {
+      "mnemonic": "SWAP",
+      "syntax": "swap",
+      "stackEffect": "a b swap == b a",
+      "description": "Swaps the top two values on the stack.",
+      "opcode": 36
+    },
+    {
+      "mnemonic": "MOD",
+      "syntax": "%",
+      "stackEffect": "a b % == n",
+      "description": "Computes the remainder of a divided by b.",
+      "opcode": 37
+    },
+    {
+      "mnemonic": "AND",
+      "syntax": "&",
+      "stackEffect": "a b & == n",
+      "description": "Bitwise AND of a and b.",
+      "opcode": 38
+    },
+    {
+      "mnemonic": "STASH",
+      "syntax": "(",
+      "stackEffect": "… ( == {moves stack to queue}",
+      "description": "Moves values from the stack to the queue.",
+      "opcode": 40
+    },
+    {
+      "mnemonic": "FETCH",
+      "syntax": ")",
+      "stackEffect": ") == … {restores stack from queue}",
+      "description": "Moves values from the queue back to the stack.",
+      "opcode": 41
+    },
+    {
+      "mnemonic": "MUL",
+      "syntax": "*",
+      "stackEffect": "a b * == n",
+      "description": "Multiplies a by b.",
+      "opcode": 42
+    },
+    {
+      "mnemonic": "ADD",
+      "syntax": "+",
+      "stackEffect": "a b + == n",
+      "description": "Adds a and b together.",
+      "opcode": 43
+    },
+    {
+      "mnemonic": "SUB",
+      "syntax": "-",
+      "stackEffect": "a b - == n",
+      "description": "Subtracts b from a.",
+      "opcode": 45
+    },
+    {
+      "mnemonic": "DUMP",
+      "syntax": ".",
+      "stackEffect": "… . == … {prints stack}",
+      "description": "Prints the entire stack to output.",
+      "opcode": 46
+    },
+    {
+      "mnemonic": "DIV",
+      "syntax": "/",
+      "stackEffect": "a b / == n",
+      "description": "Divides a by b (integer division).",
+      "opcode": 47
+    },
+    {
+      "mnemonic": "MARK",
+      "syntax": ":",
+      "stackEffect": "n : == {begin definition(n)}",
+      "description": "Begins a new word definition with name n.",
+      "opcode": 58
+    },
+    {
+      "mnemonic": "DEF",
+      "syntax": ";",
+      "stackEffect": "; == {end definition}",
+      "description": "Ends the current word definition.",
+      "opcode": 59
+    },
+    {
+      "mnemonic": "LT",
+      "syntax": "<",
+      "stackEffect": "a b < == flag",
+      "description": "Pushes true if a is less than b.",
+      "opcode": 60
+    },
+    {
+      "mnemonic": "EQ",
+      "syntax": "=",
+      "stackEffect": "a b = == flag",
+      "description": "Pushes true if a equals b.",
+      "opcode": 61
+    },
+    {
+      "mnemonic": "GT",
+      "syntax": ">",
+      "stackEffect": "a b > == flag",
+      "description": "Pushes true if a is greater than b.",
+      "opcode": 62
+    },
+    {
+      "mnemonic": "WHEN",
+      "syntax": "?",
+      "stackEffect": "flag [A] ? == a*",
+      "description": "Executes the quotation if flag is true.",
+      "opcode": 63
+    },
+    {
+      "mnemonic": "BRA",
+      "syntax": "[",
+      "stackEffect": "[ == {begin quotation}",
+      "description": "Begins a quotation (anonymous code block).",
+      "opcode": 91
+    },
+    {
+      "mnemonic": "KET",
+      "syntax": "]",
+      "stackEffect": "] == [A] {end quotation}",
+      "description": "Ends a quotation and pushes it to the stack.",
+      "opcode": 93
+    },
+    {
+      "mnemonic": "POW",
+      "syntax": "^",
+      "stackEffect": "a b ^ == n",
+      "description": "Computes a raised to the power of b.",
+      "opcode": 94
+    },
+    {
+      "mnemonic": "OR",
+      "syntax": "|",
+      "stackEffect": "a b | == n",
+      "description": "Bitwise OR of a and b.",
+      "opcode": 124
+    },
+    {
+      "mnemonic": "NOT",
+      "syntax": "~",
+      "stackEffect": "a ~ == n'",
+      "description": "Bitwise NOT of a.",
+      "opcode": 126
+    }
+  ]
+}

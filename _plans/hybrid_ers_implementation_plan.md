@@ -2,6 +2,22 @@
 
 Below is a concrete implementation plan for a **hybrid ERS system**: a small static tool handles the deterministic expand/reduce/resynthesize steps, while the skill remains responsible for ambiguous choices, reporting, and higher-level review.
 
+## Progress vs this document (as of 2026-04-02)
+
+### In repo today
+
+- **Phase 1 (read-only analyzer) — partially implemented**
+  - **`ers audit`** exists: `tools/ers/` (`auditSource`, safety model, inventories, JSON + human CLI output via `node/bin/ers.ts` and Deno `deno/bin/ers.ts`).
+  - **Single-file analysis:** implementation uses `typescript/compile-service` **`compileSource`** on one buffer; **import resolution and cross-file symbol tables are not yet implemented** in the shipped analyzer (still listed under *Target architecture* / Milestone 1).
+  - **Tests:** e.g. `deno/src/ers_audit_test.ts` exercises audit behavior.
+- **Phase 2+ (rewrite / closure / suggest)** — not implemented as CLI commands yet; plan below remains the target.
+- **Editor integration:** VS Code extension can run the bundled audit CLI; see **`_plans/vscode-ers-definition-commands.md`** for command + hover UX (**Progress** section there).
+
+### Gaps called out in this plan but not done
+
+- Import-following analyzer outputs (“imports followed from source directory”) and unified definition/reference model.
+- `ers rewrite`, `ers suggest`, `ers check`, closure passes, CI enforcing mode — all still future work.
+
 ## Target architecture
 
 ### Goal
@@ -319,11 +335,11 @@ Assert that a tool claiming `success/no-op` must include:
 ## Delivery order
 
 ### Milestone 1 — Useful quickly
-- parser
-- import resolution
-- queue inventory
-- pointer inventory
-- advisory audit command
+- parser *(compile-service tokenize + compile path in use for audit)*
+- import resolution *(deferred; audit is single-file today)*
+- queue inventory *(present in audit output)*
+- pointer inventory *(present in audit output)*
+- advisory audit command *(**done:** `ers audit`)*
 
 ### Milestone 2 — Immediate ROI
 - safe-local rewrites
