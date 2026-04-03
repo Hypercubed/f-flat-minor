@@ -186,3 +186,21 @@ name = 'loc'
 deps = ['clean']
 validation = 'none'
 run = 'cloc --force-lang-def=.cloc . --quiet --md --hide-rate > loc.md'
+
+[[task]]
+name = 'uroboros'
+deps = ['build:deno', 'build:racket', 'build:bun', 'build:node', 'build:python', 'build:ruby', 'build:go', 'build:dart']
+validation = 'none'
+serial = true
+run = '''
+  cat ./ff/quine.ff\
+    | (cat; echo -e "\n----deno----" >&2) | ./deno/build/ff-run | tee /dev/tty\
+    | (cat; echo -e "\n----bun----" >&2) | ./bun/build/ff-run | tee /dev/tty\
+    | (cat; echo -e "\n----node----" >&2) | ./node/bin/ff-run.ts | tee /dev/tty\
+    | (cat; echo -e "\n----python----" >&2) | ./python/execute.py | tee /dev/tty\
+    | (cat; echo -e "\n----ruby----" >&2) | ./ruby/execute.rb | tee /dev/tty\
+    | (cat; echo -e "\n----go----" >&2) | ./go/build/run | tee /dev/tty\
+    | (cat; echo -e "\n----dart----" >&2) | ./dart/bin/dart.exe | tee /dev/tty\
+    | (cat; echo -e "\n----deno----" >&2) | ./deno/build/ff-run;
+  echo -e "\n\n== UROBOROS ==\n\n" >&2;
+'''
