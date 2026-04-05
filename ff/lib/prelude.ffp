@@ -2,3 +2,4 @@
 .import ./math/math.ffp
 .import ./string/string.ffp
 .import ./seq/seq.ffp
+.import ./time/time.ffp

@@ -1,0 +1,103 @@
+.import ../core/core.ff
+.import ../math/pred.ffp
+.import ../math/precision.ffp
+
+/* UTC calendar helpers for non-negative Unix epoch seconds. */
+
+leap-year?:
+  dup 4 % zero?
+  [
+    dup 100 % zero?
+    [ 400 % zero? ]
+    [ drop true ]
+    branch
+  ]
+  [ drop false ]
+  branch ; /* year leap-year? == flag */
+
+days/year: dup leap-year? [ drop 366 ] [ drop 365 ] branch ; /* year days/year == days */
+
+days/month:
+  dup 2 =
+  [ drop leap-year? 28 + ]
+  [
+    dup 4 =
+    [ drop2 30 ]
+    [
+      dup 6 =
+      [ drop2 30 ]
+      [
+        dup 9 =
+        [ drop2 30 ]
+        [
+          dup 11 =
+          [ drop2 30 ]
+          [ drop2 31 ]
+          branch
+        ]
+        branch
+      ]
+      branch
+    ]
+    branch
+  ]
+  branch ; /* year month days/month == days */
+
+sod>hms: 3600 divrem 60 divrem ; /* sod sod>hms == hour minute second */
+
+__utc__days>year:
+  over days/year
+  over over >=
+  [ drop over days/year - swap ++ swap __utc__days>year ]
+  [ drop ]
+  branch ; /* year day-index __utc__days>year == year day-of-year */
+
+__utc__days>month:
+  q< dup2 days/month q> swap
+  over over >=
+  [ drop q< dup2 days/month q> swap - swap ++ swap __utc__days>month ]
+  [ drop ]
+  branch ; /* year month day-of-year __utc__days>month == year month day-index */
+
+days>ymd:
+  1970 swap
+  __utc__days>year
+  1 swap
+  __utc__days>month
+  ++ ; /* days days>ymd == year month day */
+
+epoch>utc:
+  dup negitive? [ 1 0 / ] ?
+  86400 divrem
+  q< days>ymd q>
+  sod>hms ; /* epoch epoch>utc == year month day hour minute second */
+
+__utc__zero: '0' putc ;
+__utc__needs-zero:
+  dup 1 <=
+  [ drop2 false ]
+  [ over over -- n->S < nip nip ]
+  branch ; /* x n __utc__needs-zero == x n flag */
+
+__utc__putn0:
+  dup2 __utc__needs-zero
+  [ __utc__zero -- __utc__putn0 ]
+  [ drop putn ]
+  branch ; /* x n __utc__putn0 == {prints x padded to n digits} */
+
+utc>iso8601:
+  q< q< q< q< q<
+  4 __utc__putn0
+  '-' putc
+  q> 2 __utc__putn0
+  '-' putc
+  q> 2 __utc__putn0
+  'T' putc
+  q> 2 __utc__putn0
+  ':' putc
+  q> 2 __utc__putn0
+  ':' putc
+  q> 2 __utc__putn0
+  'Z' putc ; /* year month day hour minute second utc>iso8601 == {prints YYYY-MM-DDTHH:MM:SSZ} */
+
+epoch>iso8601: epoch>utc utc>iso8601 ; /* epoch epoch>iso8601 == {prints UTC ISO-8601 string} */

@@ -1,0 +1,42 @@
+.import ../time.ffp
+.import ../../seq/seq.ffp
+.import ../../tap.ffp
+
+TAP-VERSION
+
+'\0UTC\sHelpers' SUBTEST
+  2000 leap-year? OK
+  1900 leap-year? not OK
+  2024 leap-year? OK
+  2023 leap-year? not OK
+
+  2000 days/year 366 = OK
+  2023 days/year 365 = OK
+
+  2024 2 days/month 29 = OK
+  2023 2 days/month 28 = OK
+  2024 4 days/month 30 = OK
+  2024 1 days/month 31 = OK
+
+  [ 0 sod>hms ] in [ 0 0 0 ] seq= OK
+  [ 86399 sod>hms ] in [ 23 59 59 ] seq= OK
+  [ 43200 sod>hms ] in [ 12 0 0 ] seq= OK
+
+  [ 0 days>ymd ] in [ 1970 1 1 ] seq= OK
+  [ 1 days>ymd ] in [ 1970 1 2 ] seq= OK
+  [ 59 days>ymd ] in [ 1970 3 1 ] seq= OK
+  [ 365 days>ymd ] in [ 1971 1 1 ] seq= OK
+  [ 789 days>ymd ] in [ 1972 2 29 ] seq= OK
+  [ 19782 days>ymd ] in [ 2024 2 29 ] seq= OK
+  19 PLAN OK
+
+'\0Epoch\sto\sUTC' SUBTEST
+  [ 0 epoch>utc ] in [ 1970 1 1 0 0 0 ] seq= OK
+  [ 86400 epoch>utc ] in [ 1970 1 2 0 0 0 ] seq= OK
+  [ 951827696 epoch>utc ] in [ 2000 2 29 12 34 56 ] seq= OK
+  [ 1712059200 epoch>utc ] in [ 2024 4 2 12 0 0 ] seq= OK
+  [ 1704067199 epoch>utc ] in [ 2023 12 31 23 59 59 ] seq= OK
+  [ 1704067200 epoch>utc ] in [ 2024 1 1 0 0 0 ] seq= OK
+  6 PLAN OK
+
+2 PLAN
