@@ -1,0 +1,8 @@
+.import ./lib/time/time.ffp
+
+0 epoch>iso8601 10 putc
+86400 epoch>iso8601 10 putc
+951827696 epoch>iso8601 10 putc
+1712059200 epoch>iso8601 10 putc
+1704067199 epoch>iso8601 10 putc
+1704067200 epoch>iso8601 10 putc
