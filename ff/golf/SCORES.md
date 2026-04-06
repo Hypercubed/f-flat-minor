@@ -1,0 +1,34 @@
+# F♭m code golf — stroke counts
+
+This folder holds programs aligned with classic [code.golf](https://code.golf) holes. Strokes follow the same definition as on that site ([About → “How are solutions scored?”](https://code.golf/about)):
+
+- **Bytes:** length of the source file in UTF-8 octets.
+- **Chars:** number of Unicode code points in the source (each code point counts as one stroke, regardless of UTF-8 width).
+
+On code.golf, **leaderboard points** for a hole in a given language use the shortest solution in that language as the baseline: the best submission scores **1,000** points; a solution twice as long scores **500**, and so on (inverse proportion to length). The **global** leaderboard blends in a *par* derived from all languages; see the About page for the full formula.
+
+There is only one F♭m solution per hole here yet, so each program is simultaneously the “best” and only entry for our local tally: **1,000 language points** per hole at the current stroke counts below.
+
+| code.golf hole | File | Bytes | Chars | Notes |
+| --- | --- | ---: | ---: | --- |
+| [Fizz Buzz](https://code.golf/fizz-buzz) | `fizzbuzz.ffp` | 326 | 326 | Matches spec (1–100, `Fizz` / `Buzz` / `FizzBuzz`). |
+| [99 Bottles of Beer](https://code.golf/99-bottles-of-beer) | `99bottles.ffp` | 337 | 337 | Output diverges from the official lyrics (e.g. comma placement, “1 bottle” vs “1 bottles”, final verses). Treat as a starting point, not a passing solution. |
+| [Hello, World!](https://code.golf/hello-world) | `hello_world.ff` | 70 | 70 | Plain `.ff`; prints `Hello World!` with newline. |
+| (tutorial / demos) | `hello.ffp` | 296 | 296 | Several hello-world variants in one file; not a minimal single-hole submission. |
+| Fibonacci (near) | `fib.ffp` | 166 | 166 | Computes `20 fib` and prints **6765**; typical holes expect stdin/argv *n* or a longer sequence — adjust before treating as a hole solution. |
+| [Quine](https://code.golf/quine) | `quine.ff` | 130 | 130 | Prints stack then body; does **not** reproduce its own source on stdout as required for a quine. |
+
+To refresh the byte/char columns after edits:
+
+```bash
+python3 -c "
+from pathlib import Path
+for p in sorted(Path('ff/golf').glob('*')):
+    if p.suffix in {'.ff', '.ffp'}:
+        b = p.read_bytes()
+        t = b.decode('utf-8')
+        print(f'{p.name}: bytes={len(b)} chars={len(t)}')
+"
+```
+
+(Run from the repository root.)

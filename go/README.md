@@ -23,7 +23,7 @@ This ensures `chomp` is available and `go` matches the version required by [`go/
 From the repo root:
 
 ```bash
-mise exec -- go run ./go/cmd/run --in ./ff/hello_world.ff
+mise exec -- go run ./go/cmd/run --in ./ff/golf/hello_world.ff
 ```
 
 Preprocess an `.ffp` source file without running it:

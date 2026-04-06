@@ -19,7 +19,7 @@ The recently added Node implementation currently provides only `node/bin/ff-run.
 - Implement `build:run` as a lightweight artifact-producing step that writes an executable wrapper to `node/build/ff-run`. The wrapper should invoke `node --experimental-transform-types` on `node/bin/ff-run.ts` so downstream tasks can use a stable built path like other runtimes do.
 - Make `build:run` depend on `node/bin/ff-run.ts`, `node/src/**/*.ts`, and `../typescript/core/src/**/*.ts` so changes in the shared TypeScript core invalidate the Node build as expected.
 - Define `test:interpret` as a smoke test against `../ff/example.ff`, comparing the runner output with `../ff/example.out` using the existing `cmp` template pattern from other runtimes.
-- Add one explicit `.ffp` smoke test, using a fixture such as `../ff/hello.ffp`, so preprocessing support is covered directly rather than only through the corpus loop.
+- Add one explicit `.ffp` smoke test, using a fixture such as `../ff/golf/hello.ffp`, so preprocessing support is covered directly rather than only through the corpus loop.
 - Define `test:ff` in the same style as `deno/chompfile.toml`: iterate `../ff/##.out`, run matching `.ff` and `.ffp` sources through `./build/ff-run`, and also run the `--opt` variant for each matching source.
 - Keep `test` as a serial aggregate of `build`, the smoke tests, and the corpus test so `chomp test:node` behaves consistently with the other implementations.
 - Add a Node-local `bench` task that depends on `build:run` and benchmarks `./build/ff-run ../ff/example.ff` plus `./build/ff-run ../ff/example.ff --opt` with `hyperfine`.

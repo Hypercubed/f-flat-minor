@@ -1,4 +1,4 @@
-.import ./lib/prelude.ffp
+.import ../lib/prelude.ffp
 
 /* FizzBuzz */
 /* source https://rosettacode.org/wiki/FizzBuzz#the_unrolled_approach */

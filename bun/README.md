@@ -12,8 +12,8 @@ Current scope:
 From this directory:
 
 ```bash
-npm run run -- ../ff/hello.ffp
-bun run bin/ff-run.ts ../ff/hello.ffp
+npm run run -- ../ff/golf/hello.ffp
+bun run bin/ff-run.ts ../ff/golf/hello.ffp
 ```
 
 Both commands:
