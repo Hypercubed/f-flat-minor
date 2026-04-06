@@ -3,10 +3,12 @@
 | file | source bytes (UTF-8) | source chars (code points) | optimized .ffb bytes |
 | --- | ---: | ---: | ---: |
 | `99bottles.ffp` | 337 | 337 | 254 |
+| `e-digits.ffp` | 178 | 175 | 1086 |
 | `fib.ffp` | 166 | 166 | 75 |
 | `fizzbuzz.ffp` | 326 | 326 | 245 |
 | `hello.ffp` | 296 | 296 | 169 |
 | `hello_world.ff` | 70 | 70 | 62 |
+| `pi-digits.ffp` | 197 | 196 | 929 |
 | `quine.ff` | 130 | 130 | 94 |
 
 The **optimized .ffb bytes** column is the length of stdout from

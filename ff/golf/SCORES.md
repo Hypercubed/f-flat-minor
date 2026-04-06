@@ -32,3 +32,5 @@ python3 ff/golf/score_golf.py
 | (tutorial / demos) | `hello.ffp` | Several hello-world variants in one file; not a minimal single-hole submission. |
 | Fibonacci (near) | `fib.ffp` | Computes `20 fib` and prints **6765**; typical holes expect stdin/argv *n* or a longer sequence — adjust before treating as a hole solution. |
 | [Quine](https://code.golf/quine) | `quine.ff` | Prints stack then body; does **not** reproduce its own source on stdout as required for a quine. |
+| [π](https://code.golf/%cf%80) | `pi-digits.ffp` | Uses `npi` + `nputn` (`ff/lib/math/pi.ffp`, `prn.ffp`). Prints **1,000** decimals after `3.` (code.golf spec). |
+| [𝑒](https://code.golf/%f0%9d%91%92) | `e-digits.ffp` | Uses `1 nexp` + `nputn` (`nexp` from prelude → `exp.ffp`). Same digit count as the π hole. |

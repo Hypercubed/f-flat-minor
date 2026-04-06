@@ -1,0 +1,9 @@
+.import ../lib/prelude.ffp
+.import ../lib/math/prn.ffp
+
+/* [𝑒](https://code.golf/%f0%9d%91%92): first 1,000 decimals after the point. */
+
+N: 1000 ;
+E: N 1 nexp ;
+E N nputn
+cr
