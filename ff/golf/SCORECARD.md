@@ -12,5 +12,6 @@
 | `quine.ff` | 130 | 130 | 94 |
 
 The **optimized .ffb bytes** column is the length of stdout from
-`mise exec -- deno run --no-check --allow-read deno/bin/ff-compile.ts --opt <file>`:
+`FF_SHELL_TRACE=0 ./shell/ff-compile.sh <file>` (repo root):
 the `FbAbbCb` header plus the base64-encoded bytecode (same format as `.ffb` files).
+`.ffp` sources are preprocessed via `shell/ff-preprocess.sh` (default `--pp bun`).

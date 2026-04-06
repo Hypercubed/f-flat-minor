@@ -6,12 +6,14 @@ Run from the repository root:
 
     python3 ff/golf/score_golf.py
 
-Requires Deno on PATH (or via `mise exec --`). Uses the TypeScript compiler with
-`--opt`, same pipeline as `deno/bin/ff-compile.ts --opt`.
+Requires `mise` and Deno (via the repo shell helpers). Bytecode size uses
+`shell/ff-compile.sh`, which runs `deno/bin/ff-compile.ts --opt` (with
+`shell/ff-preprocess.sh` for `.ffp` files).
 """
 
 from __future__ import annotations
 
+import os
 import subprocess
 import sys
 from pathlib import Path
@@ -19,43 +21,31 @@ from pathlib import Path
 
 REPO_ROOT = Path(__file__).resolve().parent.parent.parent
 GOLF_DIR = Path(__file__).resolve().parent
-FF_COMPILE = REPO_ROOT / "deno" / "bin" / "ff-compile.ts"
+FF_COMPILE_SH = REPO_ROOT / "shell" / "ff-compile.sh"
 
 
-def _deno_compile_optimized(source_path: Path) -> bytes:
-    """Return full .ffb bytes: ASCII header + base64 body (Deno ff-compile --opt)."""
-    cmd = [
-        "mise",
-        "exec",
-        "--",
-        "deno",
-        "run",
-        "--no-check",
-        "--allow-read",
-        str(FF_COMPILE),
-        "--opt",
-        str(source_path),
-    ]
+def _compile_optimized(source_path: Path) -> bytes:
+    """Return full .ffb bytes: ASCII header + base64 body (shell/ff-compile.sh)."""
+    rel = source_path.relative_to(REPO_ROOT)
+    env = {**os.environ, "FF_SHELL_TRACE": "0"}
     proc = subprocess.run(
-        cmd,
+        ["/bin/bash", str(FF_COMPILE_SH), str(rel)],
         cwd=REPO_ROOT,
         capture_output=True,
         check=False,
+        env=env,
     )
     if proc.returncode != 0:
         err = proc.stderr.decode("utf-8", errors="replace").strip()
         raise RuntimeError(
-            f"compile failed for {source_path.relative_to(REPO_ROOT)} (exit {proc.returncode}): {err}"
+            f"compile failed for {rel} (exit {proc.returncode}): {err}"
         )
     return proc.stdout
 
 
 def main() -> int:
-    if not REPO_ROOT.joinpath("deno", "deno.json").is_file():
-        print("Run this script from the f-flat-minor repository (deno/ not found).", file=sys.stderr)
-        return 1
-    if not FF_COMPILE.is_file():
-        print(f"Missing {FF_COMPILE}", file=sys.stderr)
+    if not FF_COMPILE_SH.is_file():
+        print(f"Missing {FF_COMPILE_SH}", file=sys.stderr)
         return 1
 
     sources = sorted(
@@ -69,7 +59,7 @@ def main() -> int:
         text = raw.decode("utf-8")
         src_bytes = len(raw)
         src_chars = len(text)
-        out = _deno_compile_optimized(path)
+        out = _compile_optimized(path)
         ffb_bytes = len(out)
         rows.append((path.name, src_bytes, src_chars, ffb_bytes))
 
@@ -86,8 +76,9 @@ def main() -> int:
         [
             "",
             "The **optimized .ffb bytes** column is the length of stdout from",
-            "`mise exec -- deno run --no-check --allow-read deno/bin/ff-compile.ts --opt <file>`:",
+            "`FF_SHELL_TRACE=0 ./shell/ff-compile.sh <file>` (repo root):",
             "the `FbAbbCb` header plus the base64-encoded bytecode (same format as `.ffb` files).",
+            "`.ffp` sources are preprocessed via `shell/ff-preprocess.sh` (default `--pp bun`).",
         ]
     )
 
