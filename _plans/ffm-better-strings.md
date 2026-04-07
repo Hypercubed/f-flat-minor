@@ -112,11 +112,12 @@ Manual nil-terminated string **values** are still built with `0` and `swons`, fo
 
 That produces a **single** cons-chain pointer on the stack, not the quote `[ 'hello' ]`. Library words such as `sprint` expect evaluable quote bodies or cons chains per existing conventions.
 
-**Status: ✅ Implemented (TypeScript core compiler)** — `"..."` emits `BRA`, the same per-character pushes as `'...'`, then `KET`, matching tokenized `[ '...' ]`. Standalone `[` and `]` tokens are also accepted so that form parses as an explicit quotation.
-Users must currently write quotes and character/integer sequences explicitly, or build cons chains with `0` and `cons`/`swons`:
+**Status: ✅ Implemented** — TypeScript core, **Go** (`go/src/compiler/compiler.go`), and **Racket** (`racket/private/lexer.rkt`, `parser.rkt`, `compiler.rkt`, `runner.rkt`, `expander.rkt`): `"..."` emits `BRA`, the same per-character pushes as `'...'`, then `KET`, matching tokenized `[ '...' ]`. Standalone `[` and `]` tokens are accepted in Go and Racket as well. Racket’s lexer now applies the same **ff-unescape** rules as Go/TS for both `'` and `"` payloads (`racket/private/unescape.rkt`).
+
+Equivalent spellings and manual cons-chain construction:
 
 ```
-[ 'hi' ]                  /* long form; future "hi" sugar lands here first */
+[ 'hi' ]
 [ 'h' 'i' ]
 [ 104 105 ]
 0 'i' swons 'h' swons     /* cons-chain "hi", includes terminating 0 */

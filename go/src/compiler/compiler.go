@@ -231,6 +231,28 @@ func compileToIR(
 			}
 		} else if strings.HasPrefix(element, "[") && strings.HasSuffix(element, "]") {
 			push(getSymbol(element[1:len(element)-1]), element)
+		} else if element == "[" {
+			call(NewInt(OP_BRA), "[")
+		} else if element == "]" {
+			call(NewInt(OP_KET), "]")
+		} else if strings.HasPrefix(element, "\"") {
+			// Double-quoted: sugar for [ '...' ] — BRA, per-char pushes (same escapes as
+			// single-quoted), KET. No implicit 0.
+			l := 0
+			if strings.HasSuffix(element, "\"") && len(element) > 1 {
+				l++
+			}
+			s := convertEsc2Char(element[1 : len(element)-l])
+			call(NewInt(OP_BRA), "[")
+			for i := 0; i < len(s); i++ {
+				v := NewInt(int64(s[i]))
+				if i == 0 {
+					push(v, s)
+				} else {
+					push(v, "")
+				}
+			}
+			call(NewInt(OP_KET), "]")
 		} else if strings.HasPrefix(element, "'") {
 			l := 0
 			if strings.HasSuffix(element, "'") {

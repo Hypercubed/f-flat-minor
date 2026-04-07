@@ -57,4 +57,15 @@
   (with-pattern ([(INTS ...) ints])
     #`(begin (push INTS) ...)))
 
-(provide ff-program ff-marker ff-push ff-call ff-string)
+(define-macro (ff-string-dq STR)
+  (define ints (map char->integer (string->list (syntax->datum #'STR))))
+  (with-pattern ([(INTS ...) ints])
+    #`(begin (call op_bra) (push INTS) ... (call op_ket))))
+
+(define-macro (ff-bra . _)
+  #'(call op_bra))
+
+(define-macro (ff-ket . _)
+  #'(call op_ket))
+
+(provide ff-program ff-marker ff-push ff-call ff-string ff-string-dq ff-bra ff-ket)
