@@ -1,6 +1,7 @@
-.import ./lib/prelude.ffp
+.import ../lib/prelude.ffp
 
 /* Fibonacci number: n fib -> F_n */
+/* [Fibonacci](https://code.golf/fibonacci) */
 
 fib:
   dup 0 = not
@@ -8,6 +9,4 @@ fib:
     [ -- dup fib swap -- fib + ] ?
   ] ? ;
 
-20 fib .
-
-/* 6765 */
+31 fib putn

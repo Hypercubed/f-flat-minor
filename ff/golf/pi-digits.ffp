@@ -1,0 +1,8 @@
+.import ../lib/prelude.ffp
+
+/* [π](https://code.golf/%cf%80): first 1,000 decimals after the point (total 1,002 chars with "3."). */
+
+N: 1000 ;
+P: N npi ;
+P N nputn
+cr

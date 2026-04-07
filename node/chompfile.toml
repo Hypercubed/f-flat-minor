@@ -24,9 +24,9 @@ cmp = '../ff/example.out'
 name = 'test:ffp'
 dep = './bin/ff-run.ts'
 template = 'cmp'
-run = '$BIN ../ff/hello.ffp'
+run = '$BIN ../ff/golf/hello.ffp'
 [task.template-options]
-cmp = '../ff/hello.out'
+cmp = '../ff/golf/hello.out'
 
 [[task]]
 name = 'test:out'

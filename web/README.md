@@ -35,7 +35,7 @@ npm run test
 
 ## Notes
 
-- The app currently ships with `ff/hello.ffp` as the starter example.
+- The app currently ships with `ff/golf/hello.ffp` as the starter example.
 - Browser stdin is provided by the text input in the UI.
 - stdout is captured in the output panel.
 - Some engine diagnostics that use `console.log` are also captured and shown in the output area.

@@ -1,0 +1,7 @@
+.import ../lib/prelude.ffp
+
+/* [tutorial](https://code.golf/tutorial) */
+
+'\0Hello,\sWorld!\n' prints
+
+0 [ dup putn cr ++ ] 10 times

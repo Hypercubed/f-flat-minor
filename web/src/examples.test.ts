@@ -1,7 +1,15 @@
 import { describe, expect, it } from "vitest";
 
-import { createVirtualFiles } from "./examples.ts";
+import { createVirtualFiles, EXAMPLES } from "./examples.ts";
 import { runProgram } from "./program-runner.ts";
+
+describe("golf examples (vite glob)", () => {
+  it("includes every ff/golf .ff / .ffp under /examples/<basename>", () => {
+    expect(EXAMPLES["/examples/fizzbuzz.ffp"]).toMatch(/FizzBuzz/i);
+    expect(EXAMPLES["/examples/hello_world.ff"]).toMatch(/Hello/);
+    expect(EXAMPLES["/examples/pi-digits.ffp"]).toMatch(/npi/);
+  });
+});
 
 describe("virtual library files", () => {
   it("auto-includes ff/lib source files and excludes tests and non-source files", () => {

@@ -13,8 +13,8 @@ Current scope:
 From this directory:
 
 ```bash
-npm run run -- ../ff/hello.ffp
-node bin/ff-run.ts ../ff/hello.ffp
+npm run run -- ../ff/golf/hello.ffp
+node bin/ff-run.ts ../ff/golf/hello.ffp
 node bin/ers.ts audit ../ff/lib/core/core.ff --word or_else
 ```
 
@@ -45,7 +45,7 @@ chomp test:node
 
 Runs the full test suite in this order:
 1. Builds `node/build/ff-run`
-2. Smoke-tests `ff-run` against `../ff/example.ff` and `../ff/hello.ffp`
+2. Smoke-tests `ff-run` against `../ff/example.ff` and `../ff/golf/hello.ffp`
 3. Runs the full corpus of `../ff/*.ff` and `../ff/*.ffp` files, including the `--opt` path for each
 
 For the ERS wrapper specifically:

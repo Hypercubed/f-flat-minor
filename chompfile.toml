@@ -193,7 +193,7 @@ deps = ['build:deno', 'build:racket', 'build:bun', 'build:node', 'build:python',
 validation = 'none'
 serial = true
 run = '''
-  cat ./ff/quine.ff\
+  cat ./ff/golf/quine.ff\
     | (cat; echo -e "\n----deno----" >&2) | ./deno/build/ff-run | tee /dev/tty\
     | (cat; echo -e "\n----bun----" >&2) | ./bun/build/ff-run | tee /dev/tty\
     | (cat; echo -e "\n----node----" >&2) | ./node/bin/ff-run.ts | tee /dev/tty\
