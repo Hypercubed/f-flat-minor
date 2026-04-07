@@ -2,6 +2,7 @@
 
 /* FizzBuzz */
 /* source https://rosettacode.org/wiki/FizzBuzz#the_unrolled_approach */
+/* [FizzBuzz](https://code.golf/fizz-buzz) */
 
 n: dup putn cr ++ ;
 f: 0 'Fizz' println ++ ;

@@ -42,10 +42,16 @@ function golfExamplePath(globKey: string): string {
   return `/examples/${name}`;
 }
 
+function golfExampleLabel(globKey: string): string {
+  const ffIndex = globKey.indexOf("../../ff/");
+  const relative = ffIndex >= 0 ? globKey.slice(ffIndex + "../../ff/".length) : globKey;
+  return relative;
+}
+
 const GOLF_ENTRIES: ExampleEntry[] = Object.entries(golfSources)
   .map(([key, source]) => ({
     path: golfExamplePath(key),
-    label: key.slice(key.lastIndexOf("/") + 1),
+    label: golfExampleLabel(key),
     source,
   }))
   .sort((a, b) => a.label.localeCompare(b.label));
@@ -61,8 +67,8 @@ const EXAMPLE_ENTRIES: ExampleEntry[] = [
   { path: "/examples/catalan.ffp", label: "catalan.ffp", source: catalanExample },
   { path: "/examples/collatz.ffp", label: "collatz.ffp", source: collatzExample },
   { path: "/examples/hanoi.ffp", label: "hanoi.ffp", source: hanoiExample },
-  { path: "/examples/euler1.ffp", label: "euler1.ffp", source: euler1Example },
-  { path: "/examples/euler7.ffp", label: "euler7.ffp", source: euler7Example },
+  { path: "/examples/euler1.ffp", label: "euler/euler1.ffp", source: euler1Example },
+  { path: "/examples/euler7.ffp", label: "euler/euler7.ffp", source: euler7Example },
   ...GOLF_ENTRIES,
 ];
 

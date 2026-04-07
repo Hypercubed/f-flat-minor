@@ -1,3 +1,6 @@
+
+/* [Tutorial](https://code.golf/tutorial) */
+
 prints: dup [ q< prints q> putc ] ? ;
 
 0 'Hello\sWorld!\n' prints drop

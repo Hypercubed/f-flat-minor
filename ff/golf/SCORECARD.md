@@ -2,14 +2,13 @@
 
 | file | source bytes (UTF-8) | source chars (code points) | optimized .ffb bytes |
 | --- | ---: | ---: | ---: |
-| `99bottles.ffp` | 337 | 337 | 254 |
+| `99bottles.ffp` | 867 | 867 | 536 |
 | `e-digits.ffp` | 178 | 175 | 1086 |
-| `fib.ffp` | 166 | 166 | 75 |
-| `fizzbuzz.ffp` | 326 | 326 | 245 |
-| `hello.ffp` | 296 | 296 | 169 |
-| `hello_world.ff` | 70 | 70 | 62 |
-| `pi-digits.ffp` | 197 | 196 | 929 |
+| `fib.ffp` | 204 | 204 | 74 |
+| `fizzbuzz.ffp` | 372 | 372 | 245 |
+| `pi-digits.ffp` | 169 | 168 | 665 |
 | `quine.ff` | 130 | 130 | 94 |
+| `tutorial.ffp` | 132 | 132 | 147 |
 
 The **optimized .ffb bytes** column is the length of stdout from
 `FF_SHELL_TRACE=0 ./shell/ff-compile.sh <file>` (repo root):
