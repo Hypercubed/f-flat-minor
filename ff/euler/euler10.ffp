@@ -2,16 +2,10 @@
 
 /* http://projecteuler.net/index.php?section=problems&id=10 */
 
-simple?: [ even? ] [ 3 divisor? ] bi or ;
+/* Walk primes with next-prime (prelude) until past 2_000_000. Slow but exact. */
 
-_prime_loop: dup2 [ dup * > ] [ % 0 > ] bi2 and [ 2 + _prime_loop ] ? ;
-_prime?: 5 _prime_loop dup * < ;
+_e10: dup 2_000_000 <= [
+    dup rot + swap next-prime _e10
+  ] ? ;
 
-prime?: dup 4 < [ 1 > ] [
-    dup simple? [ drop false ] [ _prime? ] branch
-  ] branch ;
-
-/* 10 count [ prime? ] filter! sum . 17 */
-
-0 2000000 range [ prime? ] filter! sum! . /* 142913828922 */
-
+0 2 _e10 drop . /* 142913828922 */

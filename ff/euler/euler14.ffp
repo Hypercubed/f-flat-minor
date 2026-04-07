@@ -26,7 +26,7 @@ runn:
   dup collatz-count
   [ over ] dip
   dup [ < ] dip swap
-  [ q< q< drop2 q> q> . over ++ ]
+  [ q< q< drop2 q> q> over ++ ]
   [ drop ++ ]
   branch
 ; .inline

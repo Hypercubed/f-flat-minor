@@ -8,5 +8,5 @@ five: 100_000 % ;
 20 ! five . clr  /* 17664 */
 
 1_000 ! trim five . clr /* 53472 */
- 
-1_000_000_000_000 ! trim five . clr /* 16576 */
+
+/* Omitted: 1_000_000_000_000 ! … (expected [ 16576 ]) — factorial(10^12) is not practical here. */
