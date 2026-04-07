@@ -1,6 +1,8 @@
 #!/usr/bin/env python3
-"""Quick check: double-quoted strings tokenize like [ '...' ] with int codes."""
+"""Double-quoted sugar: tokenizer keeps \"...\" as one token; run() expands to [ '...' ]."""
 import importlib.util
+import io
+import sys
 from pathlib import Path
 
 root = Path(__file__).resolve().parent
@@ -9,7 +11,17 @@ mod = importlib.util.module_from_spec(spec)
 assert spec.loader is not None
 spec.loader.exec_module(mod)
 
-assert mod.tokenize('"hi"') == ["[", 104, 105, "]"], mod.tokenize('"hi"')
-assert mod.tokenize('""') == ["[", "]"], mod.tokenize('""')
-assert mod.tokenize('a "x" b') == ["a", "[", ord("x"), "]", "b"]
+# Tokenizer must not expand double quotes
+assert mod.tokenize('"hi"') == ['"hi"'], mod.tokenize('"hi"')
+assert mod.tokenize('a "x" b') == ['a', '"x"', 'b']
+
+# Runner expands and executes like [ 'hi' ] eval ...
+old_stdout = sys.stdout
+sys.stdout = buf = io.StringIO()
+try:
+    mod.queue = mod.tokenize('"hi" eval dup putn swap putn')
+    mod.run()
+finally:
+    sys.stdout = old_stdout
+assert buf.getvalue() == "105104", repr(buf.getvalue())
 print("ok")

@@ -112,7 +112,7 @@ Manual nil-terminated string **values** are still built with `0` and `swons`, fo
 
 That produces a **single** cons-chain pointer on the stack, not the quote `[ 'hello' ]`. Library words such as `sprint` expect evaluable quote bodies or cons chains per existing conventions.
 
-**Status: ✅ Implemented** — **TypeScript core** (Node/Bun/Deno/web), **Go** (`go/src/compiler/compiler.go`), **Racket** (lexer/parser/compiler/runner/expander + `racket/private/unescape.rkt`), **Python** (`python/execute.py` tokenizer expands `"..."` to `[`, integer char codes, `]`), **Ruby** (`ruby/execute.rb` same tokenizer expansion), **Dart** (`dart/bin/dart.dart` `tokenize` same expansion before `ev`). In TS/Go/Racket the IR is BRA + pushes + KET; in Python/Ruby/Dart the queue receives the equivalent token sequence (these interpreters already treat `[` as opening a quotation and int tokens as pushes).
+**Status: ✅ Implemented** — **TypeScript core** (Node/Bun/Deno/web), **Go** (`go/src/compiler/compiler.go`), **Racket** (lexer/parser/compiler/runner/expander + `racket/private/unescape.rkt`), **Python** (`python/execute.py`: `run()` prepends `[`, integer char codes, `]` when it sees a `"..."` token — tokenizer leaves the token intact), **Ruby** (`ruby/execute.rb`: same in `run`), **Dart** (`dart/bin/dart.dart`: expansion in `tokenize()` before `ev`). In TS/Go/Racket the IR is BRA + pushes + KET; Python/Ruby/Dart feed the VM the equivalent queue sequence (`[` … codes … `]`).
 
 Equivalent spellings and manual cons-chain construction:
 

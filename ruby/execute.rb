@@ -139,6 +139,11 @@ def run ()
 
     if item.is_a?(Numeric)
       $stack.push item
+    elsif item.is_a?(String) && item.length > 1 && item.start_with?('"') && item.end_with?('"')
+      # Sugar: "..." is [ '...' ] — prepend '[', char codes, ']'
+      inner = unescape(item[1..-2])
+      expanded = ['['] + inner.each_char.map(&:ord) + [']']
+      $queue = expanded + $queue
     elsif item[0] == "." && item.length() > 1
       # no-op
     elsif item[0] == "'"
@@ -193,19 +198,9 @@ def token (x)
   return x
 end
 
-def expand_double_quoted_string_token(s)
-  # Sugar: "..." is [ '...' ] — '[', char codes, ']'
-  return [s] unless s.is_a?(String) && s.length > 1 && s.start_with?('"') && s.end_with?('"')
-  inner = unescape(s[1..-2])
-  ['['] + inner.each_char.map(&:ord) + [']']
-end
-
 def tokenize (str)
   str = str.dup.force_encoding(Encoding::UTF_8)
-  parts = str.gsub(/\s+/m, ' ').strip.split(' ')
-  parts.flat_map { |s| expand_double_quoted_string_token(s) }.map do |x|
-    x.is_a?(String) ? token(x) : x
-  end
+  return str.gsub(/\s+/m, ' ').strip.split(' ').map { |s| token(s) }
 end
 
 defineSystem('nop', lambda {||

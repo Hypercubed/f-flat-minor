@@ -309,22 +309,8 @@ def token(s):
   else:
     return s
 
-def expand_double_quoted_string_token(s):
-  """Sugar: \"...\" is [ '...' ] — expand to '[', char code pushes, ']'."""
-  if not (isinstance(s, str) and len(s) > 1 and s.startswith('"') and s.endswith('"')):
-    return [s]
-  inner = unescape(s[1:-1])
-  return ['['] + [ord(c) for c in inner] + [']']
-
 def tokenize(text):
-  out = []
-  for part in text.split():
-    for piece in expand_double_quoted_string_token(part):
-      if isinstance(piece, str):
-        out.append(token(piece))
-      else:
-        out.append(piece)
-  return out
+  return list(map(token, text.split()))
 
 def run():
   global queue
@@ -334,6 +320,10 @@ def run():
     
     if type(s) == int:
       stack.append(s)
+    elif isinstance(s, str) and len(s) > 1 and s.startswith('"') and s.endswith('"'):
+      # Sugar: "..." is [ '...' ] — prepend '[', char codes, ']' to the queue.
+      inner = unescape(s[1:-1])
+      queue = ['['] + [ord(c) for c in inner] + [']'] + queue
     elif s.startswith('.') and len(s) > 1:
       continue
     elif s.startswith('[') and s.endswith(']'):
