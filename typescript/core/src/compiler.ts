@@ -197,12 +197,18 @@ export class Compiler {
             break;            
           }
         }
-      } else if (ss[0] === "'" && ss.length > 1) { // String
+      } else if (
+        (ss[0] === "'" || ss[0] === '"') && ss.length > 1
+      ) {
+        // Single- and double-quoted string literals: same escapes (see strings.ts);
+        // each character becomes a separate push. Double quotes are sugar for the
+        // same per-character expansion as single quotes (no implicit 0).
+        const delim = ss[0] as "'" | '"';
         unescapeString(ss)
-          .replace(/^'/, "")
-          .replace(/'$/, "")
+          .replace(delim === "'" ? /^'/ : /^"/, "")
+          .replace(delim === "'" ? /'$/ : /"$/, "")
           .split("")
-          .forEach(c => {
+          .forEach((c) => {
             push(c.charCodeAt(0), { comment: c });
           });
       } else if (ss.endsWith(":") && ss.length > 1) { // Definition

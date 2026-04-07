@@ -1,0 +1,13 @@
+.import ../string.ffp
+.import ../../tap.ffp
+
+TAP-VERSION
+
+'\0Double-quoted\sstrings' SUBTEST
+  "hi" 'i' = swap 'h' = and OK
+  42 dup "" = OK
+  '\n' "\n" = OK
+  '\"' "\"" = OK
+  4 PLAN OK
+
+1 PLAN
