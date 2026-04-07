@@ -309,9 +309,22 @@ def token(s):
   else:
     return s
 
+def expand_double_quoted_string_token(s):
+  """Sugar: \"...\" is [ '...' ] — expand to '[', char code pushes, ']'."""
+  if not (isinstance(s, str) and len(s) > 1 and s.startswith('"') and s.endswith('"')):
+    return [s]
+  inner = unescape(s[1:-1])
+  return ['['] + [ord(c) for c in inner] + [']']
+
 def tokenize(text):
-  a = text.split()
-  return list(map(token, a))
+  out = []
+  for part in text.split():
+    for piece in expand_double_quoted_string_token(part):
+      if isinstance(piece, str):
+        out.append(token(piece))
+      else:
+        out.append(piece)
+  return out
 
 def run():
   global queue

@@ -193,9 +193,19 @@ def token (x)
   return x
 end
 
+def expand_double_quoted_string_token(s)
+  # Sugar: "..." is [ '...' ] — '[', char codes, ']'
+  return [s] unless s.is_a?(String) && s.length > 1 && s.start_with?('"') && s.end_with?('"')
+  inner = unescape(s[1..-2])
+  ['['] + inner.each_char.map(&:ord) + [']']
+end
+
 def tokenize (str)
   str = str.dup.force_encoding(Encoding::UTF_8)
-  return str.gsub(/\s+/m, ' ').strip.split(" ").map { |s| token(s) }
+  parts = str.gsub(/\s+/m, ' ').strip.split(' ')
+  parts.flat_map { |s| expand_double_quoted_string_token(s) }.map do |x|
+    x.is_a?(String) ? token(x) : x
+  end
 end
 
 defineSystem('nop', lambda {||

@@ -384,9 +384,25 @@ void callOp(BigInt code) {
 }
 
 List<String> tokenize(String s) {
-  return s.split(RegExp(r"\s+"))
-    .where((ss) => ss.trim() != '')
-    .toList();
+  final raw = s
+      .split(RegExp(r"\s+"))
+      .where((ss) => ss.trim() != '')
+      .toList();
+  final out = <String>[];
+  for (final t in raw) {
+    // Sugar: "..." is [ '...' ] — '[', decimal char codes, ']'
+    if (t.length > 1 && t.startsWith('"') && t.endsWith('"')) {
+      out.add('[');
+      final inner = t.substring(1, t.length - 1);
+      for (final unit in unescapeQuotedString(inner).codeUnits) {
+        out.add(unit.toString());
+      }
+      out.add(']');
+    } else {
+      out.add(t);
+    }
+  }
+  return out;
 }
 
 void ev() {
