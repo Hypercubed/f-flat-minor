@@ -17,6 +17,7 @@ import {
 import appShellTemplate from "./templates/app-shell.html?raw";
 import helpTemplate from "./templates/help.html?raw";
 import { mountTutorial } from "./tutorial.ts";
+import { mountCodetta } from "./codetta.ts";
 import { startRunProgramRunFeedback, stopRunProgramRunFeedback, triggerReplKeyFeedback } from "./run-fx.ts";
 import { syncRunFeedbackToggleButton, toggleRunFeedback } from "./run-feedback.ts";
 import { formatVmStepCount } from "./format-vm-steps.ts";
@@ -114,6 +115,7 @@ export function mountApp(root: HTMLElement) {
   const replInspectClose = requireElement<HTMLButtonElement>(root, "#repl-inspect-close");
   const replInspectContent = requireElement<HTMLElement>(root, "#repl-inspect-content");
   const tutorialRoot = requireElement<HTMLElement>(root, "#tutorial-root");
+  const codettaRoot = requireElement<HTMLElement>(root, "#codetta-root");
 
   const tabs = Array.from(root.querySelectorAll<HTMLButtonElement>(".mode-tab"));
   const panels = Array.from(root.querySelectorAll<HTMLElement>(".tab-panel"));
@@ -743,6 +745,7 @@ export function mountApp(root: HTMLElement) {
 
   setPlaygroundIdle();
   mountTutorial(tutorialRoot);
+  mountCodetta(codettaRoot);
   renderReplStack([]);
   renderReplTranscript();
   replCommand.focus();

@@ -50,6 +50,13 @@ body[data-mode="repl"] {
   --page-bottom: #e2eee8;
 }
 
+body[data-mode="codetta"] {
+  --page-glow-left: rgba(59, 92, 180, 0.16);
+  --page-glow-right: rgba(103, 140, 231, 0.14);
+  --page-top: #f3f6ff;
+  --page-bottom: #e6ebfb;
+}
+
 body[data-mode="tutorial"] {
   --page-glow-left: rgba(176, 143, 52, 0.18);
   --page-glow-right: rgba(210, 184, 98, 0.12);
@@ -182,6 +189,12 @@ textarea {
   --tab-bg: rgba(176, 143, 52, 0.12);
   --tab-bg-active: rgba(176, 143, 52, 0.2);
   --tab-border: rgba(140, 113, 36, 0.18);
+}
+
+.mode-tab--codetta {
+  --tab-bg: rgba(74, 106, 191, 0.12);
+  --tab-bg-active: rgba(74, 106, 191, 0.2);
+  --tab-border: rgba(74, 106, 191, 0.2);
 }
 
 .mode-tab--help {
@@ -480,6 +493,174 @@ textarea {
   flex: 1;
   min-height: 0;
   overflow-y: auto;
+}
+
+.codetta {
+  display: grid;
+  gap: 1rem;
+}
+
+.codetta-screen {
+  min-height: 0;
+}
+
+.codetta-list-wrap {
+  padding: 0.8rem 1.2rem 1.2rem;
+}
+
+.codetta-list-table {
+  width: 100%;
+  border-collapse: collapse;
+  margin-bottom: 1rem;
+}
+
+.codetta-list-table th,
+.codetta-list-table td {
+  text-align: left;
+  padding: 0.55rem 0.6rem;
+  border-bottom: 1px solid rgba(32, 22, 17, 0.1);
+}
+
+.codetta-list-table th {
+  color: var(--muted);
+  font-size: 0.82rem;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+}
+
+.codetta-list-table tbody tr {
+  cursor: pointer;
+}
+
+.codetta-list-table tbody tr:hover {
+  background: rgba(74, 106, 191, 0.08);
+}
+
+.codetta-list-table tbody tr:focus-visible {
+  outline: 2px solid rgba(74, 106, 191, 0.35);
+  outline-offset: -2px;
+}
+
+.codetta-detail-head {
+  display: flex;
+  align-items: center;
+  gap: 0.9rem;
+  margin-bottom: 0.9rem;
+}
+
+.codetta-detail-grid {
+  display: grid;
+  gap: 1rem;
+  grid-template-columns: minmax(320px, 1fr) minmax(250px, 0.7fr);
+  margin-bottom: 1rem;
+}
+
+.codetta-panel-body {
+  padding: 0.8rem 1.2rem 1.2rem;
+}
+
+.codetta-meta p {
+  margin: 0.45rem 0;
+  color: var(--muted);
+}
+
+.codetta-meta span {
+  color: var(--ink);
+}
+
+.codetta-expected {
+  background: rgba(255, 250, 244, 0.66);
+  color: var(--ink);
+  min-height: 120px;
+}
+
+.codetta-attempt-panel {
+  margin-bottom: 1rem;
+}
+
+.codetta-editor {
+  width: 100%;
+  min-height: 200px;
+  border: 1px solid rgba(32, 22, 17, 0.15);
+  border-radius: 14px;
+  padding: 0.8rem 0.9rem;
+  resize: vertical;
+  background: rgba(255, 250, 244, 0.9);
+  color: var(--ink);
+  font-family: "Iosevka", "Cascadia Code", "SFMono-Regular", monospace;
+}
+
+.codetta-byte-status {
+  margin: 0.75rem 0;
+  color: var(--muted);
+}
+
+.codetta-byte-status[data-tone="good"] {
+  color: var(--accent-2);
+}
+
+.codetta-byte-status[data-tone="bad"] {
+  color: var(--accent);
+}
+
+.codetta-run-btn {
+  width: fit-content;
+}
+
+.codetta-output {
+  min-height: 120px;
+}
+
+.codetta-result {
+  margin: 0.75rem 0;
+  color: var(--muted);
+}
+
+.codetta-result[data-tone="good"] {
+  color: var(--accent-2);
+}
+
+.codetta-result[data-tone="bad"] {
+  color: var(--accent);
+}
+
+.codetta-submit-help {
+  margin-top: 0.9rem;
+  padding: 0.9rem;
+  border-radius: 14px;
+  border: 1px solid rgba(74, 106, 191, 0.2);
+  background: rgba(74, 106, 191, 0.08);
+}
+
+.codetta-submit-head {
+  margin-top: 0;
+  color: #354574;
+  font-weight: 600;
+}
+
+.codetta-issue-title {
+  margin: 0.45rem 0;
+  font-family: "Iosevka", "Cascadia Code", "SFMono-Regular", monospace;
+}
+
+.codetta-issue-body {
+  width: 100%;
+  min-height: 150px;
+  border-radius: 10px;
+  border: 1px solid rgba(32, 22, 17, 0.2);
+  padding: 0.65rem;
+  font-family: "Iosevka", "Cascadia Code", "SFMono-Regular", monospace;
+}
+
+.codetta-submit-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.6rem;
+  margin-top: 0.65rem;
+}
+
+.codetta-issues-link {
+  min-height: 44px;
 }
 
 .panel {
@@ -1223,6 +1404,14 @@ button:disabled {
 
   .repl-layout {
     grid-template-columns: 1fr;
+  }
+
+  .codetta-detail-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .codetta-detail-head {
+    flex-wrap: wrap;
   }
 
   .repl-pane {
