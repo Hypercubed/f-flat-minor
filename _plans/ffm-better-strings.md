@@ -112,7 +112,7 @@ Manual nil-terminated string **values** are still built with `0` and `swons`, fo
 
 That produces a **single** cons-chain pointer on the stack, not the quote `[ 'hello' ]`. Library words such as `sprint` expect evaluable quote bodies or cons chains per existing conventions.
 
-**Status: ❌ NOT IMPLEMENTED** — No implementation currently desugars `"..."` as specified.
+**Status: ✅ Implemented (TypeScript core compiler)** — `"..."` emits `BRA`, the same per-character pushes as `'...'`, then `KET`, matching tokenized `[ '...' ]`. Standalone `[` and `]` tokens are also accepted so that form parses as an explicit quotation.
 Users must currently write quotes and character/integer sequences explicitly, or build cons chains with `0` and `cons`/`swons`:
 
 ```
