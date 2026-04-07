@@ -2,13 +2,16 @@
 
 ## Overview
 
-Double-quoted strings (e.g. `"hello"`) are compiler sugar for a **quote that pushes character codes**. They are first-class values — a single pointer on the stack, like any other quote.
+Double-quoted strings (e.g. `"hello"`) are **compiler sugar for a quote that contains a single single-quoted string literal**. The double-quote form wraps the same text in `[ ... ]` with one `'...'` inside.
 
 ```
-"hi"  ≡  [ 'h' 'i' ]  ≡  [ 104 105 ]
+"xyz"  ≡  [ 'xyz' ]
+"hi"   ≡  [ 'hi' ]
 ```
 
-The empty string is `0` — the same `0` that already means NOP/nil throughout the language. This gives strings a natural null terminator with no new machinery.
+So `"hi"` is **not** sugar for `[ 'h' 'i' ]` (a quote of two character literals); it is exactly one quoted string token inside an outer quote. How the inner `'...'` is represented internally (e.g. cons chain vs literal) is specified below; the sugar rule is purely syntactic.
+
+The empty string is `0` — the same `0` that already means NOP/nil throughout the language. This gives strings a natural null terminator with no new machinery. The sugar form for an empty double-quoted string is consistent with the rule: `""` ≡ `[ '' ]` (if the lexer accepts empty single-quoted strings); implementations may still normalize or relate that to `0` as the chain terminator.
 
 ---
 
@@ -20,11 +23,13 @@ Strings are built from **cons cells**, directly analogous to Lisp. Each cons cel
 x y cons  →  ptr,  body: [ PUSH x, CALL y ]
 ```
 
-A string is a linked chain of cons cells terminating at `0`:
+A string is a linked chain of cons cells terminating at `0`. The **inner** single-quoted literal `'hi'` has that shape; double-quoted `"hi"` is sugar for a **quote** whose body is that literal:
 
 ```
-"hi"  →  ptrH,  body: [ PUSH 104, CALL ptrI ]
-          ptrI,  body: [ PUSH 105, CALL 0    ]
+"hi"  ≡  [ 'hi' ]   /* outer: one quote value on the stack */
+
+'hi' (runtime)  →  ptrH,  body: [ PUSH 104, CALL ptrI ]
+                    ptrI,  body: [ PUSH 105, CALL 0    ]
 ```
 
 Eval'ing the head pointer walks the chain, pushing each character code in order.
@@ -63,16 +68,30 @@ The plan originally called this `concat`, but the implementation uses `compose`
 
 ## Compiler Sugar
 
+**Double quotes → quote + single-quoted string**
+
 ```
-"hello"  →  desugared at compile time to 0 'o' swons 'l' swons 'l' swons 'e' swons 'h' swons
+"hello"  ≡  [ 'hello' ]
 ```
 
-So eval'ing the result pushes characters left to order: `h`, `e`, `l`, `l`, `o`.
+The compiler may implement this by emitting the same AST/bytecode as for `[ 'hello' ]` directly, or by lowering later (e.g. to a cons chain) — but the **authoring rule** is: `"..."` is sugar for wrapping the corresponding `'...'` in an outer `[ ... ]`.
 
-**Status: ❌ NOT IMPLEMENTED** - No implementation currently desugars `"..."` syntax.
-Users must manually construct strings using `0` and `cons`/`swons`:
+**Previous plan (superseded for `"..."` syntax):** desugaring `"hello"` straight to a `swons` chain at the surface:
+
 ```
-0 'i' swons 'h' swons   /* creates "hi" */
+0 'o' swons 'l' swons 'l' swons 'e' swons 'h' swons
+```
+
+That chain remains a valid **manual** way to build the same runtime string shape; it is no longer the specified meaning of the `"hello"` token.
+
+Eval'ing the result of `[ 'hello' ]` (whether written with double or single quotes inside brackets) should still push character codes in order when that is how single-quoted string literals behave in the VM.
+
+**Status: ❌ NOT IMPLEMENTED** — No implementation currently desugars `"..."` this way.
+Users must currently write an explicit quote around a single-quoted string, or construct strings with `0` and `cons`/`swons`:
+
+```
+[ 'hi' ]                  /* equivalent target for future "hi" sugar */
+0 'i' swons 'h' swons     /* manual cons chain for "hi" */
 ```
 
 ---
