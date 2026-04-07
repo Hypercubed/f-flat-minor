@@ -15,6 +15,21 @@ describe("virtual library files", () => {
     expect(files["/lib/README.md"]).toBeUndefined();
   });
 
+  it("includes every ff/euler/*.ffp example in the virtual example map", () => {
+    const eulerModules = import.meta.glob("../../ff/euler/*.ffp", {
+      eager: true,
+      import: "default",
+      query: "?raw",
+    }) as Record<string, string>;
+    const files = createVirtualFiles("", "/main.ffp");
+
+    for (const vitePath of Object.keys(eulerModules)) {
+      const base = vitePath.split("/").pop()!;
+      expect(files[`/examples/${base}`]).toBeDefined();
+    }
+    expect(Object.keys(eulerModules).length).toBeGreaterThan(0);
+  });
+
   it("loads an auto-discovered library file at runtime", () => {
     const result = runProgram(".load /lib/math/log.ffp\n1 putn", "", true);
 

@@ -11,8 +11,6 @@ import fibExample from "../../ff/fib.ffp?raw";
 import catalanExample from "../../ff/catalan.ffp?raw";
 import collatzExample from "../../ff/collatz.ffp?raw";
 import hanoiExample from "../../ff/hanoi.ffp?raw";
-import euler1Example from "../../ff/euler/euler1.ffp?raw";
-import euler7Example from "../../ff/euler/euler7.ffp?raw";
 
 import type { VirtualFiles } from "./runtime.ts";
 
@@ -32,6 +30,31 @@ function toVirtualLibraryPath(sourcePath: string): string {
   return `/lib/${sourcePath.slice(libraryRoot.length)}`;
 }
 
+const eulerExampleSources = import.meta.glob("../../ff/euler/*.ffp", {
+  eager: true,
+  import: "default",
+  query: "?raw",
+}) as Record<string, string>;
+
+function eulerExampleSortKey(vitePath: string): [number, string] {
+  const base = vitePath.split("/").pop() ?? vitePath;
+  const match = /^euler(\d+)\.ffp$/.exec(base);
+  if (match) return [Number(match[1]), base];
+  return [Number.POSITIVE_INFINITY, base];
+}
+
+const EULER_EXAMPLE_ENTRIES: ExampleEntry[] = Object.entries(eulerExampleSources)
+  .sort((a, b) => {
+    const ka = eulerExampleSortKey(a[0]);
+    const kb = eulerExampleSortKey(b[0]);
+    if (ka[0] !== kb[0]) return ka[0] - kb[0];
+    return ka[1].localeCompare(kb[1]);
+  })
+  .map(([vitePath, source]) => {
+    const base = vitePath.split("/").pop()!;
+    return { path: `/examples/${base}`, label: base, source };
+  });
+
 const EXAMPLE_ENTRIES: ExampleEntry[] = [
   { path: "/examples/fact.ffp", label: "fact.ffp", source: factExample },
   { path: "/examples/fizzbuzz.ffp", label: "fizzbuzz.ffp", source: fizzbuzzExample },
@@ -46,8 +69,7 @@ const EXAMPLE_ENTRIES: ExampleEntry[] = [
   { path: "/examples/catalan.ffp", label: "catalan.ffp", source: catalanExample },
   { path: "/examples/collatz.ffp", label: "collatz.ffp", source: collatzExample },
   { path: "/examples/hanoi.ffp", label: "hanoi.ffp", source: hanoiExample },
-  { path: "/examples/euler1.ffp", label: "euler1.ffp", source: euler1Example },
-  { path: "/examples/euler7.ffp", label: "euler7.ffp", source: euler7Example },
+  ...EULER_EXAMPLE_ENTRIES,
 ];
 
 const librarySources = import.meta.glob(
