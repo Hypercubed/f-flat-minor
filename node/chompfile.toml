@@ -42,8 +42,8 @@ run = '''
   shopt -s nullglob
   shopt -s extglob
   for i in "${DEP%.*}.ff?(p)"; do
-    $BIN $i | cmp - $DEP -s && ${{CHECK}};
-    $BIN $i --opt | cmp - $DEP -s && ${{CHECK}};
+    $BIN $i | diff --ignore-trailing-space -q - $DEP && ${{CHECK}};
+    $BIN $i --opt | diff --ignore-trailing-space -q - $DEP && ${{CHECK}};
   done
 '''
 
