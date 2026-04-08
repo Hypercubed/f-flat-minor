@@ -601,6 +601,32 @@ textarea {
   padding: 0.8rem 1.2rem 1.2rem;
 }
 
+.codetta-description p {
+  margin: 0 0 0.8rem;
+}
+
+.codetta-description p:last-child {
+  margin-bottom: 0;
+}
+
+.codetta-description ul {
+  margin: 0 0 0.8rem 1.2rem;
+  padding: 0;
+}
+
+.codetta-description li + li {
+  margin-top: 0.25rem;
+}
+
+.codetta-description a {
+  color: var(--accent-2);
+}
+
+.codetta-description code {
+  font-family: "Iosevka", "Cascadia Code", "SFMono-Regular", monospace;
+  font-size: 0.95em;
+}
+
 .codetta-meta p {
   margin: 0.45rem 0;
   color: var(--muted);

@@ -8,15 +8,32 @@ import { getCompiledBytecodeDisplay, getCompiledByteScore } from "./program-runn
 import { startRunProgramRunFeedback, stopRunProgramRunFeedback } from "./run-fx.ts";
 import { runPlaygroundProgram } from "./run-playground.ts";
 import { formatVmStepCount } from "./format-vm-steps.ts";
+import { remark } from "https://esm.sh/remark@15.0.1";
+import remarkGfm from "https://esm.sh/remark-gfm@4.0.1";
+import remarkRehype from "https://esm.sh/remark-rehype@11.1.0";
+import rehypeStringify from "https://esm.sh/rehype-stringify@10.0.1";
 
 const ETUDES: CodettaEntry[] = CODETTA_ENTRIES;
 const CODETTA_GITHUB_REPO = "https://github.com/Hypercubed/f-flat-minor";
+const markdownProcessor = remark()
+  .use(remarkGfm)
+  .use(remarkRehype)
+  .use(rehypeStringify);
 
 function escapeHtml(value: string): string {
   return value
     .replaceAll("&", "&amp;")
     .replaceAll("<", "&lt;")
     .replaceAll(">", "&gt;");
+}
+
+function renderMarkdown(markdown: string): string {
+  const normalized = markdown.replaceAll("\r\n", "\n").trim();
+  if (!normalized) {
+    return "";
+  }
+  const rendered = String(markdownProcessor.processSync(normalized));
+  return rendered.replaceAll("<a ", '<a target="_blank" rel="noreferrer" ');
 }
 
 function getCodettaSubmitUrl(slug: string): string {
@@ -103,7 +120,7 @@ export function mountCodetta(root: HTMLElement) {
               </div>
             </div>
             <div class="codetta-panel-body">
-              <p id="codetta-description"></p>
+              <div id="codetta-description" class="codetta-description"></div>
               <p class="panel-label">Expected output</p>
               <pre id="codetta-expected" class="code-block codetta-expected"></pre>
             </div>
@@ -386,7 +403,7 @@ export function mountCodetta(root: HTMLElement) {
   function openDetail(etude: CodettaEntry) {
     activeEtude = etude;
     ui.title.textContent = etude.title;
-    ui.description.textContent = etude.description;
+    ui.description.innerHTML = renderMarkdown(etude.description);
     ui.expected.textContent = etude.expected;
     ui.leader.textContent = etude.leader;
     ui.bytes.textContent = String(etude.bytes);
