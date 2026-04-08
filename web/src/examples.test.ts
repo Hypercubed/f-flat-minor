@@ -45,4 +45,14 @@ describe("virtual library files", () => {
     expect(result.exitCode).toBe(0);
     expect(result.issues).toEqual([]);
   });
+
+  it("runs a Codetta program relative to its virtual source path", () => {
+    const result = runProgram(".import ../../lib/prelude.ffp\n1 putn", "", true, {
+      filename: "/codetta/test/solution.ffp",
+    });
+
+    expect(result.output.trimEnd()).toBe("1");
+    expect(result.exitCode).toBe(0);
+    expect(result.issues).toEqual([]);
+  });
 });

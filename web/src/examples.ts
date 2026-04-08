@@ -1,13 +1,9 @@
 import factExample from "../../ff/fact.ffp?raw";
-import pascalExample from "../../ff/pascal.ffp?raw";
 import cbrtExample from "../../ff/cbrt.ffp?raw";
 import sqrtExample from "../../ff/sqrt.ffp?raw";
 import gcdExample from "../../ff/gcd.ffp?raw";
 import ackExample from "../../ff/ack.ffp?raw";
 import piExample from "../../ff/pi.ffp?raw";
-import catalanExample from "../../ff/catalan.ffp?raw";
-import collatzExample from "../../ff/collatz.ffp?raw";
-import hanoiExample from "../../ff/hanoi.ffp?raw";
 
 import type { VirtualFiles } from "./runtime.ts";
 
@@ -84,15 +80,11 @@ const GOLF_ENTRIES: ExampleEntry[] = Object.entries(golfSources)
 
 const EXAMPLE_ENTRIES: ExampleEntry[] = [
   { path: "/examples/fact.ffp", label: "fact.ffp", source: factExample },
-  { path: "/examples/pascal.ffp", label: "pascal.ffp", source: pascalExample },
   { path: "/examples/cbrt.ffp", label: "cbrt.ffp", source: cbrtExample },
   { path: "/examples/sqrt.ffp", label: "sqrt.ffp", source: sqrtExample },
   { path: "/examples/gcd.ffp", label: "gcd.ffp", source: gcdExample },
   { path: "/examples/ack.ffp", label: "ack.ffp", source: ackExample },
   { path: "/examples/pi.ffp", label: "pi.ffp", source: piExample },
-  { path: "/examples/catalan.ffp", label: "catalan.ffp", source: catalanExample },
-  { path: "/examples/collatz.ffp", label: "collatz.ffp", source: collatzExample },
-  { path: "/examples/hanoi.ffp", label: "hanoi.ffp", source: hanoiExample },
   ...EULER_EXAMPLE_ENTRIES,
   ...GOLF_ENTRIES,
 ];

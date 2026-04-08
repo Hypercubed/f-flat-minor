@@ -1,10 +1,7 @@
-.import ./lib/prelude.ffp
-
-/* Pascal's triangle */
+.import ../../lib/prelude.ffp
 
 ps: putn sp ;
 
 line: dup 0 swap [ dup2 ++ q< q< nck ps q> q> ] seq nck ps cr ;
 
-0 [ dup line ++ ] 16 times
-
+0 [ dup line ++ ] 20 times

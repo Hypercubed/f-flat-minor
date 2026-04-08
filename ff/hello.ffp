@@ -1,5 +1,4 @@
-.import ../lib/prelude.ffp
-.import ../lib/string/string.ffp
+.import ./lib/prelude.ffp
 
 0 'Hello\sWorld!\n' prints
 

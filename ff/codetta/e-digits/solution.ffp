@@ -1,0 +1,6 @@
+.import ../../lib/prelude.ffp
+
+N: 1000 ;
+E: N 1 nexp ;
+E N nputn
+cr

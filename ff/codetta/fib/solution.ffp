@@ -1,0 +1,9 @@
+.import ../../lib/prelude.ffp
+
+fib:
+  dup 0 = not
+  [ dup 1 = not
+    [ -- dup fib swap -- fib + ] ?
+  ] ? ;
+
+31 fib putn

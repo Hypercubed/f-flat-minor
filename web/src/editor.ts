@@ -117,6 +117,7 @@ const readonlyTheme = EditorView.theme({
   ".cm-content": {
     minHeight: "160px",
     padding: "1rem 1.2rem 1.2rem",
+    whiteSpace: "pre",
   },
   ".cm-scroller": {
     fontFamily: "\"Iosevka\", \"Cascadia Code\", \"SFMono-Regular\", monospace",
@@ -318,7 +319,6 @@ export function mountReadonlySourceViewer(parent: HTMLElement, initialValue: str
         syntaxHighlighting(ffHighlightStyle),
         EditorState.readOnly.of(true),
         EditorView.editable.of(false),
-        EditorView.lineWrapping,
         ffTheme,
         readonlyTheme,
       ],

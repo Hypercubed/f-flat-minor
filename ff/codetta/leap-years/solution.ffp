@@ -1,0 +1,6 @@
+.import ../../lib/prelude.ffp
+.import ../../lib/time/utc.ffp
+
+line: dup leap-year? [ dup putn cr ] ? ++ ;
+
+1800 [ line ] 601 times drop

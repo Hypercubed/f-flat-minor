@@ -8,6 +8,7 @@ export type PlaygroundWorkerInbound =
     source: string;
     stdin: string;
     optimize: boolean;
+    filename?: string;
     yieldIntervalMs: number;
     yieldSliceMax: number;
   }
@@ -22,6 +23,7 @@ export type PlaygroundWorkerOutbound =
     preprocessed: string;
     ir: string;
     bytecode: string;
+    compiledBytes: number;
   }
   | { type: "PROGRESS"; runId: number; vmCyclesExecuted: number; executeElapsedMs: number }
   | { type: "RESULT"; runId: number; result: RunResult }

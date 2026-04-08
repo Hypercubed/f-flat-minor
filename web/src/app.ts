@@ -7,6 +7,7 @@ import {
   EXAMPLE_OPTIONS_HTML,
 } from "./examples.ts";
 import { runPlaygroundProgram } from "./run-playground.ts";
+import { getCompiledBytecodeDisplay, getCompiledByteScore } from "./program-runner.ts";
 import { ReplSession } from "./repl-session.ts";
 import {
   buildAppUrl,
@@ -44,6 +45,12 @@ function requireElement<T extends Element>(root: ParentNode, selector: string): 
 
 function scrollToBottom(element: HTMLElement) {
   element.scrollTop = element.scrollHeight;
+}
+
+function formatBytecodeByteCount(value: string) {
+  const byteCount = value ? getCompiledByteScore(value) : 0;
+  const unit = byteCount === 1 ? "byte" : "bytes";
+  return `${byteCount} ${unit}`;
 }
 
 type SummaryTone = "default" | "success" | "error" | "running" | "pending";
@@ -104,6 +111,8 @@ export function mountApp(root: HTMLElement) {
   const preprocessed = requireElement<HTMLElement>(root, "#preprocessed");
   const ir = requireElement<HTMLElement>(root, "#ir");
   const bytecode = requireElement<HTMLElement>(root, "#bytecode");
+  const bytecodeMeta = requireElement<HTMLElement>(root, "#bytecode-meta");
+  const bytecodeCount = requireElement<HTMLElement>(root, "#bytecode-count");
   const replCommand = requireElement<HTMLInputElement>(root, "#repl-command");
   const replReset = requireElement<HTMLButtonElement>(root, "#repl-reset");
   const replStatus = requireElement<HTMLElement>(root, "#repl-status");
@@ -225,6 +234,13 @@ export function mountApp(root: HTMLElement) {
       const active = panel.dataset.detailPanel === name;
       panel.classList.toggle("is-active", active);
     });
+
+    bytecodeMeta.hidden = name !== "bytecode";
+  }
+
+  function setBytecodeDisplay(value: string) {
+    bytecode.innerHTML = escapeHtml(getCompiledBytecodeDisplay(value));
+    bytecodeCount.textContent = formatBytecodeByteCount(value);
   }
 
   tabs.forEach((tab) => {
@@ -254,6 +270,10 @@ export function mountApp(root: HTMLElement) {
       setDetailTab(tab.dataset.detailTab ?? "output");
     });
   });
+
+  setDetailTab(
+    detailTabs.find((tab) => tab.classList.contains("is-active"))?.dataset.detailTab ?? "output",
+  );
 
   let playgroundAbort: AbortController | null = null;
 
@@ -287,7 +307,7 @@ export function mountApp(root: HTMLElement) {
           if (expandedSrc !== undefined) {
             preprocessedViewer.setValue(expandedSrc);
             irViewer.setValue(irText ?? "");
-            bytecode.innerHTML = escapeHtml(bcText ?? "");
+            setBytecodeDisplay(bcText ?? "");
           }
           summary.innerHTML = renderSummary([
             {
@@ -367,14 +387,14 @@ export function mountApp(root: HTMLElement) {
         errorOutput.innerHTML = escapeHtml(result.logs.join("\n") || "Run failed.");
         preprocessedViewer.setValue("");
         irViewer.setValue("");
-        bytecode.innerHTML = "";
+        setBytecodeDisplay("");
         scrollToBottom(errorOutput);
       } else {
         output.innerHTML = escapeHtml(diagnostics);
         errorOutput.textContent = "";
         preprocessedViewer.setValue(result.preprocessed);
         irViewer.setValue(result.ir);
-        bytecode.innerHTML = escapeHtml(result.bytecode);
+        setBytecodeDisplay(result.bytecode);
         scrollToBottom(output);
       }
     } catch (error) {
@@ -390,7 +410,7 @@ export function mountApp(root: HTMLElement) {
       errorOutput.innerHTML = escapeHtml(message);
       preprocessedViewer.setValue("");
       irViewer.setValue("");
-      bytecode.innerHTML = "";
+      setBytecodeDisplay("");
       scrollToBottom(errorOutput);
     } finally {
       playgroundAbort = null;
@@ -412,7 +432,7 @@ export function mountApp(root: HTMLElement) {
     errorOutput.textContent = "";
     preprocessedViewer.setValue("");
     irViewer.setValue("");
-    bytecode.innerHTML = "";
+    setBytecodeDisplay("");
     document.body.dataset.ready = "true";
   }
 

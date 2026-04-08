@@ -1,5 +1,5 @@
-.import ./lib/prelude.ffp
-.import ./lib/seq/seq.ffp
+.import ../../lib/prelude.ffp
+.import ../../lib/seq/seq.ffp
 
 I: 1 'I' putc ;
 V: 5 'V' putc ;
@@ -43,7 +43,7 @@ D L X X roman!
 D L X X X roman!
 D X C roman!
 
-M C M X C roman! /* 1900 */
+M C M X C roman! /* 1990 */
 M D C L X V I roman! /* 1666 */
 M M V I I I roman! /* 2008 */
-M M X X I I roman!  /* 2020 */
+M M X X I I roman!  /* 2022 */

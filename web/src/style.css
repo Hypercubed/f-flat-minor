@@ -508,6 +508,23 @@ textarea {
   padding: 0.8rem 1.2rem 1.2rem;
 }
 
+.codetta-suggest-btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 44px;
+  padding: 0.75rem 1rem;
+  border-radius: 999px;
+  border: 1px solid rgba(32, 22, 17, 0.18);
+  color: var(--ink);
+  text-decoration: none;
+  transition: transform 160ms ease, box-shadow 160ms ease, background 160ms ease;
+}
+
+.codetta-suggest-btn:hover {
+  transform: translateY(-1px);
+}
+
 .codetta-list-table {
   width: 100%;
   border-collapse: collapse;
@@ -548,6 +565,31 @@ textarea {
   margin-bottom: 0.9rem;
 }
 
+.codetta-detail-nav {
+  display: inline-flex;
+  align-items: center;
+  justify-content: flex-end;
+  gap: 0.65rem;
+  margin-left: auto;
+}
+
+.codetta-etude-header {
+  padding-bottom: 0.2rem;
+}
+
+.codetta-etude-header h2 {
+  margin-top: 0.3rem;
+  line-height: 1.08;
+}
+
+.codetta-detail-nav-btn {
+  min-width: 6.5rem;
+}
+
+.codetta-detail-nav-btn:disabled {
+  cursor: default;
+}
+
 .codetta-detail-grid {
   display: grid;
   gap: 1rem;
@@ -572,26 +614,64 @@ textarea {
   background: rgba(255, 250, 244, 0.66);
   color: var(--ink);
   min-height: 120px;
+  max-height: min(40vh, 20rem);
+  overflow: auto;
 }
 
-.codetta-attempt-panel {
+.codetta-attempt-layout {
+  display: grid;
+  grid-template-columns: minmax(340px, 1.1fr) minmax(320px, 0.9fr);
+  gap: 1rem;
+  align-items: stretch;
   margin-bottom: 1rem;
+}
+
+.codetta-attempt-layout > .panel {
+  min-width: 0;
+}
+
+.codetta-attempt-panel,
+.codetta-output-panel {
+  height: var(--workspace-pane-height);
+  display: flex;
+  flex-direction: column;
+  min-height: 0;
+  overflow: hidden;
+}
+
+.codetta-attempt-body,
+.codetta-output-body {
+  display: flex;
+  flex-direction: column;
+  gap: 0.85rem;
+  padding: 0 1rem 1rem;
+  flex: 1 1 auto;
+  min-height: 0;
+}
+
+.codetta-attempt-controls {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  flex-shrink: 0;
 }
 
 .codetta-editor {
   width: 100%;
-  min-height: 200px;
+  flex: 1 1 auto;
+  min-height: 0;
   border: 1px solid rgba(32, 22, 17, 0.15);
-  border-radius: 14px;
+  border-radius: 18px;
   padding: 0.8rem 0.9rem;
   resize: vertical;
   background: rgba(255, 250, 244, 0.9);
   color: var(--ink);
   font-family: "Iosevka", "Cascadia Code", "SFMono-Regular", monospace;
+  line-height: 1.55;
 }
 
 .codetta-byte-status {
-  margin: 0.75rem 0;
+  margin: 0;
   color: var(--muted);
 }
 
@@ -604,15 +684,35 @@ textarea {
 }
 
 .codetta-run-btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
   width: fit-content;
+  min-inline-size: 7.5rem;
+  margin-left: auto;
 }
 
 .codetta-output {
-  min-height: 120px;
+  flex: 1 1 auto;
+  min-height: 0;
+  margin: 0;
+  border: 1px solid rgba(32, 22, 17, 0.15);
+  border-radius: 18px;
+  background: rgba(255, 250, 244, 0.88);
+}
+
+.codetta-detail-panels {
+  flex: 1 1 auto;
+}
+
+.codetta-bytecode {
+  flex: 1 1 auto;
+  min-height: 0;
+  border-top: 0;
 }
 
 .codetta-result {
-  margin: 0.75rem 0;
+  margin: 0;
   color: var(--muted);
 }
 
@@ -624,8 +724,17 @@ textarea {
   color: var(--accent);
 }
 
+.codetta-submit-panel {
+  margin-bottom: 1rem;
+}
+
+.codetta-submit-body {
+  display: grid;
+  gap: 0.9rem;
+}
+
 .codetta-submit-help {
-  margin-top: 0.9rem;
+  margin-top: 0;
   padding: 0.9rem;
   border-radius: 14px;
   border: 1px solid rgba(74, 106, 191, 0.2);
@@ -983,8 +1092,10 @@ button:disabled {
   margin: 0;
   padding: 1rem 1.2rem 1.2rem;
   min-height: 160px;
-  white-space: pre-wrap;
-  overflow-wrap: anywhere;
+  overflow-x: auto;
+  overflow-y: auto;
+  white-space: pre;
+  overflow-wrap: normal;
   font-family: "Iosevka", "Cascadia Code", "SFMono-Regular", monospace;
   font-size: 0.92rem;
 }
@@ -994,6 +1105,33 @@ button:disabled {
   flex: 1 1 auto;
   min-height: 0;
   overflow: hidden;
+}
+
+.detail-meta {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 1rem;
+  padding: 0.8rem 1.2rem 0.9rem;
+  border-top: 1px solid rgba(32, 22, 17, 0.08);
+  background: linear-gradient(180deg, rgba(255, 252, 247, 0.9), rgba(239, 225, 207, 0.68));
+}
+
+.detail-meta[hidden] {
+  display: none;
+}
+
+.detail-meta .label {
+  color: var(--muted);
+  text-transform: uppercase;
+  letter-spacing: 0.1em;
+  font-size: 0.7rem;
+}
+
+.detail-meta .value {
+  color: var(--ink);
+  font-weight: 500;
+  font-family: "Iosevka", "Cascadia Code", "SFMono-Regular", monospace;
 }
 
 .help-grid {
@@ -1206,8 +1344,9 @@ button:disabled {
   padding: 0.8rem 0.95rem;
   border-radius: 16px;
   overflow-x: auto;
-  white-space: pre-wrap;
-  overflow-wrap: anywhere;
+  overflow-y: auto;
+  white-space: pre;
+  overflow-wrap: normal;
   font-family: "Iosevka", "Cascadia Code", "SFMono-Regular", monospace;
   font-size: 0.88rem;
   line-height: 1.5;
@@ -1410,8 +1549,30 @@ button:disabled {
     grid-template-columns: 1fr;
   }
 
+  .codetta-attempt-layout {
+    grid-template-columns: 1fr;
+  }
+
   .codetta-detail-head {
     flex-wrap: wrap;
+  }
+
+  .codetta-detail-nav {
+    width: 100%;
+    justify-content: flex-start;
+    margin-left: 0;
+  }
+
+  .codetta-attempt-panel,
+  .codetta-output-panel {
+    height: auto;
+    max-height: none;
+  }
+
+  .codetta-editor,
+  .codetta-output,
+  .codetta-bytecode {
+    min-height: 200px;
   }
 
   .repl-pane {
@@ -1489,6 +1650,14 @@ button:disabled {
   .tutorial-actions {
     margin-left: 0;
     width: 100%;
+  }
+
+  .codetta-attempt-controls {
+    flex-wrap: wrap;
+  }
+
+  .codetta-run-btn {
+    margin-left: 0;
   }
 }
 

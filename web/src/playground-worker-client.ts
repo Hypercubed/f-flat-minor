@@ -7,6 +7,7 @@ function cancelledResult(): RunResult {
     preprocessed: "",
     ir: "",
     bytecode: "",
+    compiledBytes: 0,
     issues: [],
     stack: [],
     logs: [],
@@ -24,6 +25,7 @@ function workerErrorResult(message: string): RunResult {
     preprocessed: "",
     ir: "",
     bytecode: "",
+    compiledBytes: 0,
     issues: [],
     stack: [],
     logs: [message],
@@ -45,12 +47,14 @@ export interface PlaygroundRunProgress {
   preprocessed?: string;
   ir?: string;
   bytecode?: string;
+  compiledBytes?: number;
 }
 
 export interface PlaygroundWorkerRunOptions {
   source: string;
   stdin: string;
   optimize: boolean;
+  filename?: string;
   yieldIntervalMs: number;
   yieldSliceMax: number;
   signal?: AbortSignal;
@@ -94,6 +98,7 @@ export class PlaygroundWorkerHost {
           preprocessed: msg.preprocessed,
           ir: msg.ir,
           bytecode: msg.bytecode,
+          compiledBytes: msg.compiledBytes,
         });
       }
       return;
@@ -175,6 +180,7 @@ export class PlaygroundWorkerHost {
         source: options.source,
         stdin: options.stdin,
         optimize: options.optimize,
+        filename: options.filename,
         yieldIntervalMs: options.yieldIntervalMs,
         yieldSliceMax: options.yieldSliceMax,
       });

@@ -1,6 +1,7 @@
 import {
   Compiler,
   Engine,
+  HEADER,
   Optimizer,
   Preprocessor,
   formatFfCompatibleIr,
@@ -12,6 +13,7 @@ import { createVirtualFiles } from "./examples.ts";
 import { createBrowserPlatform, createPreprocessHost } from "./runtime.ts";
 
 const PRELUDE = "/lib/prelude.ffp";
+const DEFAULT_PROGRAM_FILENAME = "/main.ffp";
 
 /** How the run finished (playground / worker). */
 export type RunTerminalState = "done" | "cancelled" | "error";
@@ -21,6 +23,7 @@ export interface RunResult {
   preprocessed: string;
   ir: string;
   bytecode: string;
+  compiledBytes: number;
   issues: string[];
   stack: string[];
   logs: string[];
@@ -35,6 +38,7 @@ export interface PreparedProgram {
   preprocessed: string;
   ir: string;
   bytecode: string;
+  compiledBytes: number;
   issues: string[];
   compileMs: number;
   execute: () => ExecuteResult;
@@ -52,6 +56,18 @@ export interface ExecuteResult {
   executeMs: number;
   cancelled: boolean;
   vmCyclesExecuted: number;
+}
+
+export interface ProgramRunOptions {
+  filename?: string;
+}
+
+export function getCompiledByteScore(bytecode: string): number {
+  return HEADER.length + bytecode.length;
+}
+
+export function getCompiledBytecodeDisplay(bytecode: string): string {
+  return bytecode ? `${HEADER}${bytecode}` : "";
 }
 
 function withCapturedConsole<T>(
@@ -86,10 +102,11 @@ async function withCapturedConsoleAsync<T>(
   }
 }
 
-function createProgramContext(source: string, stdin: string) {
+function createProgramContext(source: string, stdin: string, options: ProgramRunOptions = {}) {
   let output = "";
   const logs: string[] = [];
   let exitCode = 0;
+  const filename = options.filename ?? DEFAULT_PROGRAM_FILENAME;
 
   const platform = createBrowserPlatform({
     stdin,
@@ -105,7 +122,7 @@ function createProgramContext(source: string, stdin: string) {
   const engine = new Engine(platform);
   const macroCompiler = new Compiler();
   const macroEngine = new Engine(platform);
-  const files = createVirtualFiles(source);
+  const files = createVirtualFiles(source, filename);
   const preprocessor = new Preprocessor(createPreprocessHost(files), {
     engine: macroEngine,
     compiler: macroCompiler,
@@ -117,6 +134,7 @@ function createProgramContext(source: string, stdin: string) {
     compiler,
     engine,
     preprocessor,
+    filename,
     logs,
     getOutput() {
       return output;
@@ -127,19 +145,24 @@ function createProgramContext(source: string, stdin: string) {
   };
 }
 
-export function compileProgram(source: string, stdin: string, optimize: boolean): PreparedProgram {
-  const context = createProgramContext(source, stdin);
+export function compileProgram(
+  source: string,
+  stdin: string,
+  optimize: boolean,
+  options: ProgramRunOptions = {},
+): PreparedProgram {
+  const context = createProgramContext(source, stdin, options);
 
   const compileStart = performance.now();
   const compiled = withCapturedConsole((message) => context.logs.push(message), () => {
     const preprocessed = context.preprocessor.preprocess(
       Preprocessor.tokenize(source),
-      "/main.ffp",
+      context.filename,
     );
 
     let ir: IrInstruction[] = context.compiler.compileToIR(
       Compiler.tokenize(preprocessed),
-      "/main.ffp",
+      context.filename,
     );
     const issues = context.compiler.validate(ir);
 
@@ -149,6 +172,7 @@ export function compileProgram(source: string, stdin: string, optimize: boolean)
 
     const formattedIr = formatFfCompatibleIr(ir);
     const bytecode = Compiler.compileToBase64(ir);
+    const compiledBytes = getCompiledByteScore(bytecode);
 
     context.engine.loadIR(ir);
 
@@ -156,6 +180,7 @@ export function compileProgram(source: string, stdin: string, optimize: boolean)
       preprocessed,
       formattedIr,
       bytecode,
+      compiledBytes,
       issues,
     };
   });
@@ -165,6 +190,7 @@ export function compileProgram(source: string, stdin: string, optimize: boolean)
     preprocessed: compiled.preprocessed,
     ir: compiled.formattedIr,
     bytecode: compiled.bytecode,
+    compiledBytes: compiled.compiledBytes,
     issues: compiled.issues,
     compileMs: compileEnd - compileStart,
     execute() {
@@ -208,8 +234,13 @@ export function compileProgram(source: string, stdin: string, optimize: boolean)
   };
 }
 
-export function runProgram(source: string, stdin: string, optimize: boolean): RunResult {
-  const compiled = compileProgram(source, stdin, optimize);
+export function runProgram(
+  source: string,
+  stdin: string,
+  optimize: boolean,
+  options: ProgramRunOptions = {},
+): RunResult {
+  const compiled = compileProgram(source, stdin, optimize, options);
   const executed = compiled.execute();
 
   return {
@@ -217,6 +248,7 @@ export function runProgram(source: string, stdin: string, optimize: boolean): Ru
     preprocessed: compiled.preprocessed,
     ir: compiled.ir,
     bytecode: compiled.bytecode,
+    compiledBytes: compiled.compiledBytes,
     issues: compiled.issues,
     stack: executed.stack,
     logs: executed.logs,

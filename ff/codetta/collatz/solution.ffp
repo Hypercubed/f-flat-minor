@@ -1,0 +1,7 @@
+.import ../../lib/prelude.ffp
+
+next: dup even? [ 2 / ] [ 3 * 1 + ] branch ;
+steps: dup 1 > [ next steps ++ ] [ drop 0 ] branch ;
+line: dup steps putn cr ++ ;
+
+1 [ line ] 1000 times drop
