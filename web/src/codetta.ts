@@ -8,6 +8,7 @@ import { getCompiledBytecodeDisplay, getCompiledByteScore } from "./program-runn
 import { startRunProgramRunFeedback, stopRunProgramRunFeedback } from "./run-fx.ts";
 import { runPlaygroundProgram } from "./run-playground.ts";
 import { formatVmStepCount } from "./format-vm-steps.ts";
+import { codettaOutputsMatch, normalizeCodettaOutputForComparison } from "./codetta-compare.ts";
 
 const ETUDES: CodettaEntry[] = CODETTA_ENTRIES;
 const CODETTA_GITHUB_REPO = "https://github.com/Hypercubed/f-flat-minor";
@@ -556,9 +557,8 @@ export function mountCodetta(root: HTMLElement) {
         return;
       }
 
-      const actual = run.output.trimEnd();
-      const expectedOutput = activeEtude.expected.trimEnd();
-      latestMatchedOutput = actual === expectedOutput;
+      const actual = normalizeCodettaOutputForComparison(run.output);
+      latestMatchedOutput = codettaOutputsMatch(run.output, activeEtude.expected);
       ui.output.textContent = actual || "(no output)";
       ui.result.textContent = latestMatchedOutput ? "✓ Output matches expected" : "✗ Output does not match expected";
       ui.result.dataset.tone = latestMatchedOutput ? "good" : "bad";
