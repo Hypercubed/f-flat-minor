@@ -10,10 +10,10 @@ This directory contains the Deno/TypeScript implementation of f-flat-minor, incl
 From this directory:
 
 ```bash
-deno task run ../ff/golf/hello.ffp
-deno task compile ../ff/golf/hello.ffp > out.ffb
+deno task run ../ff/hello.ffp
+deno task compile ../ff/hello.ffp > out.ffb
 deno task execute out.ffb
-deno task preprocess ../ff/golf/hello.ffp
+deno task preprocess ../ff/hello.ffp
 deno task repl
 ```
 

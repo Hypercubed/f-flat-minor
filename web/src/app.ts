@@ -7,6 +7,7 @@ import {
   EXAMPLE_OPTIONS_HTML,
 } from "./examples.ts";
 import { runPlaygroundProgram } from "./run-playground.ts";
+import { getCompiledBytecodeDisplay, getCompiledByteScore } from "./program-runner.ts";
 import { ReplSession } from "./repl-session.ts";
 import {
   buildAppUrl,
@@ -17,6 +18,7 @@ import {
 import appShellTemplate from "./templates/app-shell.html?raw";
 import helpTemplate from "./templates/help.html?raw";
 import { mountTutorial } from "./tutorial.ts";
+import { mountCodetta } from "./codetta.ts";
 import { startRunProgramRunFeedback, stopRunProgramRunFeedback, triggerReplKeyFeedback } from "./run-fx.ts";
 import { syncRunFeedbackToggleButton, toggleRunFeedback } from "./run-feedback.ts";
 import { formatVmStepCount } from "./format-vm-steps.ts";
@@ -43,6 +45,12 @@ function requireElement<T extends Element>(root: ParentNode, selector: string): 
 
 function scrollToBottom(element: HTMLElement) {
   element.scrollTop = element.scrollHeight;
+}
+
+function formatBytecodeByteCount(value: string) {
+  const byteCount = value ? getCompiledByteScore(value) : 0;
+  const unit = byteCount === 1 ? "byte" : "bytes";
+  return `${byteCount} ${unit}`;
 }
 
 type SummaryTone = "default" | "success" | "error" | "running" | "pending";
@@ -99,10 +107,14 @@ export function mountApp(root: HTMLElement) {
   const run = requireElement<HTMLButtonElement>(root, "#run");
   const summary = requireElement<HTMLDivElement>(root, "#summary");
   const output = requireElement<HTMLElement>(root, "#output");
+  const outputWrap = requireElement<HTMLInputElement>(root, "#output-wrap");
+  const outputWrapToggle = requireElement<HTMLElement>(root, "#output-wrap-toggle");
   const errorOutput = requireElement<HTMLElement>(root, "#error");
   const preprocessed = requireElement<HTMLElement>(root, "#preprocessed");
   const ir = requireElement<HTMLElement>(root, "#ir");
   const bytecode = requireElement<HTMLElement>(root, "#bytecode");
+  const bytecodeMeta = requireElement<HTMLElement>(root, "#bytecode-meta");
+  const bytecodeCount = requireElement<HTMLElement>(root, "#bytecode-count");
   const replCommand = requireElement<HTMLInputElement>(root, "#repl-command");
   const replReset = requireElement<HTMLButtonElement>(root, "#repl-reset");
   const replStatus = requireElement<HTMLElement>(root, "#repl-status");
@@ -114,6 +126,7 @@ export function mountApp(root: HTMLElement) {
   const replInspectClose = requireElement<HTMLButtonElement>(root, "#repl-inspect-close");
   const replInspectContent = requireElement<HTMLElement>(root, "#repl-inspect-content");
   const tutorialRoot = requireElement<HTMLElement>(root, "#tutorial-root");
+  const codettaRoot = requireElement<HTMLElement>(root, "#codetta-root");
 
   const tabs = Array.from(root.querySelectorAll<HTMLButtonElement>(".mode-tab"));
   const panels = Array.from(root.querySelectorAll<HTMLElement>(".tab-panel"));
@@ -153,6 +166,12 @@ export function mountApp(root: HTMLElement) {
   example.value = initialExampleValue;
   const preprocessedViewer = mountReadonlySourceViewer(preprocessed, "");
   const irViewer = mountReadonlySourceViewer(ir, "");
+
+  function setOutputWrap(enabled: boolean) {
+    output.classList.toggle("is-wrapped", enabled);
+    preprocessedViewer.setWrapped(enabled);
+    irViewer.setWrapped(enabled);
+  }
 
   function setPlaygroundRunningState(isRunning: boolean) {
     example.disabled = isRunning;
@@ -223,6 +242,14 @@ export function mountApp(root: HTMLElement) {
       const active = panel.dataset.detailPanel === name;
       panel.classList.toggle("is-active", active);
     });
+
+    outputWrapToggle.hidden = name === "bytecode";
+    bytecodeMeta.hidden = name !== "bytecode";
+  }
+
+  function setBytecodeDisplay(value: string) {
+    bytecode.innerHTML = escapeHtml(getCompiledBytecodeDisplay(value));
+    bytecodeCount.textContent = formatBytecodeByteCount(value);
   }
 
   tabs.forEach((tab) => {
@@ -252,6 +279,15 @@ export function mountApp(root: HTMLElement) {
       setDetailTab(tab.dataset.detailTab ?? "output");
     });
   });
+
+  setOutputWrap(outputWrap.checked);
+  outputWrap.addEventListener("change", () => {
+    setOutputWrap(outputWrap.checked);
+  });
+
+  setDetailTab(
+    detailTabs.find((tab) => tab.classList.contains("is-active"))?.dataset.detailTab ?? "output",
+  );
 
   let playgroundAbort: AbortController | null = null;
 
@@ -285,7 +321,7 @@ export function mountApp(root: HTMLElement) {
           if (expandedSrc !== undefined) {
             preprocessedViewer.setValue(expandedSrc);
             irViewer.setValue(irText ?? "");
-            bytecode.innerHTML = escapeHtml(bcText ?? "");
+            setBytecodeDisplay(bcText ?? "");
           }
           summary.innerHTML = renderSummary([
             {
@@ -365,14 +401,14 @@ export function mountApp(root: HTMLElement) {
         errorOutput.innerHTML = escapeHtml(result.logs.join("\n") || "Run failed.");
         preprocessedViewer.setValue("");
         irViewer.setValue("");
-        bytecode.innerHTML = "";
+        setBytecodeDisplay("");
         scrollToBottom(errorOutput);
       } else {
         output.innerHTML = escapeHtml(diagnostics);
         errorOutput.textContent = "";
         preprocessedViewer.setValue(result.preprocessed);
         irViewer.setValue(result.ir);
-        bytecode.innerHTML = escapeHtml(result.bytecode);
+        setBytecodeDisplay(result.bytecode);
         scrollToBottom(output);
       }
     } catch (error) {
@@ -388,7 +424,7 @@ export function mountApp(root: HTMLElement) {
       errorOutput.innerHTML = escapeHtml(message);
       preprocessedViewer.setValue("");
       irViewer.setValue("");
-      bytecode.innerHTML = "";
+      setBytecodeDisplay("");
       scrollToBottom(errorOutput);
     } finally {
       playgroundAbort = null;
@@ -410,7 +446,7 @@ export function mountApp(root: HTMLElement) {
     errorOutput.textContent = "";
     preprocessedViewer.setValue("");
     irViewer.setValue("");
-    bytecode.innerHTML = "";
+    setBytecodeDisplay("");
     document.body.dataset.ready = "true";
   }
 
@@ -743,6 +779,7 @@ export function mountApp(root: HTMLElement) {
 
   setPlaygroundIdle();
   mountTutorial(tutorialRoot);
+  mountCodetta(codettaRoot);
   renderReplStack([]);
   renderReplTranscript();
   replCommand.focus();

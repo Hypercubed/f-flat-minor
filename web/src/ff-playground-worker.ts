@@ -20,6 +20,7 @@ function buildRunResult(
     preprocessed: compiled.preprocessed,
     ir: compiled.ir,
     bytecode: compiled.bytecode,
+    compiledBytes: compiled.compiledBytes,
     issues: compiled.issues,
     stack: executed.stack,
     logs: executed.logs,
@@ -44,14 +45,14 @@ self.onmessage = (event: MessageEvent<PlaygroundWorkerInbound>) => {
     return;
   }
 
-  const { runId, source, stdin, optimize, yieldIntervalMs, yieldSliceMax } = msg;
+  const { runId, source, stdin, optimize, filename, yieldIntervalMs, yieldSliceMax } = msg;
 
   void (async () => {
     cancelRequested = false;
     activeRunId = runId;
 
     try {
-      const compiled = compileProgram(source, stdin, optimize);
+      const compiled = compileProgram(source, stdin, optimize, { filename });
 
       if (activeRunId !== runId) {
         return;
@@ -64,6 +65,7 @@ self.onmessage = (event: MessageEvent<PlaygroundWorkerInbound>) => {
         preprocessed: compiled.preprocessed,
         ir: compiled.ir,
         bytecode: compiled.bytecode,
+        compiledBytes: compiled.compiledBytes,
       });
 
       const executeStart = performance.now();

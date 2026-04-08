@@ -1,0 +1,23 @@
+.import ../../lib/prelude.ffp
+
+over2: [ over ] dip swap ;
+over3: [ over2 ] dip swap ;
+
+dup4: over3 over3 over3 over3 ;
+drop4: drop drop drop drop ;
+
+print-move: over2 putn sp over putn cr ;
+
+dec-n: [ rot -- rot ] dip ;
+
+move:
+  dup4 over3 [
+    dec-n swap move
+    print-move
+    bury move
+  ]
+  ?
+  drop4
+;
+
+9 1 2 3 move

@@ -13,7 +13,7 @@ Usage:
 Examples:
   ./shell/ff-preprocess.sh ff/example.ff
   ./shell/ff-preprocess.sh --quiet ff/example.ff
-  ./shell/ff-preprocess.sh --pp deno ff/golf/hello.ffp
+  ./shell/ff-preprocess.sh --pp deno ff/hello.ffp
 
 Preprocessors:
   go

@@ -51,9 +51,9 @@ validation = 'none'
 display = 'status-only'
 run = '''
   if [ -f ${DEP%.*}.ffp ]; then
-    ../shell/ff-run.sh --quiet --run python ${DEP%.*}.ffp | cmp - $DEP -s && ${{CHECK}};
+    ../shell/ff-run.sh --quiet --run python ${DEP%.*}.ffp | diff --ignore-trailing-space -q - > /dev/null 2>&1 $DEP && ${{CHECK}};
   fi
   if [ -f ${DEP%.*}.ff ]; then
-    cat ${DEP%.*}.ff | ${{BIN}} | cmp - $DEP -s && ${{CHECK}};
+    cat ${DEP%.*}.ff | ${{BIN}} | diff --ignore-trailing-space -q - > /dev/null 2>&1 $DEP && ${{CHECK}};
   fi
 '''

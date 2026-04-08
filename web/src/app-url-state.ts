@@ -1,4 +1,4 @@
-export const APP_TABS = ["playground", "repl", "tutorial", "help"] as const;
+export const APP_TABS = ["playground", "repl", "codetta", "tutorial", "help"] as const;
 
 export type AppTab = typeof APP_TABS[number];
 

@@ -1,0 +1,90 @@
+name: Codetta Etude Proposal
+description: Suggest a new Codetta etude/challenge for ff/codetta.
+title: "[Codetta] "
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Propose a new Codetta etude with a stable prompt, canonical expected output, and a clear source or reference. Keep the wording concise and focused on what maintainers would need to add a new `ff/codetta/<slug>/` entry.
+
+  - type: input
+    id: title
+    attributes:
+      label: Etude title
+      description: Short display name for the challenge.
+      placeholder: Fibonacci
+    validations:
+      required: true
+
+  - type: input
+    id: slug
+    attributes:
+      label: Suggested slug
+      description: Lowercase kebab-case id for `ff/codetta/<slug>/`.
+      placeholder: fibonacci
+    validations:
+      required: true
+
+  - type: textarea
+    id: prompt
+    attributes:
+      label: Prompt
+      description: One or two sentences describing what the etude asks the program to do.
+      placeholder: |
+        Print the 31st Fibonacci number.
+    validations:
+      required: true
+
+  - type: textarea
+    id: expected-output
+    attributes:
+      label: Expected output
+      description: Exact output the etude should use as `solution.out`.
+      placeholder: |
+        1346269
+      render: text
+    validations:
+      required: true
+
+  - type: textarea
+    id: source
+    attributes:
+      label: Source inspiration and references
+      description: Link the original or canonical source, such as code.golf, Rosetta Code, OEIS, or another stable reference.
+      placeholder: |
+        - https://code.golf/fibonacci
+        - https://rosettacode.org/wiki/Fibonacci_sequence
+    validations:
+      required: true
+
+  - type: textarea
+    id: constraints
+    attributes:
+      label: Constraints or notes
+      description: Any fixed input set, formatting decisions, edge cases, or Codetta-specific adaptations.
+      placeholder: |
+        Freeze the challenge to a single representative input.
+        One line of output only.
+    validations:
+      required: false
+
+  - type: textarea
+    id: codetta-fit
+    attributes:
+      label: Why this belongs in Codetta
+      description: Explain why this would make a good size-golf etude for F-flat-minor.
+      placeholder: It is compact, recognizable, and has a stable expected output that is easy to verify.
+    validations:
+      required: true
+
+  - type: checkboxes
+    id: checks
+    attributes:
+      label: Proposal checklist
+      options:
+        - label: I included an exact expected output, not just a general problem statement.
+          required: true
+        - label: I linked at least one stable source or reference.
+          required: true
+        - label: I described any changes from the original source challenge.
+          required: false

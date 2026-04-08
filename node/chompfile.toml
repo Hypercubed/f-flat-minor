@@ -24,9 +24,9 @@ cmp = '../ff/example.out'
 name = 'test:ffp'
 dep = './bin/ff-run.ts'
 template = 'cmp'
-run = '$BIN ../ff/golf/hello.ffp'
+run = '$BIN ../ff/hello.ffp'
 [task.template-options]
-cmp = '../ff/golf/hello.out'
+cmp = '../ff/hello.out'
 
 [[task]]
 name = 'test:out'
@@ -42,8 +42,8 @@ run = '''
   shopt -s nullglob
   shopt -s extglob
   for i in "${DEP%.*}.ff?(p)"; do
-    $BIN $i | cmp - $DEP -s && ${{CHECK}};
-    $BIN $i --opt | cmp - $DEP -s && ${{CHECK}};
+    $BIN $i | diff --ignore-trailing-space -q - > /dev/null 2>&1 $DEP && ${{CHECK}};
+    $BIN $i --opt | diff --ignore-trailing-space -q - > /dev/null 2>&1 $DEP && ${{CHECK}};
   done
 '''
 

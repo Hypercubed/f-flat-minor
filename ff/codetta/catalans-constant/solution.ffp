@@ -1,0 +1,8 @@
+.import ../../lib/prelude.ffp
+
+/* Near-solution seed retained from ff/catalan.ffp. */
+/* Catalan number: n cat -> C_n */
+
+cat: dup dup 2 * swap nck swap 1 + / ;
+
+100 cat .

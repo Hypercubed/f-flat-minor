@@ -1,0 +1,11 @@
+.import ../../lib/prelude.ffp
+
+n: dup putn cr ++ ;
+f: 0 'Fizz' println ++ ;
+b: 0 'Buzz' println ++ ;
+fb: 0 'FizzBuzz' println ++ ;
+fb10: n n f n b f n n f b ;
+fb15: fb10 n f n n fb ;
+fb100: fb15 fb15 fb15 fb15 fb15 fb15 fb10 ;
+
+1 fb100 drop

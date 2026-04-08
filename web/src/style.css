@@ -50,6 +50,13 @@ body[data-mode="repl"] {
   --page-bottom: #e2eee8;
 }
 
+body[data-mode="codetta"] {
+  --page-glow-left: rgba(59, 92, 180, 0.16);
+  --page-glow-right: rgba(103, 140, 231, 0.14);
+  --page-top: #f3f6ff;
+  --page-bottom: #e6ebfb;
+}
+
 body[data-mode="tutorial"] {
   --page-glow-left: rgba(176, 143, 52, 0.18);
   --page-glow-right: rgba(210, 184, 98, 0.12);
@@ -184,6 +191,12 @@ textarea {
   --tab-border: rgba(140, 113, 36, 0.18);
 }
 
+.mode-tab--codetta {
+  --tab-bg: rgba(74, 106, 191, 0.12);
+  --tab-bg-active: rgba(74, 106, 191, 0.2);
+  --tab-border: rgba(74, 106, 191, 0.2);
+}
+
 .mode-tab--help {
   --tab-bg: rgba(113, 98, 145, 0.1);
   --tab-bg-active: rgba(113, 98, 145, 0.18);
@@ -193,9 +206,7 @@ textarea {
 .subtabs {
   display: flex;
   gap: 0.5rem;
-  padding: 0.8rem 1.2rem 0;
   flex-wrap: wrap;
-  margin-bottom: 0.75rem;
 }
 
 .subtab {
@@ -312,7 +323,7 @@ textarea {
 
 .workspace .details-panel-shell > .panel-header,
 .workspace .details-panel-shell > .summary-bar,
-.workspace .details-panel-shell > .subtabs {
+.workspace .details-panel-shell > .detail-toolbar {
   flex-shrink: 0;
 }
 
@@ -467,6 +478,10 @@ textarea {
   white-space: nowrap;
 }
 
+.repl-status[hidden] {
+  display: none;
+}
+
 .repl-status-dot {
   width: 0.7rem;
   height: 0.7rem;
@@ -480,6 +495,292 @@ textarea {
   flex: 1;
   min-height: 0;
   overflow-y: auto;
+}
+
+.codetta {
+  display: grid;
+  gap: 1rem;
+}
+
+.codetta-screen {
+  min-height: 0;
+}
+
+.codetta-list-wrap {
+  padding: 0.8rem 1.2rem 1.2rem;
+}
+
+.codetta-suggest-btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 44px;
+  padding: 0.75rem 1rem;
+  border-radius: 999px;
+  border: 1px solid rgba(32, 22, 17, 0.18);
+  color: var(--ink);
+  text-decoration: none;
+  transition: transform 160ms ease, box-shadow 160ms ease, background 160ms ease;
+}
+
+.codetta-suggest-btn:hover {
+  transform: translateY(-1px);
+}
+
+.codetta-list-table {
+  width: 100%;
+  border-collapse: collapse;
+  margin-bottom: 1rem;
+}
+
+.codetta-list-table th,
+.codetta-list-table td {
+  text-align: left;
+  padding: 0.55rem 0.6rem;
+  border-bottom: 1px solid rgba(32, 22, 17, 0.1);
+}
+
+.codetta-list-table th {
+  color: var(--muted);
+  font-size: 0.82rem;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+}
+
+.codetta-list-table tbody tr {
+  cursor: pointer;
+}
+
+.codetta-list-table tbody tr:hover {
+  background: rgba(74, 106, 191, 0.08);
+}
+
+.codetta-list-table tbody tr:focus-visible {
+  outline: 2px solid rgba(74, 106, 191, 0.35);
+  outline-offset: -2px;
+}
+
+.codetta-detail-head {
+  display: flex;
+  align-items: center;
+  gap: 0.9rem;
+  margin-bottom: 0.9rem;
+}
+
+.codetta-detail-nav {
+  display: inline-flex;
+  align-items: center;
+  justify-content: flex-end;
+  gap: 0.65rem;
+  margin-left: auto;
+}
+
+.codetta-etude-header {
+  padding-bottom: 0.2rem;
+}
+
+.codetta-etude-header h2 {
+  margin-top: 0.3rem;
+  line-height: 1.08;
+}
+
+.codetta-detail-nav-btn {
+  min-width: 6.5rem;
+}
+
+.codetta-detail-nav-btn:disabled {
+  cursor: default;
+}
+
+.codetta-detail-grid {
+  display: grid;
+  gap: 1rem;
+  grid-template-columns: minmax(320px, 1fr) minmax(250px, 0.7fr);
+  margin-bottom: 1rem;
+}
+
+.codetta-panel-body {
+  padding: 0.8rem 1.2rem 1.2rem;
+}
+
+.codetta-meta p {
+  margin: 0.45rem 0;
+  color: var(--muted);
+}
+
+.codetta-meta span {
+  color: var(--ink);
+}
+
+.codetta-expected {
+  background: rgba(255, 250, 244, 0.66);
+  color: var(--ink);
+  min-height: 120px;
+  max-height: min(40vh, 20rem);
+  overflow: auto;
+}
+
+.codetta-attempt-layout {
+  display: grid;
+  grid-template-columns: minmax(340px, 1.1fr) minmax(320px, 0.9fr);
+  gap: 1rem;
+  align-items: stretch;
+  margin-bottom: 1rem;
+}
+
+.codetta-attempt-layout > .panel {
+  min-width: 0;
+}
+
+.codetta-attempt-panel,
+.codetta-output-panel {
+  height: var(--workspace-pane-height);
+  display: flex;
+  flex-direction: column;
+  min-height: 0;
+  overflow: hidden;
+}
+
+.codetta-attempt-body,
+.codetta-output-body {
+  display: flex;
+  flex-direction: column;
+  gap: 0.85rem;
+  padding: 0 1rem 1rem;
+  flex: 1 1 auto;
+  min-height: 0;
+}
+
+.codetta-attempt-controls {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  flex-shrink: 0;
+}
+
+.codetta-editor-shell {
+  width: 100%;
+  flex: 1 1 auto;
+  min-height: 0;
+  overflow: hidden;
+}
+
+.codetta-editor-shell .cm-editor {
+  height: 100%;
+  min-height: 0;
+  overflow: auto;
+  border: 1px solid rgba(32, 22, 17, 0.15);
+  border-radius: 18px;
+  background: rgba(255, 250, 244, 0.88);
+  color: var(--ink);
+}
+
+.codetta-editor-shell .cm-scroller {
+  font-family: "Iosevka", "Cascadia Code", "SFMono-Regular", monospace;
+  font-size: 0.95rem;
+  line-height: 1.55;
+}
+
+.codetta-byte-status {
+  margin: 0;
+  color: var(--muted);
+}
+
+.codetta-byte-status[data-tone="good"] {
+  color: var(--accent-2);
+}
+
+.codetta-byte-status[data-tone="bad"] {
+  color: var(--accent);
+}
+
+.codetta-run-btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: fit-content;
+  min-inline-size: 7.5rem;
+  margin-left: auto;
+}
+
+.codetta-output {
+  flex: 1 1 auto;
+  min-height: 0;
+  margin: 0;
+  border: 1px solid rgba(32, 22, 17, 0.15);
+  border-radius: 18px;
+  background: rgba(255, 250, 244, 0.88);
+}
+
+.codetta-detail-panels {
+  flex: 1 1 auto;
+}
+
+.codetta-bytecode {
+  flex: 1 1 auto;
+  min-height: 0;
+  border-top: 0;
+}
+
+.codetta-result {
+  margin: 0;
+  color: var(--muted);
+}
+
+.codetta-result[data-tone="good"] {
+  color: var(--accent-2);
+}
+
+.codetta-result[data-tone="bad"] {
+  color: var(--accent);
+}
+
+.codetta-submit-panel {
+  margin-bottom: 1rem;
+}
+
+.codetta-submit-body {
+  display: grid;
+  gap: 0.9rem;
+}
+
+.codetta-submit-help {
+  margin-top: 0;
+  padding: 0.9rem;
+  border-radius: 14px;
+  border: 1px solid rgba(74, 106, 191, 0.2);
+  background: rgba(74, 106, 191, 0.08);
+}
+
+.codetta-submit-head {
+  margin-top: 0;
+  color: #354574;
+  font-weight: 600;
+}
+
+.codetta-issue-title {
+  margin: 0.45rem 0;
+  font-family: "Iosevka", "Cascadia Code", "SFMono-Regular", monospace;
+}
+
+.codetta-issue-body {
+  width: 100%;
+  min-height: 150px;
+  border-radius: 10px;
+  border: 1px solid rgba(32, 22, 17, 0.2);
+  padding: 0.65rem;
+  font-family: "Iosevka", "Cascadia Code", "SFMono-Regular", monospace;
+}
+
+.codetta-submit-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.6rem;
+  margin-top: 0.65rem;
+}
+
+.codetta-issues-link {
+  min-height: 44px;
 }
 
 .panel {
@@ -802,10 +1103,19 @@ button:disabled {
   margin: 0;
   padding: 1rem 1.2rem 1.2rem;
   min-height: 160px;
-  white-space: pre-wrap;
-  overflow-wrap: anywhere;
+  overflow-x: auto;
+  overflow-y: auto;
+  white-space: pre;
+  overflow-wrap: normal;
   font-family: "Iosevka", "Cascadia Code", "SFMono-Regular", monospace;
   font-size: 0.92rem;
+}
+
+.console.is-wrapped,
+.code-block.is-wrapped,
+.code-block.bytecode-wrap {
+  white-space: pre-wrap;
+  overflow-wrap: anywhere;
 }
 
 .detail-panels {
@@ -813,6 +1123,70 @@ button:disabled {
   flex: 1 1 auto;
   min-height: 0;
   overflow: hidden;
+}
+
+.detail-meta {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 1rem;
+  padding: 0.8rem 1.2rem 0.9rem;
+  border-top: 1px solid rgba(32, 22, 17, 0.08);
+  background: linear-gradient(180deg, rgba(255, 252, 247, 0.9), rgba(239, 225, 207, 0.68));
+}
+
+.detail-meta[hidden] {
+  display: none;
+}
+
+.detail-meta .label {
+  color: var(--muted);
+  text-transform: uppercase;
+  letter-spacing: 0.1em;
+  font-size: 0.7rem;
+}
+
+.detail-meta .value {
+  color: var(--ink);
+  font-weight: 500;
+  font-family: "Iosevka", "Cascadia Code", "SFMono-Regular", monospace;
+}
+
+.detail-toolbar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.75rem 1rem;
+  flex-wrap: wrap;
+  padding: 0.8rem 1.2rem 0.7rem;
+}
+
+.detail-toolbar .subtabs {
+  min-width: 0;
+}
+
+.detail-toolbar .output-wrap-toggle {
+  margin-left: auto;
+}
+
+.detail-toolbar .output-wrap-toggle[hidden] {
+  display: none;
+}
+
+.output-wrap-toggle {
+  min-height: 36px;
+  padding: 0.4rem 0.7rem;
+  border: 1px solid rgba(32, 22, 17, 0.15);
+  border-radius: 999px;
+  background: var(--panel-strong);
+  color: var(--ink);
+  font-size: 0.82rem;
+  white-space: nowrap;
+}
+
+.output-wrap-toggle input {
+  margin: 0;
+  accent-color: var(--accent-2);
 }
 
 .help-grid {
@@ -1025,8 +1399,9 @@ button:disabled {
   padding: 0.8rem 0.95rem;
   border-radius: 16px;
   overflow-x: auto;
-  white-space: pre-wrap;
-  overflow-wrap: anywhere;
+  overflow-y: auto;
+  white-space: pre;
+  overflow-wrap: normal;
   font-family: "Iosevka", "Cascadia Code", "SFMono-Regular", monospace;
   font-size: 0.88rem;
   line-height: 1.5;
@@ -1225,6 +1600,36 @@ button:disabled {
     grid-template-columns: 1fr;
   }
 
+  .codetta-detail-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .codetta-attempt-layout {
+    grid-template-columns: 1fr;
+  }
+
+  .codetta-detail-head {
+    flex-wrap: wrap;
+  }
+
+  .codetta-detail-nav {
+    width: 100%;
+    justify-content: flex-start;
+    margin-left: 0;
+  }
+
+  .codetta-attempt-panel,
+  .codetta-output-panel {
+    height: auto;
+    max-height: none;
+  }
+
+  .codetta-editor-shell .cm-editor,
+  .codetta-output,
+  .codetta-bytecode {
+    min-height: 200px;
+  }
+
   .repl-pane {
     height: auto;
     max-height: none;
@@ -1244,6 +1649,10 @@ button:disabled {
 
   .detail-panels {
     max-height: var(--workspace-pane-height);
+  }
+
+  .detail-toolbar {
+    align-items: flex-start;
   }
 
   .help-grid {
@@ -1300,6 +1709,14 @@ button:disabled {
   .tutorial-actions {
     margin-left: 0;
     width: 100%;
+  }
+
+  .codetta-attempt-controls {
+    flex-wrap: wrap;
+  }
+
+  .codetta-run-btn {
+    margin-left: 0;
   }
 }
 

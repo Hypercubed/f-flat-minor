@@ -1,0 +1,5 @@
+/* Near-solution seed based on the fixed-point ln(2) helper value. */
+
+ln2: 69314718055994530941 ;
+
+ln2 putn

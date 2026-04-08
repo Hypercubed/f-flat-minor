@@ -26,7 +26,7 @@ Preprocessors (for .ffp only):
 
 Examples:
   ./shell/ff-compile.sh ff/example.ff > out.ffb
-  ./shell/ff-compile.sh --pp deno ff/golf/hello.ffp > out.ffb
+  ./shell/ff-compile.sh --pp deno ff/hello.ffp > out.ffb
 EOF
 }
 

@@ -39,6 +39,7 @@ export interface RunPlaygroundProgress {
   preprocessed?: string;
   ir?: string;
   bytecode?: string;
+  compiledBytes?: number;
 }
 
 export interface RunPlaygroundOptions {
@@ -51,6 +52,7 @@ export interface RunPlaygroundOptions {
   yieldSliceMax?: number;
   /** @deprecated Prefer {@link yieldSliceMax}. */
   yieldEvery?: number;
+  filename?: string;
   signal?: AbortSignal;
   onProgress?: (state: RunPlaygroundProgress) => void;
 }
@@ -61,6 +63,7 @@ function runFailedResult(message: string): RunResult {
     preprocessed: "",
     ir: "",
     bytecode: "",
+    compiledBytes: 0,
     issues: [],
     stack: [],
     logs: [],
@@ -91,6 +94,7 @@ export async function runPlaygroundProgram(
         source,
         stdin,
         optimize,
+        filename: options.filename,
         yieldIntervalMs,
         yieldSliceMax,
         signal: options.signal,
@@ -106,9 +110,16 @@ export async function runPlaygroundProgram(
   }
 
   try {
-    const compiled = compileProgram(source, stdin, optimize);
+    const compiled = compileProgram(source, stdin, optimize, {
+      filename: options.filename,
+    });
     const compileMs = compiled.compileMs;
-    options.onProgress?.({ vmCyclesExecuted: 0, compileMs, executeElapsedMs: 0 });
+    options.onProgress?.({
+      vmCyclesExecuted: 0,
+      compileMs,
+      executeElapsedMs: 0,
+      compiledBytes: compiled.compiledBytes,
+    });
 
     const executeStart = performance.now();
     const executed = await compiled.executeAsync({
@@ -135,6 +146,7 @@ export async function runPlaygroundProgram(
       preprocessed: compiled.preprocessed,
       ir: compiled.ir,
       bytecode: compiled.bytecode,
+      compiledBytes: compiled.compiledBytes,
       issues: compiled.issues,
       stack: executed.stack,
       logs: executed.logs,
