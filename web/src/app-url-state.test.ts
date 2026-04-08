@@ -13,6 +13,7 @@ describe("app-url-state", () => {
     expect(parseAppTab("#playground")).toBe("playground");
     expect(parseAppTab("#playground?code=txt.dup")).toBe("playground");
     expect(parseAppTab("#repl")).toBe("repl");
+    expect(parseAppTab("#codetta")).toBe("codetta");
     expect(parseAppTab("tutorial")).toBe("tutorial");
     expect(parseAppTab(" HELP ")).toBe("help");
   });
