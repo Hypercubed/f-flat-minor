@@ -76,16 +76,16 @@
           </div>
         </div>
         <div id="summary" class="summary-bar"></div>
-        <div class="subtabs" aria-label="Program details">
-          <button class="subtab is-active" data-detail-tab="output">Output</button>
-          <button class="subtab" data-detail-tab="preprocessed">Expanded Source</button>
-          <button class="subtab" data-detail-tab="ir">IR</button>
-          <button class="subtab" data-detail-tab="bytecode">Bytecode</button>
-        </div>
-        <div class="detail-controls">
-          <label class="toggle output-wrap-toggle">
+        <div class="detail-toolbar">
+          <div class="subtabs" aria-label="Program details">
+            <button class="subtab is-active" data-detail-tab="output">Output</button>
+            <button class="subtab" data-detail-tab="preprocessed">Expanded Source</button>
+            <button class="subtab" data-detail-tab="ir">IR</button>
+            <button class="subtab" data-detail-tab="bytecode">Bytecode</button>
+          </div>
+          <label id="output-wrap-toggle" class="toggle output-wrap-toggle">
             <input id="output-wrap" type="checkbox" checked />
-            <span>Warp output</span>
+            <span>Wrap Output</span>
           </label>
         </div>
         <div class="detail-panels">

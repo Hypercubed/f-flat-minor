@@ -206,9 +206,7 @@ textarea {
 .subtabs {
   display: flex;
   gap: 0.5rem;
-  padding: 0.8rem 1.2rem 0;
   flex-wrap: wrap;
-  margin-bottom: 0.75rem;
 }
 
 .subtab {
@@ -325,7 +323,7 @@ textarea {
 
 .workspace .details-panel-shell > .panel-header,
 .workspace .details-panel-shell > .summary-bar,
-.workspace .details-panel-shell > .subtabs {
+.workspace .details-panel-shell > .detail-toolbar {
   flex-shrink: 0;
 }
 
@@ -478,6 +476,10 @@ textarea {
   color: var(--muted);
   font-size: 0.85rem;
   white-space: nowrap;
+}
+
+.repl-status[hidden] {
+  display: none;
 }
 
 .repl-status-dot {
@@ -656,17 +658,26 @@ textarea {
   flex-shrink: 0;
 }
 
-.codetta-editor {
+.codetta-editor-shell {
   width: 100%;
   flex: 1 1 auto;
   min-height: 0;
+  overflow: hidden;
+}
+
+.codetta-editor-shell .cm-editor {
+  height: 100%;
+  min-height: 0;
+  overflow: auto;
   border: 1px solid rgba(32, 22, 17, 0.15);
   border-radius: 18px;
-  padding: 0.8rem 0.9rem;
-  resize: vertical;
-  background: rgba(255, 250, 244, 0.9);
+  background: rgba(255, 250, 244, 0.88);
   color: var(--ink);
+}
+
+.codetta-editor-shell .cm-scroller {
   font-family: "Iosevka", "Cascadia Code", "SFMono-Regular", monospace;
+  font-size: 0.95rem;
   line-height: 1.55;
 }
 
@@ -1141,10 +1152,25 @@ button:disabled {
   font-family: "Iosevka", "Cascadia Code", "SFMono-Regular", monospace;
 }
 
-.detail-controls {
+.detail-toolbar {
   display: flex;
-  justify-content: flex-end;
-  padding: 0 1.2rem 0.7rem;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.75rem 1rem;
+  flex-wrap: wrap;
+  padding: 0.8rem 1.2rem 0.7rem;
+}
+
+.detail-toolbar .subtabs {
+  min-width: 0;
+}
+
+.detail-toolbar .output-wrap-toggle {
+  margin-left: auto;
+}
+
+.detail-toolbar .output-wrap-toggle[hidden] {
+  display: none;
 }
 
 .output-wrap-toggle {
@@ -1598,7 +1624,7 @@ button:disabled {
     max-height: none;
   }
 
-  .codetta-editor,
+  .codetta-editor-shell .cm-editor,
   .codetta-output,
   .codetta-bytecode {
     min-height: 200px;
@@ -1623,6 +1649,10 @@ button:disabled {
 
   .detail-panels {
     max-height: var(--workspace-pane-height);
+  }
+
+  .detail-toolbar {
+    align-items: flex-start;
   }
 
   .help-grid {
