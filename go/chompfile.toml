@@ -94,7 +94,7 @@ run = '''
   shopt -s nullglob
   shopt -s extglob
   for i in "${DEP%.*}.ff?(p)"; do
-    ./build/run --in $i | diff --ignore-trailing-space -q - $DEP && ${{CHECK}};
+    ./build/run --in $i | diff --ignore-trailing-space -q - > /dev/null 2>&1 $DEP && ${{CHECK}};
   done
 '''
 

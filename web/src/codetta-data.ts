@@ -12,8 +12,7 @@ interface CodettaEntry {
 const CODETTA_SOURCE_ROOT = "../../ff/codetta";
 const HIDDEN_CODETTA_IDS = new Set([
   "catalans-constant",
-  "ln-2",
-  "pascals-triangle",
+  "ln-2"
 ]);
 
 interface CodettaFrontmatter {

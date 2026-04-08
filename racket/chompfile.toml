@@ -93,7 +93,7 @@ run = '''
   shopt -s nullglob
   shopt -s extglob
   for i in "${TARGET}.ff?(p)"; do
-    racket main.rkt $i | diff --ignore-trailing-space -q - $DEP && ${{CHECK}};
+    racket main.rkt $i | diff --ignore-trailing-space -q - > /dev/null 2>&1 $DEP && ${{CHECK}};
   done
 '''
 

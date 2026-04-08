@@ -5,7 +5,7 @@ Chomp.registerTemplate('cmp', function (task) {
     throw new Error('Cmp template expects a run field.');
   return [{
     ...task,
-    run: `${task.run.trim()} 2>/dev/null | diff --ignore-trailing-space -q - ${task.templateOptions.cmp} && \${{CHECK}}`,
+    run: `${task.run.trim()} 2>/dev/null | diff --ignore-trailing-space -q - > /dev/null 2>&1 ${task.templateOptions.cmp} && \${{CHECK}}`,
     env: {
       CHECK: 'printf "  ${GRN}OK${NC} " || printf "  ${RED}FAIL${NC} "',
       RED: '\033[31m',
