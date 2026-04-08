@@ -2,6 +2,7 @@
 .import ./arith.ffp
 .import ./num.ffp
 .import ./atan.ffp
+.import ./atanh.ffp
 .import ./sqrt.ffp
 .import ./cbrt.ffp
 .import ./gcd.ffp

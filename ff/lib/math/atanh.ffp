@@ -1,0 +1,42 @@
+.import ./arith.ffp
+.import ./precision.ffp
+.import ./atanh-core.ffp
+
+/*
+ * Artanh utilities using precision helpers and rational Taylor parts.
+ *
+ * Words:
+ *   iatanh    ( x -- y )
+ *   natanh    ( n x -- y )
+ *   qatanh    ( u v -- y )
+ *   atanh-inv ( n x -- y )
+ */
+
+__num_zero:
+  drop2 drop 0
+; /* n u v (u == 0) __num_zero == 0 */
+
+__abs_pair: abs swap abs swap ; .inline /* u v __abs_pair == |u| |v| */
+__sign_pair_product: dup2 * sgn ; /* u v __sign_pair_product == u v sgn(u*v) */
+
+__atanh_pos_scaled:
+  _atanh__core_scaled
+; /* n u v (u,v > 0 and u < v) __atanh_pos_scaled == floor(10ⁿ*atanh(u/v)) */
+
+__finite:
+  __sign_pair_product
+  [ __abs_pair __atanh_pos_scaled ] dip
+  *
+; /* n u v (u,v != 0) __finite == signed scaled atanh(u/v) */
+
+_atanh__scaled:
+  over zero?
+  [ __num_zero ]
+  [ __finite ]
+  branch
+; /* n u v _atanh__scaled == floor(10ⁿ*atanh(u/v)) for |u| < |v| */
+
+iatanh: 0 swap 1 _atanh__scaled ; /* x iatanh == floor(atanh(x)) */
+natanh: 1 _atanh__scaled ; /* n x natanh == floor(10ⁿ*atanh(x)) */
+qatanh: 0 bury _atanh__scaled ; /* u v qatanh == floor(atanh(u/v)) */
+atanh-inv: 1 swap _atanh__scaled ; /* n x atanh-inv == floor(10ⁿ*atanh(1/x)) */
