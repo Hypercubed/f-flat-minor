@@ -13,6 +13,13 @@ interface ExampleEntry {
   source: string;
 }
 
+const HIDDEN_EULER_EXAMPLE_PATHS = new Set([
+  "../../ff/euler/euler4.ffp",
+  "../../ff/euler/euler10.ffp",
+  "../../ff/euler/euler14.ffp",
+  "../../ff/euler/euler46.ffp",
+]);
+
 function toVirtualLibraryPath(sourcePath: string): string {
   const libraryRoot = "../../ff/lib/";
 
@@ -29,13 +36,6 @@ const eulerExampleSources = import.meta.glob("../../ff/euler/*.ffp", {
   query: "?raw",
 }) as Record<string, string>;
 
-/** Vite glob: every `ff/golf` program (`.ff` / `.ffp` only). */
-const golfSources = import.meta.glob("../../ff/golf/*.{ff,ffp}", {
-  eager: true,
-  import: "default",
-  query: "?raw",
-}) as Record<string, string>;
-
 function eulerExampleSortKey(vitePath: string): [number, string] {
   const base = vitePath.split("/").pop() ?? vitePath;
   const match = /^euler(\d+)\.ffp$/.exec(base);
@@ -44,6 +44,7 @@ function eulerExampleSortKey(vitePath: string): [number, string] {
 }
 
 const EULER_EXAMPLE_ENTRIES: ExampleEntry[] = Object.entries(eulerExampleSources)
+  .filter(([vitePath]) => !HIDDEN_EULER_EXAMPLE_PATHS.has(vitePath))
   .sort((a, b) => {
     const ka = eulerExampleSortKey(a[0]);
     const kb = eulerExampleSortKey(b[0]);
@@ -70,14 +71,6 @@ function exampleLabel(globKey: string): string {
   return relative;
 }
 
-const GOLF_ENTRIES: ExampleEntry[] = Object.entries(golfSources)
-  .map(([vitePath, source]) => ({
-    path: examplePath(vitePath),
-    label: exampleLabel(vitePath),
-    source,
-  }))
-  .sort((a, b) => a.label.localeCompare(b.label));
-
 const EXAMPLE_ENTRIES: ExampleEntry[] = [
   { path: "/examples/fact.ffp", label: "fact.ffp", source: factExample },
   { path: "/examples/cbrt.ffp", label: "cbrt.ffp", source: cbrtExample },
@@ -86,7 +79,6 @@ const EXAMPLE_ENTRIES: ExampleEntry[] = [
   { path: "/examples/ack.ffp", label: "ack.ffp", source: ackExample },
   { path: "/examples/pi.ffp", label: "pi.ffp", source: piExample },
   ...EULER_EXAMPLE_ENTRIES,
-  ...GOLF_ENTRIES,
 ];
 
 const librarySources = import.meta.glob(

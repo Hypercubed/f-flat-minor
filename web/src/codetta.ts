@@ -4,7 +4,7 @@ import {
   getCodettaSolutionRepoPath,
   type CodettaEntry,
 } from "./codetta-data.ts";
-import { compileProgram, getCompiledBytecodeDisplay, getCompiledByteScore } from "./program-runner.ts";
+import { getCompiledBytecodeDisplay, getCompiledByteScore } from "./program-runner.ts";
 import { startRunProgramRunFeedback, stopRunProgramRunFeedback } from "./run-fx.ts";
 import { runPlaygroundProgram } from "./run-playground.ts";
 import { formatVmStepCount } from "./format-vm-steps.ts";
@@ -261,7 +261,13 @@ export function mountCodetta(root: HTMLElement) {
 
   function invalidateLatestRun() {
     latestMatchedOutput = false;
-    ui.result.textContent = "Status: pending";
+    latestCompiledBytes = null;
+    ui.output.textContent = "(Run your attempt to compare output.)";
+    setBytecodeDisplay("");
+    setIdleSummary();
+    ui.byteStatus.textContent = "Compiled bytes: run to compute and compare against the current best.";
+    delete ui.byteStatus.dataset.tone;
+    ui.result.textContent = "Status: run required";
     ui.result.dataset.tone = "pending";
   }
 
@@ -300,24 +306,12 @@ export function mountCodetta(root: HTMLElement) {
     ui.summary.dataset.state = "idle";
   }
 
-  function getAttemptCompiledBytes(): number | null {
-    try {
-      return compileProgram(ui.attempt.value, "", true, {
-        filename: getCodettaSolutionFilename(activeEtude.id),
-      }).compiledBytes;
-    } catch {
-      return null;
-    }
-  }
-
-  function updateByteStatus() {
-    const currentBytes = getAttemptCompiledBytes();
-
+  function updateByteStatus(currentBytes: number | null) {
     latestCompiledBytes = currentBytes;
 
     if (currentBytes === null) {
-      ui.byteStatus.textContent = `Compiled bytes: -- (compile error)`;
-      ui.byteStatus.dataset.tone = "bad";
+      ui.byteStatus.textContent = "Compiled bytes: run to compute and compare against the current best.";
+      delete ui.byteStatus.dataset.tone;
       return null;
     }
 
@@ -391,7 +385,6 @@ export function mountCodetta(root: HTMLElement) {
 
   function openDetail(etude: CodettaEntry) {
     activeEtude = etude;
-    latestMatchedOutput = false;
     ui.title.textContent = etude.title;
     ui.description.textContent = etude.description;
     ui.expected.textContent = etude.expected;
@@ -399,15 +392,9 @@ export function mountCodetta(root: HTMLElement) {
     ui.bytes.textContent = String(etude.bytes);
     ui.date.textContent = etude.date;
     ui.attempt.value = etude.solution;
-    ui.output.textContent = "(Run your attempt to compare output.)";
-    setBytecodeDisplay("");
-    setIdleSummary();
     setDetailTab("output");
-    ui.result.textContent = "Status: pending";
-    ui.result.dataset.tone = "pending";
-    ui.submit.disabled = true;
-    ui.submitHelp.hidden = true;
-    updateByteStatus();
+    invalidateLatestRun();
+    syncSubmitState();
     syncDetailNavigation();
     ui.listScreen.hidden = true;
     ui.detailScreen.hidden = false;
@@ -482,13 +469,11 @@ export function mountCodetta(root: HTMLElement) {
   ui.loadBest.addEventListener("click", () => {
     ui.attempt.value = activeEtude.solution;
     invalidateLatestRun();
-    updateByteStatus();
     syncSubmitState();
   });
 
   ui.attempt.addEventListener("input", () => {
     invalidateLatestRun();
-    updateByteStatus();
     syncSubmitState();
   });
 
@@ -560,10 +545,10 @@ export function mountCodetta(root: HTMLElement) {
       ]);
 
       setBytecodeDisplay(run.bytecode);
+      updateByteStatus(run.compiledBytes);
 
       if (run.terminal === "error") {
         latestMatchedOutput = false;
-        latestCompiledBytes = run.compiledBytes || latestCompiledBytes;
         ui.output.textContent = run.logs.join("\n") || "Run failed.";
         ui.result.textContent = "Status: error";
         ui.result.dataset.tone = "bad";
@@ -573,7 +558,6 @@ export function mountCodetta(root: HTMLElement) {
 
       const actual = run.output.trimEnd();
       const expectedOutput = activeEtude.expected.trimEnd();
-      latestCompiledBytes = run.compiledBytes;
       latestMatchedOutput = actual === expectedOutput;
       ui.output.textContent = actual || "(no output)";
       ui.result.textContent = latestMatchedOutput ? "✓ Output matches expected" : "✗ Output does not match expected";
@@ -581,8 +565,10 @@ export function mountCodetta(root: HTMLElement) {
       syncSubmitState();
     } catch (error) {
       latestMatchedOutput = false;
+      latestCompiledBytes = null;
       ui.output.textContent = error instanceof Error ? error.message : String(error);
       setBytecodeDisplay("");
+      updateByteStatus(null);
       ui.summary.dataset.state = "idle";
       ui.summary.innerHTML = renderSummary([
         { label: "compile", value: "failed", tone: "error" },

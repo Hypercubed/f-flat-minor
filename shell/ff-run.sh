@@ -14,9 +14,9 @@ Usage:
 Examples:
   ./shell/ff-run.sh ff/example.ff
   ./shell/ff-run.sh --quiet ff/example.ff
-  ./shell/ff-run.sh ff/golf/hello.ffp
-  ./shell/ff-run.sh --run ruby ff/golf/hello.ffp
-  ./shell/ff-run.sh --run node --pp deno ff/golf/hello.ffp
+  ./shell/ff-run.sh ff/hello.ffp
+  ./shell/ff-run.sh --run ruby ff/hello.ffp
+  ./shell/ff-run.sh --run node --pp deno ff/hello.ffp
 
 Runners:
   python

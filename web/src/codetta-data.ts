@@ -10,6 +10,11 @@ interface CodettaEntry {
 }
 
 const CODETTA_SOURCE_ROOT = "../../ff/codetta";
+const HIDDEN_CODETTA_IDS = new Set([
+  "catalans-constant",
+  "ln-2",
+  "pascals-triangle",
+]);
 
 interface CodettaFrontmatter {
   etude: string;
@@ -108,6 +113,10 @@ for (const vitePath of Object.keys(solutions)) {
 }
 
 export function getCodettaSolutionFilename(slug: string): string {
+  if (HIDDEN_CODETTA_IDS.has(slug)) {
+    throw new Error(`Codetta solution is hidden for ${slug}`);
+  }
+
   const vitePath = solutionPathsBySlug.get(slug);
 
   if (!vitePath) {
@@ -119,6 +128,10 @@ export function getCodettaSolutionFilename(slug: string): string {
 }
 
 export function getCodettaSolutionRepoPath(slug: string): string {
+  if (HIDDEN_CODETTA_IDS.has(slug)) {
+    throw new Error(`Codetta solution is hidden for ${slug}`);
+  }
+
   const vitePath = solutionPathsBySlug.get(slug);
 
   if (!vitePath) {
@@ -161,6 +174,7 @@ export const CODETTA_ENTRIES: CodettaEntry[] = Object.entries(readmes)
       solution: solution.trimEnd(),
     } satisfies CodettaEntry;
   })
+  .filter((entry) => !HIDDEN_CODETTA_IDS.has(entry.id))
   .sort((a, b) => a.title.localeCompare(b.title));
 
 export type { CodettaEntry };

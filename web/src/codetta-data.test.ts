@@ -7,13 +7,13 @@ describe("Codetta data loading", () => {
   it("includes the current shipped Coda Etudes in the leaderboard data", () => {
     const ids = new Set(CODETTA_ENTRIES.map((entry) => entry.id));
 
-    expect(ids.has("catalans-constant")).toBe(true);
     expect(ids.has("roman-to-arabic")).toBe(true);
     expect(ids.has("collatz")).toBe(true);
     expect(ids.has("leap-years")).toBe(true);
-    expect(ids.has("ln-2")).toBe(true);
-    expect(ids.has("pascals-triangle")).toBe(true);
     expect(ids.has("tower-of-hanoi")).toBe(true);
+    expect(ids.has("catalans-constant")).toBe(false);
+    expect(ids.has("ln-2")).toBe(false);
+    expect(ids.has("pascals-triangle")).toBe(false);
   });
 
   it("loads Codetta entries with description, output, and solution content", () => {
