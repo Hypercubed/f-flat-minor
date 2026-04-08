@@ -1,5 +1,4 @@
-.import ./arith.ffp
-.import ./precision.ffp
+.import ./atan-shared.ffp
 .import ./atanh-core.ffp
 
 /*
@@ -12,26 +11,19 @@
  *   atanh-inv ( n x -- y )
  */
 
-__num_zero:
-  drop2 drop 0
-; /* n u v (u == 0) __num_zero == 0 */
-
-__abs_pair: abs swap abs swap ; .inline /* u v __abs_pair == |u| |v| */
-__sign_pair_product: dup2 * sgn ; /* u v __sign_pair_product == u v sgn(u*v) */
-
 __atanh_pos_scaled:
   _atanh__core_scaled
 ; /* n u v (u,v > 0 and u < v) __atanh_pos_scaled == floor(10ⁿ*atanh(u/v)) */
 
 __finite:
-  __sign_pair_product
-  [ __abs_pair __atanh_pos_scaled ] dip
+  atan_shared_sign_pair_product
+  [ atan_shared_abs_pair __atanh_pos_scaled ] dip
   *
 ; /* n u v (u,v != 0) __finite == signed scaled atanh(u/v) */
 
 _atanh__scaled:
   over zero?
-  [ __num_zero ]
+  [ atan_shared_num_zero ]
   [ __finite ]
   branch
 ; /* n u v _atanh__scaled == floor(10ⁿ*atanh(u/v)) for |u| < |v| */

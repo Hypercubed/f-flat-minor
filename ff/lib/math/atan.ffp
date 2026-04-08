@@ -1,5 +1,4 @@
-.import ./arith.ffp
-.import ./precision.ffp
+.import ./atan-shared.ffp
 .import ./atan-core.ffp
 .import ./pi.ffp
 
@@ -13,10 +12,6 @@
  *   atan-inv ( n x -- y )
  */
 
-__num_zero:
-  drop2 drop 0
-; /* n u v (u == 0) __num_zero == 0 */
-
 __den_zero:            /* n u v */
   drop                 /* n u */
   sgn                  /* n sgn(u) */
@@ -26,8 +21,6 @@ __den_zero:            /* n u v */
 
 __quarter_pi: half_pi 2 / ; /* n __quarter_pi == floor(10ⁿ*π/4) */
 __diff_sum: [ - ] [ + ] bi2 ; /* u v __diff_sum == u-v u+v */
-__abs_pair: abs swap abs swap ; .inline /* u v __abs_pair == |u| |v| */
-__sign_pair_product: dup2 * sgn ; /* u v __sign_pair_product == u v sgn(u*v) */
 
 __atan_pos_scaled:
   dup2 >
@@ -53,14 +46,14 @@ __atan_pos_scaled:
 ; /* n u v (u,v > 0) __atan_pos_scaled == floor(10ⁿ*atan(u/v)) */
 
 __finite:
-  __sign_pair_product
-  [ __abs_pair __atan_pos_scaled ] dip
+  atan_shared_sign_pair_product
+  [ atan_shared_abs_pair __atan_pos_scaled ] dip
   *
 ; /* n u v (u,v != 0) __finite == signed scaled atan(u/v) */
 
 _atan__scaled:
   over zero?
-  [ __num_zero ]
+  [ atan_shared_num_zero ]
   [
     dup zero?
     [ __den_zero ]

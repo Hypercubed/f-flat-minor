@@ -1,5 +1,4 @@
-.import ./arith.ffp
-.import ./precision.ffp
+.import ./atan-shared.ffp
 
 /*
  * Shared arctan Taylor core without pi-dependent range reduction.
@@ -7,28 +6,18 @@
  * introducing a circular import back through atan.ffp.
  */
 
-__over3: [ [ over ] dip ] dip dig ; /* x a b c __over3 == x a b c x */
-
-__odd_prev: 2 * 1 - ; .inline /* n __odd_prev == 2n-1 */
-__odd_next: 2 * 1 + ; .inline /* n __odd_next == 2n+1 */
-__sqr_keep2: over sqr over sqr ; /* a b __sqr_keep2 == a b a² b² */
-
 __u2_newp: /* u² p q odd v² */
-  [ __over3 ] dip /* u² p q odd u² v² */
+  [ atan_shared_over3 ] dip /* u² p q odd u² v² */
   dup
   [ [ dig [ * * ] dip ] dip * swap - ] dip /* u² q*v²-p*odd*u² v² */
 ; /* u² p q odd v² __u2_newp == u² p' v² */
-
-__newq_stack: /* p q odd v² */
-  dup [ [ dup2 ] dip * * ] dip /* p q odd q*odd*v² v² */
-; /* p q odd v² __newq_stack == p q odd q' v² */
 
 __tail_loop:
   over positive?
   [
     over
     2 -
-    [__newq_stack] dip
+    [atan_shared_newq_stack] dip
     swapd
     [__u2_newp] dipd
     dig
@@ -41,34 +30,11 @@ __tail_loop:
   branch
 ; /* u v u2 p q odd v2 __tail_loop == u v p q */
 
-__odd_from_precision:
-  rot
-  n->K
-  swapd
-; .inline /* n u v __odd_from_precision == u v odd */
-
-__seed_taylor_state: /* u v odd */
-  dup                                  /* u v odd odd */
-  __odd_next                           /* u v odd (2*odd+1) */
-  [ __odd_prev [ __sqr_keep2 ] dip ] dip /* u v u² v² (2*odd-1) (2*odd+1) */
-  rot                                  /* u v u² (2*odd+1) (2*odd-1) v² */
-  1                                    /* u v u² (2*odd+1) (2*odd-1) v² 1 */
-  bury                                 /* u v u² (2*odd+1) 1 (2*odd-1) v² */
-  [ swapd ] dip                        /* u v u² 1 (2*odd+1) (2*odd-1) v² */
-; /* u v odd __seed_taylor_state == u v u2 p q odd v2 */
-
-__mul2_pairs: * [ * ] dip ; .inline /* a b c d __mul2_pairs == a*b c*d */
-
-__scale_tail_result:
-  swapd
-  __mul2_pairs
-; .inline /* u v p q __scale_tail_result == p q */
-
 __parts:
-  __odd_from_precision
-  __seed_taylor_state
+  atan_shared_odd_from_precision
+  atan_shared_seed_taylor_state
   __tail_loop
-  __scale_tail_result
+  atan_shared_scale_tail_result
 ; /* n u v __parts == p q */
 
 _atan__core_scaled:

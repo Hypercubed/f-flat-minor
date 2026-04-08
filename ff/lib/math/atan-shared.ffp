@@ -1,0 +1,46 @@
+.import ./arith.ffp
+.import ./precision.ffp
+
+/*
+ * Shared helpers for the atan / atanh family wrappers and Taylor cores.
+ */
+
+atan_shared_over3: [ [ over ] dip ] dip dig ; /* x a b c atan_shared_over3 == x a b c x */
+
+atan_shared_odd_prev: 2 * 1 - ; .inline /* n atan_shared_odd_prev == 2n-1 */
+atan_shared_odd_next: 2 * 1 + ; .inline /* n atan_shared_odd_next == 2n+1 */
+atan_shared_sqr_keep2: over sqr over sqr ; /* a b atan_shared_sqr_keep2 == a b a² b² */
+
+atan_shared_newq_stack: /* p q odd v² */
+  dup [ [ dup2 ] dip * * ] dip /* p q odd q*odd*v² v² */
+; /* p q odd v² atan_shared_newq_stack == p q odd q' v² */
+
+atan_shared_odd_from_precision:
+  rot
+  n->K
+  swapd
+; .inline /* n u v atan_shared_odd_from_precision == u v odd */
+
+atan_shared_seed_taylor_state: /* u v odd */
+  dup                                            /* u v odd odd */
+  atan_shared_odd_next                           /* u v odd (2*odd+1) */
+  [ atan_shared_odd_prev [ atan_shared_sqr_keep2 ] dip ] dip /* u v u² v² (2*odd-1) (2*odd+1) */
+  rot                                            /* u v u² (2*odd+1) (2*odd-1) v² */
+  1                                              /* u v u² (2*odd+1) (2*odd-1) v² 1 */
+  bury                                           /* u v u² (2*odd+1) 1 (2*odd-1) v² */
+  [ swapd ] dip                                  /* u v u² 1 (2*odd+1) (2*odd-1) v² */
+; /* u v odd atan_shared_seed_taylor_state == u v u2 p q odd v2 */
+
+atan_shared_mul2_pairs: * [ * ] dip ; .inline /* a b c d atan_shared_mul2_pairs == a*b c*d */
+
+atan_shared_scale_tail_result:
+  swapd
+  atan_shared_mul2_pairs
+; .inline /* u v p q atan_shared_scale_tail_result == p q */
+
+atan_shared_num_zero:
+  drop2 drop 0
+; /* n u v (u == 0) atan_shared_num_zero == 0 */
+
+atan_shared_abs_pair: abs swap abs swap ; .inline /* u v atan_shared_abs_pair == |u| |v| */
+atan_shared_sign_pair_product: dup2 * sgn ; /* u v atan_shared_sign_pair_product == u v sgn(u*v) */
