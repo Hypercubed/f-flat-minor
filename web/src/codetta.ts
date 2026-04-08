@@ -147,9 +147,15 @@ export function mountCodetta(root: HTMLElement) {
               <button type="button" class="subtab is-active" data-codetta-detail-tab="output">Output</button>
               <button type="button" class="subtab" data-codetta-detail-tab="bytecode">Bytecode</button>
             </div>
+            <div class="detail-controls">
+              <label class="toggle output-wrap-toggle">
+                <input id="codetta-output-wrap" type="checkbox" checked />
+                <span>Warp output</span>
+              </label>
+            </div>
             <div class="detail-panels codetta-detail-panels">
-              <pre id="codetta-output" class="console codetta-output detail-panel is-active" data-codetta-detail-panel="output">(Run your attempt to compare output.)</pre>
-              <pre id="codetta-bytecode" class="code-block codetta-bytecode detail-panel" data-codetta-detail-panel="bytecode">(Run your attempt to inspect bytecode.)</pre>
+              <pre id="codetta-output" class="console is-wrapped codetta-output detail-panel is-active" data-codetta-detail-panel="output">(Run your attempt to compare output.)</pre>
+              <pre id="codetta-bytecode" class="code-block bytecode-wrap codetta-bytecode detail-panel" data-codetta-detail-panel="bytecode">(Run your attempt to inspect bytecode.)</pre>
             </div>
             <div id="codetta-bytecode-meta" class="detail-meta" hidden>
               <span class="label">Byte count</span>
@@ -202,6 +208,7 @@ export function mountCodetta(root: HTMLElement) {
   const runButton = root.querySelector<HTMLButtonElement>("#codetta-run");
   const summary = root.querySelector<HTMLElement>("#codetta-summary");
   const output = root.querySelector<HTMLElement>("#codetta-output");
+  const outputWrap = root.querySelector<HTMLInputElement>("#codetta-output-wrap");
   const bytecode = root.querySelector<HTMLElement>("#codetta-bytecode");
   const bytecodeMeta = root.querySelector<HTMLElement>("#codetta-bytecode-meta");
   const bytecodeCount = root.querySelector<HTMLElement>("#codetta-bytecode-count");
@@ -217,7 +224,7 @@ export function mountCodetta(root: HTMLElement) {
   if (
     !listScreen || !detailScreen || !listBody || !backButton || !prevButton || !nextButton || !title || !description || !expected ||
     !leader || !bytes || !date || !attempt || !loadBest || !byteStatus || !runButton || !summary ||
-    !output || !bytecode || !bytecodeMeta || !bytecodeCount || !result || !submit || !submitHelp ||
+    !output || !outputWrap || !bytecode || !bytecodeMeta || !bytecodeCount || !result || !submit || !submitHelp ||
     !issueTitle || !issueBody || !copyButton
   ) {
     throw new Error("Missing Codetta UI elements.");
@@ -242,6 +249,7 @@ export function mountCodetta(root: HTMLElement) {
     runButton,
     summary,
     output,
+    outputWrap,
     bytecode,
     bytecodeMeta,
     bytecodeCount,
@@ -289,6 +297,15 @@ export function mountCodetta(root: HTMLElement) {
     ui.bytecode.textContent = getCompiledBytecodeDisplay(value) || "(Run your attempt to inspect bytecode.)";
     ui.bytecodeCount.textContent = formatBytecodeByteCount(value);
   }
+
+  function setOutputWrap(enabled: boolean) {
+    ui.output.classList.toggle("is-wrapped", enabled);
+  }
+
+  setOutputWrap(ui.outputWrap.checked);
+  ui.outputWrap.addEventListener("change", () => {
+    setOutputWrap(ui.outputWrap.checked);
+  });
 
   function setCodettaRunningState(isRunning: boolean) {
     ui.runButton.disabled = isRunning;

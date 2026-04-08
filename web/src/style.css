@@ -1100,6 +1100,13 @@ button:disabled {
   font-size: 0.92rem;
 }
 
+.console.is-wrapped,
+.code-block.is-wrapped,
+.code-block.bytecode-wrap {
+  white-space: pre-wrap;
+  overflow-wrap: anywhere;
+}
+
 .detail-panels {
   display: flex;
   flex: 1 1 auto;
@@ -1132,6 +1139,28 @@ button:disabled {
   color: var(--ink);
   font-weight: 500;
   font-family: "Iosevka", "Cascadia Code", "SFMono-Regular", monospace;
+}
+
+.detail-controls {
+  display: flex;
+  justify-content: flex-end;
+  padding: 0 1.2rem 0.7rem;
+}
+
+.output-wrap-toggle {
+  min-height: 36px;
+  padding: 0.4rem 0.7rem;
+  border: 1px solid rgba(32, 22, 17, 0.15);
+  border-radius: 999px;
+  background: var(--panel-strong);
+  color: var(--ink);
+  font-size: 0.82rem;
+  white-space: nowrap;
+}
+
+.output-wrap-toggle input {
+  margin: 0;
+  accent-color: var(--accent-2);
 }
 
 .help-grid {

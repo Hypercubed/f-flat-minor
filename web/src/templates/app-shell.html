@@ -82,12 +82,18 @@
           <button class="subtab" data-detail-tab="ir">IR</button>
           <button class="subtab" data-detail-tab="bytecode">Bytecode</button>
         </div>
+        <div class="detail-controls">
+          <label class="toggle output-wrap-toggle">
+            <input id="output-wrap" type="checkbox" checked />
+            <span>Warp output</span>
+          </label>
+        </div>
         <div class="detail-panels">
-          <pre id="output" class="console detail-panel is-active" data-detail-panel="output"></pre>
+          <pre id="output" class="console is-wrapped detail-panel is-active" data-detail-panel="output"></pre>
           <pre id="error" class="console detail-panel is-active" data-detail-panel="output"></pre>
           <div id="preprocessed" class="code-block detail-panel" data-detail-panel="preprocessed"></div>
           <div id="ir" class="code-block detail-panel" data-detail-panel="ir"></div>
-          <pre id="bytecode" class="code-block detail-panel" data-detail-panel="bytecode"></pre>
+          <pre id="bytecode" class="code-block bytecode-wrap detail-panel" data-detail-panel="bytecode"></pre>
         </div>
         <div id="bytecode-meta" class="detail-meta" hidden>
           <span class="label">Byte count</span>
