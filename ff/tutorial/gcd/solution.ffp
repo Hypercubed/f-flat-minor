@@ -1,0 +1,5 @@
+.load /lib/prelude.ffp
+
+gcd: dup [ tuck % gcd ] [ drop ] branch ;
+
+84 30 gcd dup putn cr drop

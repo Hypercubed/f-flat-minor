@@ -3,7 +3,11 @@ import { type RunResult } from "./program-runner.ts";
 import { formatVmStepCount } from "./format-vm-steps.ts";
 import { runPlaygroundProgram } from "./run-playground.ts";
 import { startRunProgramRunFeedback, stopRunProgramRunFeedback } from "./run-fx.ts";
-import { TUTORIAL_PROBLEMS, type TutorialProblem } from "./tutorial-problems.ts";
+import {
+  getTutorialSolutionFilename,
+  TUTORIAL_PROBLEMS,
+  type TutorialProblem,
+} from "./tutorial-problems.ts";
 import { registerActiveRun } from "./active-run-cancellation.ts";
 
 function escapeHtml(value: string): string {
@@ -254,6 +258,7 @@ export function mountTutorial(root: HTMLElement) {
         await waitForPaint();
 
         const result = await runPlaygroundProgram(sourceEditor.getValue(), stdin?.value ?? "", true, {
+          filename: getTutorialSolutionFilename(problem.id),
           signal: abortController.signal,
           onProgress: ({ vmCyclesExecuted, compileMs }) => {
             summary.innerHTML = renderTutorialSummaryItems([
@@ -262,7 +267,12 @@ export function mountTutorial(root: HTMLElement) {
                 value: compileMs !== undefined ? `${compileMs.toFixed(2)} ms` : "…",
                 tone: "running",
               },
-              { label: "execute", value: `${formatVmStepCount(vmCyclesExecuted)} vm steps`, tone: "running", showDot: true },
+              {
+                label: "execute",
+                value: `${formatVmStepCount(vmCyclesExecuted)} vm steps`,
+                tone: "running",
+                showDot: true,
+              },
               { label: "exit", value: "pending", tone: "pending" },
             ]);
           },

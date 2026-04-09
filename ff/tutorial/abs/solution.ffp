@@ -1,0 +1,5 @@
+.load /lib/prelude.ffp
+
+my-abs: dup 0 < [ -1 * ] ? ;
+
+-42 my-abs dup putn cr drop

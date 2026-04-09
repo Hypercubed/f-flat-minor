@@ -1,0 +1,5 @@
+.load /lib/prelude.ffp
+
+my-even?: 2 % 0 = ;
+
+14 my-even? dup putn cr drop

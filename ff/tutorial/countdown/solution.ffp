@@ -1,0 +1,11 @@
+.load /lib/prelude.ffp
+
+countdown:
+  dup putn
+  dup 0 >
+  [ sp -- countdown ]
+  [ cr drop ]
+  branch
+;
+
+5 countdown

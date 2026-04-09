@@ -1,0 +1,5 @@
+.load /lib/prelude.ffp
+
+fact: dup [ dup -- fact * ] [ drop 1 ] branch ;
+
+6 fact dup putn cr drop

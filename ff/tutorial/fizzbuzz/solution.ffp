@@ -1,0 +1,27 @@
+.load /lib/prelude.ffp
+
+fizzbuzz-line:
+  dup 15 % 0 =
+  [ drop 0 'FizzBuzz' println ]
+  [
+    dup 3 % 0 =
+    [ drop 0 'Fizz' println ]
+    [
+      dup 5 % 0 =
+      [ drop 0 'Buzz' println ]
+      [ putn cr ]
+      branch
+    ]
+    branch
+  ]
+  branch
+;
+
+fizzbuzz:
+  dup 1 >
+  [ dup -- fizzbuzz ]
+  ?
+  fizzbuzz-line
+;
+
+15 fizzbuzz

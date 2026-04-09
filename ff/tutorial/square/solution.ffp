@@ -1,0 +1,5 @@
+.load /lib/prelude.ffp
+
+square: dup * ;
+
+6 square dup putn cr drop
