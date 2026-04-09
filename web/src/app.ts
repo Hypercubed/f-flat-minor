@@ -11,8 +11,10 @@ import { getCompiledBytecodeDisplay, getCompiledByteScore } from "./program-runn
 import { ReplSession } from "./repl-session.ts";
 import {
   buildAppUrl,
+  getMergedAppSearchParams,
   getSearchStringForStateMerge,
   parseAppTab,
+  parseCodettaEtudeParam,
   type AppTab,
 } from "./app-url-state.ts";
 import appShellTemplate from "./templates/app-shell.html?raw";
@@ -23,6 +25,7 @@ import { startRunProgramRunFeedback, stopRunProgramRunFeedback, triggerReplKeyFe
 import { syncRunFeedbackToggleButton, toggleRunFeedback } from "./run-feedback.ts";
 import { formatVmStepCount } from "./format-vm-steps.ts";
 import { decodeCodeFromUrlParam, encodeCodeForUrlParam } from "./url-codec.ts";
+import { abortActiveRuns, registerActiveRun } from "./active-run-cancellation.ts";
 import type { ValueInspection } from "../../typescript/core/src/engine.ts";
 import type { StackItem } from "./repl-session.ts";
 
@@ -127,15 +130,16 @@ export function mountApp(root: HTMLElement) {
   const replInspectContent = requireElement<HTMLElement>(root, "#repl-inspect-content");
   const tutorialRoot = requireElement<HTMLElement>(root, "#tutorial-root");
   const codettaRoot = requireElement<HTMLElement>(root, "#codetta-root");
+  const codettaModeNav = requireElement<HTMLElement>(root, "#codetta-mode-nav");
+  const codettaModePrev = requireElement<HTMLButtonElement>(root, "#codetta-mode-prev");
+  const codettaModeNext = requireElement<HTMLButtonElement>(root, "#codetta-mode-next");
 
   const tabs = Array.from(root.querySelectorAll<HTMLButtonElement>(".mode-tab"));
   const panels = Array.from(root.querySelectorAll<HTMLElement>(".tab-panel"));
   const detailTabs = Array.from(root.querySelectorAll<HTMLButtonElement>(".subtab"));
   const detailPanels = Array.from(root.querySelectorAll<HTMLElement>(".detail-panel"));
 
-  const searchParams = new URLSearchParams(
-    getSearchStringForStateMerge(window.location).replace(/^\?/, ""),
-  );
+  const searchParams = getMergedAppSearchParams(window.location);
   const sourceFromUrl = decodeCodeFromUrlParam(searchParams.get("code"));
   const exampleFromUrl = searchParams.get("example");
 
@@ -151,6 +155,11 @@ export function mountApp(root: HTMLElement) {
   }
 
   let activeTab: AppTab = parseAppTab(window.location.hash);
+  let codettaShowsDetailNavigation = false;
+
+  function syncCodettaModeNavigationVisibility() {
+    codettaModeNav.hidden = activeTab !== "codetta" || !codettaShowsDetailNavigation;
+  }
 
   let skipProgrammaticExampleSync = false;
   const sourceEditor = mountSourceEditor(source, initialPlaygroundSource, {
@@ -186,6 +195,7 @@ export function mountApp(root: HTMLElement) {
   function syncUrlToAppState() {
     let codeParam: string | null = null;
     let exampleParam: string | null = null;
+    let etudeParam: string | null = null;
 
     if (activeTab === "playground") {
       if (example.value === CUSTOM_EXAMPLE_VALUE) {
@@ -201,6 +211,8 @@ export function mountApp(root: HTMLElement) {
       } else {
         exampleParam = example.value;
       }
+    } else if (activeTab === "codetta") {
+      etudeParam = parseCodettaEtudeParam(window.location);
     }
 
     const nextUrl = buildAppUrl({
@@ -209,6 +221,7 @@ export function mountApp(root: HTMLElement) {
       tab: activeTab,
       codeParam,
       exampleParam,
+      etudeParam,
     });
     const currentUrl = `${window.location.pathname}${window.location.hash}`;
 
@@ -230,6 +243,8 @@ export function mountApp(root: HTMLElement) {
       const active = panel.dataset.panel === activeTab;
       panel.classList.toggle("is-active", active);
     });
+
+    syncCodettaModeNavigationVisibility();
   }
 
   function setDetailTab(name: string) {
@@ -257,7 +272,24 @@ export function mountApp(root: HTMLElement) {
       const nextTab = parseAppTab(tab.dataset.tab);
 
       if (nextTab === activeTab) {
-        syncUrlToAppState();
+        if (nextTab === "codetta") {
+          const nextUrl = buildAppUrl({
+            pathname: window.location.pathname,
+            search: getSearchStringForStateMerge(window.location),
+            tab: "codetta",
+            codeParam: null,
+            exampleParam: null,
+            etudeParam: null,
+          });
+
+          const currentUrl = `${window.location.pathname}${window.location.hash}`;
+
+          if (nextUrl !== currentUrl) {
+            window.location.hash = nextUrl.slice(nextUrl.indexOf("#") + 1);
+          }
+        } else {
+          syncUrlToAppState();
+        }
         return;
       }
 
@@ -265,12 +297,30 @@ export function mountApp(root: HTMLElement) {
     });
   });
 
+  const codettaController = mountCodetta(codettaRoot, {
+    detailNavigation: {
+      prevButton: codettaModePrev,
+      nextButton: codettaModeNext,
+      onVisibilityChange: (visible) => {
+        codettaShowsDetailNavigation = visible;
+        syncCodettaModeNavigationVisibility();
+      },
+    },
+  });
+
   function applyUrlStateFromLocation() {
+    abortActiveRuns();
     setTab(window.location.hash);
+
+    if (activeTab === "codetta") {
+      codettaController.syncFromLocation();
+    }
+
     syncUrlToAppState();
   }
 
   window.addEventListener("hashchange", applyUrlStateFromLocation);
+  window.addEventListener("popstate", applyUrlStateFromLocation);
 
   applyUrlStateFromLocation();
 
@@ -304,6 +354,7 @@ export function mountApp(root: HTMLElement) {
 
     const abortController = new AbortController();
     playgroundAbort = abortController;
+    const unregisterAbort = registerActiveRun(abortController);
 
     await waitForPaint();
 
@@ -427,6 +478,7 @@ export function mountApp(root: HTMLElement) {
       setBytecodeDisplay("");
       scrollToBottom(errorOutput);
     } finally {
+      unregisterAbort();
       playgroundAbort = null;
       stopRunProgramRunFeedback();
       setPlaygroundRunningState(false);
@@ -779,7 +831,6 @@ export function mountApp(root: HTMLElement) {
 
   setPlaygroundIdle();
   mountTutorial(tutorialRoot);
-  mountCodetta(codettaRoot);
   renderReplStack([]);
   renderReplTranscript();
   replCommand.focus();

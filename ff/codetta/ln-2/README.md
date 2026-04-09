@@ -8,4 +8,4 @@ date: 2026-04-08
 
 Print ln(2) to the first 1,000 decimal places after the point.
 
-This etude follows the code.golf [ln 2](https://code.golf/ln-2) hole.
+This Codetta follows the code.golf [ln 2](https://code.golf/ln-2) hole.

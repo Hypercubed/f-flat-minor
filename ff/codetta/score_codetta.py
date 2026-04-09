@@ -13,6 +13,7 @@ which emits the full .ffb payload: the FbAbbCb header plus base64 bytecode.
 from __future__ import annotations
 
 import os
+import argparse
 import subprocess
 import sys
 from pathlib import Path
@@ -49,6 +50,37 @@ def _parse_readme_frontmatter(readme_path: Path) -> dict[str, str]:
     return values
 
 
+def _parse_args(argv: list[str]) -> argparse.Namespace:
+    parser = argparse.ArgumentParser(description=__doc__)
+    parser.add_argument(
+        "--update-readme-bytes",
+        action="store_true",
+        help="update Codetta README frontmatter bytes fields to the compiled score",
+    )
+    return parser.parse_args(argv)
+
+
+def _update_readme_bytes(readme_path: Path, compiled_bytes: int) -> None:
+    text = readme_path.read_text(encoding="utf-8")
+
+    if not text.startswith("---\n"):
+        raise RuntimeError(f"Missing frontmatter in {readme_path.relative_to(REPO_ROOT)}")
+
+    end = text.find("\n---\n", 4)
+    if end < 0:
+        raise RuntimeError(f"Unterminated frontmatter in {readme_path.relative_to(REPO_ROOT)}")
+
+    frontmatter = text[4:end].split("\n")
+    for index, line in enumerate(frontmatter):
+        if line.startswith("bytes:"):
+            frontmatter[index] = f"bytes: {compiled_bytes}"
+            updated_frontmatter = "\n".join(frontmatter)
+            readme_path.write_text(f"---\n{updated_frontmatter}\n---\n{text[end + 5:]}", encoding="utf-8")
+            return
+
+    raise RuntimeError(f"Missing README bytes field in {readme_path.relative_to(REPO_ROOT)}")
+
+
 def _compile_optimized(source_path: Path) -> bytes:
     rel = source_path.relative_to(REPO_ROOT)
     env = {**os.environ, "FF_SHELL_TRACE": "0"}
@@ -76,6 +108,8 @@ def _find_solution(etude_dir: Path) -> Path:
 
 
 def main() -> int:
+    args = _parse_args(sys.argv[1:])
+
     if not FF_COMPILE_SH.is_file():
         print(f"Missing {FF_COMPILE_SH}", file=sys.stderr)
         return 1
@@ -110,6 +144,10 @@ def main() -> int:
         src_bytes = len(raw)
         src_chars = len(text)
         compiled_bytes = len(_compile_optimized(solution_path))
+
+        if args.update_readme_bytes and compiled_bytes != readme_bytes:
+            _update_readme_bytes(readme_path, compiled_bytes)
+            readme_bytes = compiled_bytes
 
         if compiled_bytes != readme_bytes:
             mismatches.append(

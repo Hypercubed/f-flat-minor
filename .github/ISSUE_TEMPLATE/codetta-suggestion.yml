@@ -1,16 +1,16 @@
-name: Codetta Etude Proposal
-description: Suggest a new Codetta etude/challenge for ff/codetta.
+name: Codetta Proposal
+description: Suggest a new Codetta challenge for ff/codetta.
 title: "[Codetta] "
 body:
   - type: markdown
     attributes:
       value: |
-        Propose a new Codetta etude with a stable prompt, canonical expected output, and a clear source or reference. Keep the wording concise and focused on what maintainers would need to add a new `ff/codetta/<slug>/` entry.
+        Propose a new Codetta with a stable prompt, canonical expected output, and a clear source or reference. Keep the wording concise and focused on what maintainers would need to add a new `ff/codetta/<slug>/` entry.
 
   - type: input
     id: title
     attributes:
-      label: Etude title
+      label: Codetta title
       description: Short display name for the challenge.
       placeholder: Fibonacci
     validations:
@@ -29,7 +29,7 @@ body:
     id: prompt
     attributes:
       label: Prompt
-      description: One or two sentences describing what the etude asks the program to do.
+      description: One or two sentences describing what the Codetta asks the program to do.
       placeholder: |
         Print the 31st Fibonacci number.
     validations:
@@ -39,7 +39,7 @@ body:
     id: expected-output
     attributes:
       label: Expected output
-      description: Exact output the etude should use as `solution.out`.
+      description: Exact output the Codetta should use as `solution.out`.
       placeholder: |
         1346269
       render: text
@@ -72,7 +72,7 @@ body:
     id: codetta-fit
     attributes:
       label: Why this belongs in Codetta
-      description: Explain why this would make a good size-golf etude for F-flat-minor.
+      description: Explain why this would make a good Codetta for F-flat-minor.
       placeholder: It is compact, recognizable, and has a stable expected output that is easy to verify.
     validations:
       required: true

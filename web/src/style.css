@@ -150,11 +150,31 @@ textarea {
   padding: 1rem 0 1.5rem;
 }
 
+.mode-tabs-row {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem 1rem;
+  flex-wrap: wrap;
+  margin-bottom: 1rem;
+}
+
 .mode-tabs {
   display: flex;
   gap: 0.65rem;
-  margin-bottom: 1rem;
   flex-wrap: wrap;
+  min-width: 0;
+  flex: 1 1 auto;
+}
+
+.codetta-mode-nav {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.65rem;
+  margin-left: auto;
+}
+
+.codetta-mode-nav[hidden] {
+  display: none;
 }
 
 .mode-tab {
@@ -254,20 +274,20 @@ textarea {
 }
 
 .lede {
+  display: none;
   margin: 1rem 0 0;
   color: var(--muted);
   font-size: 1.05rem;
 }
 
-.hero-links {
-  margin: 1rem 0 0;
-}
-
 .repo-link {
   display: inline-flex;
   align-items: center;
+  justify-content: center;
+  flex: 0 0 auto;
   min-height: 44px;
-  padding: 0.7rem 1rem;
+  min-width: 44px;
+  padding: 0;
   border-radius: 999px;
   border: 1px solid rgba(32, 22, 17, 0.14);
   background: rgba(255, 250, 244, 0.74);
@@ -280,6 +300,17 @@ textarea {
   transform: translateY(-1px);
   box-shadow: 0 12px 24px rgba(32, 22, 17, 0.12);
   background: rgba(255, 250, 244, 0.96);
+}
+
+.repo-link:focus-visible {
+  outline: 2px solid rgba(23, 105, 93, 0.45);
+  outline-offset: 2px;
+}
+
+.repo-link svg {
+  display: block;
+  width: 1.15rem;
+  height: 1.15rem;
 }
 
 .workspace {
@@ -506,8 +537,45 @@ textarea {
   min-height: 0;
 }
 
+.codetta-screen[hidden] {
+  display: none;
+}
+
+.codetta-list-screen {
+  display: grid;
+  gap: 1rem;
+}
+
+.codetta-intro-panel {
+  overflow: visible;
+}
+
+.codetta-intro-body {
+  display: grid;
+  gap: 0.8rem;
+  color: var(--muted);
+}
+
+.codetta-intro-body p {
+  margin: 0;
+  max-width: 68ch;
+}
+
+.codetta-intro-body code {
+  font-family: "Iosevka", "Cascadia Code", "SFMono-Regular", monospace;
+  font-size: 0.95em;
+  color: var(--ink);
+}
+
 .codetta-list-wrap {
   padding: 0.8rem 1.2rem 1.2rem;
+}
+
+.codetta-list-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+  gap: 0.9rem;
+  margin-bottom: 1rem;
 }
 
 .codetta-suggest-btn {
@@ -527,52 +595,110 @@ textarea {
   transform: translateY(-1px);
 }
 
-.codetta-list-table {
+.codetta-list-card {
+  --codetta-card-border: rgba(74, 106, 191, 0.12);
+  --codetta-card-paper-top: rgba(255, 253, 250, 0.98);
+  --codetta-card-paper-bottom: rgba(242, 234, 222, 0.92);
+  --codetta-card-rule: rgba(74, 106, 191, 0.04);
+  --codetta-card-shadow: rgba(49, 72, 132, 0.12);
+  --codetta-card-shadow-hover: rgba(49, 72, 132, 0.15);
+  --codetta-card-tape: rgba(161, 180, 226, 0.22);
+  --codetta-card-bytes: #354574;
+  position: relative;
+  display: grid;
+  gap: 0.35rem;
+  min-height: 9.5rem;
   width: 100%;
-  border-collapse: collapse;
-  margin-bottom: 1rem;
-}
-
-.codetta-list-table th,
-.codetta-list-table td {
+  padding: 1rem 1rem 1.1rem;
+  border: 1px solid var(--codetta-card-border);
+  border-radius: 20px 22px 18px 20px;
+  background:
+    linear-gradient(180deg, var(--codetta-card-paper-top), var(--codetta-card-paper-bottom)),
+    repeating-linear-gradient(
+      180deg,
+      var(--codetta-card-rule) 0,
+      var(--codetta-card-rule) 1px,
+      transparent 1px,
+      transparent 1.85rem
+    );
+  box-shadow: 0 18px 36px var(--codetta-card-shadow);
+  color: var(--ink);
   text-align: left;
-  padding: 0.55rem 0.6rem;
-  border-bottom: 1px solid rgba(32, 22, 17, 0.1);
-}
-
-.codetta-list-table th {
-  color: var(--muted);
-  font-size: 0.82rem;
-  text-transform: uppercase;
-  letter-spacing: 0.08em;
-}
-
-.codetta-list-table tbody tr {
   cursor: pointer;
+  overflow: hidden;
 }
 
-.codetta-list-table tbody tr:hover {
-  background: rgba(74, 106, 191, 0.08);
+.codetta-list-card:nth-child(3n + 2) {
+  --codetta-card-border: rgba(62, 133, 128, 0.15);
+  --codetta-card-paper-top: rgba(249, 253, 250, 0.98);
+  --codetta-card-paper-bottom: rgba(228, 241, 235, 0.94);
+  --codetta-card-rule: rgba(62, 133, 128, 0.055);
+  --codetta-card-shadow: rgba(38, 98, 92, 0.13);
+  --codetta-card-shadow-hover: rgba(38, 98, 92, 0.17);
+  --codetta-card-tape: rgba(145, 201, 188, 0.24);
+  --codetta-card-bytes: #245a58;
 }
 
-.codetta-list-table tbody tr:focus-visible {
+.codetta-list-card:nth-child(3n) {
+  --codetta-card-border: rgba(176, 128, 72, 0.16);
+  --codetta-card-paper-top: rgba(255, 251, 245, 0.98);
+  --codetta-card-paper-bottom: rgba(245, 232, 211, 0.95);
+  --codetta-card-rule: rgba(176, 128, 72, 0.06);
+  --codetta-card-shadow: rgba(132, 91, 44, 0.13);
+  --codetta-card-shadow-hover: rgba(132, 91, 44, 0.17);
+  --codetta-card-tape: rgba(224, 190, 134, 0.24);
+  --codetta-card-bytes: #7a4d1f;
+}
+
+.codetta-list-card::before {
+  content: "";
+  position: absolute;
+  top: 0.75rem;
+  right: 1rem;
+  width: 3.25rem;
+  height: 0.8rem;
+  border-radius: 999px;
+  background: var(--codetta-card-tape);
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.5);
+  transform: rotate(8deg);
+  z-index: 0;
+}
+
+.codetta-list-card:hover {
+  transform: translateY(-2px) rotate(-0.4deg);
+  box-shadow: 0 24px 42px var(--codetta-card-shadow-hover);
+}
+
+.codetta-list-card:focus-visible {
   outline: 2px solid rgba(74, 106, 191, 0.35);
-  outline-offset: -2px;
+  outline-offset: 3px;
 }
 
-.codetta-detail-head {
-  display: flex;
-  align-items: center;
-  gap: 0.9rem;
-  margin-bottom: 0.9rem;
+.codetta-list-card-title {
+  max-width: 12ch;
+  padding-right: 4.5rem;
+  font-family: Georgia, "Times New Roman", serif;
+  font-size: 1.35rem;
+  font-weight: 600;
+  line-height: 1.05;
+  overflow-wrap: anywhere;
 }
 
-.codetta-detail-nav {
-  display: inline-flex;
-  align-items: center;
-  justify-content: flex-end;
-  gap: 0.65rem;
-  margin-left: auto;
+.codetta-list-card-meta,
+.codetta-list-card-bytes {
+  color: var(--muted);
+  font-size: 0.94rem;
+}
+
+.codetta-list-card-bytes {
+  position: absolute;
+  top: 0.45rem;
+  right: 1rem;
+  color: var(--codetta-card-bytes);
+  font-family: "Iosevka", "Cascadia Code", "SFMono-Regular", monospace;
+  font-size: 1.3rem;
+  line-height: 1;
+  z-index: 1;
 }
 
 .codetta-etude-header {
@@ -595,12 +721,13 @@ textarea {
 .codetta-detail-grid {
   display: grid;
   gap: 1rem;
-  grid-template-columns: minmax(320px, 1fr) minmax(250px, 0.7fr);
+  grid-template-columns: minmax(320px, 1fr) minmax(250px, 0.35fr);
+  align-items: start;
   margin-bottom: 1rem;
 }
 
 .codetta-panel-body {
-  padding: 0.8rem 1.2rem 1.2rem;
+  padding: 0.8rem 1.2rem 1rem;
 }
 
 .codetta-description {
@@ -633,6 +760,30 @@ textarea {
   font-size: 0.95em;
 }
 
+.codetta-expected-details {
+  margin-top: 0.75rem;
+}
+
+.codetta-expected-details summary {
+  cursor: pointer;
+  list-style: none;
+}
+
+.codetta-expected-details summary::-webkit-details-marker {
+  display: none;
+}
+
+.codetta-expected-details summary::before {
+  content: ">";
+  display: inline-block;
+  margin-right: 0.45rem;
+  transition: transform 160ms ease;
+}
+
+.codetta-expected-details[open] summary::before {
+  transform: rotate(90deg);
+}
+
 .codetta-meta p {
   margin: 0.45rem 0;
   color: var(--muted);
@@ -645,8 +796,9 @@ textarea {
 .codetta-expected {
   background: rgba(255, 250, 244, 0.66);
   color: var(--ink);
-  min-height: 120px;
-  max-height: min(40vh, 20rem);
+  margin-top: 0.6rem;
+  min-height: 0;
+  max-height: min(30vh, 14rem);
   overflow: auto;
 }
 
@@ -1622,6 +1774,10 @@ button:disabled {
 }
 
 @media (max-width: 1080px) {
+  .mode-tabs-row {
+    align-items: flex-start;
+  }
+
   .workspace {
     grid-template-columns: 1fr;
   }
@@ -1638,11 +1794,7 @@ button:disabled {
     grid-template-columns: 1fr;
   }
 
-  .codetta-detail-head {
-    flex-wrap: wrap;
-  }
-
-  .codetta-detail-nav {
+  .codetta-mode-nav {
     width: 100%;
     justify-content: flex-start;
     margin-left: 0;
@@ -1694,6 +1846,14 @@ button:disabled {
   .shell {
     width: min(100vw - 1rem, 1400px);
     padding-top: 1.25rem;
+  }
+
+  .codetta-list-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .codetta-list-card {
+    min-height: 8.5rem;
   }
 
   .controls {

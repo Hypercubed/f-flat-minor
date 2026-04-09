@@ -4,6 +4,7 @@ import { formatVmStepCount } from "./format-vm-steps.ts";
 import { runPlaygroundProgram } from "./run-playground.ts";
 import { startRunProgramRunFeedback, stopRunProgramRunFeedback } from "./run-fx.ts";
 import { TUTORIAL_PROBLEMS, type TutorialProblem } from "./tutorial-problems.ts";
+import { registerActiveRun } from "./active-run-cancellation.ts";
 
 function escapeHtml(value: string): string {
   return value
@@ -239,6 +240,7 @@ export function mountTutorial(root: HTMLElement) {
 
       const abortController = new AbortController();
       runAbort = abortController;
+      const unregisterAbort = registerActiveRun(abortController);
 
       try {
         await waitForPaint();
@@ -334,6 +336,7 @@ export function mountTutorial(root: HTMLElement) {
         error.textContent = message;
         error.hidden = false;
       } finally {
+        unregisterAbort();
         runAbort = null;
         stopRunProgramRunFeedback();
         if (stdin) {

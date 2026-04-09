@@ -1,0 +1,6 @@
+.import ../../lib/prelude.ffp
+
+N: 1000 ;
+S: N 2 nsqrt ;
+
+S N nputn

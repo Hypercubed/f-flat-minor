@@ -1,0 +1,3 @@
+.import ../../lib/math/primes.ffp
+
+1 [ dup prime? [ dup putn '\n' putc ] ? ++ ] 100 times drop

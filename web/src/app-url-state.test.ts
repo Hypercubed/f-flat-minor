@@ -1,6 +1,12 @@
 import { describe, expect, it } from "vitest";
 
-import { buildAppUrl, parseAppTab } from "./app-url-state.ts";
+import {
+  buildAppUrl,
+  getMergedAppSearchParams,
+  getSearchStringForStateMerge,
+  parseAppTab,
+  parseCodettaEtudeParam,
+} from "./app-url-state.ts";
 
 describe("app-url-state", () => {
   it("defaults to playground when the hash is missing or unknown", () => {
@@ -25,6 +31,7 @@ describe("app-url-state", () => {
       tab: "playground",
       codeParam: "txt.dup",
       exampleParam: null,
+      etudeParam: null,
     })).toBe("/app#playground?foo=bar&code=txt.dup");
   });
 
@@ -35,6 +42,7 @@ describe("app-url-state", () => {
       tab: "playground",
       codeParam: null,
       exampleParam: "/examples/fact.ffp",
+      etudeParam: null,
     })).toBe("/app#playground?foo=bar&example=%2Fexamples%2Ffact.ffp");
   });
 
@@ -45,6 +53,7 @@ describe("app-url-state", () => {
       tab: "playground",
       codeParam: "txt.dup",
       exampleParam: null,
+      etudeParam: null,
     })).toBe("/app#playground?foo=bar&code=txt.dup");
   });
 
@@ -55,6 +64,7 @@ describe("app-url-state", () => {
       tab: "help",
       codeParam: "txt.swap",
       exampleParam: null,
+      etudeParam: null,
     })).toBe("/app#help?foo=bar");
   });
 
@@ -65,6 +75,7 @@ describe("app-url-state", () => {
       tab: "help",
       codeParam: null,
       exampleParam: "/examples/fact.ffp",
+      etudeParam: null,
     })).toBe("/app#help?foo=bar");
   });
 
@@ -75,6 +86,82 @@ describe("app-url-state", () => {
       tab: "playground",
       codeParam: null,
       exampleParam: null,
+      etudeParam: null,
     })).toBe("/app#playground");
+  });
+
+  it("writes the codetta param on the codetta tab", () => {
+    expect(buildAppUrl({
+      pathname: "/app",
+      search: "?foo=bar",
+      tab: "codetta",
+      codeParam: null,
+      exampleParam: null,
+      etudeParam: "fib",
+    })).toBe("/app#codetta?foo=bar&codetta=fib");
+  });
+
+  it("removes codetta and legacy etude params outside codetta or when clearing the selection", () => {
+    expect(buildAppUrl({
+      pathname: "/app",
+      search: "?foo=bar&codetta=fib&etude=old-fib",
+      tab: "codetta",
+      codeParam: null,
+      exampleParam: null,
+      etudeParam: null,
+    })).toBe("/app#codetta?foo=bar");
+
+    expect(buildAppUrl({
+      pathname: "/app",
+      search: "?foo=bar&codetta=fib&etude=old-fib",
+      tab: "help",
+      codeParam: null,
+      exampleParam: null,
+      etudeParam: "fib",
+    })).toBe("/app#help?foo=bar");
+  });
+
+  it("merges codetta from the hash query over the path query", () => {
+    expect(getSearchStringForStateMerge({
+      hash: "#codetta?codetta=fib&foo=baz",
+      search: "?foo=bar",
+    } as Pick<Location, "hash" | "search">)).toBe("?foo=baz&codetta=fib");
+  });
+
+  it("parses merged search params from the path and hash", () => {
+    const params = getMergedAppSearchParams({
+      hash: "#codetta?codetta=fib&foo=baz",
+      search: "?foo=bar&worker=1",
+    } as Pick<Location, "hash" | "search">);
+
+    expect(params.get("foo")).toBe("baz");
+    expect(params.get("worker")).toBe("1");
+    expect(params.get("codetta")).toBe("fib");
+  });
+
+  it("parses the codetta deep link only on the codetta tab", () => {
+    expect(parseCodettaEtudeParam({
+      hash: "#codetta?codetta=fib",
+      search: "",
+    } as Pick<Location, "hash" | "search">)).toBe("fib");
+
+    expect(parseCodettaEtudeParam({
+      hash: "#help?codetta=fib",
+      search: "",
+    } as Pick<Location, "hash" | "search">)).toBeNull();
+  });
+
+  it("accepts legacy etude deep links for codetta", () => {
+    expect(parseCodettaEtudeParam({
+      hash: "#codetta?etude=fib",
+      search: "",
+    } as Pick<Location, "hash" | "search">)).toBe("fib");
+  });
+
+  it("prefers codetta over legacy etude when both are present", () => {
+    expect(parseCodettaEtudeParam({
+      hash: "#codetta?codetta=fizzbuzz&etude=fib",
+      search: "",
+    } as Pick<Location, "hash" | "search">)).toBe("fizzbuzz");
   });
 });

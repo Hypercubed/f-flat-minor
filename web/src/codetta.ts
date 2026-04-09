@@ -1,4 +1,9 @@
 import {
+  buildAppUrl,
+  getSearchStringForStateMerge,
+  parseCodettaEtudeParam,
+} from "./app-url-state.ts";
+import {
   CODETTA_ENTRIES,
   getCodettaSolutionFilename,
   getCodettaSolutionRepoPath,
@@ -14,6 +19,7 @@ import remarkGfm from "remark-gfm";
 import remarkRehype from "remark-rehype";
 import rehypeStringify from "rehype-stringify";
 import { codettaOutputsMatch, normalizeCodettaOutputForComparison } from "./codetta-compare.ts";
+import { abortActiveRuns, registerActiveRun } from "./active-run-cancellation.ts";
 
 const ETUDES: CodettaEntry[] = CODETTA_ENTRIES;
 const CODETTA_GITHUB_REPO = "https://github.com/Hypercubed/f-flat-minor";
@@ -38,8 +44,31 @@ function renderMarkdown(markdown: string): string {
   return rendered.replaceAll("<a ", '<a target="_blank" rel="noreferrer" ');
 }
 
-function getCodettaSubmitUrl(slug: string): string {
-  return `${CODETTA_GITHUB_REPO}/edit/main/${getCodettaSolutionRepoPath(slug)}`;
+function getCodettaIssueTitle(slug: string, compiledBytes: number): string {
+  return `[Codetta] ${slug} - ${compiledBytes} bytes`;
+}
+
+function getCodettaValidationNotes(etude: CodettaEntry, compiledBytes: number, matchedOutput: boolean): string {
+  const validationLines = [
+    "- compiler/runtime used: Codetta web playground",
+    `- source file target: ${getCodettaSolutionFilename(etude.id)}`,
+    `- how output was checked: ${matchedOutput ? "Output matched expected in the Codetta runner." : "Not verified in the Codetta runner."}`,
+    `- how compiled byte length was checked: Runner reported ${compiledBytes} bytes including FbAbbCb.`,
+    `- current leaderboard bytes: ${etude.bytes}`,
+  ];
+
+  return validationLines.join("\n");
+}
+
+function getCodettaSubmitUrl(etude: CodettaEntry, compiledBytes: number, source: string, matchedOutput: boolean): string {
+  const url = new URL(`${CODETTA_GITHUB_REPO}/issues/new`);
+  url.searchParams.set("template", "codetta-submission.yml");
+  url.searchParams.set("title", getCodettaIssueTitle(etude.id, compiledBytes));
+  url.searchParams.set("etude", etude.id);
+  url.searchParams.set("bytes", String(compiledBytes));
+  url.searchParams.set("solution", source);
+  url.searchParams.set("validation", getCodettaValidationNotes(etude, compiledBytes, matchedOutput));
+  return url.toString();
 }
 
 type SummaryTone = "default" | "success" | "error" | "running" | "pending";
@@ -81,48 +110,87 @@ function requireElement<T extends Element>(root: ParentNode, selector: string): 
   return element;
 }
 
-export function mountCodetta(root: HTMLElement) {
+function syncCodettaUrl(
+  etudeSlug: string | null,
+  mode: "push" | "replace",
+  onPushNavigation?: () => void,
+) {
+  const nextUrl = buildAppUrl({
+    pathname: window.location.pathname,
+    search: getSearchStringForStateMerge(window.location),
+    tab: "codetta",
+    codeParam: null,
+    exampleParam: null,
+    etudeParam: etudeSlug,
+  });
+  const currentUrl = `${window.location.pathname}${window.location.hash}`;
+
+  if (nextUrl !== currentUrl) {
+    if (mode === "push") {
+      window.history.pushState(window.history.state, "", nextUrl);
+      onPushNavigation?.();
+    } else {
+      window.history.replaceState(window.history.state, "", nextUrl);
+    }
+  }
+}
+
+function getEtudeFromLocation(location: Pick<Location, "hash" | "search">): CodettaEntry | null {
+  return ETUDES.find((item) => item.id === parseCodettaEtudeParam(location)) ?? null;
+}
+
+export interface CodettaController {
+  syncFromLocation(location?: Pick<Location, "hash" | "search">): void;
+}
+
+interface CodettaMountOptions {
+  detailNavigation: {
+    prevButton: HTMLButtonElement;
+    nextButton: HTMLButtonElement;
+    onVisibilityChange?: (visible: boolean) => void;
+  };
+  onPushNavigation?: () => void;
+}
+
+export function mountCodetta(root: HTMLElement, options: CodettaMountOptions): CodettaController {
   if (ETUDES.length === 0) {
     throw new Error("No Codetta entries found.");
   }
 
   root.innerHTML = `
     <section class="codetta">
-      <section class="panel codetta-screen" data-screen="list">
-        <div class="panel-header">
-          <div>
-            <p class="panel-label">F♭m Codetta</p>
-            <h2>Coda Études</h2>
+      <section class="codetta-screen codetta-list-screen" data-screen="list">
+        <article class="panel codetta-intro-panel">
+          <div class="panel-header">
+            <div>
+              <p class="panel-label">How Codetta Works</p>
+              <h2>Small code-golf like challenges</h2>
+            </div>
           </div>
-        </div>
-        <div class="codetta-list-wrap">
-          <table class="codetta-list-table" aria-label="Codetta études list">
-            <thead>
-              <tr>
-                <th>Étude</th>
-                <th>Leader</th>
-                <th>Compiled bytes</th>
-                <th>Last Updated</th>
-              </tr>
-            </thead>
-            <tbody id="codetta-etude-list"></tbody>
-          </table>
-          <a
-            class="ghost codetta-suggest-btn"
-            href="https://github.com/Hypercubed/f-flat-minor/issues/new?template=codetta-etude.yml"
-          >+ Suggest an étude</a>
-        </div>
+          <div class="codetta-panel-body codetta-intro-body">
+            <p>Codettas are small F-flat-minor code-golf like challenges with fixed expected output. Many mirror <code>code.golf</code> holes, with a few repo-defined variants.</p>
+            <p>Leaderboard rank is based on optimized compiled <code>.ffb</code> byte count, not source length. Output has to match the expected result before the byte score matters.</p>
+          </div>
+        </article>
+
+        <section class="panel">
+          <div class="panel-header">
+            <div>
+              <p class="panel-label">F♭m Codetta</p>
+              <h2>Codettas</h2>
+            </div>
+          </div>
+          <div class="codetta-list-wrap">
+            <div id="codetta-etude-list" class="codetta-list-grid" role="list" aria-label="Codettas list"></div>
+            <a
+              class="ghost codetta-suggest-btn"
+              href="https://github.com/Hypercubed/f-flat-minor/issues/new?template=codetta-suggestion.yml"
+            >+ Suggest a Codetta</a>
+          </div>
+        </section>
       </section>
 
       <section class="codetta-screen" data-screen="detail" hidden>
-        <div class="codetta-detail-head">
-          <button type="button" class="ghost codetta-back-btn" id="codetta-back">← Études</button>
-          <div class="codetta-detail-nav" aria-label="Navigate études">
-            <button type="button" class="ghost codetta-detail-nav-btn" id="codetta-prev">Previous</button>
-            <button type="button" class="ghost codetta-detail-nav-btn" id="codetta-next">Next</button>
-          </div>
-        </div>
-
         <section class="codetta-detail-grid">
           <article class="panel">
             <div class="panel-header codetta-etude-header">
@@ -133,8 +201,10 @@ export function mountCodetta(root: HTMLElement) {
             </div>
             <div class="codetta-panel-body">
               <div id="codetta-description" class="codetta-description"></div>
-              <p class="panel-label">Expected output</p>
-              <pre id="codetta-expected" class="code-block codetta-expected"></pre>
+              <details class="codetta-expected-details">
+                <summary class="panel-label">Expected output</summary>
+                <pre id="codetta-expected" class="code-block codetta-expected"></pre>
+              </details>
             </div>
           </article>
           <article class="panel">
@@ -200,17 +270,17 @@ export function mountCodetta(root: HTMLElement) {
             <button id="codetta-submit" type="button" class="primary" disabled>✦ Submit</button>
             <section id="codetta-submit-help" class="codetta-submit-help" hidden>
               <p class="codetta-submit-head">🏆 New record! Ready to submit?</p>
-              <p>Submit opens GitHub's file editor for this etude. GitHub will offer to fork the repository first if needed.</p>
+              <p>Submit opens a prefilled GitHub issue for this Codetta submission.</p>
               <p id="codetta-issue-title" class="codetta-issue-title"></p>
               <textarea id="codetta-issue-body" class="codetta-issue-body" readonly></textarea>
               <div class="codetta-submit-actions">
                 <button id="codetta-copy" type="button" class="ghost">Copy</button>
                 <a
                   class="repo-link codetta-issues-link"
-                  href="https://github.com/Hypercubed/f-flat-minor/blob/main/.github/PULL_REQUEST_TEMPLATE/codetta-solution.md"
+                  href="https://github.com/Hypercubed/f-flat-minor/blob/main/.github/ISSUE_TEMPLATE/codetta-submission.yml"
                   target="_blank"
                   rel="noreferrer"
-                >View Codetta PR template ↗</a>
+                >View Codetta issue template ↗</a>
               </div>
             </section>
           </div>
@@ -222,9 +292,6 @@ export function mountCodetta(root: HTMLElement) {
   const listScreen = root.querySelector<HTMLElement>('[data-screen="list"]');
   const detailScreen = root.querySelector<HTMLElement>('[data-screen="detail"]');
   const listBody = root.querySelector<HTMLElement>("#codetta-etude-list");
-  const backButton = root.querySelector<HTMLButtonElement>("#codetta-back");
-  const prevButton = root.querySelector<HTMLButtonElement>("#codetta-prev");
-  const nextButton = root.querySelector<HTMLButtonElement>("#codetta-next");
   const title = root.querySelector<HTMLElement>("#codetta-title");
   const description = root.querySelector<HTMLElement>("#codetta-description");
   const expected = root.querySelector<HTMLElement>("#codetta-expected");
@@ -252,7 +319,7 @@ export function mountCodetta(root: HTMLElement) {
   const detailPanels = Array.from(root.querySelectorAll<HTMLElement>("[data-codetta-detail-panel]"));
 
   if (
-    !listScreen || !detailScreen || !listBody || !backButton || !prevButton || !nextButton || !title || !description || !expected ||
+    !listScreen || !detailScreen || !listBody || !title || !description || !expected ||
     !leader || !bytes || !date || !loadBest || !byteStatus || !runButton || !summary ||
     !output || !outputWrap || !outputWrapToggle || !bytecode || !bytecodeMeta || !bytecodeCount || !result || !submit || !submitHelp ||
     !issueTitle || !issueBody || !copyButton
@@ -272,9 +339,8 @@ export function mountCodetta(root: HTMLElement) {
     listScreen,
     detailScreen,
     listBody,
-    backButton,
-    prevButton,
-    nextButton,
+    prevButton: options.detailNavigation.prevButton,
+    nextButton: options.detailNavigation.nextButton,
     title,
     description,
     expected,
@@ -401,6 +467,10 @@ export function mountCodetta(root: HTMLElement) {
     ui.nextButton.disabled = index === -1 || index >= ETUDES.length - 1;
   }
 
+  function setDetailNavigationVisible(visible: boolean) {
+    options.detailNavigation.onVisibilityChange?.(visible);
+  }
+
   function syncSubmitState() {
     const isRecord = latestMatchedOutput && latestCompiledBytes !== null && latestCompiledBytes < activeEtude.bytes;
     ui.submit.disabled = !isRecord;
@@ -412,35 +482,48 @@ export function mountCodetta(root: HTMLElement) {
       return;
     }
 
-    const submitUrl = getCodettaSubmitUrl(activeEtude.id);
+    const source = ui.attemptEditor.getValue();
+    const submitUrl = getCodettaSubmitUrl(activeEtude, latestCompiledBytes, source, latestMatchedOutput);
     const solutionPath = getCodettaSolutionRepoPath(activeEtude.id);
-    ui.issueTitle.textContent = `Target file: ${solutionPath}`;
+    ui.issueTitle.textContent = `GitHub issue title: ${getCodettaIssueTitle(activeEtude.id, latestCompiledBytes)}`;
     ui.issueBody.value = [
       submitUrl,
       "",
-      `GitHub edit target: ${solutionPath}`,
+      `Issue template: .github/ISSUE_TEMPLATE/codetta-submission.yml`,
+      `Codetta slug: ${activeEtude.id}`,
+      `Target file: ${solutionPath}`,
       `Current winning score: ${activeEtude.bytes} bytes`,
       `Your verified score: ${latestCompiledBytes} bytes`,
       "",
-      "After committing the file edit in GitHub:",
-      "1. Choose Create pull request.",
-      "2. Use the Codetta PR template.",
-      "3. Include validation notes and the new byte count.",
+      "Prefilled fields:",
+      `- challenge slug: ${activeEtude.id}`,
+      "- leaderboard-name: not prefilled",
+      `- bytes: ${latestCompiledBytes}`,
+      "- solution: current editor contents",
+      "- validation: web-run verification notes",
+      "",
+      "Checkboxes are not prefilled by GitHub issue forms and must be checked manually.",
     ].join("\n");
   }
 
   function renderEtudeList() {
     ui.listBody.innerHTML = ETUDES.map((etude) => `
-      <tr data-etude-id="${etude.id}" role="button" tabindex="0">
-        <td>› ${escapeHtml(etude.title)}</td>
-        <td>${escapeHtml(etude.leader)}</td>
-        <td>${etude.bytes}</td>
-        <td>${escapeHtml(etude.date)}</td>
-      </tr>
+      <button
+        type="button"
+        class="codetta-list-card"
+        role="listitem"
+        data-etude-id="${etude.id}"
+        aria-label="Open codetta ${escapeHtml(etude.title)}, led by ${escapeHtml(etude.leader)}, ${etude.bytes} compiled bytes"
+      >
+        <span class="codetta-list-card-title">${escapeHtml(etude.title)}</span>
+        <span class="codetta-list-card-meta">${escapeHtml(etude.leader)}</span>
+        <span class="codetta-list-card-bytes">${etude.bytes}</span>
+      </button>
     `).join("");
   }
 
-  function openDetail(etude: CodettaEntry) {
+  function openDetail(etude: CodettaEntry, navigationOptions?: { history?: "push" | "replace" | "none" }) {
+    abortActiveRuns();
     activeEtude = etude;
     ui.title.textContent = etude.title;
     ui.description.innerHTML = renderMarkdown(etude.description);
@@ -455,19 +538,50 @@ export function mountCodetta(root: HTMLElement) {
     syncDetailNavigation();
     ui.listScreen.hidden = true;
     ui.detailScreen.hidden = false;
+    setDetailNavigationVisible(true);
+
+    if (navigationOptions?.history && navigationOptions.history !== "none") {
+      syncCodettaUrl(
+        etude.id,
+        navigationOptions.history,
+        navigationOptions.history === "push" ? options.onPushNavigation : undefined,
+      );
+    }
+
     ui.attemptEditor.focus();
   }
 
-  function openList() {
+  function openList(navigationOptions?: { history?: "push" | "replace" | "none" }) {
+    abortActiveRuns();
     ui.detailScreen.hidden = true;
     ui.listScreen.hidden = false;
+    setDetailNavigationVisible(false);
+
+    if (navigationOptions?.history && navigationOptions.history !== "none") {
+      syncCodettaUrl(
+        null,
+        navigationOptions.history,
+        navigationOptions.history === "push" ? options.onPushNavigation : undefined,
+      );
+    }
+  }
+
+  function syncFromLocation(location: Pick<Location, "hash" | "search"> = window.location) {
+    const etude = getEtudeFromLocation(location);
+
+    if (etude) {
+      openDetail(etude, { history: "none" });
+      return;
+    }
+
+    openList({ history: "none" });
   }
 
   renderEtudeList();
   setIdleSummary();
   setCodettaRunningState(false);
-  openDetail(activeEtude);
-  openList();
+  openDetail(activeEtude, { history: "none" });
+  syncFromLocation();
 
   ui.detailTabs.forEach((tab) => {
     tab.addEventListener("click", () => {
@@ -476,34 +590,17 @@ export function mountCodetta(root: HTMLElement) {
   });
 
   ui.listBody.addEventListener("click", (event) => {
-    const row = (event.target as HTMLElement).closest("tr[data-etude-id]");
-    if (!row) {
+    const card = (event.target as HTMLElement).closest<HTMLElement>("[data-etude-id]");
+    if (!card) {
       return;
     }
-    const etude = ETUDES.find((item) => item.id === row.getAttribute("data-etude-id"));
+    const etude = ETUDES.find((item) => item.id === card.getAttribute("data-etude-id"));
     if (!etude) {
       return;
     }
-    openDetail(etude);
+    openDetail(etude, { history: "push" });
   });
 
-  ui.listBody.addEventListener("keydown", (event) => {
-    if (event.key !== "Enter" && event.key !== " ") {
-      return;
-    }
-    const row = (event.target as HTMLElement).closest("tr[data-etude-id]");
-    if (!row) {
-      return;
-    }
-    const etude = ETUDES.find((item) => item.id === row.getAttribute("data-etude-id"));
-    if (!etude) {
-      return;
-    }
-    event.preventDefault();
-    openDetail(etude);
-  });
-
-  ui.backButton.addEventListener("click", openList);
   ui.prevButton.addEventListener("click", () => {
     const index = getEtudeIndex(activeEtude);
 
@@ -511,7 +608,7 @@ export function mountCodetta(root: HTMLElement) {
       return;
     }
 
-    openDetail(ETUDES[index - 1]);
+    openDetail(ETUDES[index - 1], { history: "push" });
   });
 
   ui.nextButton.addEventListener("click", () => {
@@ -521,7 +618,7 @@ export function mountCodetta(root: HTMLElement) {
       return;
     }
 
-    openDetail(ETUDES[index + 1]);
+    openDetail(ETUDES[index + 1], { history: "push" });
   });
 
   ui.loadBest.addEventListener("click", () => {
@@ -530,6 +627,9 @@ export function mountCodetta(root: HTMLElement) {
   });
 
   ui.runButton.addEventListener("click", async () => {
+    const abortController = new AbortController();
+    const unregisterAbort = registerActiveRun(abortController);
+
     startRunProgramRunFeedback(ui.runButton);
     setCodettaRunningState(true);
     ui.summary.dataset.state = "running";
@@ -543,6 +643,7 @@ export function mountCodetta(root: HTMLElement) {
     try {
       const run = await runPlaygroundProgram(ui.attemptEditor.getValue(), "", true, {
         filename: getCodettaSolutionFilename(activeEtude.id),
+        signal: abortController.signal,
         onProgress: ({ vmCyclesExecuted, compileMs, executeElapsedMs, bytecode: bcText }) => {
           if (bcText !== undefined) {
             setBytecodeDisplay(bcText);
@@ -631,6 +732,7 @@ export function mountCodetta(root: HTMLElement) {
       ui.result.dataset.tone = "bad";
       syncSubmitState();
     } finally {
+      unregisterAbort();
       stopRunProgramRunFeedback();
       setCodettaRunningState(false);
     }
@@ -641,7 +743,16 @@ export function mountCodetta(root: HTMLElement) {
       return;
     }
 
-    window.location.assign(getCodettaSubmitUrl(activeEtude.id));
+    if (latestCompiledBytes === null) {
+      return;
+    }
+
+    window.location.assign(getCodettaSubmitUrl(
+      activeEtude,
+      latestCompiledBytes,
+      ui.attemptEditor.getValue(),
+      latestMatchedOutput,
+    ));
   });
 
   ui.copyButton.addEventListener("click", async () => {
@@ -658,4 +769,8 @@ export function mountCodetta(root: HTMLElement) {
       ui.issueBody.select();
     }
   });
+
+  return {
+    syncFromLocation,
+  };
 }

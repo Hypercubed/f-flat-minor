@@ -4,7 +4,7 @@ import { CODETTA_ENTRIES, getCodettaSolutionFilename } from "./codetta-data.ts";
 import { compileProgram, getCompiledBytecodeDisplay } from "./program-runner.ts";
 
 describe("Codetta data loading", () => {
-  it("includes the current shipped Coda Etudes in the leaderboard data", () => {
+  it("includes the current shipped Codettas in the leaderboard data", () => {
     const ids = new Set(CODETTA_ENTRIES.map((entry) => entry.id));
 
     expect(ids.has("roman-to-arabic")).toBe(true);
@@ -29,7 +29,7 @@ describe("Codetta data loading", () => {
     expect(fizzbuzz?.solution.length).toBeGreaterThan(0);
   });
 
-  it("preserves the loaded Codetta solution filename extension per etude", () => {
+  it("preserves the loaded Codetta solution filename extension per Codetta entry", () => {
     expect(getCodettaSolutionFilename("99bottles")).toBe("/codetta/99bottles/solution.ffp");
     expect(getCodettaSolutionFilename("fizzbuzz")).toBe("/codetta/fizzbuzz/solution.ffp");
   });

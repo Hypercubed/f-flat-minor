@@ -1,0 +1,74 @@
+name: Codetta Submission
+description: Submit a new best solution for an existing Codetta.
+title: "[Codetta] "
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Submit one record-improving solution for an existing `ff/codetta/<slug>/` entry. Paste the exact source you want maintainers to apply and include the verified compiled byte count.
+
+  - type: input
+    id: etude
+    attributes:
+      label: Codetta slug
+      description: Existing `ff/codetta/<slug>/` id for this submission.
+      placeholder: fib
+    validations:
+      required: true
+
+  - type: input
+    id: leaderboard-name
+    attributes:
+      label: Leaderboard name
+      description: Only fill this in if you want the leaderboard to show something other than your GitHub username.
+      placeholder: hypercubed
+    validations:
+      required: false
+
+  - type: input
+    id: bytes
+    attributes:
+      label: Verified compiled bytes
+      description: Optimized compiled `.ffb` byte length, including the `FbAbbCb` header.
+      placeholder: "74"
+    validations:
+      required: true
+
+  - type: textarea
+    id: solution
+    attributes:
+      label: Submitted solution
+      description: Paste the exact contents of `solution.ff` or `solution.ffp`.
+      render: text
+      placeholder: |
+        ." 1346269"
+    validations:
+      required: true
+
+  - type: textarea
+    id: validation
+    attributes:
+      label: Validation notes
+      description: Optional notes on the compiler/runtime used and how you checked output and compiled byte length.
+      placeholder: |
+        - compiler/runtime used:
+        - how output was checked:
+        - how compiled byte length was checked:
+    validations:
+      required: false
+
+  - type: checkboxes
+    id: checks
+    attributes:
+      label: Submission checklist
+      options:
+        - label: This submission is for exactly one existing Codetta under `ff/codetta/<slug>/`.
+          required: true
+        - label: The submitted program matches that Codetta's `solution.out`.
+          required: true
+        - label: The byte count is the optimized compiled `.ffb` length, including `FbAbbCb`.
+          required: true
+        - label: The submitted score is strictly lower than the current README `bytes:` value.
+          required: true
+        - label: The pasted source is intended for `solution.ff` or `solution.ffp`.
+          required: true

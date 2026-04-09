@@ -3,7 +3,7 @@
 | etude | solution | source bytes (UTF-8) | source chars (code points) | optimized .ffb bytes | README bytes |
 | --- | --- | ---: | ---: | ---: | ---: |
 | `99bottles` | `solution.ffp` | 764 | 764 | 564 | 564 |
-| `catalans-constant` | `solution.ffp` | 172 | 172 | 149 | 149 |
+| `catalan-numbers` | `solution.ffp` | 197 | 197 | 222 | 222 |
 | `collatz` | `solution.ffp` | 186 | 186 | 222 | 222 |
 | `e-digits` | `solution.ffp` | 66 | 66 | 1083 | 1083 |
 | `fib` | `solution.ffp` | 122 | 122 | 78 | 78 |
@@ -12,7 +12,9 @@
 | `ln-2` | `solution.ffp` | 64 | 64 | 1043 | 1043 |
 | `pascals-triangle` | `solution.ffp` | 138 | 138 | 265 | 265 |
 | `pi-digits` | `solution.ffp` | 63 | 63 | 926 | 926 |
+| `prime-numbers` | `solution.ffp` | 94 | 94 | 1144 | 1144 |
 | `roman-to-arabic` | `solution.ffp` | 759 | 759 | 911 | 911 |
+| `sqrt-2` | `solution.ffp` | 67 | 67 | 439 | 439 |
 | `tower-of-hanoi` | `solution.ffp` | 322 | 322 | 215 | 215 |
 
 The **optimized .ffb bytes** column is the Codetta score.
