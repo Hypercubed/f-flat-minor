@@ -2,7 +2,7 @@
 etude: roman-to-arabic
 title: "Roman to Arabic"
 leader: hypercubed
-bytes: 877
+bytes: 911
 date: 2026-04-07
 ---
 

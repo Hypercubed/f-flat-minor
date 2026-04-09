@@ -1,5 +1,6 @@
-/* Near-solution seed based on the fixed-point ln(2) helper value. */
+.import ../../lib/prelude.ffp
 
-ln2: 69314718055994530941 ;
+N: 1000 ;
+L: N nln2 ;
 
-ln2 putn
+L N nputn

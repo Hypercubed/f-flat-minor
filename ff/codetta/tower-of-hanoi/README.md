@@ -2,7 +2,7 @@
 etude: tower-of-hanoi
 title: "Tower of Hanoi"
 leader: hypercubed
-bytes: 198
+bytes: 215
 date: 2026-04-07
 ---
 

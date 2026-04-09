@@ -2,7 +2,7 @@
 etude: catalans-constant
 title: "Catalan's Constant"
 leader: hypercubed
-bytes: 147
+bytes: 149
 date: 2026-04-07
 ---
 

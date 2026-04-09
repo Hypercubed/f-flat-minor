@@ -2,18 +2,18 @@
 
 | etude | solution | source bytes (UTF-8) | source chars (code points) | optimized .ffb bytes | README bytes |
 | --- | --- | ---: | ---: | ---: | ---: |
-| `99bottles` | `solution.ffp` | 764 | 764 | 543 | 543 |
-| `catalans-constant` | `solution.ffp` | 172 | 172 | 147 | 147 |
-| `collatz` | `solution.ffp` | 186 | 186 | 215 | 215 |
-| `e-digits` | `solution.ffp` | 68 | 68 | 1086 | 1086 |
-| `fib` | `solution.ffp` | 122 | 122 | 74 | 74 |
-| `fizzbuzz` | `solution.ffp` | 241 | 241 | 245 | 245 |
-| `leap-years` | `solution.ffp` | 136 | 136 | 224 | 224 |
-| `ln-2` | `solution.ffp` | 109 | 109 | 22 | 22 |
-| `pascals-triangle` | `solution.ffp` | 138 | 138 | 263 | 263 |
-| `pi-digits` | `solution.ffp` | 65 | 65 | 929 | 929 |
-| `roman-to-arabic` | `solution.ffp` | 759 | 759 | 877 | 877 |
-| `tower-of-hanoi` | `solution.ffp` | 322 | 322 | 198 | 198 |
+| `99bottles` | `solution.ffp` | 764 | 764 | 564 | 564 |
+| `catalans-constant` | `solution.ffp` | 172 | 172 | 149 | 149 |
+| `collatz` | `solution.ffp` | 186 | 186 | 222 | 222 |
+| `e-digits` | `solution.ffp` | 66 | 66 | 1083 | 1083 |
+| `fib` | `solution.ffp` | 122 | 122 | 78 | 78 |
+| `fizzbuzz` | `solution.ffp` | 241 | 241 | 267 | 267 |
+| `leap-years` | `solution.ffp` | 136 | 136 | 226 | 226 |
+| `ln-2` | `solution.ffp` | 64 | 64 | 1043 | 1043 |
+| `pascals-triangle` | `solution.ffp` | 138 | 138 | 265 | 265 |
+| `pi-digits` | `solution.ffp` | 63 | 63 | 926 | 926 |
+| `roman-to-arabic` | `solution.ffp` | 759 | 759 | 911 | 911 |
+| `tower-of-hanoi` | `solution.ffp` | 322 | 322 | 215 | 215 |
 
 The **optimized .ffb bytes** column is the Codetta score.
 It is the byte length of stdout from `FF_SHELL_TRACE=0 ./shell/ff-compile.sh <file>`.

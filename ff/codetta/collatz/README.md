@@ -2,7 +2,7 @@
 etude: collatz
 title: "Collatz"
 leader: hypercubed
-bytes: 215
+bytes: 222
 date: 2026-04-07
 ---
 

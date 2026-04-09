@@ -2,8 +2,8 @@
 etude: e-digits
 title: "Digits of e"
 leader: hypercubed
-bytes: 1086
-date: 2026-04-07
+bytes: 1083
+date: 2026-04-08
 ---
 
 Print e to the first 1,000 decimal places after the point.

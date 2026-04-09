@@ -2,8 +2,8 @@
 etude: pi-digits
 title: "Digits of pi"
 leader: hypercubed
-bytes: 929
-date: 2026-04-07
+bytes: 926
+date: 2026-04-08
 ---
 
 Print pi to the first 1,000 decimal places after the point.

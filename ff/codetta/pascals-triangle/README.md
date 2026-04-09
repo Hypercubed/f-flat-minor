@@ -2,7 +2,7 @@
 etude: pascals-triangle
 title: "Pascal's Triangle"
 leader: hypercubed
-bytes: 263
+bytes: 265
 date: 2026-04-07
 ---
 

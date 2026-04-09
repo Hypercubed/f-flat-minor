@@ -2,7 +2,7 @@
 etude: fib
 title: "Fibonacci"
 leader: hypercubed
-bytes: 74
+bytes: 78
 date: 2026-04-07
 ---
 

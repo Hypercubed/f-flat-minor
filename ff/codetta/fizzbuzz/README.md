@@ -2,7 +2,7 @@
 etude: fizzbuzz
 title: "FizzBuzz"
 leader: hypercubed
-bytes: 245
+bytes: 267
 date: 2026-04-07
 ---
 
