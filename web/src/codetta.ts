@@ -4,19 +4,38 @@ import {
   getCodettaSolutionRepoPath,
   type CodettaEntry,
 } from "./codetta-data.ts";
+import { mountSourceEditor, tutorialEditorFlatFeedback } from "./editor.ts";
 import { getCompiledBytecodeDisplay, getCompiledByteScore } from "./program-runner.ts";
 import { startRunProgramRunFeedback, stopRunProgramRunFeedback } from "./run-fx.ts";
 import { runPlaygroundProgram } from "./run-playground.ts";
 import { formatVmStepCount } from "./format-vm-steps.ts";
+import { remark } from "remark";
+import remarkGfm from "remark-gfm";
+import remarkRehype from "remark-rehype";
+import rehypeStringify from "rehype-stringify";
+import { codettaOutputsMatch, normalizeCodettaOutputForComparison } from "./codetta-compare.ts";
 
 const ETUDES: CodettaEntry[] = CODETTA_ENTRIES;
 const CODETTA_GITHUB_REPO = "https://github.com/Hypercubed/f-flat-minor";
+const markdownProcessor = remark()
+  .use(remarkGfm)
+  .use(remarkRehype)
+  .use(rehypeStringify);
 
 function escapeHtml(value: string): string {
   return value
     .replaceAll("&", "&amp;")
     .replaceAll("<", "&lt;")
     .replaceAll(">", "&gt;");
+}
+
+function renderMarkdown(markdown: string): string {
+  const normalized = markdown.replaceAll("\r\n", "\n").trim();
+  if (!normalized) {
+    return "";
+  }
+  const rendered = String(markdownProcessor.processSync(normalized));
+  return rendered.replaceAll("<a ", '<a target="_blank" rel="noreferrer" ');
 }
 
 function getCodettaSubmitUrl(slug: string): string {
@@ -50,6 +69,16 @@ function renderSummary(items: SummaryItem[]) {
       </span>
     `;
   }).join("");
+}
+
+function requireElement<T extends Element>(root: ParentNode, selector: string): T {
+  const element = root.querySelector<T>(selector);
+
+  if (!element) {
+    throw new Error(`Missing Codetta UI element: ${selector}`);
+  }
+
+  return element;
 }
 
 export function mountCodetta(root: HTMLElement) {
@@ -103,7 +132,7 @@ export function mountCodetta(root: HTMLElement) {
               </div>
             </div>
             <div class="codetta-panel-body">
-              <p id="codetta-description"></p>
+              <div id="codetta-description" class="codetta-description"></div>
               <p class="panel-label">Expected output</p>
               <pre id="codetta-expected" class="code-block codetta-expected"></pre>
             </div>
@@ -127,7 +156,7 @@ export function mountCodetta(root: HTMLElement) {
               </div>
             </div>
             <div class="codetta-attempt-body">
-              <textarea id="codetta-attempt" class="codetta-editor" spellcheck="false"></textarea>
+              <div id="codetta-attempt" class="codetta-editor-shell" aria-label="Codetta attempt editor"></div>
               <div class="codetta-attempt-controls">
                 <button id="codetta-load-best" type="button" class="ghost">Load Current Best</button>
                 <button id="codetta-run" type="button" class="primary codetta-run-btn">▶ Run</button>
@@ -143,13 +172,19 @@ export function mountCodetta(root: HTMLElement) {
               </div>
             </div>
             <div id="codetta-summary" class="summary-bar"></div>
-            <div class="subtabs" aria-label="Codetta program details">
-              <button type="button" class="subtab is-active" data-codetta-detail-tab="output">Output</button>
-              <button type="button" class="subtab" data-codetta-detail-tab="bytecode">Bytecode</button>
+            <div class="detail-toolbar">
+              <div class="subtabs" aria-label="Codetta program details">
+                <button type="button" class="subtab is-active" data-codetta-detail-tab="output">Output</button>
+                <button type="button" class="subtab" data-codetta-detail-tab="bytecode">Bytecode</button>
+              </div>
+              <label id="codetta-output-wrap-toggle" class="toggle output-wrap-toggle">
+                <input id="codetta-output-wrap" type="checkbox" checked />
+                <span>Wrap Output</span>
+              </label>
             </div>
             <div class="detail-panels codetta-detail-panels">
-              <pre id="codetta-output" class="console codetta-output detail-panel is-active" data-codetta-detail-panel="output">(Run your attempt to compare output.)</pre>
-              <pre id="codetta-bytecode" class="code-block codetta-bytecode detail-panel" data-codetta-detail-panel="bytecode">(Run your attempt to inspect bytecode.)</pre>
+              <pre id="codetta-output" class="console is-wrapped codetta-output detail-panel is-active" data-codetta-detail-panel="output">(Run your attempt to compare output.)</pre>
+              <pre id="codetta-bytecode" class="code-block bytecode-wrap codetta-bytecode detail-panel" data-codetta-detail-panel="bytecode">(Run your attempt to inspect bytecode.)</pre>
             </div>
             <div id="codetta-bytecode-meta" class="detail-meta" hidden>
               <span class="label">Byte count</span>
@@ -196,12 +231,14 @@ export function mountCodetta(root: HTMLElement) {
   const leader = root.querySelector<HTMLElement>("#codetta-leader");
   const bytes = root.querySelector<HTMLElement>("#codetta-bytes");
   const date = root.querySelector<HTMLElement>("#codetta-date");
-  const attempt = root.querySelector<HTMLTextAreaElement>("#codetta-attempt");
+  const attemptHost = requireElement<HTMLElement>(root, "#codetta-attempt");
   const loadBest = root.querySelector<HTMLButtonElement>("#codetta-load-best");
   const byteStatus = root.querySelector<HTMLElement>("#codetta-byte-status");
   const runButton = root.querySelector<HTMLButtonElement>("#codetta-run");
   const summary = root.querySelector<HTMLElement>("#codetta-summary");
   const output = root.querySelector<HTMLElement>("#codetta-output");
+  const outputWrap = root.querySelector<HTMLInputElement>("#codetta-output-wrap");
+  const outputWrapToggle = root.querySelector<HTMLElement>("#codetta-output-wrap-toggle");
   const bytecode = root.querySelector<HTMLElement>("#codetta-bytecode");
   const bytecodeMeta = root.querySelector<HTMLElement>("#codetta-bytecode-meta");
   const bytecodeCount = root.querySelector<HTMLElement>("#codetta-bytecode-count");
@@ -216,12 +253,20 @@ export function mountCodetta(root: HTMLElement) {
 
   if (
     !listScreen || !detailScreen || !listBody || !backButton || !prevButton || !nextButton || !title || !description || !expected ||
-    !leader || !bytes || !date || !attempt || !loadBest || !byteStatus || !runButton || !summary ||
-    !output || !bytecode || !bytecodeMeta || !bytecodeCount || !result || !submit || !submitHelp ||
+    !leader || !bytes || !date || !loadBest || !byteStatus || !runButton || !summary ||
+    !output || !outputWrap || !outputWrapToggle || !bytecode || !bytecodeMeta || !bytecodeCount || !result || !submit || !submitHelp ||
     !issueTitle || !issueBody || !copyButton
   ) {
     throw new Error("Missing Codetta UI elements.");
   }
+
+  const attemptEditor = mountSourceEditor(attemptHost, ETUDES[0]?.solution ?? "", {
+    extraExtensions: [tutorialEditorFlatFeedback],
+    onDocumentChange: () => {
+      invalidateLatestRun();
+      syncSubmitState();
+    },
+  });
 
   const ui = {
     listScreen,
@@ -236,12 +281,14 @@ export function mountCodetta(root: HTMLElement) {
     leader,
     bytes,
     date,
-    attempt,
+    attemptEditor,
     loadBest,
     byteStatus,
     runButton,
     summary,
     output,
+    outputWrap,
+    outputWrapToggle,
     bytecode,
     bytecodeMeta,
     bytecodeCount,
@@ -282,6 +329,7 @@ export function mountCodetta(root: HTMLElement) {
       panel.classList.toggle("is-active", active);
     });
 
+    ui.outputWrapToggle.hidden = name === "bytecode";
     ui.bytecodeMeta.hidden = name !== "bytecode";
   }
 
@@ -289,6 +337,15 @@ export function mountCodetta(root: HTMLElement) {
     ui.bytecode.textContent = getCompiledBytecodeDisplay(value) || "(Run your attempt to inspect bytecode.)";
     ui.bytecodeCount.textContent = formatBytecodeByteCount(value);
   }
+
+  function setOutputWrap(enabled: boolean) {
+    ui.output.classList.toggle("is-wrapped", enabled);
+  }
+
+  setOutputWrap(ui.outputWrap.checked);
+  ui.outputWrap.addEventListener("change", () => {
+    setOutputWrap(ui.outputWrap.checked);
+  });
 
   function setCodettaRunningState(isRunning: boolean) {
     ui.runButton.disabled = isRunning;
@@ -386,18 +443,19 @@ export function mountCodetta(root: HTMLElement) {
   function openDetail(etude: CodettaEntry) {
     activeEtude = etude;
     ui.title.textContent = etude.title;
-    ui.description.textContent = etude.description;
+    ui.description.innerHTML = renderMarkdown(etude.description);
     ui.expected.textContent = etude.expected;
     ui.leader.textContent = etude.leader;
     ui.bytes.textContent = String(etude.bytes);
     ui.date.textContent = etude.date;
-    ui.attempt.value = etude.solution;
+    ui.attemptEditor.setValue(etude.solution);
     setDetailTab("output");
     invalidateLatestRun();
     syncSubmitState();
     syncDetailNavigation();
     ui.listScreen.hidden = true;
     ui.detailScreen.hidden = false;
+    ui.attemptEditor.focus();
   }
 
   function openList() {
@@ -467,14 +525,8 @@ export function mountCodetta(root: HTMLElement) {
   });
 
   ui.loadBest.addEventListener("click", () => {
-    ui.attempt.value = activeEtude.solution;
-    invalidateLatestRun();
-    syncSubmitState();
-  });
-
-  ui.attempt.addEventListener("input", () => {
-    invalidateLatestRun();
-    syncSubmitState();
+    ui.attemptEditor.setValue(activeEtude.solution);
+    ui.attemptEditor.focus();
   });
 
   ui.runButton.addEventListener("click", async () => {
@@ -489,7 +541,7 @@ export function mountCodetta(root: HTMLElement) {
     ]);
 
     try {
-      const run = await runPlaygroundProgram(ui.attempt.value, "", true, {
+      const run = await runPlaygroundProgram(ui.attemptEditor.getValue(), "", true, {
         filename: getCodettaSolutionFilename(activeEtude.id),
         onProgress: ({ vmCyclesExecuted, compileMs, executeElapsedMs, bytecode: bcText }) => {
           if (bcText !== undefined) {
@@ -556,9 +608,8 @@ export function mountCodetta(root: HTMLElement) {
         return;
       }
 
-      const actual = run.output.trimEnd();
-      const expectedOutput = activeEtude.expected.trimEnd();
-      latestMatchedOutput = actual === expectedOutput;
+      const actual = normalizeCodettaOutputForComparison(run.output);
+      latestMatchedOutput = codettaOutputsMatch(run.output, activeEtude.expected);
       ui.output.textContent = actual || "(no output)";
       ui.result.textContent = latestMatchedOutput ? "✓ Output matches expected" : "✗ Output does not match expected";
       ui.result.dataset.tone = latestMatchedOutput ? "good" : "bad";

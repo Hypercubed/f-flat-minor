@@ -107,6 +107,8 @@ export function mountApp(root: HTMLElement) {
   const run = requireElement<HTMLButtonElement>(root, "#run");
   const summary = requireElement<HTMLDivElement>(root, "#summary");
   const output = requireElement<HTMLElement>(root, "#output");
+  const outputWrap = requireElement<HTMLInputElement>(root, "#output-wrap");
+  const outputWrapToggle = requireElement<HTMLElement>(root, "#output-wrap-toggle");
   const errorOutput = requireElement<HTMLElement>(root, "#error");
   const preprocessed = requireElement<HTMLElement>(root, "#preprocessed");
   const ir = requireElement<HTMLElement>(root, "#ir");
@@ -164,6 +166,12 @@ export function mountApp(root: HTMLElement) {
   example.value = initialExampleValue;
   const preprocessedViewer = mountReadonlySourceViewer(preprocessed, "");
   const irViewer = mountReadonlySourceViewer(ir, "");
+
+  function setOutputWrap(enabled: boolean) {
+    output.classList.toggle("is-wrapped", enabled);
+    preprocessedViewer.setWrapped(enabled);
+    irViewer.setWrapped(enabled);
+  }
 
   function setPlaygroundRunningState(isRunning: boolean) {
     example.disabled = isRunning;
@@ -235,6 +243,7 @@ export function mountApp(root: HTMLElement) {
       panel.classList.toggle("is-active", active);
     });
 
+    outputWrapToggle.hidden = name === "bytecode";
     bytecodeMeta.hidden = name !== "bytecode";
   }
 
@@ -269,6 +278,11 @@ export function mountApp(root: HTMLElement) {
     tab.addEventListener("click", () => {
       setDetailTab(tab.dataset.detailTab ?? "output");
     });
+  });
+
+  setOutputWrap(outputWrap.checked);
+  outputWrap.addEventListener("change", () => {
+    setOutputWrap(outputWrap.checked);
   });
 
   setDetailTab(

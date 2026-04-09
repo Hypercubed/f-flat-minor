@@ -1,6 +1,6 @@
 import { history, historyKeymap, indentWithTab, defaultKeymap } from "@codemirror/commands";
 import { syntaxHighlighting, HighlightStyle, StreamLanguage } from "@codemirror/language";
-import { EditorState, Prec, type Extension } from "@codemirror/state";
+import { Compartment, EditorState, Prec, type Extension } from "@codemirror/state";
 import type { StreamParser } from "@codemirror/stream-parser";
 import { EditorView, drawSelection, highlightActiveLine, keymap, lineNumbers, placeholder } from "@codemirror/view";
 import { tags } from "@lezer/highlight";
@@ -117,6 +117,8 @@ const readonlyTheme = EditorView.theme({
   ".cm-content": {
     minHeight: "160px",
     padding: "1rem 1.2rem 1.2rem",
+  },
+  ".cm-content:not(.cm-lineWrapping)": {
     whiteSpace: "pre",
   },
   ".cm-scroller": {
@@ -242,6 +244,10 @@ export interface SourceEditor {
   focus(): void;
 }
 
+export interface ReadonlySourceViewer extends SourceEditor {
+  setWrapped(enabled: boolean): void;
+}
+
 export interface MountSourceEditorOptions {
   extraExtensions?: readonly Extension[];
   /** Called after the document text changes (not on selection-only updates). */
@@ -310,11 +316,13 @@ export function mountSourceEditor(
   };
 }
 
-export function mountReadonlySourceViewer(parent: HTMLElement, initialValue: string): SourceEditor {
+export function mountReadonlySourceViewer(parent: HTMLElement, initialValue: string): ReadonlySourceViewer {
+  const wrapping = new Compartment();
   const view = new EditorView({
     state: EditorState.create({
       doc: initialValue,
       extensions: [
+        wrapping.of([]),
         ffLanguage,
         syntaxHighlighting(ffHighlightStyle),
         EditorState.readOnly.of(true),
@@ -346,6 +354,11 @@ export function mountReadonlySourceViewer(parent: HTMLElement, initialValue: str
     },
     focus() {
       view.focus();
+    },
+    setWrapped(enabled: boolean) {
+      view.dispatch({
+        effects: wrapping.reconfigure(enabled ? EditorView.lineWrapping : []),
+      });
     },
   };
 }

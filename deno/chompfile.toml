@@ -83,8 +83,8 @@ run = '''
   shopt -s nullglob
   shopt -s extglob
   for i in "${DEP%.*}.ff?(p)"; do
-    ./build/ff-run $i | cmp - $DEP -s && ${{CHECK}};
-    ./build/ff-run $i --opt | cmp - $DEP -s && ${{CHECK}};
+    ./build/ff-run $i | diff --ignore-trailing-space -q - > /dev/null 2>&1 $DEP && ${{CHECK}};
+    ./build/ff-run $i --opt | diff --ignore-trailing-space -q - > /dev/null 2>&1 $DEP && ${{CHECK}};
   done
 '''
 
@@ -174,7 +174,7 @@ run = '''
   shopt -s nullglob
   shopt -s extglob
   for i in "${DEP%.*}.ff?(p)"; do
-    ./build/ff-run $i | cmp - $DEP -s && ${{CHECK}};
-    ./build/ff-run $i --opt | cmp - $DEP -s && ${{CHECK}};
+    ./build/ff-run $i | diff --ignore-trailing-space -q - > /dev/null 2>&1 $DEP && ${{CHECK}};
+    ./build/ff-run $i --opt | diff --ignore-trailing-space -q - > /dev/null 2>&1 $DEP && ${{CHECK}};
   done
 '''

@@ -206,9 +206,7 @@ textarea {
 .subtabs {
   display: flex;
   gap: 0.5rem;
-  padding: 0.8rem 1.2rem 0;
   flex-wrap: wrap;
-  margin-bottom: 0.75rem;
 }
 
 .subtab {
@@ -325,7 +323,7 @@ textarea {
 
 .workspace .details-panel-shell > .panel-header,
 .workspace .details-panel-shell > .summary-bar,
-.workspace .details-panel-shell > .subtabs {
+.workspace .details-panel-shell > .detail-toolbar {
   flex-shrink: 0;
 }
 
@@ -480,6 +478,10 @@ textarea {
   white-space: nowrap;
 }
 
+.repl-status[hidden] {
+  display: none;
+}
+
 .repl-status-dot {
   width: 0.7rem;
   height: 0.7rem;
@@ -601,6 +603,36 @@ textarea {
   padding: 0.8rem 1.2rem 1.2rem;
 }
 
+.codetta-description {
+  margin: 0 0 0.8rem;
+}
+
+.codetta-description p {
+  margin: 0 0 0.8rem;
+}
+
+.codetta-description p:last-child {
+  margin-bottom: 0;
+}
+
+.codetta-description ul {
+  margin: 0 0 0.8rem 1.2rem;
+  padding: 0;
+}
+
+.codetta-description li + li {
+  margin-top: 0.25rem;
+}
+
+.codetta-description a {
+  color: var(--accent-2);
+}
+
+.codetta-description code {
+  font-family: "Iosevka", "Cascadia Code", "SFMono-Regular", monospace;
+  font-size: 0.95em;
+}
+
 .codetta-meta p {
   margin: 0.45rem 0;
   color: var(--muted);
@@ -656,17 +688,26 @@ textarea {
   flex-shrink: 0;
 }
 
-.codetta-editor {
+.codetta-editor-shell {
   width: 100%;
   flex: 1 1 auto;
   min-height: 0;
+  overflow: hidden;
+}
+
+.codetta-editor-shell .cm-editor {
+  height: 100%;
+  min-height: 0;
+  overflow: auto;
   border: 1px solid rgba(32, 22, 17, 0.15);
   border-radius: 18px;
-  padding: 0.8rem 0.9rem;
-  resize: vertical;
-  background: rgba(255, 250, 244, 0.9);
+  background: rgba(255, 250, 244, 0.88);
   color: var(--ink);
+}
+
+.codetta-editor-shell .cm-scroller {
   font-family: "Iosevka", "Cascadia Code", "SFMono-Regular", monospace;
+  font-size: 0.95rem;
   line-height: 1.55;
 }
 
@@ -1100,6 +1141,13 @@ button:disabled {
   font-size: 0.92rem;
 }
 
+.console.is-wrapped,
+.code-block.is-wrapped,
+.code-block.bytecode-wrap {
+  white-space: pre-wrap;
+  overflow-wrap: anywhere;
+}
+
 .detail-panels {
   display: flex;
   flex: 1 1 auto;
@@ -1132,6 +1180,43 @@ button:disabled {
   color: var(--ink);
   font-weight: 500;
   font-family: "Iosevka", "Cascadia Code", "SFMono-Regular", monospace;
+}
+
+.detail-toolbar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.75rem 1rem;
+  flex-wrap: wrap;
+  padding: 0.8rem 1.2rem 0.7rem;
+}
+
+.detail-toolbar .subtabs {
+  min-width: 0;
+}
+
+.detail-toolbar .output-wrap-toggle {
+  margin-left: auto;
+}
+
+.detail-toolbar .output-wrap-toggle[hidden] {
+  display: none;
+}
+
+.output-wrap-toggle {
+  min-height: 36px;
+  padding: 0.4rem 0.7rem;
+  border: 1px solid rgba(32, 22, 17, 0.15);
+  border-radius: 999px;
+  background: var(--panel-strong);
+  color: var(--ink);
+  font-size: 0.82rem;
+  white-space: nowrap;
+}
+
+.output-wrap-toggle input {
+  margin: 0;
+  accent-color: var(--accent-2);
 }
 
 .help-grid {
@@ -1569,7 +1654,7 @@ button:disabled {
     max-height: none;
   }
 
-  .codetta-editor,
+  .codetta-editor-shell .cm-editor,
   .codetta-output,
   .codetta-bytecode {
     min-height: 200px;
@@ -1594,6 +1679,10 @@ button:disabled {
 
   .detail-panels {
     max-height: var(--workspace-pane-height);
+  }
+
+  .detail-toolbar {
+    align-items: flex-start;
   }
 
   .help-grid {
