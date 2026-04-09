@@ -139,6 +139,11 @@ def run ()
 
     if item.is_a?(Numeric)
       $stack.push item
+    elsif item.is_a?(String) && item.length > 1 && item.start_with?('"') && item.end_with?('"')
+      # Sugar: "..." is [ '...' ] — prepend '[', char codes, ']'
+      inner = unescape(item[1..-2])
+      expanded = ['['] + inner.each_char.map(&:ord) + [']']
+      $queue = expanded + $queue
     elsif item[0] == "." && item.length() > 1
       # no-op
     elsif item[0] == "'"
@@ -195,7 +200,7 @@ end
 
 def tokenize (str)
   str = str.dup.force_encoding(Encoding::UTF_8)
-  return str.gsub(/\s+/m, ' ').strip.split(" ").map { |s| token(s) }
+  return str.gsub(/\s+/m, ' ').strip.split(' ').map { |s| token(s) }
 end
 
 defineSystem('nop', lambda {||

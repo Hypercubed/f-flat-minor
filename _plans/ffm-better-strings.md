@@ -2,13 +2,23 @@
 
 ## Overview
 
-Double-quoted strings (e.g. `"hello"`) are compiler sugar for a **quote that pushes character codes**. They are first-class values — a single pointer on the stack, like any other quote.
+**Double-quoted** strings (e.g. `"hello"`) are compiler sugar for a **quote that contains a single single-quoted string literal**: the same characters appear inside `[ ... ]` as one `'...'` token.
+
+**Single-quoted** strings (e.g. `'hi'`) are themselves sugar for **pushing each character as its own literal** (character codes / integers) in sequence.
+
+Chaining those rules, all of the following are equivalent (same quote body after full desugar):
 
 ```
-"hi"  ≡  [ 'h' 'i' ]  ≡  [ 104 105 ]
+"hi"  ≡  [ 'hi' ]  ≡  [ 'h' 'i' ]  ≡  [ 104 105 ]
 ```
 
-The empty string is `0` — the same `0` that already means NOP/nil throughout the language. This gives strings a natural null terminator with no new machinery.
+The **first** step for double quotes is still syntactic: `"hi"` becomes `[ 'hi' ]` — one string token inside the brackets, not two tokens `'h'` `'i'` at that stage. The equivalence to `[ 'h' 'i' ]` and `[ 104 105 ]` follows from how **single**-quoted strings desugar.
+
+**Escaping** rules are unchanged between single- and double-quoted forms: whatever escapes apply inside `'...'` apply inside the text of `"..."` as well (the lexer/parser treats the payload the same; only the outer delimiters differ).
+
+**No `0` on the double-quoted path:** desugaring `"..."` to `[ '...' ]` (and then to per-character pushes) does **not** add a `0` prefix or suffix. That is distinct from manually building a **nil-terminated cons chain** with `0 ... swons`, where `0` is the tail of the list — see Internal Representation.
+
+The empty string: `""` ≡ `[ '' ]`, which desugars to an empty quote body `[]` (no pushes). Separately, **`0`** remains the language’s NOP/nil and the **terminator** of cons-chain string values when constructed with `cons`/`swons`; it is not inserted by the double-quote sugar itself.
 
 ---
 
@@ -20,14 +30,16 @@ Strings are built from **cons cells**, directly analogous to Lisp. Each cons cel
 x y cons  →  ptr,  body: [ PUSH x, CALL y ]
 ```
 
-A string is a linked chain of cons cells terminating at `0`:
+A **cons-chain string value** (what you hold on the stack after `0 ... swons`) is a linked list of cons cells terminating at `0`:
 
 ```
-"hi"  →  ptrH,  body: [ PUSH 104, CALL ptrI ]
-          ptrI,  body: [ PUSH 105, CALL 0    ]
+ptrH,  body: [ PUSH 104, CALL ptrI ]
+ptrI,  body: [ PUSH 105, CALL 0    ]
 ```
 
 Eval'ing the head pointer walks the chain, pushing each character code in order.
+
+That shape is **not** the same token sequence as `"hi"` or `[ 'hi' ]` / `[ 104 105 ]`. The latter are **quotes** whose body (after desugar) is a flat sequence of pushes. Building a cons chain is still done manually (or by library words) with `0` and `cons`/`swons`. Double-quoted sugar never prepends or appends `0` to the quote body.
 
 ---
 
@@ -63,16 +75,52 @@ The plan originally called this `concat`, but the implementation uses `compose`
 
 ## Compiler Sugar
 
+### Double quotes → one single-quoted string inside a quote
+
 ```
-"hello"  →  desugared at compile time to 0 'o' swons 'l' swons 'l' swons 'e' swons 'h' swons
+"hello"  ≡  [ 'hello' ]
 ```
 
-So eval'ing the result pushes characters left to order: `h`, `e`, `l`, `l`, `o`.
+No `0` is added before or after the content when applying this rule.
 
-**Status: ❌ NOT IMPLEMENTED** - No implementation currently desugars `"..."` syntax.
-Users must manually construct strings using `0` and `cons`/`swons`:
+### Single quotes → one push per character
+
+A single-quoted string literal desugars to the same sequence of single-character literals (and thus to integer pushes) inside a quote:
+
 ```
-0 'i' swons 'h' swons   /* creates "hi" */
+'hello'  ≡  'h' 'e' 'l' 'l' 'o'   /* inside a quote body */
+[ 'hello' ]  ≡  [ 'h' 'e' 'l' 'l' 'o' ]  ≡  [ 104 101 108 108 111 ]   /* example codes */
+```
+
+**Escaping:** the escape grammar for `'...'` and `"..."` stays the same; only the delimiters differ at the first double-quote step.
+
+### Combined equivalence (example)
+
+```
+"hi"  ≡  [ 'hi' ]  ≡  [ 'h' 'i' ]  ≡  [ 104 105 ]
+```
+
+The compiler may fuse steps internally (e.g. emit numeric pushes directly) as long as the result matches the above.
+
+### Cons-chain construction (unchanged, not the same as `"..."` desugar)
+
+Manual nil-terminated string **values** are still built with `0` and `swons`, for example:
+
+```
+0 'o' swons 'l' swons 'l' swons 'e' swons 'h' swons
+```
+
+That produces a **single** cons-chain pointer on the stack, not the quote `[ 'hello' ]`. Library words such as `sprint` expect evaluable quote bodies or cons chains per existing conventions.
+
+**Status: ✅ Implemented** — **TypeScript core** (Node/Bun/Deno/web), **Go** (`go/src/compiler/compiler.go`), **Racket** (lexer/parser/compiler/runner/expander + `racket/private/unescape.rkt`), **Python** (`python/execute.py`: `run()` prepends `[`, integer char codes, `]` when it sees a `"..."` token — tokenizer leaves the token intact), **Ruby** (`ruby/execute.rb`: same in `run`), **Dart** (`dart/bin/dart.dart`: `ev()` prepends `[`, UTF-16 code unit strings, `]` when dequeuing a `"..."` token; `tokenize()` splits on whitespace only). In TS/Go/Racket the IR is BRA + pushes + KET; Python/Ruby/Dart feed the VM the equivalent queue sequence (`[` … codes … `]`).
+
+Equivalent spellings and manual cons-chain construction:
+
+```
+[ 'hi' ]
+[ 'h' 'i' ]
+[ 104 105 ]
+0 'i' swons 'h' swons     /* cons-chain "hi", includes terminating 0 */
 ```
 
 ---

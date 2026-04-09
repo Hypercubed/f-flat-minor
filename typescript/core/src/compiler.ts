@@ -197,14 +197,31 @@ export class Compiler {
             break;            
           }
         }
-      } else if (ss[0] === "'" && ss.length > 1) { // String
+      } else if (ss[0] === '"' && ss.length > 1) {
+        // Double-quoted strings: sugar for [ '...' ] — a quotation whose body is
+        // the same per-character pushes as a single-quoted literal (same escapes;
+        // no implicit 0). Eval'ing the quote matches running '...' at the call site.
+        call(OpCodes.BRA, { name: "[" }, currentToken);
+        const inner = unescapeString(ss)
+          .replace(/^"/, "")
+          .replace(/"$/, "");
+        inner.split("").forEach((c) => {
+          push(c.charCodeAt(0), { comment: c });
+        });
+        call(OpCodes.KET, { name: "]" }, currentToken);
+      } else if (ss[0] === "'" && ss.length > 1) {
+        // Single-quoted string: one push per character (see strings.ts).
         unescapeString(ss)
           .replace(/^'/, "")
           .replace(/'$/, "")
           .split("")
-          .forEach(c => {
+          .forEach((c) => {
             push(c.charCodeAt(0), { comment: c });
           });
+      } else if (ss === "[") {
+        call(OpCodes.BRA, { name: "[" }, currentToken);
+      } else if (ss === "]") {
+        call(OpCodes.KET, { name: "]" }, currentToken);
       } else if (ss.endsWith(":") && ss.length > 1) { // Definition
         const name = ss.replace(/:$/, "");
         push(this.getSymbol(name), { name: `${name}`, pointer: true });

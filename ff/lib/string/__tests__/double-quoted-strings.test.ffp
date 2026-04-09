@@ -1,0 +1,15 @@
+.import ../string.ffp
+.import ../../seq/seq.ffp
+.import ../../tap.ffp
+
+TAP-VERSION
+
+'\0Double-quoted\sstrings' SUBTEST
+  "hi" [ 'hi' ] seq= OK
+  "hi" eval 'i' = swap 'h' = and OK
+  "" [ ] seq= OK
+  '\n' "\n" eval = OK
+  '\"' "\"" eval = OK
+  5 PLAN OK
+
+1 PLAN

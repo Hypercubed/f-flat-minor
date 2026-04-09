@@ -1,7 +1,7 @@
 #lang racket/base
 
 (require racket/string brag/support)
-(require "ops.rkt" "symbols.rkt")
+(require "ops.rkt" "symbols.rkt" "unescape.rkt")
 
 (define user_symbols (make-hash))
 
@@ -44,20 +44,21 @@
 (define-lex-abbrev oct (:: (:or "-" "") "0o" (:+ (:or "_" "0" "1" "2" "3" "4" "5" "6" "7"))))
 (define-lex-abbrev comment (from/to "/*" "*/"))
 (define-lex-abbrev string (from/to "\'" "\'"))
+(define-lex-abbrev string-dq (from/to "\"" "\""))
 (define-lex-abbrev pointer (:: "[" id "]"))
 (define-lex-abbrev marker (:: id ":"))
 (define-lex-abbrev command (:: "." id))
-
-(define (unescape str)
-  (string-replace (string-replace (string-replace str "\\t" "\t") "\\s" " ") "\\n" "\n"))
 
 (define ff-lexer
   (lexer
    [comment (token 'COMMENT lexeme #:skip? #t)]
    [whitespace (token 'WHITESPACE lexeme #:skip? #t)]
    [command (token 'COMMENT lexeme #:skip? #t)]
-   [string (token 'STR (unescape (string-trim lexeme "\'")))]
+   [string (token 'STR (ff-unescape (string-trim lexeme "\'")))]
+   [string-dq (token 'STR-DQ (ff-unescape (substring lexeme 1 (sub1 (string-length lexeme)))))]
    [pointer (token 'PUSH (lookup (trim-ends "[" lexeme "]")))]
+   ["[" (token 'BRA #\[)]
+   ["]" (token 'KET #\])]
    [marker (token 'MRKR (lookup (string-trim lexeme ":")))]
    [decimal (token 'PUSH (->number lexeme))]
    [bin (token 'PUSH (->number lexeme))]

@@ -28,4 +28,16 @@
   (define cmds (flatten (map (lambda (x) (list x 0)) chars)))
   #`(list #,@cmds))
 
-(provide ff-program ff-marker ff-push ff-call ff-string)
+;; Double-quoted: sugar for [ '...' ] — BRA, per-char pushes, KET (same escapes as STR).
+(define-macro (ff-string-dq STR)
+  (define chars (map char->integer (string->list (syntax->datum #'STR))))
+  (define cmds (flatten (map (lambda (x) (list x 0)) chars)))
+  #`(list op_bra 1 #,@cmds op_ket 1))
+
+(define-macro (ff-bra . _)
+  #'(list op_bra 1))
+
+(define-macro (ff-ket . _)
+  #'(list op_ket 1))
+
+(provide ff-program ff-marker ff-push ff-call ff-string ff-string-dq ff-bra ff-ket)

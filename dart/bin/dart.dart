@@ -383,10 +383,12 @@ void callOp(BigInt code) {
   }
 }
 
+/// Whitespace-only split (no string or comment awareness).
 List<String> tokenize(String s) {
-  return s.split(RegExp(r"\s+"))
-    .where((ss) => ss.trim() != '')
-    .toList();
+  return s
+      .split(RegExp(r'\s+'))
+      .where((ss) => ss.trim().isNotEmpty)
+      .toList();
 }
 
 void ev() {
@@ -408,6 +410,17 @@ void ev() {
         var chars = unescapeQuotedString(text.substring(1, end)).split('');
         var asc = chars.map((c) => BigInt.from(c.codeUnitAt(0))).toList();
         stack.addAll(asc);
+      } else if (text.length > 1 &&
+          text.startsWith('"') &&
+          text.endsWith('"')) {
+        // Sugar: "..." is [ '...' ] — prepend '[', char code tokens, ']'
+        final inner = text.substring(1, text.length - 1);
+        final expanded = <Object>[
+          '[',
+          ...unescapeQuotedString(inner).codeUnits.map((u) => u.toString()),
+          ']',
+        ];
+        pushFrontQueueAll(expanded);
       } else if (symbols[text.toLowerCase()] != null) {
         var code = getSymbol(text);
         callOp(code);
