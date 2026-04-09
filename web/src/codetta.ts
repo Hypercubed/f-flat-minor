@@ -267,20 +267,11 @@ export function mountCodetta(root: HTMLElement, options: CodettaMountOptions): C
           <div class="codetta-panel-body codetta-submit-body">
             <p id="codetta-byte-status" class="codetta-byte-status"></p>
             <p id="codetta-result" class="codetta-result">Status: pending</p>
-            <button id="codetta-submit" type="button" class="primary" disabled>✦ Submit</button>
             <section id="codetta-submit-help" class="codetta-submit-help" hidden>
               <p class="codetta-submit-head">🏆 New record! Ready to submit?</p>
               <p>Submit opens a prefilled GitHub issue for this Codetta submission.</p>
-              <p id="codetta-issue-title" class="codetta-issue-title"></p>
-              <textarea id="codetta-issue-body" class="codetta-issue-body" readonly></textarea>
               <div class="codetta-submit-actions">
-                <button id="codetta-copy" type="button" class="ghost">Copy</button>
-                <a
-                  class="repo-link codetta-issues-link"
-                  href="https://github.com/Hypercubed/f-flat-minor/blob/main/.github/ISSUE_TEMPLATE/codetta-submission.yml"
-                  target="_blank"
-                  rel="noreferrer"
-                >View Codetta issue template ↗</a>
+                <button id="codetta-submit" type="button" class="primary" disabled>✦ Submit</button>
               </div>
             </section>
           </div>
@@ -312,17 +303,13 @@ export function mountCodetta(root: HTMLElement, options: CodettaMountOptions): C
   const result = root.querySelector<HTMLElement>("#codetta-result");
   const submit = root.querySelector<HTMLButtonElement>("#codetta-submit");
   const submitHelp = root.querySelector<HTMLElement>("#codetta-submit-help");
-  const issueTitle = root.querySelector<HTMLElement>("#codetta-issue-title");
-  const issueBody = root.querySelector<HTMLTextAreaElement>("#codetta-issue-body");
-  const copyButton = root.querySelector<HTMLButtonElement>("#codetta-copy");
   const detailTabs = Array.from(root.querySelectorAll<HTMLButtonElement>("[data-codetta-detail-tab]"));
   const detailPanels = Array.from(root.querySelectorAll<HTMLElement>("[data-codetta-detail-panel]"));
 
   if (
     !listScreen || !detailScreen || !listBody || !title || !description || !expected ||
     !leader || !bytes || !date || !loadBest || !byteStatus || !runButton || !summary ||
-    !output || !outputWrap || !outputWrapToggle || !bytecode || !bytecodeMeta || !bytecodeCount || !result || !submit || !submitHelp ||
-    !issueTitle || !issueBody || !copyButton
+    !output || !outputWrap || !outputWrapToggle || !bytecode || !bytecodeMeta || !bytecodeCount || !result || !submit || !submitHelp
   ) {
     throw new Error("Missing Codetta UI elements.");
   }
@@ -361,9 +348,6 @@ export function mountCodetta(root: HTMLElement, options: CodettaMountOptions): C
     result,
     submit,
     submitHelp,
-    issueTitle,
-    issueBody,
-    copyButton,
     detailTabs,
     detailPanels,
   };
@@ -475,35 +459,6 @@ export function mountCodetta(root: HTMLElement, options: CodettaMountOptions): C
     const isRecord = latestMatchedOutput && latestCompiledBytes !== null && latestCompiledBytes < activeEtude.bytes;
     ui.submit.disabled = !isRecord;
     ui.submitHelp.hidden = !isRecord;
-
-    if (!isRecord || latestCompiledBytes === null) {
-      ui.issueTitle.textContent = "";
-      ui.issueBody.value = "";
-      return;
-    }
-
-    const source = ui.attemptEditor.getValue();
-    const submitUrl = getCodettaSubmitUrl(activeEtude, latestCompiledBytes, source, latestMatchedOutput);
-    const solutionPath = getCodettaSolutionRepoPath(activeEtude.id);
-    ui.issueTitle.textContent = `GitHub issue title: ${getCodettaIssueTitle(activeEtude.id, latestCompiledBytes)}`;
-    ui.issueBody.value = [
-      submitUrl,
-      "",
-      `Issue template: .github/ISSUE_TEMPLATE/codetta-submission.yml`,
-      `Codetta slug: ${activeEtude.id}`,
-      `Target file: ${solutionPath}`,
-      `Current winning score: ${activeEtude.bytes} bytes`,
-      `Your verified score: ${latestCompiledBytes} bytes`,
-      "",
-      "Prefilled fields:",
-      `- challenge slug: ${activeEtude.id}`,
-      "- leaderboard-name: not prefilled",
-      `- bytes: ${latestCompiledBytes}`,
-      "- solution: current editor contents",
-      "- validation: web-run verification notes",
-      "",
-      "Checkboxes are not prefilled by GitHub issue forms and must be checked manually.",
-    ].join("\n");
   }
 
   function renderEtudeList() {
@@ -753,21 +708,6 @@ export function mountCodetta(root: HTMLElement, options: CodettaMountOptions): C
       ui.attemptEditor.getValue(),
       latestMatchedOutput,
     ));
-  });
-
-  ui.copyButton.addEventListener("click", async () => {
-    const value = ui.issueBody.value;
-
-    try {
-      await navigator.clipboard.writeText(value);
-      ui.copyButton.textContent = "Copied!";
-      window.setTimeout(() => {
-        ui.copyButton.textContent = "Copy";
-      }, 1200);
-    } catch {
-      ui.issueBody.focus();
-      ui.issueBody.select();
-    }
   });
 
   return {

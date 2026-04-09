@@ -940,29 +940,11 @@ textarea {
   font-weight: 600;
 }
 
-.codetta-issue-title {
-  margin: 0.45rem 0;
-  font-family: "Iosevka", "Cascadia Code", "SFMono-Regular", monospace;
-}
-
-.codetta-issue-body {
-  width: 100%;
-  min-height: 150px;
-  border-radius: 10px;
-  border: 1px solid rgba(32, 22, 17, 0.2);
-  padding: 0.65rem;
-  font-family: "Iosevka", "Cascadia Code", "SFMono-Regular", monospace;
-}
-
 .codetta-submit-actions {
   display: flex;
   flex-wrap: wrap;
   gap: 0.6rem;
   margin-top: 0.65rem;
-}
-
-.codetta-issues-link {
-  min-height: 44px;
 }
 
 .panel {
