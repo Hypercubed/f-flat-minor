@@ -1,3 +1,4 @@
+import { html, nothing, render } from "lit-html";
 import { mountSourceEditor, tutorialEditorFlatFeedback } from "./editor.ts";
 import { type RunResult } from "./program-runner.ts";
 import { formatVmStepCount } from "./format-vm-steps.ts";
@@ -5,13 +6,6 @@ import { runPlaygroundProgram } from "./run-playground.ts";
 import { startRunProgramRunFeedback, stopRunProgramRunFeedback } from "./run-fx.ts";
 import { TUTORIAL_PROBLEMS, type TutorialProblem } from "./tutorial-problems.ts";
 import { registerActiveRun } from "./active-run-cancellation.ts";
-
-function escapeHtml(value: string): string {
-  return value
-    .replaceAll("&", "&amp;")
-    .replaceAll("<", "&lt;")
-    .replaceAll(">", "&gt;");
-}
 
 function requireElement<T extends Element>(root: ParentNode, selector: string): T {
   const element = root.querySelector<T>(selector);
@@ -24,16 +18,12 @@ function requireElement<T extends Element>(root: ParentNode, selector: string): 
 }
 
 function renderInlineCopy(value: string) {
-  return value
-    .split(/(`[^`]+`)/g)
-    .map((part) => {
-      if (part.startsWith("`") && part.endsWith("`")) {
-        return `<code>${escapeHtml(part.slice(1, -1))}</code>`;
-      }
-
-      return escapeHtml(part);
-    })
-    .join("");
+  return html`${value.split(/(`[^`]+`)/g).map((part) => {
+    if (part.startsWith("`") && part.endsWith("`")) {
+      return html`<code>${part.slice(1, -1)}</code>`;
+    }
+    return part;
+  })}`;
 }
 
 type TutorialSummaryTone = "default" | "success" | "error" | "running" | "pending";
@@ -53,71 +43,81 @@ function waitForPaint() {
   });
 }
 
-function renderTutorialSummaryItems(items: TutorialSummaryItem[]) {
-  return items.map((item) => {
+function renderTutorialSummaryTemplate(items: TutorialSummaryItem[]) {
+  return html`${items.flatMap((item, index) => {
     const toneClass = item.tone && item.tone !== "default" ? ` ${item.tone}` : "";
-    const dot = item.showDot ? '<span class="tutorial-summary-dot" aria-hidden="true"></span>' : "";
-
-    return `
+    const node = html`
       <span class="tutorial-summary-item">
-        <span class="tutorial-summary-label">${escapeHtml(item.label)}</span>
-        <span class="tutorial-summary-value${toneClass}">${dot}${escapeHtml(item.value)}</span>
+        <span class="tutorial-summary-label">${item.label}</span>
+        <span class="tutorial-summary-value${toneClass}">
+          ${item.showDot ? html`<span class="tutorial-summary-dot" aria-hidden="true"></span>` : nothing}
+          ${item.value}
+        </span>
       </span>
     `;
-  }).join('<span class="tutorial-summary-separator" aria-hidden="true">|</span>');
+    if (index === 0) {
+      return [node];
+    }
+    return [html`<span class="tutorial-summary-separator" aria-hidden="true">|</span>`, node];
+  })}`;
 }
 
 function renderProblemCard(problem: TutorialProblem) {
-  const expectedHtml = problem.expected
-    ? `
-      <div class="tutorial-guidance-block">
-        <p class="tutorial-guidance-label">Expected result</p>
-        <pre class="tutorial-guidance-value">${escapeHtml(problem.expected)}</pre>
-      </div>
-    `
-    : "";
+  const expectedBlock = problem.expected
+    ? html`
+        <div class="tutorial-guidance-block">
+          <p class="tutorial-guidance-label">Expected result</p>
+          <pre class="tutorial-guidance-value">${problem.expected}</pre>
+        </div>
+      `
+    : nothing;
 
-  const noteHtml = problem.note
-    ? `
-      <div class="tutorial-guidance-block">
-        <p class="tutorial-guidance-label">Note</p>
-        <p class="tutorial-note">${renderInlineCopy(problem.note)}</p>
-      </div>
-    `
-    : "";
+  const noteBlock = problem.note
+    ? html`
+        <div class="tutorial-guidance-block">
+          <p class="tutorial-guidance-label">Note</p>
+          <p class="tutorial-note">${renderInlineCopy(problem.note)}</p>
+        </div>
+      `
+    : nothing;
 
-  const stdinHtml = typeof problem.stdin === "string"
-    ? `
-      <label class="field tutorial-stdin-field">
-        <span>stdin</span>
-        <input data-role="stdin" type="text" value="${escapeHtml(problem.stdin)}" />
-      </label>
-    `
-    : "";
+  const stdinField =
+    typeof problem.stdin === "string"
+      ? html`
+          <label class="field tutorial-stdin-field">
+            <span>stdin</span>
+            <input data-role="stdin" type="text" .value="${problem.stdin}" />
+          </label>
+        `
+      : nothing;
 
-  return `
-    <article class="panel tutorial-card" data-problem-id="${escapeHtml(problem.id)}">
+  return html`
+    <article class="panel tutorial-card" data-problem-id="${problem.id}">
       <div class="tutorial-card-body">
         <div class="tutorial-card-header">
           <div>
             <p class="panel-label">Problem ${problem.order}</p>
-            <h2>${escapeHtml(problem.title)}</h2>
+            <h2>${problem.title}</h2>
           </div>
           <p class="tutorial-goal">${renderInlineCopy(problem.goal)}</p>
         </div>
 
         <div class="tutorial-concepts" aria-label="Concepts">
-          ${problem.concepts.map((concept) => `<span class="tutorial-concept">${escapeHtml(concept)}</span>`).join("")}
+          ${problem.concepts.map((concept) => html`<span class="tutorial-concept">${concept}</span>`)}
         </div>
 
         <div class="tutorial-workbench">
           <div class="tutorial-editor-pane">
             <div class="tutorial-editor-shell">
-              <div class="tutorial-editor" data-role="editor" aria-label="${escapeHtml(problem.title)} source editor"></div>
+              <div
+                class="tutorial-editor"
+                data-role="editor"
+                aria-label="${problem.title} source editor"
+              ></div>
             </div>
 
             <div class="tutorial-controls">
-              ${stdinHtml}
+              ${stdinField}
               <div class="actions tutorial-actions">
                 <button type="button" data-role="run" class="primary tutorial-run-btn" aria-label="Run">Run</button>
                 <button type="button" data-role="reset" class="ghost">Reset</button>
@@ -134,8 +134,8 @@ function renderProblemCard(problem: TutorialProblem) {
         </div>
 
         <div class="tutorial-guidance">
-          ${expectedHtml}
-          ${noteHtml}
+          ${expectedBlock}
+          ${noteBlock}
         </div>
       </div>
     </article>
@@ -145,7 +145,7 @@ function renderProblemCard(problem: TutorialProblem) {
 function renderTutorialShell() {
   const problems = [...TUTORIAL_PROBLEMS].sort((left, right) => left.order - right.order);
 
-  return `
+  return html`
     <section class="tutorial-page">
       <section class="panel tutorial-intro">
         <div class="tutorial-intro-body">
@@ -163,7 +163,7 @@ function renderTutorialShell() {
       </section>
 
       <section class="tutorial-list" aria-label="Tutorial problems">
-        ${problems.map((problem) => renderProblemCard(problem)).join("")}
+        ${problems.map((problem) => renderProblemCard(problem))}
       </section>
     </section>
   `;
@@ -184,7 +184,7 @@ function renderOutput(result: RunResult) {
 }
 
 export function mountTutorial(root: HTMLElement) {
-  root.innerHTML = renderTutorialShell();
+  render(renderTutorialShell(), root);
 
   const problems = [...TUTORIAL_PROBLEMS].sort((left, right) => left.order - right.order);
 
@@ -230,11 +230,14 @@ export function mountTutorial(root: HTMLElement) {
       if (stdin) {
         stdin.disabled = true;
       }
-      summary.innerHTML = renderTutorialSummaryItems([
-        { label: "compile", value: "Running...", tone: "running", showDot: true },
-        { label: "execute", value: "pending", tone: "pending" },
-        { label: "exit", value: "pending", tone: "pending" },
-      ]);
+      render(
+        renderTutorialSummaryTemplate([
+          { label: "compile", value: "Running...", tone: "running", showDot: true },
+          { label: "execute", value: "pending", tone: "pending" },
+          { label: "exit", value: "pending", tone: "pending" },
+        ]),
+        summary,
+      );
       error.textContent = "";
       error.hidden = true;
 
@@ -245,26 +248,37 @@ export function mountTutorial(root: HTMLElement) {
       try {
         await waitForPaint();
 
-        summary.innerHTML = renderTutorialSummaryItems([
-          { label: "compile", value: "Running...", tone: "running", showDot: true },
-          { label: "execute", value: "pending", tone: "pending" },
-          { label: "exit", value: "pending", tone: "pending" },
-        ]);
+        render(
+          renderTutorialSummaryTemplate([
+            { label: "compile", value: "Running...", tone: "running", showDot: true },
+            { label: "execute", value: "pending", tone: "pending" },
+            { label: "exit", value: "pending", tone: "pending" },
+          ]),
+          summary,
+        );
 
         await waitForPaint();
 
         const result = await runPlaygroundProgram(sourceEditor.getValue(), stdin?.value ?? "", true, {
           signal: abortController.signal,
           onProgress: ({ vmCyclesExecuted, compileMs }) => {
-            summary.innerHTML = renderTutorialSummaryItems([
-              {
-                label: "compile",
-                value: compileMs !== undefined ? `${compileMs.toFixed(2)} ms` : "…",
-                tone: "running",
-              },
-              { label: "execute", value: `${formatVmStepCount(vmCyclesExecuted)} vm steps`, tone: "running", showDot: true },
-              { label: "exit", value: "pending", tone: "pending" },
-            ]);
+            render(
+              renderTutorialSummaryTemplate([
+                {
+                  label: "compile",
+                  value: compileMs !== undefined ? `${compileMs.toFixed(2)} ms` : "…",
+                  tone: "running",
+                },
+                {
+                  label: "execute",
+                  value: `${formatVmStepCount(vmCyclesExecuted)} vm steps`,
+                  tone: "running",
+                  showDot: true,
+                },
+                { label: "exit", value: "pending", tone: "pending" },
+              ]),
+              summary,
+            );
           },
         });
 
@@ -283,27 +297,32 @@ export function mountTutorial(root: HTMLElement) {
             ? "success"
             : "error";
 
-        summary.innerHTML = renderTutorialSummaryItems([
-          { label: "compile", value: `${result.compileMs.toFixed(2)} ms` },
-          { label: "execute", value: `${result.executeMs.toFixed(2)} ms` },
-          {
-            label: "exit",
-            value: exitLabel,
-            tone: exitTone,
-          },
-          {
-            label: "issues",
-            value: result.issues.length === 1 ? "1 compiler issue" : `${result.issues.length} compiler issues`,
-            tone: result.issues.length ? "error" : "default",
-          },
-          ...(result.vmCyclesExecuted !== undefined
-            ? [{
-              label: "vm steps",
-              value: formatVmStepCount(result.vmCyclesExecuted),
-              tone: "default" as const,
-            }]
-            : []),
-        ]);
+        render(
+          renderTutorialSummaryTemplate([
+            { label: "compile", value: `${result.compileMs.toFixed(2)} ms` },
+            { label: "execute", value: `${result.executeMs.toFixed(2)} ms` },
+            {
+              label: "exit",
+              value: exitLabel,
+              tone: exitTone,
+            },
+            {
+              label: "issues",
+              value: result.issues.length === 1 ? "1 compiler issue" : `${result.issues.length} compiler issues`,
+              tone: result.issues.length ? "error" : "default",
+            },
+            ...(result.vmCyclesExecuted !== undefined
+              ? [
+                  {
+                    label: "vm steps",
+                    value: formatVmStepCount(result.vmCyclesExecuted),
+                    tone: "default" as const,
+                  },
+                ]
+              : []),
+          ]),
+          summary,
+        );
         output.textContent = renderOutput(result);
 
         if (result.terminal === "error") {
@@ -325,11 +344,14 @@ export function mountTutorial(root: HTMLElement) {
       } catch (runError) {
         const message = runError instanceof Error ? runError.message : String(runError);
 
-        summary.innerHTML = renderTutorialSummaryItems([
-          { label: "compile", value: "failed", tone: "error" },
-          { label: "execute", value: "pending", tone: "pending" },
-          { label: "exit", value: "pending", tone: "pending" },
-        ]);
+        render(
+          renderTutorialSummaryTemplate([
+            { label: "compile", value: "failed", tone: "error" },
+            { label: "execute", value: "pending", tone: "pending" },
+            { label: "exit", value: "pending", tone: "pending" },
+          ]),
+          summary,
+        );
         output.textContent = "";
         diagnostics.textContent = "";
         diagnostics.hidden = true;

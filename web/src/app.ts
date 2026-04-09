@@ -1,10 +1,12 @@
+import { html, nothing, render } from "lit-html";
+import { unsafeHTML } from "lit-html/directives/unsafe-html.js";
 import { mountReadonlySourceViewer, mountSourceEditor, tutorialEditorFlatFeedback } from "./editor.ts";
 import {
   CUSTOM_EXAMPLE_VALUE,
   DEFAULT_EXAMPLE_PATH,
   DEFAULT_SOURCE,
   EXAMPLES,
-  EXAMPLE_OPTIONS_HTML,
+  EXAMPLE_ENTRIES,
 } from "./examples.ts";
 import { runPlaygroundProgram } from "./run-playground.ts";
 import { getCompiledBytecodeDisplay, getCompiledByteScore } from "./program-runner.ts";
@@ -28,13 +30,6 @@ import { decodeCodeFromUrlParam, encodeCodeForUrlParam } from "./url-codec.ts";
 import { abortActiveRuns, registerActiveRun } from "./active-run-cancellation.ts";
 import type { ValueInspection } from "../../typescript/core/src/engine.ts";
 import type { StackItem } from "./repl-session.ts";
-
-function escapeHtml(value: string): string {
-  return value
-    .replaceAll("&", "&amp;")
-    .replaceAll("<", "&lt;")
-    .replaceAll(">", "&gt;");
-}
 
 function requireElement<T extends Element>(root: ParentNode, selector: string): T {
   const element = root.querySelector<T>(selector);
@@ -73,28 +68,38 @@ function waitForPaint() {
   });
 }
 
-function renderSummary(items: SummaryItem[]) {
-  return items.map((item) => {
-    const toneClass = item.tone && item.tone !== "default" ? ` ${item.tone}` : "";
-    const dot = item.showDot ? '<span class="summary-running-dot" aria-hidden="true"></span>' : "";
-
-    return `
+function renderSummaryTemplate(items: SummaryItem[]) {
+  return html`${items.map(
+    (item) => html`
       <span class="summary-bar-item">
         <span class="label">${item.label}</span>
-        <span class="value${toneClass}">${dot}${escapeHtml(item.value)}</span>
+        <span class="value${item.tone && item.tone !== "default" ? ` ${item.tone}` : ""}">
+          ${item.showDot ? html`<span class="summary-running-dot" aria-hidden="true"></span>` : nothing}
+          ${item.value}
+        </span>
       </span>
-    `;
-  }).join("");
+    `,
+  )}`;
 }
 
+const [appShellBeforeExampleOptions, appShellAfterExampleOptions] = appShellTemplate.split(
+  "<!--@FFM_EXAMPLE_OPTIONS@-->",
+);
+const [appShellBeforeHelp, appShellAfterHelp] = appShellAfterExampleOptions.split("<!--@FFM_HELP@-->");
+
 function renderAppShell() {
-  return appShellTemplate
-    .replace("{{EXAMPLE_OPTIONS}}", EXAMPLE_OPTIONS_HTML)
-    .replace("{{HELP_HTML}}", helpTemplate);
+  return html`
+    ${unsafeHTML(appShellBeforeExampleOptions)}
+    ${EXAMPLE_ENTRIES.map(({ path, label }) => html`<option value="${path}">${label}</option>`)}
+    <option value="${CUSTOM_EXAMPLE_VALUE}">Custom</option>
+    ${unsafeHTML(appShellBeforeHelp)}
+    ${unsafeHTML(helpTemplate)}
+    ${unsafeHTML(appShellAfterHelp)}
+  `;
 }
 
 export function mountApp(root: HTMLElement) {
-  root.innerHTML = renderAppShell();
+  render(renderAppShell(), root);
 
   const runFeedbackToggle = requireElement<HTMLButtonElement>(root, "#run-feedback-toggle");
   runFeedbackToggle.addEventListener("click", () => {
@@ -263,7 +268,7 @@ export function mountApp(root: HTMLElement) {
   }
 
   function setBytecodeDisplay(value: string) {
-    bytecode.innerHTML = escapeHtml(getCompiledBytecodeDisplay(value));
+    render(html`${getCompiledBytecodeDisplay(value)}`, bytecode);
     bytecodeCount.textContent = formatBytecodeByteCount(value);
   }
 
@@ -344,12 +349,15 @@ export function mountApp(root: HTMLElement) {
   async function renderPlayground() {
     document.body.dataset.ready = "false";
     setPlaygroundRunningState(true);
-    summary.innerHTML = renderSummary([
-      { label: "compile", value: "Running...", tone: "running", showDot: true },
-      { label: "execute", value: "…", tone: "pending" },
-      { label: "vm steps", value: "…", tone: "pending" },
-      { label: "exit", value: "pending", tone: "pending" },
-    ]);
+    render(
+      renderSummaryTemplate([
+        { label: "compile", value: "Running...", tone: "running", showDot: true },
+        { label: "execute", value: "…", tone: "pending" },
+        { label: "vm steps", value: "…", tone: "pending" },
+        { label: "exit", value: "pending", tone: "pending" },
+      ]),
+      summary,
+    );
     errorOutput.textContent = "";
 
     const abortController = new AbortController();
@@ -374,26 +382,29 @@ export function mountApp(root: HTMLElement) {
             irViewer.setValue(irText ?? "");
             setBytecodeDisplay(bcText ?? "");
           }
-          summary.innerHTML = renderSummary([
-            {
-              label: "compile",
-              value: compileMs !== undefined ? `${compileMs.toFixed(2)} ms` : "…",
-              tone: "running",
-            },
-            {
-              label: "execute",
-              value:
-                executeElapsedMs !== undefined ? `${executeElapsedMs.toFixed(2)} ms` : "…",
-              tone: "running",
-              showDot: true,
-            },
-            {
-              label: "vm steps",
-              value: formatVmStepCount(vmCyclesExecuted),
-              tone: "running",
-            },
-            { label: "exit", value: "pending", tone: "pending" },
-          ]);
+          render(
+            renderSummaryTemplate([
+              {
+                label: "compile",
+                value: compileMs !== undefined ? `${compileMs.toFixed(2)} ms` : "…",
+                tone: "running",
+              },
+              {
+                label: "execute",
+                value:
+                  executeElapsedMs !== undefined ? `${executeElapsedMs.toFixed(2)} ms` : "…",
+                tone: "running",
+                showDot: true,
+              },
+              {
+                label: "vm steps",
+                value: formatVmStepCount(vmCyclesExecuted),
+                tone: "running",
+              },
+              { label: "exit", value: "pending", tone: "pending" },
+            ]),
+            summary,
+          );
         },
       });
 
@@ -445,17 +456,17 @@ export function mountApp(root: HTMLElement) {
         },
       ];
 
-      summary.innerHTML = renderSummary(summaryItems);
+      render(renderSummaryTemplate(summaryItems), summary);
 
       if (result.terminal === "error") {
-        output.innerHTML = "";
-        errorOutput.innerHTML = escapeHtml(result.logs.join("\n") || "Run failed.");
+        render(nothing, output);
+        render(html`${result.logs.join("\n") || "Run failed."}`, errorOutput);
         preprocessedViewer.setValue("");
         irViewer.setValue("");
         setBytecodeDisplay("");
         scrollToBottom(errorOutput);
       } else {
-        output.innerHTML = escapeHtml(diagnostics);
+        render(html`${diagnostics}`, output);
         errorOutput.textContent = "";
         preprocessedViewer.setValue(result.preprocessed);
         irViewer.setValue(result.ir);
@@ -465,14 +476,17 @@ export function mountApp(root: HTMLElement) {
     } catch (error) {
       const message = error instanceof Error ? error.message : String(error);
 
-      summary.innerHTML = renderSummary([
-        { label: "compile", value: "failed", tone: "error" },
-        { label: "execute", value: "—", tone: "pending" },
-        { label: "vm steps", value: "—", tone: "pending" },
-        { label: "exit", value: "pending", tone: "pending" },
-      ]);
-      output.innerHTML = "";
-      errorOutput.innerHTML = escapeHtml(message);
+      render(
+        renderSummaryTemplate([
+          { label: "compile", value: "failed", tone: "error" },
+          { label: "execute", value: "—", tone: "pending" },
+          { label: "vm steps", value: "—", tone: "pending" },
+          { label: "exit", value: "pending", tone: "pending" },
+        ]),
+        summary,
+      );
+      render(nothing, output);
+      render(html`${message}`, errorOutput);
       preprocessedViewer.setValue("");
       irViewer.setValue("");
       setBytecodeDisplay("");
@@ -487,14 +501,17 @@ export function mountApp(root: HTMLElement) {
   }
 
   function setPlaygroundIdle() {
-    summary.innerHTML = renderSummary([
-      { label: "compile", value: "—", tone: "pending" },
-      { label: "execute", value: "—", tone: "pending" },
-      { label: "vm steps", value: "—", tone: "pending" },
-      { label: "exit", value: "—", tone: "pending" },
-    ]);
+    render(
+      renderSummaryTemplate([
+        { label: "compile", value: "—", tone: "pending" },
+        { label: "execute", value: "—", tone: "pending" },
+        { label: "vm steps", value: "—", tone: "pending" },
+        { label: "exit", value: "—", tone: "pending" },
+      ]),
+      summary,
+    );
     summary.dataset.state = "idle";
-    output.innerHTML = escapeHtml("(Click Run Program to execute.)");
+    render(html`(Click Run Program to execute.)`, output);
     errorOutput.textContent = "";
     preprocessedViewer.setValue("");
     irViewer.setValue("");
@@ -531,26 +548,30 @@ export function mountApp(root: HTMLElement) {
     replDepth.textContent = `depth: ${stack.length}`;
 
     if (!stack.length) {
-      replStack.innerHTML = '<li class="repl-stack-empty">(empty stack)</li>';
+      render(
+        html`<li class="repl-stack-empty">(empty stack)</li>`,
+        replStack,
+      );
       scrollToBottom(replStack);
       return;
     }
 
-    replStack.innerHTML = stack
-      .map(
-        (item) => `
-          <li class="repl-stack-row" data-value="${escapeHtml(item.value)}">
+    render(
+      html`${stack.map(
+        (item) => html`
+          <li class="repl-stack-row" data-value="${item.value}">
             <span class="repl-stack-index">${item.index}:</span>
-            <code class="repl-stack-value">${escapeHtml(item.value)}</code>
+            <code class="repl-stack-value">${item.value}</code>
           </li>
         `,
-      )
-      .join("");
+      )}`,
+      replStack,
+    );
     scrollToBottom(replStack);
   }
 
   function renderReplTranscript() {
-    replOutput.innerHTML = escapeHtml(replTranscript.join("\n\n"));
+    render(html`${replTranscript.join("\n\n")}`, replOutput);
     scrollToBottom(replOutput);
   }
 
@@ -620,63 +641,62 @@ export function mountApp(root: HTMLElement) {
       return;
     }
 
-    const parts: string[] = [];
     const isNested = inspectCurrentIndex > 0;
+    const isQuote = !info.name && info.value > 255n;
 
-    // Header with value, name, and tags all on one line
-    parts.push(`<div class="inspect-header">`);
-    parts.push(`<code class="inspect-value">${escapeHtml(String(info.value))}</code>`);
-    if (info.name) {
-      parts.push(`<span class="inspect-name-label">KNOWN AS:</span><span class="inspect-name-value">${escapeHtml(info.name)}</span>`);
-    }
-    // Tags on same line
-    if (info.isSystem) parts.push(`<span class="inspect-tag system">system</span>`);
-    else if (info.isDefined) {
-      // Check if it's an anonymous word (quote): defined but no name and value > 255
-      const isQuote = !info.name && info.value > 255n;
-      parts.push(`<span class="inspect-tag ${isQuote ? "quote" : "user"}">${isQuote ? "quote" : "user-defined"}</span>`);
-    }
-    parts.push(`</div>`);
+    const definitionSection =
+      info.definition && info.definition.length > 0
+        ? html`
+            <div class="inspect-label">Definition:</div>
+            <div class="inspect-definition">
+              ${info.definition.map((token) => {
+                const display = token.name ?? String(token.value);
+                const tokenClass = token.isCall ? "token-call" : "token-literal";
+                const inspectable = token.isCall || token.isDefined ? "inspectable" : "";
+                const title = token.isCall || token.isDefined ? "Click to inspect" : "Literal value";
+                return html`
+                  <span
+                    class="inspect-token ${tokenClass} ${inspectable}"
+                    data-value="${String(token.value)}"
+                    title="${title}"
+                  >${display}</span>
+                `;
+              })}
+            </div>
+          `
+        : !info.isSystem && !info.isDefined
+        ? html`<div class="inspect-note">Plain value (not a word)</div>`
+        : nothing;
 
-    // Stack effect and description for core words (system words)
-    if (info.isSystem && (info.stackEffect || info.description)) {
-      parts.push(`<div class="inspect-vocabulary">`);
-      if (info.stackEffect) {
-        parts.push(`<div class="inspect-stack-effect"><code>${escapeHtml(info.stackEffect)}</code></div>`);
-      }
-      if (info.description) {
-        parts.push(`<div class="inspect-description">${escapeHtml(info.description)}</div>`);
-      }
-      parts.push(`</div>`);
-    }
-
-    // Definition with clickable tokens
-    if (info.definition && info.definition.length > 0) {
-      parts.push(`<div class="inspect-label">Definition:</div>`);
-      parts.push(`<div class="inspect-definition">`);
-
-      for (const token of info.definition) {
-        const display = token.name ?? String(token.value);
-        const tokenClass = token.isCall ? "token-call" : "token-literal";
-        // Make inspectable if it's a call OR if it's a defined word (even if stored as literal)
-        const inspectable = token.isCall || token.isDefined ? "inspectable" : "";
-        const title = token.isCall || token.isDefined ? "Click to inspect" : "Literal value";
-
-        parts.push(
-          `<span class="inspect-token ${tokenClass} ${inspectable}" ` +
-            `data-value="${escapeHtml(String(token.value))}" ` +
-            `title="${title}">` +
-            `${escapeHtml(display)}` +
-            `</span>`,
-        );
-      }
-
-      parts.push(`</div>`);
-    } else if (!info.isSystem && !info.isDefined) {
-      parts.push(`<div class="inspect-note">Plain value (not a word)</div>`);
-    }
-
-    replInspectContent.innerHTML = parts.join("");
+    render(
+      html`
+        <div class="inspect-header">
+          <code class="inspect-value">${String(info.value)}</code>
+          ${info.name
+            ? html`<span class="inspect-name-label">KNOWN AS:</span><span class="inspect-name-value">${info.name}</span>`
+            : nothing}
+          ${info.isSystem
+            ? html`<span class="inspect-tag system">system</span>`
+            : info.isDefined
+            ? html`<span class="inspect-tag ${isQuote ? "quote" : "user"}">${isQuote ? "quote" : "user-defined"}</span>`
+            : nothing}
+        </div>
+        ${info.isSystem && (info.stackEffect || info.description)
+          ? html`
+              <div class="inspect-vocabulary">
+                ${info.stackEffect
+                  ? html`<div class="inspect-stack-effect"><code>${info.stackEffect}</code></div>`
+                  : nothing}
+                ${info.description
+                  ? html`<div class="inspect-description">${info.description}</div>`
+                  : nothing}
+              </div>
+            `
+          : nothing}
+        ${definitionSection}
+      `,
+      replInspectContent,
+    );
     // Back button: disabled at root level, enabled when nested
     replInspectBack.disabled = !isNested;
     // Close button: always visible when panel is open

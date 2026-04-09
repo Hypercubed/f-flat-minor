@@ -71,7 +71,7 @@ function exampleLabel(globKey: string): string {
   return relative;
 }
 
-const EXAMPLE_ENTRIES: ExampleEntry[] = [
+export const EXAMPLE_ENTRIES: ExampleEntry[] = [
   { path: "/examples/fact.ffp", label: "fact.ffp", source: factExample },
   { path: "/examples/cbrt.ffp", label: "cbrt.ffp", source: cbrtExample },
   { path: "/examples/sqrt.ffp", label: "sqrt.ffp", source: sqrtExample },

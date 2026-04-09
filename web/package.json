@@ -10,6 +10,7 @@
     "@codemirror/view": "^6.38.6",
     "@lezer/highlight": "^1.2.3",
     "fflate": "^0.8.2",
+    "lit-html": "^3.3.2",
     "rehype-stringify": "^10.0.1",
     "remark": "^15.0.1",
     "remark-gfm": "^4.0.1",

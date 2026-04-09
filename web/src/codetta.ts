@@ -1,3 +1,5 @@
+import { html, nothing, render } from "lit-html";
+import { unsafeHTML } from "lit-html/directives/unsafe-html.js";
 import {
   buildAppUrl,
   getSearchStringForStateMerge,
@@ -27,13 +29,6 @@ const markdownProcessor = remark()
   .use(remarkGfm)
   .use(remarkRehype)
   .use(rehypeStringify);
-
-function escapeHtml(value: string): string {
-  return value
-    .replaceAll("&", "&amp;")
-    .replaceAll("<", "&lt;")
-    .replaceAll(">", "&gt;");
-}
 
 function renderMarkdown(markdown: string): string {
   const normalized = markdown.replaceAll("\r\n", "\n").trim();
@@ -86,78 +81,22 @@ function formatBytecodeByteCount(value: string) {
   return `${byteCount} ${unit}`;
 }
 
-function renderSummary(items: SummaryItem[]) {
-  return items.map((item) => {
-    const toneClass = item.tone && item.tone !== "default" ? ` ${item.tone}` : "";
-    const dot = item.showDot ? '<span class="summary-running-dot" aria-hidden="true"></span>' : "";
-
-    return `
+function renderSummaryTemplate(items: SummaryItem[]) {
+  return html`${items.map(
+    (item) => html`
       <span class="summary-bar-item">
-        <span class="label">${escapeHtml(item.label)}</span>
-        <span class="value${toneClass}">${dot}${escapeHtml(item.value)}</span>
+        <span class="label">${item.label}</span>
+        <span class="value${item.tone && item.tone !== "default" ? ` ${item.tone}` : ""}">
+          ${item.showDot ? html`<span class="summary-running-dot" aria-hidden="true"></span>` : nothing}
+          ${item.value}
+        </span>
       </span>
-    `;
-  }).join("");
+    `,
+  )}`;
 }
 
-function requireElement<T extends Element>(root: ParentNode, selector: string): T {
-  const element = root.querySelector<T>(selector);
-
-  if (!element) {
-    throw new Error(`Missing Codetta UI element: ${selector}`);
-  }
-
-  return element;
-}
-
-function syncCodettaUrl(
-  etudeSlug: string | null,
-  mode: "push" | "replace",
-  onPushNavigation?: () => void,
-) {
-  const nextUrl = buildAppUrl({
-    pathname: window.location.pathname,
-    search: getSearchStringForStateMerge(window.location),
-    tab: "codetta",
-    codeParam: null,
-    exampleParam: null,
-    etudeParam: etudeSlug,
-  });
-  const currentUrl = `${window.location.pathname}${window.location.hash}`;
-
-  if (nextUrl !== currentUrl) {
-    if (mode === "push") {
-      window.history.pushState(window.history.state, "", nextUrl);
-      onPushNavigation?.();
-    } else {
-      window.history.replaceState(window.history.state, "", nextUrl);
-    }
-  }
-}
-
-function getEtudeFromLocation(location: Pick<Location, "hash" | "search">): CodettaEntry | null {
-  return ETUDES.find((item) => item.id === parseCodettaEtudeParam(location)) ?? null;
-}
-
-export interface CodettaController {
-  syncFromLocation(location?: Pick<Location, "hash" | "search">): void;
-}
-
-interface CodettaMountOptions {
-  detailNavigation: {
-    prevButton: HTMLButtonElement;
-    nextButton: HTMLButtonElement;
-    onVisibilityChange?: (visible: boolean) => void;
-  };
-  onPushNavigation?: () => void;
-}
-
-export function mountCodetta(root: HTMLElement, options: CodettaMountOptions): CodettaController {
-  if (ETUDES.length === 0) {
-    throw new Error("No Codetta entries found.");
-  }
-
-  root.innerHTML = `
+function codettaShellTemplate() {
+  return html`
     <section class="codetta">
       <section class="codetta-screen codetta-list-screen" data-screen="list">
         <article class="panel codetta-intro-panel">
@@ -253,8 +192,16 @@ export function mountCodetta(root: HTMLElement, options: CodettaMountOptions): C
               </label>
             </div>
             <div class="detail-panels codetta-detail-panels">
-              <pre id="codetta-output" class="console is-wrapped codetta-output detail-panel is-active" data-codetta-detail-panel="output">(Run your attempt to compare output.)</pre>
-              <pre id="codetta-bytecode" class="code-block bytecode-wrap codetta-bytecode detail-panel" data-codetta-detail-panel="bytecode">(Run your attempt to inspect bytecode.)</pre>
+              <pre
+                id="codetta-output"
+                class="console is-wrapped codetta-output detail-panel is-active"
+                data-codetta-detail-panel="output"
+              >(Run your attempt to compare output.)</pre>
+              <pre
+                id="codetta-bytecode"
+                class="code-block bytecode-wrap codetta-bytecode detail-panel"
+                data-codetta-detail-panel="bytecode"
+              >(Run your attempt to inspect bytecode.)</pre>
             </div>
             <div id="codetta-bytecode-meta" class="detail-meta" hidden>
               <span class="label">Byte count</span>
@@ -279,6 +226,66 @@ export function mountCodetta(root: HTMLElement, options: CodettaMountOptions): C
       </section>
     </section>
   `;
+}
+
+function requireElement<T extends Element>(root: ParentNode, selector: string): T {
+  const element = root.querySelector<T>(selector);
+
+  if (!element) {
+    throw new Error(`Missing Codetta UI element: ${selector}`);
+  }
+
+  return element;
+}
+
+function syncCodettaUrl(
+  etudeSlug: string | null,
+  mode: "push" | "replace",
+  onPushNavigation?: () => void,
+) {
+  const nextUrl = buildAppUrl({
+    pathname: window.location.pathname,
+    search: getSearchStringForStateMerge(window.location),
+    tab: "codetta",
+    codeParam: null,
+    exampleParam: null,
+    etudeParam: etudeSlug,
+  });
+  const currentUrl = `${window.location.pathname}${window.location.hash}`;
+
+  if (nextUrl !== currentUrl) {
+    if (mode === "push") {
+      window.history.pushState(window.history.state, "", nextUrl);
+      onPushNavigation?.();
+    } else {
+      window.history.replaceState(window.history.state, "", nextUrl);
+    }
+  }
+}
+
+function getEtudeFromLocation(location: Pick<Location, "hash" | "search">): CodettaEntry | null {
+  return ETUDES.find((item) => item.id === parseCodettaEtudeParam(location)) ?? null;
+}
+
+export interface CodettaController {
+  syncFromLocation(location?: Pick<Location, "hash" | "search">): void;
+}
+
+interface CodettaMountOptions {
+  detailNavigation: {
+    prevButton: HTMLButtonElement;
+    nextButton: HTMLButtonElement;
+    onVisibilityChange?: (visible: boolean) => void;
+  };
+  onPushNavigation?: () => void;
+}
+
+export function mountCodetta(root: HTMLElement, options: CodettaMountOptions): CodettaController {
+  if (ETUDES.length === 0) {
+    throw new Error("No Codetta entries found.");
+  }
+
+  render(codettaShellTemplate(), root);
 
   const listScreen = root.querySelector<HTMLElement>('[data-screen="list"]');
   const detailScreen = root.querySelector<HTMLElement>('[data-screen="detail"]');
@@ -404,12 +411,15 @@ export function mountCodetta(root: HTMLElement, options: CodettaMountOptions): C
   }
 
   function setIdleSummary() {
-    ui.summary.innerHTML = renderSummary([
-      { label: "compile", value: "—", tone: "pending" },
-      { label: "execute", value: "—", tone: "pending" },
-      { label: "vm steps", value: "—", tone: "pending" },
-      { label: "exit", value: "—", tone: "pending" },
-    ]);
+    render(
+      renderSummaryTemplate([
+        { label: "compile", value: "—", tone: "pending" },
+        { label: "execute", value: "—", tone: "pending" },
+        { label: "vm steps", value: "—", tone: "pending" },
+        { label: "exit", value: "—", tone: "pending" },
+      ]),
+      ui.summary,
+    );
     ui.summary.dataset.state = "idle";
   }
 
@@ -462,26 +472,31 @@ export function mountCodetta(root: HTMLElement, options: CodettaMountOptions): C
   }
 
   function renderEtudeList() {
-    ui.listBody.innerHTML = ETUDES.map((etude) => `
-      <button
-        type="button"
-        class="codetta-list-card"
-        role="listitem"
-        data-etude-id="${etude.id}"
-        aria-label="Open codetta ${escapeHtml(etude.title)}, led by ${escapeHtml(etude.leader)}, ${etude.bytes} compiled bytes"
-      >
-        <span class="codetta-list-card-title">${escapeHtml(etude.title)}</span>
-        <span class="codetta-list-card-meta">${escapeHtml(etude.leader)}</span>
-        <span class="codetta-list-card-bytes">${etude.bytes}</span>
-      </button>
-    `).join("");
+    render(
+      html`${ETUDES.map(
+        (etude) => html`
+          <button
+            type="button"
+            class="codetta-list-card"
+            role="listitem"
+            data-etude-id="${etude.id}"
+            aria-label="Open codetta ${etude.title}, led by ${etude.leader}, ${etude.bytes} compiled bytes"
+          >
+            <span class="codetta-list-card-title">${etude.title}</span>
+            <span class="codetta-list-card-meta">${etude.leader}</span>
+            <span class="codetta-list-card-bytes">${etude.bytes}</span>
+          </button>
+        `,
+      )}`,
+      ui.listBody,
+    );
   }
 
   function openDetail(etude: CodettaEntry, navigationOptions?: { history?: "push" | "replace" | "none" }) {
     abortActiveRuns();
     activeEtude = etude;
     ui.title.textContent = etude.title;
-    ui.description.innerHTML = renderMarkdown(etude.description);
+    render(unsafeHTML(renderMarkdown(etude.description)), ui.description);
     ui.expected.textContent = etude.expected;
     ui.leader.textContent = etude.leader;
     ui.bytes.textContent = String(etude.bytes);
@@ -588,12 +603,15 @@ export function mountCodetta(root: HTMLElement, options: CodettaMountOptions): C
     startRunProgramRunFeedback(ui.runButton);
     setCodettaRunningState(true);
     ui.summary.dataset.state = "running";
-    ui.summary.innerHTML = renderSummary([
-      { label: "compile", value: "Running...", tone: "running", showDot: true },
-      { label: "execute", value: "…", tone: "pending" },
-      { label: "vm steps", value: "…", tone: "pending" },
-      { label: "exit", value: "pending", tone: "pending" },
-    ]);
+    render(
+      renderSummaryTemplate([
+        { label: "compile", value: "Running...", tone: "running", showDot: true },
+        { label: "execute", value: "…", tone: "pending" },
+        { label: "vm steps", value: "…", tone: "pending" },
+        { label: "exit", value: "pending", tone: "pending" },
+      ]),
+      ui.summary,
+    );
 
     try {
       const run = await runPlaygroundProgram(ui.attemptEditor.getValue(), "", true, {
@@ -604,25 +622,28 @@ export function mountCodetta(root: HTMLElement, options: CodettaMountOptions): C
             setBytecodeDisplay(bcText);
           }
 
-          ui.summary.innerHTML = renderSummary([
-            {
-              label: "compile",
-              value: compileMs !== undefined ? `${compileMs.toFixed(2)} ms` : "…",
-              tone: "running",
-            },
-            {
-              label: "execute",
-              value: executeElapsedMs !== undefined ? `${executeElapsedMs.toFixed(2)} ms` : "…",
-              tone: "running",
-              showDot: true,
-            },
-            {
-              label: "vm steps",
-              value: formatVmStepCount(vmCyclesExecuted),
-              tone: "running",
-            },
-            { label: "exit", value: "pending", tone: "pending" },
-          ]);
+          render(
+            renderSummaryTemplate([
+              {
+                label: "compile",
+                value: compileMs !== undefined ? `${compileMs.toFixed(2)} ms` : "…",
+                tone: "running",
+              },
+              {
+                label: "execute",
+                value: executeElapsedMs !== undefined ? `${executeElapsedMs.toFixed(2)} ms` : "…",
+                tone: "running",
+                showDot: true,
+              },
+              {
+                label: "vm steps",
+                value: formatVmStepCount(vmCyclesExecuted),
+                tone: "running",
+              },
+              { label: "exit", value: "pending", tone: "pending" },
+            ]),
+            ui.summary,
+          );
         },
       });
 
@@ -642,15 +663,18 @@ export function mountCodetta(root: HTMLElement, options: CodettaMountOptions): C
           : "error";
 
       ui.summary.dataset.state = "idle";
-      ui.summary.innerHTML = renderSummary([
-        { label: "compile", value: `${run.compileMs.toFixed(2)} ms` },
-        { label: "execute", value: `${run.executeMs.toFixed(2)} ms` },
-        {
-          label: "vm steps",
-          value: run.vmCyclesExecuted !== undefined ? formatVmStepCount(run.vmCyclesExecuted) : "—",
-        },
-        { label: "exit", value: exitLabel, tone: exitTone },
-      ]);
+      render(
+        renderSummaryTemplate([
+          { label: "compile", value: `${run.compileMs.toFixed(2)} ms` },
+          { label: "execute", value: `${run.executeMs.toFixed(2)} ms` },
+          {
+            label: "vm steps",
+            value: run.vmCyclesExecuted !== undefined ? formatVmStepCount(run.vmCyclesExecuted) : "—",
+          },
+          { label: "exit", value: exitLabel, tone: exitTone },
+        ]),
+        ui.summary,
+      );
 
       setBytecodeDisplay(run.bytecode);
       updateByteStatus(run.compiledBytes);
@@ -677,12 +701,15 @@ export function mountCodetta(root: HTMLElement, options: CodettaMountOptions): C
       setBytecodeDisplay("");
       updateByteStatus(null);
       ui.summary.dataset.state = "idle";
-      ui.summary.innerHTML = renderSummary([
-        { label: "compile", value: "failed", tone: "error" },
-        { label: "execute", value: "—", tone: "pending" },
-        { label: "vm steps", value: "—", tone: "pending" },
-        { label: "exit", value: "pending", tone: "pending" },
-      ]);
+      render(
+        renderSummaryTemplate([
+          { label: "compile", value: "failed", tone: "error" },
+          { label: "execute", value: "—", tone: "pending" },
+          { label: "vm steps", value: "—", tone: "pending" },
+          { label: "exit", value: "pending", tone: "pending" },
+        ]),
+        ui.summary,
+      );
       ui.result.textContent = "Status: error";
       ui.result.dataset.tone = "bad";
       syncSubmitState();
