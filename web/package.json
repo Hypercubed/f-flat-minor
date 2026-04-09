@@ -9,7 +9,11 @@
     "@codemirror/stream-parser": "^0.19.9",
     "@codemirror/view": "^6.38.6",
     "@lezer/highlight": "^1.2.3",
-    "fflate": "^0.8.2"
+    "fflate": "^0.8.2",
+    "rehype-stringify": "^10.0.1",
+    "remark": "^15.0.1",
+    "remark-gfm": "^4.0.1",
+    "remark-rehype": "^11.1.2"
   },
   "scripts": {
     "dev": "vite",
