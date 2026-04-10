@@ -4,7 +4,11 @@ import { type RunResult } from "./program-runner.ts";
 import { formatVmStepCount } from "./format-vm-steps.ts";
 import { runPlaygroundProgram } from "./run-playground.ts";
 import { startRunProgramRunFeedback, stopRunProgramRunFeedback } from "./run-fx.ts";
-import { TUTORIAL_PROBLEMS, type TutorialProblem } from "./tutorial-problems.ts";
+import {
+  getTutorialSolutionFilename,
+  TUTORIAL_PROBLEMS,
+  type TutorialProblem,
+} from "./tutorial-problems.ts";
 import { registerActiveRun } from "./active-run-cancellation.ts";
 
 function requireElement<T extends Element>(root: ParentNode, selector: string): T {
@@ -260,6 +264,7 @@ export function mountTutorial(root: HTMLElement) {
         await waitForPaint();
 
         const result = await runPlaygroundProgram(sourceEditor.getValue(), stdin?.value ?? "", true, {
+          filename: getTutorialSolutionFilename(problem.id),
           signal: abortController.signal,
           onProgress: ({ vmCyclesExecuted, compileMs }) => {
             render(

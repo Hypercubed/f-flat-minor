@@ -1,0 +1,6 @@
+.import ../../lib/prelude.ffp
+
+square: dup * ;
+
+0 'Square\sof\s7:\s' prints
+7 square putn cr

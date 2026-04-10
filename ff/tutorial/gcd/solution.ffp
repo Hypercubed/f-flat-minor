@@ -1,0 +1,5 @@
+.import ../../lib/prelude.ffp
+
+greatest-common-divisor: dup [ tuck % greatest-common-divisor ] [ drop ] branch ;
+
+84 30 greatest-common-divisor dup putn cr drop

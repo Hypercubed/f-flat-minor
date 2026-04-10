@@ -1,7 +1,7 @@
 import { describe, expect, it } from "vitest";
 
 import { runProgram } from "./program-runner.ts";
-import { TUTORIAL_PROBLEMS } from "./tutorial-problems.ts";
+import { getTutorialSolutionFilename, TUTORIAL_PROBLEMS } from "./tutorial-problems.ts";
 
 function getProblem(id: string) {
   const problem = TUTORIAL_PROBLEMS.find((entry) => entry.id === id);
@@ -32,6 +32,18 @@ describe("tutorial problems", () => {
       "prime",
       "pascal-row",
     ]);
+  });
+
+  it("loads tutorial entries from README, solution, and output files", () => {
+    const fizzbuzz = getProblem("fizzbuzz");
+
+    expect(TUTORIAL_PROBLEMS).toHaveLength(15);
+    expect(TUTORIAL_PROBLEMS.every((entry) => entry.source.length > 0)).toBe(true);
+    expect(TUTORIAL_PROBLEMS.every((entry) => entry.expected?.length)).toBe(true);
+    expect(fizzbuzz.title).toBe("FizzBuzz");
+    expect(fizzbuzz.order).toBe(12);
+    expect(fizzbuzz.concepts).toEqual(["nested branching", "%", "recursion", "visible output"]);
+    expect(getTutorialSolutionFilename("fizzbuzz")).toBe("/tutorial/fizzbuzz/solution.ffp");
   });
 
   it.each([

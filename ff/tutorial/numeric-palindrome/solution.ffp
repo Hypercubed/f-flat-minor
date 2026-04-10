@@ -1,0 +1,13 @@
+.import ../../lib/prelude.ffp
+
+rev-step:
+  over
+  [ swap 10 divrem q< swap 10 * q> + rev-step ]
+  [ nip ]
+  branch
+;
+
+reverse-digits: 0 rev-step ;
+palindrome?: dup reverse-digits = ;
+
+12321 palindrome? dup putn cr drop

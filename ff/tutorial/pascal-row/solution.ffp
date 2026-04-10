@@ -1,0 +1,18 @@
+.import ../../lib/prelude.ffp
+
+print-entry:
+  dup 0 > [ sp ] ?
+  over over nck putn
+;
+
+row-step:
+  dup 0 >
+  [ over over -- row-step ]
+  ?
+  print-entry
+  drop2
+;
+
+pascal-row: dup row-step cr ;
+
+5 pascal-row

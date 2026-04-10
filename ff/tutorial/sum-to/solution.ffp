@@ -1,0 +1,9 @@
+.import ../../lib/prelude.ffp
+
+sum-to:
+  dup
+  [ dup -- sum-to + ]
+  ?
+;
+
+8 sum-to dup putn cr drop

@@ -1,0 +1,3 @@
+.load ../../lib/prelude.ffp
+
+29 prime? [ '\0prime' ] [ '\0composite' ] branch println
