@@ -6,7 +6,7 @@ import {
   DEFAULT_EXAMPLE_PATH,
   DEFAULT_SOURCE,
   EXAMPLES,
-  EXAMPLE_ENTRIES,
+  EXAMPLE_OPTIONS_HTML,
 } from "./examples.ts";
 import { runPlaygroundProgram } from "./run-playground.ts";
 import { getCompiledBytecodeDisplay, getCompiledByteScore } from "./program-runner.ts";
@@ -85,17 +85,26 @@ function renderSummaryTemplate(items: SummaryItem[]) {
 const [appShellBeforeExampleOptions, appShellAfterExampleOptions] = appShellTemplate.split(
   "<!--@FFM_EXAMPLE_OPTIONS@-->",
 );
-const [appShellBeforeHelp, appShellAfterHelp] = appShellAfterExampleOptions.split("<!--@FFM_HELP@-->");
+const exampleSelectClose = "</select>";
+const exampleSelectCloseIndex = appShellAfterExampleOptions.indexOf(exampleSelectClose);
+if (exampleSelectCloseIndex < 0) {
+  throw new Error("app-shell.html: missing </select> after example options placeholder");
+}
+/** One HTML string for the example `<select>` so lit-html does not insert part markers inside it. */
+const appShellExampleSelectSection =
+  appShellBeforeExampleOptions +
+  EXAMPLE_OPTIONS_HTML +
+  appShellAfterExampleOptions.slice(0, exampleSelectCloseIndex + exampleSelectClose.length);
+const [appShellBeforeHelp, appShellAfterHelp] = appShellAfterExampleOptions
+  .slice(exampleSelectCloseIndex + exampleSelectClose.length)
+  .split("<!--@FFM_HELP@-->");
+
+/** Full shell as one string: fragment parsing must not split mid-`<main>` or tags auto-close at EOF and break the next chunk (e.g. orphan `</label>` before stdin). */
+const appShellFullHtml =
+  appShellExampleSelectSection + appShellBeforeHelp + helpTemplate + appShellAfterHelp;
 
 function renderAppShell() {
-  return html`
-    ${unsafeHTML(appShellBeforeExampleOptions)}
-    ${EXAMPLE_ENTRIES.map(({ path, label }) => html`<option value="${path}">${label}</option>`)}
-    <option value="${CUSTOM_EXAMPLE_VALUE}">Custom</option>
-    ${unsafeHTML(appShellBeforeHelp)}
-    ${unsafeHTML(helpTemplate)}
-    ${unsafeHTML(appShellAfterHelp)}
-  `;
+  return html`${unsafeHTML(appShellFullHtml)}`;
 }
 
 export function mountApp(root: HTMLElement) {
