@@ -1,0 +1,54 @@
+---
+import BaseLayout from "../layouts/BaseLayout.astro";
+import { siteSections, type SiteSection } from "../data/site";
+
+export function getStaticPaths() {
+  return siteSections.map((section) => ({
+    params: { slug: section.slug },
+    props: { section },
+  }));
+}
+
+interface Props {
+  section: SiteSection;
+}
+
+const { section } = Astro.props;
+---
+
+<BaseLayout
+  title={section.title}
+  description={section.summary}
+  theme={section.slug}
+  activePath={`/${section.slug}/`}
+>
+  <section class="route-hero section-summary">
+    <p class="eyebrow">{section.eyebrow}</p>
+    <h1 class="route-title">{section.title}</h1>
+    <p class="page-copy">{section.description}</p>
+    <div class="status-badge">{section.status}</div>
+  </section>
+
+  <section class="page-section grid route-grid">
+    <article class="info-card">
+      <p class="eyebrow">What belongs here</p>
+      <h3>Future shape of this page</h3>
+      <p>{section.summary}</p>
+      <ul class="bullet-list">
+        {section.highlights.map((item) => <li>{item}</li>)}
+      </ul>
+    </article>
+
+    <article class="info-card">
+      <p class="eyebrow">Migration steps</p>
+      <h3>What comes next</h3>
+      <ul class="bullet-list">
+        {section.nextSteps.map((item) => <li>{item}</li>)}
+      </ul>
+      <p>
+        This route is intentionally static for now so the eventual migration can embed the existing surface
+        instead of rebuilding its runtime behavior prematurely.
+      </p>
+    </article>
+  </section>
+</BaseLayout>

@@ -1,0 +1,60 @@
+---
+import BaseLayout from "../layouts/BaseLayout.astro";
+import { siteSections } from "../data/site";
+---
+
+<BaseLayout
+  title="Astro site bootstrap"
+  description="A first-pass Astro shell for the F-flat-minor website, styled after the current web app."
+  theme="home"
+  activePath="/"
+>
+  <section class="hero-grid">
+    <div class="hero-copy">
+      <p class="eyebrow">f-flat-minor / web2</p>
+      <h1 class="hero-title">Bring the F♭m site into Astro without losing its voice.</h1>
+      <p class="hero-lede">
+        This first step sets up Astro layouts, routes, and shared styling inspired by the current browser
+        app. The interactive playground, REPL, codettas, and tutorials stay in <code>/web</code> for now.
+      </p>
+      <div class="hero-actions">
+        <a class="button-link primary" href="/playground/">Browse the new routes</a>
+        <a class="button-link secondary" href="/help/">See the easiest migration target</a>
+      </div>
+      <div class="migration-note">
+        <p>
+          The intent here is structure first: Astro owns navigation, page layout, and static content framing;
+          the existing client-side tools can be embedded later.
+        </p>
+      </div>
+    </div>
+
+    <aside class="hero-panel">
+      <p class="eyebrow">What ships now</p>
+      <h2>Static shell, ready for gradual migration.</h2>
+      <ol class="stack">
+        <li><strong>Shared layout</strong> for nav, branding, and page chrome</li>
+        <li><strong>Dedicated routes</strong> for the main tool areas</li>
+        <li><strong>Global styling</strong> lifted from the current warm glassmorphism palette</li>
+        <li><strong>Room to embed</strong> the current interactive surfaces later</li>
+      </ol>
+    </aside>
+  </section>
+
+  <section class="page-section grid feature-grid" aria-label="Site sections">
+    {
+      siteSections.map((section) => (
+        <article class="feature-card">
+          <p class="eyebrow">{section.eyebrow}</p>
+          <h3>{section.title}</h3>
+          <p>{section.summary}</p>
+          <footer>
+            <a class="inline-link" href={`/${section.slug}/`}>
+              Open the {section.title.toLowerCase()} route
+            </a>
+          </footer>
+        </article>
+      ))
+    }
+  </section>
+</BaseLayout>
