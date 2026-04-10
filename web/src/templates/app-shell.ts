@@ -1,0 +1,201 @@
+import { html } from "lit-html";
+import type { TemplateResult } from "lit-html";
+import { unsafeHTML } from "lit-html/directives/unsafe-html.js";
+import { CUSTOM_EXAMPLE_VALUE, EXAMPLE_ENTRIES } from "../examples.ts";
+import helpTemplate from "./help.html?raw";
+
+/** Single child binding for `<select>` (no lit markers between `<option>` nodes). */
+function exampleLoadSelectOptions(): TemplateResult[] {
+  return [
+    ...EXAMPLE_ENTRIES.map(({ path, label }) => html`<option value="${path}">${label}</option>`),
+    html`<option value="${CUSTOM_EXAMPLE_VALUE}">Custom</option>`,
+  ];
+}
+
+export function renderAppShell(): TemplateResult {
+  return html`
+    <main class="shell">
+      <div class="shell-hero-row">
+        <section class="hero">
+          <p class="eyebrow">f-flat-minor / web</p>
+          <h1>Run F♭m in the browser.</h1>
+          <p class="lede">F♭m Playground, REPL, Codettas and Tutorials</p>
+        </section>
+        <div class="shell-hero-toolbar">
+          <button
+            type="button"
+            id="run-feedback-toggle"
+            class="run-feedback-toggle"
+            aria-label="Run sound and animations on"
+            aria-pressed="true"
+            title="Turn off run sound and animations"
+          >
+            <span class="run-feedback-toggle__glyph" aria-hidden="true">♭</span>
+          </button>
+        </div>
+      </div>
+
+      <div class="mode-tabs-row">
+        <nav class="mode-tabs" aria-label="Application modes">
+          <button class="mode-tab mode-tab--playground is-active" data-tab="playground">Playground</button>
+          <button class="mode-tab mode-tab--repl" data-tab="repl">REPL</button>
+          <button class="mode-tab mode-tab--codetta" data-tab="codetta">Codettas</button>
+          <button class="mode-tab mode-tab--tutorial" data-tab="tutorial">Tutorial</button>
+          <button class="mode-tab mode-tab--help" data-tab="help">Help</button>
+          <a
+            class="repo-link"
+            href="https://github.com/Hypercubed/f-flat-minor"
+            target="_blank"
+            rel="noreferrer"
+            aria-label="View the GitHub repository"
+            title="View the GitHub repository"
+          >
+            <svg viewBox="0 0 24 24" aria-hidden="true" focusable="false">
+              <path
+                fill="currentColor"
+                d="M12 0.5C5.649 0.5 0.5 5.649 0.5 12c0 5.082 3.292 9.395 7.861 10.916c0.575 0.106 0.786-0.249 0.786-0.554c0-0.274-0.01-1-0.016-1.962c-3.198 0.695-3.873-1.541-3.873-1.541c-0.523-1.328-1.277-1.682-1.277-1.682c-1.044-0.714 0.079-0.699 0.079-0.699c1.154 0.081 1.761 1.185 1.761 1.185c1.026 1.758 2.692 1.25 3.348 0.956c0.104-0.743 0.401-1.25 0.729-1.537c-2.553-0.291-5.238-1.276-5.238-5.679c0-1.254 0.448-2.28 1.183-3.084c-0.119-0.29-0.513-1.46 0.112-3.045c0 0 0.965-0.309 3.162 1.178c0.917-0.255 1.9-0.382 2.878-0.387c0.977 0.005 1.961 0.132 2.879 0.387c2.195-1.487 3.158-1.178 3.158-1.178c0.627 1.585 0.233 2.755 0.115 3.045c0.736 0.804 1.181 1.83 1.181 3.084c0 4.414-2.689 5.385-5.252 5.67c0.412 0.355 0.779 1.057 0.779 2.131c0 1.539-0.014 2.78-0.014 3.158c0 0.308 0.207 0.666 0.793 0.553C20.712 21.391 24 17.08 24 12c0-6.351-5.149-11.5-11.5-11.5Z"
+              />
+            </svg>
+          </a>
+        </nav>
+        <div id="codetta-mode-nav" class="codetta-mode-nav" aria-label="Navigate Codettas" hidden>
+          <button type="button" class="ghost codetta-detail-nav-btn" id="codetta-mode-prev">Previous</button>
+          <button type="button" class="ghost codetta-detail-nav-btn" id="codetta-mode-next">Next</button>
+        </div>
+      </div>
+
+      <section class="tab-panel is-active" data-panel="playground">
+        <section class="workspace">
+          <div class="panel editor-panel">
+            <div class="panel-header">
+              <div>
+                <p class="panel-label">Editor</p>
+                <h2>Main source</h2>
+              </div>
+            </div>
+            <div id="source" aria-label="Main source editor"></div>
+            <div class="controls">
+              <label class="field">
+                <span>Load example</span>
+                <select id="example" class="example-load-select" aria-label="Load example">
+                  ${exampleLoadSelectOptions()}
+                </select>
+              </label>
+              <label class="field">
+                <span>stdin</span>
+                <input id="stdin" type="text" placeholder="Optional input for getc" />
+              </label>
+              <div class="actions">
+                <label class="toggle optimize-toggle">
+                  <input id="optimize" type="checkbox" checked />
+                  <span>Optimize</span>
+                </label>
+                <button id="run" type="button" class="primary" aria-label="Run program">Run Program</button>
+              </div>
+            </div>
+          </div>
+
+          <div class="panel details-panel-shell">
+            <div class="panel-header">
+              <div>
+                <p class="panel-label">Inspect</p>
+                <h2>Program details</h2>
+              </div>
+            </div>
+            <div id="summary" class="summary-bar"></div>
+            <div class="detail-toolbar">
+              <div class="subtabs" aria-label="Program details">
+                <button class="subtab is-active" data-detail-tab="output">Output</button>
+                <button class="subtab" data-detail-tab="preprocessed">Expanded Source</button>
+                <button class="subtab" data-detail-tab="ir">IR</button>
+                <button class="subtab" data-detail-tab="bytecode">Bytecode</button>
+              </div>
+              <label id="output-wrap-toggle" class="toggle output-wrap-toggle">
+                <input id="output-wrap" type="checkbox" checked />
+                <span>Wrap Output</span>
+              </label>
+            </div>
+            <div class="detail-panels">
+              <pre id="output" class="console is-wrapped detail-panel is-active" data-detail-panel="output"></pre>
+              <pre id="error" class="console detail-panel is-active" data-detail-panel="output"></pre>
+              <div id="preprocessed" class="code-block detail-panel" data-detail-panel="preprocessed"></div>
+              <div id="ir" class="code-block detail-panel" data-detail-panel="ir"></div>
+              <pre id="bytecode" class="code-block bytecode-wrap detail-panel" data-detail-panel="bytecode"></pre>
+            </div>
+            <div id="bytecode-meta" class="detail-meta" hidden>
+              <span class="label">Byte count</span>
+              <span id="bytecode-count" class="value">0 bytes</span>
+            </div>
+          </div>
+        </section>
+      </section>
+
+      <section class="tab-panel" data-panel="repl">
+        <section class="repl-layout">
+          <div class="panel repl-pane">
+            <div class="panel-header repl-pane-header">
+              <div>
+                <p class="panel-label">REPL</p>
+                <h2>Persistent session</h2>
+              </div>
+              <button id="repl-reset" class="ghost">Reset Session</button>
+            </div>
+            <div class="help-copy repl-help-copy">
+              <p>The REPL keeps your definitions and stack between lines. It preloads <code>/lib/prelude.ffp</code>.</p>
+              <p>Special commands: <code>.reset</code>, <code>.clear</code>, <code>.exit</code>, <code>.quit</code>.</p>
+            </div>
+            <div class="repl-left-body">
+              <section class="repl-stack-panel" aria-live="polite">
+                <div class="repl-stack-head">
+                  <span>Stack monitor</span>
+                  <span id="repl-depth">depth: 0</span>
+                </div>
+                <ol id="repl-stack" class="repl-stack-list" aria-label="Current stack values"></ol>
+              </section>
+
+              <section class="repl-inspect-panel" id="repl-inspect">
+                <div class="repl-inspect-header">
+                  <button id="repl-inspect-back" class="inspect-back" disabled>← Back</button>
+                  <span class="inspect-title">Inspector</span>
+                  <button id="repl-inspect-close" class="inspect-close">✕</button>
+                </div>
+                <div id="repl-inspect-content" class="repl-inspect-content">
+                  <div class="inspect-placeholder">Click a stack value to inspect</div>
+                </div>
+              </section>
+
+              <label class="field repl-input-field" for="repl-command">
+                <input id="repl-command" type="text" autocomplete="off" placeholder="Type code and press Enter" />
+              </label>
+              <div class="repl-hint">Tip: use ↑ and ↓ for command history.</div>
+            </div>
+          </div>
+
+          <div class="panel repl-pane">
+            <div class="panel-header">
+              <div>
+                <p class="panel-label">Console</p>
+                <h2>Output & logs</h2>
+              </div>
+              <span id="repl-status" class="repl-status" aria-live="polite" hidden>
+                <span class="repl-status-dot" aria-hidden="true"></span>
+                Running...
+              </span>
+            </div>
+            <pre id="repl-output" class="console repl-console"></pre>
+          </div>
+        </section>
+      </section>
+
+      <section class="tab-panel" data-panel="codetta">
+        <div id="codetta-root"></div>
+      </section>
+
+      <section class="tab-panel" data-panel="tutorial">
+        <div id="tutorial-root"></div>
+      </section>
+
+      <section class="tab-panel" data-panel="help">${unsafeHTML(helpTemplate)}</section>
+    </main>
+  `;
+}

@@ -1,12 +1,10 @@
 import { html, nothing, render } from "lit-html";
-import { unsafeHTML } from "lit-html/directives/unsafe-html.js";
 import { mountReadonlySourceViewer, mountSourceEditor, tutorialEditorFlatFeedback } from "./editor.ts";
 import {
   CUSTOM_EXAMPLE_VALUE,
   DEFAULT_EXAMPLE_PATH,
   DEFAULT_SOURCE,
   EXAMPLES,
-  EXAMPLE_OPTIONS_HTML,
 } from "./examples.ts";
 import { runPlaygroundProgram } from "./run-playground.ts";
 import { getCompiledBytecodeDisplay, getCompiledByteScore } from "./program-runner.ts";
@@ -19,8 +17,7 @@ import {
   parseCodettaEtudeParam,
   type AppTab,
 } from "./app-url-state.ts";
-import appShellTemplate from "./templates/app-shell.html?raw";
-import helpTemplate from "./templates/help.html?raw";
+import { renderAppShell } from "./templates/app-shell.ts";
 import { mountTutorial } from "./tutorial.ts";
 import { mountCodetta } from "./codetta.ts";
 import { startRunProgramRunFeedback, stopRunProgramRunFeedback, triggerReplKeyFeedback } from "./run-fx.ts";
@@ -80,31 +77,6 @@ function renderSummaryTemplate(items: SummaryItem[]) {
       </span>
     `,
   )}`;
-}
-
-const [appShellBeforeExampleOptions, appShellAfterExampleOptions] = appShellTemplate.split(
-  "<!--@FFM_EXAMPLE_OPTIONS@-->",
-);
-const exampleSelectClose = "</select>";
-const exampleSelectCloseIndex = appShellAfterExampleOptions.indexOf(exampleSelectClose);
-if (exampleSelectCloseIndex < 0) {
-  throw new Error("app-shell.html: missing </select> after example options placeholder");
-}
-/** One HTML string for the example `<select>` so lit-html does not insert part markers inside it. */
-const appShellExampleSelectSection =
-  appShellBeforeExampleOptions +
-  EXAMPLE_OPTIONS_HTML +
-  appShellAfterExampleOptions.slice(0, exampleSelectCloseIndex + exampleSelectClose.length);
-const [appShellBeforeHelp, appShellAfterHelp] = appShellAfterExampleOptions
-  .slice(exampleSelectCloseIndex + exampleSelectClose.length)
-  .split("<!--@FFM_HELP@-->");
-
-/** Full shell as one string: fragment parsing must not split mid-`<main>` or tags auto-close at EOF and break the next chunk (e.g. orphan `</label>` before stdin). */
-const appShellFullHtml =
-  appShellExampleSelectSection + appShellBeforeHelp + helpTemplate + appShellAfterHelp;
-
-function renderAppShell() {
-  return html`${unsafeHTML(appShellFullHtml)}`;
 }
 
 export function mountApp(root: HTMLElement) {
