@@ -1,3 +1,3 @@
-.load /lib/math/primes.ffp
+.load ../../lib/prelude.ffp
 
-29 prime? putn
+29 prime? [ '\0prime' ] [ '\0composite' ] branch println

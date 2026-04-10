@@ -1,4 +1,4 @@
-.load /lib/prelude.ffp
+.import ../../lib/prelude.ffp
 
 my-abs: dup 0 < [ -1 * ] ? ;
 

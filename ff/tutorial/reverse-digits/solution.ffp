@@ -1,4 +1,4 @@
-.load /lib/prelude.ffp
+.import ../../lib/prelude.ffp
 
 rev-step:
   over

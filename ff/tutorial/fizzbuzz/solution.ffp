@@ -1,4 +1,4 @@
-.load /lib/prelude.ffp
+.import ../../lib/prelude.ffp
 
 fizzbuzz-line:
   dup 15 % 0 =
