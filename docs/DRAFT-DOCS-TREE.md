@@ -13,7 +13,7 @@ docs/
 │   └── tutorials/
 │       └── README.md         # (placeholder)
 └── reference/
-    ├── DOCS-SPEC.md            # documentation model (Phase 1)
+    ├── DOCS-SPEC.md            # source doc format: module dossier + @tag word blocks (Phase 1)
     ├── index.md                # reference landing
     ├── examples/               # authoring samples (not generated)
     │   ├── annotated-sample.ff

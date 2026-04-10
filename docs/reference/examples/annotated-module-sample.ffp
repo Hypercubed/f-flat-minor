@@ -1,20 +1,44 @@
 /**
- * Module: docs/reference/examples/annotated-module-sample.ffp
+ * Module: docs/reference/examples/annotated-module-sample
+ * Summary: Non-normative samples for docs/reference/DOCS-SPEC.md (module + word blocks).
  *
- * Illustrative sample for the reference documentation model (DOCS-SPEC.md).
- * Not loaded by the standard library. No .imports — keeps the sample self-contained for authors.
+ * Family: documentation, examples
+ * Related:
+ *   - docs/reference/DOCS-SPEC.md
+ *   - ff/lib/seq/seq.ffp
+ */
+
+/* ============================================================================
+ * Public API
+ * ============================================================================
  */
 
 /**
- * Duplicate the top stack item (example public word).
+ * Duplicate the top stack item twice (example only; real stack uses `dup2`).
  *
- * Stack: ( a -- a a )
+ * @stack a -- a a a
+ * @family stack shuffle
+ * @kind derived
+ * @see dup2
+ * @example 1 dup2-example => 1 1 1
  */
 dup2-example: dup dup ;
 
 /**
- * Add two integers (example).
+ * Add two integers on the stack.
  *
- * Stack: ( a b -- sum )
+ * @stack a b -- sum
+ * @family math arithmetic
+ * @kind primitive
+ * @example 2 3 add-example => 5
+ * @see +
  */
 add-example: + ;
+
+/* ============================================================================
+ * Internal helpers
+ * ============================================================================
+ */
+
+/* Internal: not a public word card — omitted from generated public reference. */
+__noop-helper: ;

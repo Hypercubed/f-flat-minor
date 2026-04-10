@@ -1,143 +1,805 @@
-# F♭m reference documentation model
+# F♭m source documentation spec
 
-This document locks in the **documentation model** for source-driven reference material (Phase 1 of the source-driven reference manual plan). Tooling in later phases must map source annotations to this model; it may extend details but should not contradict the ownership and attachment rules here.
+This spec defines a **source-native documentation format** for F♭m library files that is readable in the source tree, extractable into published documentation, and flexible enough to support future word cards, module pages, and combinator-atlas views.
 
-## 1. Manual documentation vs generated reference
+The design goal is to make `ff/lib` feel like a flat-file wiki **without** turning the source into literate programming.
 
-| Kind | Owner | Typical content | Examples |
-|------|--------|-----------------|----------|
-| **Manual** | Human-authored Markdown (or site pages) under `docs/manual/` | Introduction, language overview, syntax and semantics, tutorials, design and implementation notes, guided examples | `introduction.md`, `syntax.md`, `semantics.md`, `tutorials/*` |
-| **Generated reference** | Produced from annotated F♭m source | Core word entries, `ff/lib` module pages, word and module indexes, machine-derived summaries | `docs/reference/generated/core-words.md`, `docs/reference/generated/lib/*.md` |
+**Publishing context:** Hand-written conceptual docs live under `docs/manual/` and `_docs/`. This spec governs **annotations in `.ff` / `.ffp` source** that a future pipeline turns into generated reference under `docs/reference/generated/` (see `docs/DRAFT-DOCS-TREE.md` and `_plans/f-flat-minor/source-driven-reference-manual.md`).
 
-**Rules**
+**Syntax note:** F♭m definitions use `name: … ;` (name, colon, body, semicolon). Examples below use that form. Some older Forth-oriented docs use a leading `:` before the name; that is **not** F♭m syntax.
 
-- Conceptual “why” and teaching material live in **manual** docs.
-- Factual “what does this word do, where is it, what is its stack effect” live in **generated** reference, sourced from annotations.
-- Existing narrative docs under `_docs/` remain the project’s long-form design and tutorial corpus; the new tree under `docs/` is the **publishable, site-oriented** layout. Manual pages may link to `_docs/` where appropriate until content is migrated.
+---
 
-## 2. Information architecture (initial)
+## Goals
 
-Top-level user-facing structure (one documentation area, mixed sources):
+The format should:
 
-1. **Introduction** — manual  
-2. **Language** — manual (syntax, semantics) + generated (**core words** as reference)  
-3. **Library** — generated module index + per-module reference pages for `ff/lib`  
-4. **Tutorials** — manual  
-5. **Design / implementation notes** — manual (may start as links into `_docs/`)
+- make `ff/lib` files readable as documentation in plain source view,
+- keep public reference information close to the code,
+- distinguish public surface from internal helpers without a separate visibility flag,
+- extract cleanly into Markdown and web documentation,
+- support future structured views such as:
+  - module pages,
+  - word cards,
+  - related-word groupings,
+  - family indexes,
+  - combinator atlas pages.
 
-Repository layout (draft; see also `docs/DRAFT-DOCS-TREE.md`):
+---
 
-```text
-docs/
-  manual/
-    introduction.md
-    syntax.md
-    semantics.md
-    tutorials/
-  reference/
-    DOCS-SPEC.md           # this file — model, not end-user tutorial
-    index.md               # reference landing (manual stub until generation exists)
-    examples/              # non-normative annotated samples for authors
-    generated/             # build output; may be gitignored later
-      core-words.md
-      lib/
-        math.md
-        seq.md
-        ...
-```
+## Core rules
 
-## 3. Public surface: “documented means public”
+### 1. Documented means public
 
-- There is **no** `@public` (or similar) marker.
-- A **word** that carries a **reference doc block** (see §4) is treated as **public** for the generated reference and **must** be stable API for its module.
-- Words **without** such a block are **internal**: they may appear in source for implementers but are **omitted** from generated public reference lists.
-- **Modules** (files) may have a **module doc block**; that file is then a documented public module for reference purposes. Undocumented library files are omitted from the module index until annotated.
+A documented module or word is considered part of the public reference.
 
-## 4. Annotation shape (F♭m comments)
+Undocumented words are treated as internal by default and should not appear in generated public reference output.
 
-F♭m uses C-style comments. For **reference** material (distinct from inline stack hints), use a **block comment** opened with `/**` and closed with `*/` (JSDoc-style opener) so authors and tools can distinguish long-form docs from short `/* … */` stack-effect notes.
+There is no separate `@public` tag.
 
-**Word reference block (recommended shape)**
+### 2. Source is the canonical editorial layer
 
-```text
-/**
- * One-line summary (imperative or third person, sentence case).
- *
- * Optional longer description in Markdown-friendly prose.
- * Stack effect line should follow project notation (see _docs/stack-notation.md).
- *
- * Stack: ( inputs -- outputs )
- * (Or: Stack: see inline /* ... */ on the definition line.)
- */
-```
+The source file should already be useful as documentation before any generator runs.
 
-**Module reference block**
+Extraction and publishing should preserve and reorganize this content, not replace it with a separate authoring system.
+
+### 3. Module docs and word docs use different styles
+
+Use two related but distinct block styles:
+
+- **module blocks** use readable labeled fields
+- **word blocks** use a summary paragraph plus F♭m-specific tagged fields
+
+This keeps file headers wiki-like and word entries compact and structured.
+
+### 4. Documentation attaches by position
+
+A documentation block attaches to the next meaningful definition or module context.
+
+This means the word name does not need to be repeated in word metadata.
+
+### 5. JS-style multiline comments only
+
+Documentation blocks use JS-style multiline comments.
+
+Preferred form:
 
 ```text
 /**
- * Module: relative/path/to/file.ffp
- * One-line summary of the module.
- *
- * Optional overview: purpose, main entry words, relationship to other modules.
+ * ...
  */
 ```
 
-**Plain `/* */` without `/**`**
+Single-line comments should not be treated as public documentation blocks.
 
-- Still valid F♭m; may be used for **short stack effects** on the same line or adjacent line (existing style in `ff/lib`).
-- Phase 2 tooling (`cdoc`) may treat all block comments similarly; the **authoring convention** for **public reference** is `/** … */` for blocks that should become reference entries.
+---
 
-**Line comments `//`**
+## File-level structure
 
-- Not used for normative reference blocks in this model (optional for scratch notes; excluded from public reference unless a later tool explicitly includes them).
+Each `ff/lib` file should follow this general structure:
 
-## 5. Attachment rules
+1. module dossier
+2. optional overview or algorithm notes
+3. documented public words
+4. internal helper section
+5. optional implementation notes
 
-Comments attach to **the next syntactic definition** that follows them, with only **whitespace** and **other comments** between.
+Recommended shape:
 
-- A **word definition** is a line matching: `name: … ;` (definition may span lines; the **name** is the token before `:` at the start of the definition).
-- The **attached** reference block is the **last** contiguous `/** … */` (or, if tooling merges, the immediately preceding block comment group) with no non-comment code between that block and the definition’s `name:` line.
+```text
+/**
+ * Module: math/atanh-core
+ * Summary: Integer-only fixed-point kernels for atanh-derived logarithmic functions.
+ *
+ * Family: math, series, fixed-point
+ * Depends on: precision, division, fraction reduction
+ * Related:
+ *   - math/ln
+ *   - math/fixed
+ */
 
-**Module-level attachment**
+/* ============================================================================
+ * Public API
+ * ============================================================================
+ */
 
-- A **module doc block** is a `/** … */` that appears **at the beginning of the file**: after optional whitespace, before any **non-comment** line that is **not** an `.import` or `.include` directive.
-- Consecutive `.import` / `.include` lines (and blank lines) may follow the module block without breaking module attachment; the **first** `name:` definition after those imports begins the word-level region of the file.
-- If the first documentation in a file is immediately followed only by imports, then another `/** … */` appears before the first word, the **first** block is the **module** doc and the **second** attaches to the **first** defined word (or solely to the module if no word doc is intended — authors should avoid ambiguous double blocks at file top without a definition in between).
+/**
+ * Returns a fixed-point decimal approximation of ln(2).
+ *
+ * @stack n -- floor(10^n * ln(2))
+ * @family math logarithms
+ * @kind derived
+ * @example 3 ln2 => 693
+ * @see atanh-core-scaled
+ * @see ln
+ */
+ln2: /* ... */
+;
 
-**Order**
+/* ============================================================================
+ * Internal helpers
+ * ============================================================================
+ */
 
-- Module doc: at most one primary module block per file (first qualifying position).
-- Word docs: one block per public word, immediately above `name:`.
+__series-loop: /* ... */
+;
+```
 
-## 6. Module-level vs word-level doc blocks
+After the module dossier, `.import` / `.include` lines are allowed before the first public definition; they do not cancel the module block (see **Placement** under module blocks).
 
-| Level | Position | Describes |
-|-------|----------|-----------|
-| **Module** | Start of file (see §5) | The file as a library unit: purpose, grouping, key words, import expectations |
-| **Word** | Immediately before `name:` | That word’s behavior, stack effect narrative, warnings |
+---
 
-Internal helper words should have **no** `/**` reference block so they stay out of the public reference.
+## Module documentation blocks
 
-## 7. Minimum content for a documented public word
+### Purpose
 
-Each public word’s reference block **should** include:
+A module block documents the file as a whole.
 
-1. **Summary line** — short description of what the word does.  
-2. **Stack effect** — either in the block as a `Stack:` line using notation from `_docs/stack-notation.md`, or a clear pointer that the canonical stack comment is on the definition line (for generated output, tooling should merge inline `/* … */` when present).  
-3. **Module/file identity** — supplied by the generator from path, not necessarily repeated in every block.
+It should read like the header of a wiki page or manual entry.
 
-**Should** when practical:
+### Placement
 
-- One **example** (inline code or description).  
-- **Errors / preconditions** (e.g. queue balance, empty stack).  
-- **See also** related words (manual cross-links in early phases; automated links later).
+A module block should appear near the top of the file, before the first public definition.
 
-## 8. Relationship to existing stack-effect comments
+There should be at most **one** primary module block per file.
 
-Many definitions use inline `/* inputs word == outputs */` per `_docs/stack-notation.md`. That convention **remains** valid. Public words **additionally** use `/** … */` when prose reference is needed. Generators should prefer the **inline** comment for machine-readable stack layout when both exist and agree; conflict is a **validation** error in later phases.
+It may be followed by blank lines, other comments, and `.import` / `.include` lines before the first `name:` definition.
 
-## 9. Normative references
+### Format
 
-- Stack notation: `_docs/stack-notation.md`  
-- Core vocabulary (conceptual, not generated): `_docs/core-vocabulary.md`  
-- Plan and later phases: `_plans/f-flat-minor/source-driven-reference-manual.md`
+Module blocks use readable labeled fields.
+
+### Required fields
+
+- `Module:`
+- `Summary:`
+
+### Recommended fields
+
+- `Family:`
+- `Depends on:`
+- `Related:`
+
+### Optional fields
+
+- `Status:`
+- `Public words:`
+- `Notes:`
+- `Invariants:`
+- `See also:`
+
+### Example
+
+```text
+/**
+ * Module: seq/fold
+ * Summary: Sequence reduction and accumulation words.
+ *
+ * Family: sequence, reduction
+ * Depends on: quote, eval, recursion
+ * Related:
+ *   - seq/map
+ *   - seq/length
+ *   - core/quote
+ *
+ * Notes:
+ *   This module contains public reduction operators and supporting patterns
+ *   used by other sequence modules.
+ */
+```
+
+---
+
+## Word documentation blocks
+
+### Purpose
+
+A word block documents the next public word definition.
+
+It should read as a compact word card in source form.
+
+### Placement
+
+A word block must appear **immediately above** the word definition it documents.
+
+Only **blank lines** are allowed between the block and the definition line that starts with `name:`.
+
+### Format
+
+A word block has:
+
+1. a first paragraph containing the summary
+2. zero or more tagged metadata lines
+
+The first paragraph is the canonical short description.
+
+The structured metadata is expressed using F♭m-specific tags.
+
+### Required parts
+
+- summary paragraph
+- `@stack`
+
+### Recommended tags
+
+- `@family`
+- `@kind`
+- `@example`
+- `@see`
+
+### Optional tags
+
+- `@pre`
+- `@post`
+- `@derived-from`
+- `@equivalent`
+- `@law`
+- `@note`
+- `@status`
+- `@related`
+
+### Example
+
+```text
+/**
+ * Builds a two-item quoted pair.
+ *
+ * @stack x y -- [x y]
+ * @family quote construction
+ * @kind derived
+ * @derived-from unit cons
+ * @see unit
+ * @see cons
+ * @example 2 3 pair => [2 3]
+ */
+pair: unit cons ;
+```
+
+---
+
+## Tag reference
+
+### `@stack`
+
+Required for public words.
+
+Describes the stack effect using F♭m stack notation (see `_docs/stack-notation.md`).
+
+Example:
+
+```text
+@stack x y -- [x y]
+```
+
+### `@family`
+
+Recommended.
+
+Assigns the word to one or more conceptual families. This is intended to support future family browsing and combinator-atlas views.
+
+Use space-separated terms on one line, or a short conceptual phrase.
+
+Examples:
+
+```text
+@family quote construction
+@family sequence reduction
+@family math logarithms
+@family stack shuffle
+```
+
+### `@kind`
+
+Recommended.
+
+Describes the role of the word.
+
+Suggested values:
+
+- `primitive`
+- `derived`
+- `kernel`
+- `helper`
+- `alias`
+- `experimental`
+
+Example:
+
+```text
+@kind derived
+```
+
+### `@example`
+
+Recommended.
+
+Provides a short example of behavior.
+
+Multiple `@example` tags are allowed.
+
+Examples:
+
+```text
+@example 3 ln2 => 693
+@example [1 2 3] length => 3
+```
+
+### `@see`
+
+Recommended.
+
+Adds related words or modules.
+
+Multiple `@see` tags are allowed.
+
+Examples:
+
+```text
+@see fold
+@see map
+@see seq/fold
+```
+
+### `@pre`
+
+Optional.
+
+Describes preconditions or expected input assumptions.
+
+Examples:
+
+```text
+@pre n >= 0
+@pre quote must be well-formed
+```
+
+### `@post`
+
+Optional.
+
+Describes postconditions or guarantees.
+
+Example:
+
+```text
+@post result is a normalized positive fraction
+```
+
+### `@derived-from`
+
+Optional.
+
+Used when the word is conceptually defined from other words or a known basis.
+
+Examples:
+
+```text
+@derived-from unit cons
+@derived-from eval dip cons
+```
+
+### `@equivalent`
+
+Optional.
+
+Used to record an equivalent definition or canonical expansion.
+
+Example:
+
+```text
+@equivalent 0 swap [drop 1 +] fold
+```
+
+### `@law`
+
+Optional.
+
+Used for important semantic laws, identities, or rewrite rules.
+
+Multiple `@law` tags are allowed.
+
+Examples:
+
+```text
+@law [P] [Q] cons == [[P] [Q] eval]
+@law length == 0 swap [drop 1 +] fold
+```
+
+### `@note`
+
+Optional.
+
+Used for important implementation or usage notes that do not fit another tag.
+
+Multiple `@note` tags are allowed.
+
+Example:
+
+```text
+@note Uses integer-only fixed-point arithmetic.
+```
+
+### `@status`
+
+Optional.
+
+Indicates maturity or support level.
+
+Suggested values:
+
+- `stable`
+- `experimental`
+- `internal-public`
+- `deprecated`
+
+Example:
+
+```text
+@status stable
+```
+
+### `@related`
+
+Optional.
+
+Broader related concepts where `@see` is too narrow.
+
+Example:
+
+```text
+@related fixed-point series kernels
+```
+
+---
+
+## Summary paragraph rules
+
+The summary paragraph should:
+
+- be short,
+- describe what the word does,
+- avoid repeating the stack effect,
+- read well in both source and generated docs.
+
+Good:
+
+```text
+/**
+ * Returns a fixed-point decimal approximation of ln(2).
+ *
+ * @stack n -- floor(10^n * ln(2))
+ */
+```
+
+Less good:
+
+```text
+/**
+ * ln2 takes n and returns floor(10^n * ln(2)).
+ *
+ * @stack n -- floor(10^n * ln(2))
+ */
+```
+
+The second repeats the stack effect and is less readable.
+
+---
+
+## Multiple paragraphs
+
+Word blocks may contain additional prose paragraphs after the summary and before or after tags, but this should be used sparingly.
+
+For most public words, keep the block compact.
+
+Use longer prose mainly for:
+
+- tricky combinators,
+- math kernels,
+- subtle semantics,
+- words with important caveats.
+
+Example:
+
+```text
+/**
+ * Folds a sequence from left to right using a quoted reducer.
+ *
+ * This word is intended as the primary reduction entry point for sequence-like
+ * values represented in quoted form.
+ *
+ * @stack init seq [step] -- result
+ * @family sequence reduction
+ * @kind derived
+ * @see map
+ * @see length
+ */
+foldl-example: /* ... */
+;
+```
+
+---
+
+## Internal helpers
+
+Internal helpers should usually remain undocumented.
+
+When a helper needs a local explanation, use a normal multiline comment or a very small note block, but **do not** treat it as public documentation (avoid `/**` “word card” blocks above internal words).
+
+Example:
+
+```text
+/* Internal: advances the series accumulator by one odd denominator step. */
+__odd-next: /* ... */
+;
+```
+
+This may still be useful to readers, but should not be extracted into the public reference.
+
+---
+
+## Section markers
+
+Use regular section markers to make files easier to skim in source view.
+
+Recommended pattern:
+
+```text
+/* ============================================================================
+ * Public API
+ * ============================================================================
+ */
+```
+
+Other recommended section names:
+
+- `Overview`
+- `Algorithm notes`
+- `Public API`
+- `Internal helpers`
+- `Implementation notes`
+
+These markers are useful both for source readability and future extraction.
+
+---
+
+## Public word ordering
+
+Within a module, public documented words should appear before internal helpers where practical.
+
+Recommended order:
+
+1. public entry points
+2. closely related public words
+3. internal helpers
+4. low-level kernels if not intended as user-facing
+
+This helps the file read more like a manual page and less like an implementation dump.
+
+---
+
+## Family vocabulary
+
+The `@family` field is strategically important because it can power future conceptual navigation.
+
+Use a controlled vocabulary where possible.
+
+Suggested family roots:
+
+- `stack`
+- `quote`
+- `sequence`
+- `math`
+- `logic`
+- `comparison`
+- `io`
+- `time`
+- `parsing`
+- `formatting`
+- `evaluation`
+- `derivation`
+
+Examples of family phrases:
+
+- `stack shuffle`
+- `quote construction`
+- `quote elimination`
+- `sequence reduction`
+- `sequence transformation`
+- `math series`
+- `math logarithms`
+- `evaluation control`
+
+Try to reuse existing terms consistently rather than inventing new variants casually.
+
+---
+
+## Kind vocabulary
+
+Use a small stable set of `@kind` values.
+
+Recommended values:
+
+- `primitive`
+- `derived`
+- `kernel`
+- `alias`
+- `experimental`
+
+Avoid over-expanding this list early.
+
+If a word is internal and undocumented, it does not need a `@kind`.
+
+---
+
+## Extraction rules
+
+A future extractor should follow these rules:
+
+### Module blocks
+
+A block near the top of a file containing `Module:` is treated as the module dossier for that file.
+
+### Word blocks
+
+A multiline documentation block immediately above a definition line `name:` … is treated as the documentation block for that word if:
+
+- it contains a summary paragraph, and
+- it contains at least one structured tag, preferably `@stack`.
+
+### Public visibility
+
+Only documented words should be emitted into public reference output.
+
+### Undocumented helpers
+
+Undocumented definitions should be ignored for public docs.
+
+### Source of name
+
+The word name should be taken from the following definition, not repeated in metadata.
+
+### Inline stack comments
+
+Existing one-line stack-effect comments using `/* inputs word == outputs */` (`_docs/stack-notation.md`) may still appear on definition lines. They are **not** a substitute for `@stack` on public words. If both exist, generators should require agreement or emit a validation warning.
+
+---
+
+## Minimal authoring standard for early adoption
+
+To keep Phase 1 and 2 manageable, use this minimum standard:
+
+### For every documented module
+
+Include:
+
+- `Module:`
+- `Summary:`
+- `Family:`
+- `Related:`
+
+### For every documented public word
+
+Include:
+
+- summary paragraph
+- `@stack`
+- `@family`
+- `@kind`
+- `@see` or `@example`
+
+This is enough to make source files meaningfully self-documenting and enough to seed later generated docs.
+
+---
+
+## Example module
+
+```text
+/**
+ * Module: math/ln
+ * Summary: Public logarithm words built on fixed-point kernels.
+ *
+ * Family: math, logarithms
+ * Depends on: math/atanh-core, math/fixed
+ * Related:
+ *   - math/atanh-core
+ *   - math/log10
+ */
+
+/* ============================================================================
+ * Public API
+ * ============================================================================
+ */
+
+/**
+ * Returns a fixed-point decimal approximation of ln(2).
+ *
+ * @stack n -- floor(10^n * ln(2))
+ * @family math logarithms
+ * @kind derived
+ * @derived-from atanh-core-scaled
+ * @example 3 ln2 => 693
+ * @see ln
+ * @see atanh-core-scaled
+ */
+ln2: /* ... */
+;
+
+/**
+ * Returns a fixed-point decimal approximation of the natural logarithm.
+ *
+ * @stack n x -- floor(10^n * ln(x))
+ * @family math logarithms
+ * @kind derived
+ * @pre x > 0
+ * @see ln2
+ */
+ln: /* ... */
+;
+
+/* ============================================================================
+ * Internal helpers
+ * ============================================================================
+ */
+
+__ln-normalize: /* ... */
+;
+```
+
+---
+
+## Design rationale
+
+This spec deliberately avoids two extremes:
+
+### Not raw ad hoc comments
+
+Purely freeform comments are easy to write but hard to keep consistent and hard to extract reliably.
+
+### Not full literate programming
+
+A fully literate style would place too much narrative pressure on source files and can make normal source reading harder.
+
+Instead, this format aims for a middle path:
+
+- readable in raw source,
+- structured enough for extraction,
+- compact enough for normal development,
+- expressive enough for future rich documentation interfaces.
+
+---
+
+## Intended future uses
+
+This source format should translate cleanly into:
+
+- Markdown module pages
+- Markdown word cards
+- reference indexes
+- family indexes
+- related-word navigation
+- combinator atlas views
+- playground side panels
+- hover documentation
+- notebook or trace-based interfaces later
+
+The source format should therefore remain stable even as the published documentation becomes more ambitious.
+
+---
+
+## Initial recommendation
+
+Adopt this spec first in a small number of representative `ff/lib` files:
+
+- one core conceptual module
+- one sequence module
+- one math module
+
+Use those files to refine wording conventions, family vocabulary, and extraction assumptions before rolling the format across the full library.
+
+---
+
+## See also
+
+- `_docs/stack-notation.md` — stack effect notation
+- `_docs/core-vocabulary.md` — conceptual core vocabulary
+- `_plans/f-flat-minor/source-driven-reference-manual.md` — phased rollout plan

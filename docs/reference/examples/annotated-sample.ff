@@ -1,11 +1,24 @@
 /**
- * Sample module (plain .ff) for documentation authoring examples.
- * See docs/reference/DOCS-SPEC.md. Not part of the standard test corpus.
+ * Module: docs/reference/examples/annotated-sample
+ * Summary: Plain .ff sample for the source documentation spec.
+ *
+ * Family: documentation, examples
+ * Related:
+ *   - docs/reference/DOCS-SPEC.md
+ */
+
+/* ============================================================================
+ * Public API
+ * ============================================================================
  */
 
 /**
- * Illustrative increment; real code would use library words.
+ * Adds one to the top of the stack (illustrative).
  *
- * Stack: ( n -- n' )
+ * @stack n -- n'
+ * @family math arithmetic
+ * @kind derived
+ * @example 4 bump => 5
+ * @see +
  */
 bump: 1 + ;

@@ -4,7 +4,7 @@ This section will hold **generated** API-style reference for F♭m: core words a
 
 Until the generation pipeline exists (Phase 2+), see:
 
-- [Documentation model and authoring rules](./DOCS-SPEC.md)
+- [F♭m source documentation spec](./DOCS-SPEC.md) — module dossiers (`Module:`, `Summary:`, …), word cards (`@stack`, `@family`, …), section markers, extraction rules
 - [Example annotated sources](./examples/)
 
-Conceptual stack notation and core vocabulary: `_docs/stack-notation.md`, `_docs/core-vocabulary.md`.
+Stack notation for `@stack` lines: `_docs/stack-notation.md`. Conceptual core vocabulary: `_docs/core-vocabulary.md`.

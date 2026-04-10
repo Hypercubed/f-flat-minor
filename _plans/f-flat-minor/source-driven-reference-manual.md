@@ -12,7 +12,7 @@ Add a maintainable F♭m reference manual that defines a documentation model, pr
 
 ## Implementation status
 
-- **Phase 1** (2026-04-10): **Complete** — Deliverables: `docs/reference/DOCS-SPEC.md`, example snippets under `docs/reference/examples/`, draft tree `docs/DRAFT-DOCS-TREE.md`, plus stubs `docs/reference/index.md` and `docs/manual/introduction.md`.
+- **Phase 1** (2026-04-10): **Complete** — Deliverables: `docs/reference/DOCS-SPEC.md`, example snippets under `docs/reference/examples/`, draft tree `docs/DRAFT-DOCS-TREE.md`, plus stubs `docs/reference/index.md` and `docs/manual/introduction.md`. The spec was expanded to the **F♭m source documentation** format (module labeled fields, `@stack` / `@family` / `@kind` word tags, section markers, extraction rules).
 
 ## Context
 
@@ -39,8 +39,8 @@ Phased delivery as originally scoped:
 
 ## Open questions
 
-- Exact convention for stack-effect-only one-line comments vs multi-line reference blocks (resolved for authoring in `DOCS-SPEC.md`; tooling details in Phase 2).
-- Whether `.import` lines may appear before the module doc block without splitting “module” narrative (see spec).
+- Phase 2 extractor behavior when `@stack` disagrees with an inline `/* … == … */` comment on the same definition (spec: warn or require agreement).
+- Finer rules for “primary module block” when multiple `Module:` blocks appear (should be validation error).
 
 ## Out of scope (until later phases)
 
@@ -58,7 +58,7 @@ Phased delivery as originally scoped:
 
 - `_docs/stack-notation.md` — stack effect notation for words
 - `_docs/core-vocabulary.md` — core words (conceptual baseline)
-- `docs/reference/DOCS-SPEC.md` — authoritative Phase 1 model
+- `docs/reference/DOCS-SPEC.md` — authoritative source documentation format (module dossier + `@tag` word blocks)
 
 ---
 
