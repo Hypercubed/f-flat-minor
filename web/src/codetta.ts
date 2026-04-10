@@ -1,4 +1,4 @@
-import { html, nothing, render } from "lit-html";
+import { html, render } from "lit-html";
 import { unsafeHTML } from "lit-html/directives/unsafe-html.js";
 import {
   buildAppUrl,
@@ -12,16 +12,25 @@ import {
   type CodettaEntry,
 } from "./codetta-data.ts";
 import { mountSourceEditor, tutorialEditorFlatFeedback } from "./editor.ts";
-import { getCompiledBytecodeDisplay, getCompiledByteScore } from "./program-runner.ts";
 import { startRunProgramRunFeedback, stopRunProgramRunFeedback } from "./run-fx.ts";
 import { runPlaygroundProgram } from "./run-playground.ts";
-import { formatVmStepCount } from "./format-vm-steps.ts";
 import { remark } from "remark";
 import remarkGfm from "remark-gfm";
 import remarkRehype from "remark-rehype";
 import rehypeStringify from "rehype-stringify";
 import { codettaOutputsMatch, normalizeCodettaOutputForComparison } from "./codetta-compare.ts";
 import { abortActiveRuns, registerActiveRun } from "./active-run-cancellation.ts";
+import { setBytecodeCountLabel, setBytecodePlainText } from "./ui/bytecode-display.ts";
+import { syncBytecodeDetailTabChrome, syncSubtabActiveState } from "./ui/detail-tabs.ts";
+import {
+  completedProgramRunSummaryItems,
+  failedProgramRunSummaryItems,
+  idleProgramRunSummaryItems,
+  initialRunningProgramRunSummaryItems,
+  progressProgramRunSummaryItems,
+} from "./ui/program-run-summary.ts";
+import { requireElement } from "./ui/require-element.ts";
+import { renderSummaryBar } from "./ui/summary-bar.ts";
 
 const ETUDES: CodettaEntry[] = CODETTA_ENTRIES;
 const CODETTA_GITHUB_REPO = "https://github.com/Hypercubed/f-flat-minor";
@@ -64,35 +73,6 @@ function getCodettaSubmitUrl(etude: CodettaEntry, compiledBytes: number, source:
   url.searchParams.set("solution", source);
   url.searchParams.set("validation", getCodettaValidationNotes(etude, compiledBytes, matchedOutput));
   return url.toString();
-}
-
-type SummaryTone = "default" | "success" | "error" | "running" | "pending";
-
-interface SummaryItem {
-  label: string;
-  value: string;
-  tone?: SummaryTone;
-  showDot?: boolean;
-}
-
-function formatBytecodeByteCount(value: string) {
-  const byteCount = value ? getCompiledByteScore(value) : 0;
-  const unit = byteCount === 1 ? "byte" : "bytes";
-  return `${byteCount} ${unit}`;
-}
-
-function renderSummaryTemplate(items: SummaryItem[]) {
-  return html`${items.map(
-    (item) => html`
-      <span class="summary-bar-item">
-        <span class="label">${item.label}</span>
-        <span class="value${item.tone && item.tone !== "default" ? ` ${item.tone}` : ""}">
-          ${item.showDot ? html`<span class="summary-running-dot" aria-hidden="true"></span>` : nothing}
-          ${item.value}
-        </span>
-      </span>
-    `,
-  )}`;
 }
 
 function codettaShellTemplate() {
@@ -228,16 +208,6 @@ function codettaShellTemplate() {
   `;
 }
 
-function requireElement<T extends Element>(root: ParentNode, selector: string): T {
-  const element = root.querySelector<T>(selector);
-
-  if (!element) {
-    throw new Error(`Missing Codetta UI element: ${selector}`);
-  }
-
-  return element;
-}
-
 function syncCodettaUrl(
   etudeSlug: string | null,
   mode: "push" | "replace",
@@ -296,7 +266,7 @@ export function mountCodetta(root: HTMLElement, options: CodettaMountOptions): C
   const leader = root.querySelector<HTMLElement>("#codetta-leader");
   const bytes = root.querySelector<HTMLElement>("#codetta-bytes");
   const date = root.querySelector<HTMLElement>("#codetta-date");
-  const attemptHost = requireElement<HTMLElement>(root, "#codetta-attempt");
+  const attemptHost = requireElement<HTMLElement>(root, "#codetta-attempt", "Codetta UI element");
   const loadBest = root.querySelector<HTMLButtonElement>("#codetta-load-best");
   const byteStatus = root.querySelector<HTMLElement>("#codetta-byte-status");
   const runButton = root.querySelector<HTMLButtonElement>("#codetta-run");
@@ -376,23 +346,23 @@ export function mountCodetta(root: HTMLElement, options: CodettaMountOptions): C
   }
 
   function setDetailTab(name: string) {
-    ui.detailTabs.forEach((tab) => {
-      const active = tab.dataset.codettaDetailTab === name;
-      tab.classList.toggle("is-active", active);
-    });
-
-    ui.detailPanels.forEach((panel) => {
-      const active = panel.dataset.codettaDetailPanel === name;
-      panel.classList.toggle("is-active", active);
-    });
-
-    ui.outputWrapToggle.hidden = name === "bytecode";
-    ui.bytecodeMeta.hidden = name !== "bytecode";
+    syncSubtabActiveState(
+      ui.detailTabs,
+      ui.detailPanels,
+      name,
+      (tab) => tab.dataset.codettaDetailTab,
+      (panel) => panel.dataset.codettaDetailPanel,
+    );
+    syncBytecodeDetailTabChrome(name, ui.outputWrapToggle, ui.bytecodeMeta);
   }
 
   function setBytecodeDisplay(value: string) {
-    ui.bytecode.textContent = getCompiledBytecodeDisplay(value) || "(Run your attempt to inspect bytecode.)";
-    ui.bytecodeCount.textContent = formatBytecodeByteCount(value);
+    setBytecodePlainText(
+      ui.bytecode,
+      value,
+      "(Run your attempt to inspect bytecode.)",
+    );
+    setBytecodeCountLabel(ui.bytecodeCount, value);
   }
 
   function setOutputWrap(enabled: boolean) {
@@ -411,15 +381,7 @@ export function mountCodetta(root: HTMLElement, options: CodettaMountOptions): C
   }
 
   function setIdleSummary() {
-    render(
-      renderSummaryTemplate([
-        { label: "compile", value: "—", tone: "pending" },
-        { label: "execute", value: "—", tone: "pending" },
-        { label: "vm steps", value: "—", tone: "pending" },
-        { label: "exit", value: "—", tone: "pending" },
-      ]),
-      ui.summary,
-    );
+    render(renderSummaryBar(idleProgramRunSummaryItems()), ui.summary);
     ui.summary.dataset.state = "idle";
   }
 
@@ -603,15 +565,7 @@ export function mountCodetta(root: HTMLElement, options: CodettaMountOptions): C
     startRunProgramRunFeedback(ui.runButton);
     setCodettaRunningState(true);
     ui.summary.dataset.state = "running";
-    render(
-      renderSummaryTemplate([
-        { label: "compile", value: "Running...", tone: "running", showDot: true },
-        { label: "execute", value: "…", tone: "pending" },
-        { label: "vm steps", value: "…", tone: "pending" },
-        { label: "exit", value: "pending", tone: "pending" },
-      ]),
-      ui.summary,
-    );
+    render(renderSummaryBar(initialRunningProgramRunSummaryItems()), ui.summary);
 
     try {
       const run = await runPlaygroundProgram(ui.attemptEditor.getValue(), "", true, {
@@ -623,58 +577,20 @@ export function mountCodetta(root: HTMLElement, options: CodettaMountOptions): C
           }
 
           render(
-            renderSummaryTemplate([
-              {
-                label: "compile",
-                value: compileMs !== undefined ? `${compileMs.toFixed(2)} ms` : "…",
-                tone: "running",
-              },
-              {
-                label: "execute",
-                value: executeElapsedMs !== undefined ? `${executeElapsedMs.toFixed(2)} ms` : "…",
-                tone: "running",
-                showDot: true,
-              },
-              {
-                label: "vm steps",
-                value: formatVmStepCount(vmCyclesExecuted),
-                tone: "running",
-              },
-              { label: "exit", value: "pending", tone: "pending" },
-            ]),
+            renderSummaryBar(
+              progressProgramRunSummaryItems({
+                vmCyclesExecuted,
+                compileMs,
+                executeElapsedMs,
+              }),
+            ),
             ui.summary,
           );
         },
       });
 
-      const exitLabel =
-        run.terminal === "cancelled"
-          ? "cancelled"
-          : run.terminal === "error"
-          ? "error"
-          : String(run.exitCode);
-      const exitTone =
-        run.terminal === "cancelled"
-          ? "pending"
-          : run.terminal === "error"
-          ? "error"
-          : run.exitCode === 0
-          ? "success"
-          : "error";
-
       ui.summary.dataset.state = "idle";
-      render(
-        renderSummaryTemplate([
-          { label: "compile", value: `${run.compileMs.toFixed(2)} ms` },
-          { label: "execute", value: `${run.executeMs.toFixed(2)} ms` },
-          {
-            label: "vm steps",
-            value: run.vmCyclesExecuted !== undefined ? formatVmStepCount(run.vmCyclesExecuted) : "—",
-          },
-          { label: "exit", value: exitLabel, tone: exitTone },
-        ]),
-        ui.summary,
-      );
+      render(renderSummaryBar(completedProgramRunSummaryItems(run)), ui.summary);
 
       setBytecodeDisplay(run.bytecode);
       updateByteStatus(run.compiledBytes);
@@ -701,15 +617,7 @@ export function mountCodetta(root: HTMLElement, options: CodettaMountOptions): C
       setBytecodeDisplay("");
       updateByteStatus(null);
       ui.summary.dataset.state = "idle";
-      render(
-        renderSummaryTemplate([
-          { label: "compile", value: "failed", tone: "error" },
-          { label: "execute", value: "—", tone: "pending" },
-          { label: "vm steps", value: "—", tone: "pending" },
-          { label: "exit", value: "pending", tone: "pending" },
-        ]),
-        ui.summary,
-      );
+      render(renderSummaryBar(failedProgramRunSummaryItems()), ui.summary);
       ui.result.textContent = "Status: error";
       ui.result.dataset.tone = "bad";
       syncSubmitState();

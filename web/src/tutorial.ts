@@ -10,16 +10,9 @@ import {
   type TutorialProblem,
 } from "./tutorial-problems.ts";
 import { registerActiveRun } from "./active-run-cancellation.ts";
-
-function requireElement<T extends Element>(root: ParentNode, selector: string): T {
-  const element = root.querySelector<T>(selector);
-
-  if (!element) {
-    throw new Error(`Missing required element: ${selector}`);
-  }
-
-  return element;
-}
+import { runExitDisplay } from "./ui/program-run-summary.ts";
+import { requireElement } from "./ui/require-element.ts";
+import { waitForPaint } from "./ui/wait-for-paint.ts";
 
 function renderInlineCopy(value: string) {
   return html`${value.split(/(`[^`]+`)/g).map((part) => {
@@ -37,14 +30,6 @@ interface TutorialSummaryItem {
   value: string;
   tone?: TutorialSummaryTone;
   showDot?: boolean;
-}
-
-function waitForPaint() {
-  return new Promise<void>((resolve) => {
-    requestAnimationFrame(() => {
-      requestAnimationFrame(() => resolve());
-    });
-  });
 }
 
 function renderTutorialSummaryTemplate(items: TutorialSummaryItem[]) {
@@ -287,20 +272,7 @@ export function mountTutorial(root: HTMLElement) {
           },
         });
 
-        const exitLabel =
-          result.terminal === "cancelled"
-            ? "cancelled"
-            : result.terminal === "error"
-            ? "error"
-            : String(result.exitCode);
-        const exitTone =
-          result.terminal === "cancelled"
-            ? "pending"
-            : result.terminal === "error"
-            ? "error"
-            : result.exitCode === 0
-            ? "success"
-            : "error";
+        const exit = runExitDisplay(result);
 
         render(
           renderTutorialSummaryTemplate([
@@ -308,8 +280,8 @@ export function mountTutorial(root: HTMLElement) {
             { label: "execute", value: `${result.executeMs.toFixed(2)} ms` },
             {
               label: "exit",
-              value: exitLabel,
-              tone: exitTone,
+              value: exit.value,
+              tone: exit.tone,
             },
             {
               label: "issues",

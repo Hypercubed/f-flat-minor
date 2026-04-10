@@ -7,7 +7,6 @@ import {
   EXAMPLES,
 } from "./examples.ts";
 import { runPlaygroundProgram } from "./run-playground.ts";
-import { getCompiledBytecodeDisplay, getCompiledByteScore } from "./program-runner.ts";
 import { ReplSession } from "./repl-session.ts";
 import {
   buildAppUrl,
@@ -22,62 +21,24 @@ import { mountTutorial } from "./tutorial.ts";
 import { mountCodetta } from "./codetta.ts";
 import { startRunProgramRunFeedback, stopRunProgramRunFeedback, triggerReplKeyFeedback } from "./run-fx.ts";
 import { syncRunFeedbackToggleButton, toggleRunFeedback } from "./run-feedback.ts";
-import { formatVmStepCount } from "./format-vm-steps.ts";
 import { decodeCodeFromUrlParam, encodeCodeForUrlParam } from "./url-codec.ts";
 import { abortActiveRuns, registerActiveRun } from "./active-run-cancellation.ts";
 import type { ValueInspection } from "../../typescript/core/src/engine.ts";
 import type { StackItem } from "./repl-session.ts";
-
-function requireElement<T extends Element>(root: ParentNode, selector: string): T {
-  const element = root.querySelector<T>(selector);
-
-  if (!element) {
-    throw new Error(`Missing required element: ${selector}`);
-  }
-
-  return element;
-}
-
-function scrollToBottom(element: HTMLElement) {
-  element.scrollTop = element.scrollHeight;
-}
-
-function formatBytecodeByteCount(value: string) {
-  const byteCount = value ? getCompiledByteScore(value) : 0;
-  const unit = byteCount === 1 ? "byte" : "bytes";
-  return `${byteCount} ${unit}`;
-}
-
-type SummaryTone = "default" | "success" | "error" | "running" | "pending";
-
-interface SummaryItem {
-  label: string;
-  value: string;
-  tone?: SummaryTone;
-  showDot?: boolean;
-}
-
-function waitForPaint() {
-  return new Promise<void>((resolve) => {
-    requestAnimationFrame(() => {
-      requestAnimationFrame(() => resolve());
-    });
-  });
-}
-
-function renderSummaryTemplate(items: SummaryItem[]) {
-  return html`${items.map(
-    (item) => html`
-      <span class="summary-bar-item">
-        <span class="label">${item.label}</span>
-        <span class="value${item.tone && item.tone !== "default" ? ` ${item.tone}` : ""}">
-          ${item.showDot ? html`<span class="summary-running-dot" aria-hidden="true"></span>` : nothing}
-          ${item.value}
-        </span>
-      </span>
-    `,
-  )}`;
-}
+import { renderBytecodeToPre, setBytecodeCountLabel } from "./ui/bytecode-display.ts";
+import { syncBytecodeDetailTabChrome, syncSubtabActiveState } from "./ui/detail-tabs.ts";
+import {
+  completedProgramRunSummaryItems,
+  failedProgramRunSummaryItems,
+  idleProgramRunSummaryItems,
+  initialRunningProgramRunSummaryItems,
+  progressProgramRunSummaryItems,
+} from "./ui/program-run-summary.ts";
+import { requireElement } from "./ui/require-element.ts";
+import { replInspectContentTemplate, replStackListTemplate } from "./ui/repl-views.ts";
+import { scrollElementToBottom } from "./ui/scroll-element.ts";
+import { renderSummaryBar } from "./ui/summary-bar.ts";
+import { waitForPaint } from "./ui/wait-for-paint.ts";
 
 export function mountApp(root: HTMLElement) {
   render(renderAppShell(), root);
@@ -234,23 +195,19 @@ export function mountApp(root: HTMLElement) {
   }
 
   function setDetailTab(name: string) {
-    detailTabs.forEach((tab) => {
-      const active = tab.dataset.detailTab === name;
-      tab.classList.toggle("is-active", active);
-    });
-
-    detailPanels.forEach((panel) => {
-      const active = panel.dataset.detailPanel === name;
-      panel.classList.toggle("is-active", active);
-    });
-
-    outputWrapToggle.hidden = name === "bytecode";
-    bytecodeMeta.hidden = name !== "bytecode";
+    syncSubtabActiveState(
+      detailTabs,
+      detailPanels,
+      name,
+      (tab) => tab.dataset.detailTab,
+      (panel) => panel.dataset.detailPanel,
+    );
+    syncBytecodeDetailTabChrome(name, outputWrapToggle, bytecodeMeta);
   }
 
   function setBytecodeDisplay(value: string) {
-    render(html`${getCompiledBytecodeDisplay(value)}`, bytecode);
-    bytecodeCount.textContent = formatBytecodeByteCount(value);
+    renderBytecodeToPre(bytecode, value);
+    setBytecodeCountLabel(bytecodeCount, value);
   }
 
   tabs.forEach((tab) => {
@@ -330,15 +287,7 @@ export function mountApp(root: HTMLElement) {
   async function renderPlayground() {
     document.body.dataset.ready = "false";
     setPlaygroundRunningState(true);
-    render(
-      renderSummaryTemplate([
-        { label: "compile", value: "Running...", tone: "running", showDot: true },
-        { label: "execute", value: "…", tone: "pending" },
-        { label: "vm steps", value: "…", tone: "pending" },
-        { label: "exit", value: "pending", tone: "pending" },
-      ]),
-      summary,
-    );
+    render(renderSummaryBar(initialRunningProgramRunSummaryItems()), summary);
     errorOutput.textContent = "";
 
     const abortController = new AbortController();
@@ -364,26 +313,13 @@ export function mountApp(root: HTMLElement) {
             setBytecodeDisplay(bcText ?? "");
           }
           render(
-            renderSummaryTemplate([
-              {
-                label: "compile",
-                value: compileMs !== undefined ? `${compileMs.toFixed(2)} ms` : "…",
-                tone: "running",
-              },
-              {
-                label: "execute",
-                value:
-                  executeElapsedMs !== undefined ? `${executeElapsedMs.toFixed(2)} ms` : "…",
-                tone: "running",
-                showDot: true,
-              },
-              {
-                label: "vm steps",
-                value: formatVmStepCount(vmCyclesExecuted),
-                tone: "running",
-              },
-              { label: "exit", value: "pending", tone: "pending" },
-            ]),
+            renderSummaryBar(
+              progressProgramRunSummaryItems({
+                vmCyclesExecuted,
+                compileMs,
+                executeElapsedMs,
+              }),
+            ),
             summary,
           );
         },
@@ -405,39 +341,7 @@ export function mountApp(root: HTMLElement) {
         issueCount ? `\n\n${issueCount} compiler issue(s):\n${result.issues.join("\n")}` : "",
       ].join("");
 
-      const exitLabel =
-        result.terminal === "cancelled"
-          ? "cancelled"
-          : result.terminal === "error"
-          ? "error"
-          : String(result.exitCode);
-      const exitTone =
-        result.terminal === "cancelled"
-          ? "pending"
-          : result.terminal === "error"
-          ? "error"
-          : result.exitCode === 0
-          ? "success"
-          : "error";
-
-      const summaryItems: SummaryItem[] = [
-        { label: "compile", value: `${result.compileMs.toFixed(2)} ms` },
-        { label: "execute", value: `${result.executeMs.toFixed(2)} ms` },
-        {
-          label: "vm steps",
-          value:
-            result.vmCyclesExecuted !== undefined
-              ? formatVmStepCount(result.vmCyclesExecuted)
-              : "—",
-        },
-        {
-          label: "exit",
-          value: exitLabel,
-          tone: exitTone,
-        },
-      ];
-
-      render(renderSummaryTemplate(summaryItems), summary);
+      render(renderSummaryBar(completedProgramRunSummaryItems(result)), summary);
 
       if (result.terminal === "error") {
         render(nothing, output);
@@ -445,33 +349,25 @@ export function mountApp(root: HTMLElement) {
         preprocessedViewer.setValue("");
         irViewer.setValue("");
         setBytecodeDisplay("");
-        scrollToBottom(errorOutput);
+        scrollElementToBottom(errorOutput);
       } else {
         render(html`${diagnostics}`, output);
         errorOutput.textContent = "";
         preprocessedViewer.setValue(result.preprocessed);
         irViewer.setValue(result.ir);
         setBytecodeDisplay(result.bytecode);
-        scrollToBottom(output);
+        scrollElementToBottom(output);
       }
     } catch (error) {
       const message = error instanceof Error ? error.message : String(error);
 
-      render(
-        renderSummaryTemplate([
-          { label: "compile", value: "failed", tone: "error" },
-          { label: "execute", value: "—", tone: "pending" },
-          { label: "vm steps", value: "—", tone: "pending" },
-          { label: "exit", value: "pending", tone: "pending" },
-        ]),
-        summary,
-      );
+      render(renderSummaryBar(failedProgramRunSummaryItems()), summary);
       render(nothing, output);
       render(html`${message}`, errorOutput);
       preprocessedViewer.setValue("");
       irViewer.setValue("");
       setBytecodeDisplay("");
-      scrollToBottom(errorOutput);
+      scrollElementToBottom(errorOutput);
     } finally {
       unregisterAbort();
       playgroundAbort = null;
@@ -482,15 +378,7 @@ export function mountApp(root: HTMLElement) {
   }
 
   function setPlaygroundIdle() {
-    render(
-      renderSummaryTemplate([
-        { label: "compile", value: "—", tone: "pending" },
-        { label: "execute", value: "—", tone: "pending" },
-        { label: "vm steps", value: "—", tone: "pending" },
-        { label: "exit", value: "—", tone: "pending" },
-      ]),
-      summary,
-    );
+    render(renderSummaryBar(idleProgramRunSummaryItems()), summary);
     summary.dataset.state = "idle";
     render(html`(Click Run Program to execute.)`, output);
     errorOutput.textContent = "";
@@ -527,33 +415,13 @@ export function mountApp(root: HTMLElement) {
 
   function renderReplStack(stack: StackItem[]) {
     replDepth.textContent = `depth: ${stack.length}`;
-
-    if (!stack.length) {
-      render(
-        html`<li class="repl-stack-empty">(empty stack)</li>`,
-        replStack,
-      );
-      scrollToBottom(replStack);
-      return;
-    }
-
-    render(
-      html`${stack.map(
-        (item) => html`
-          <li class="repl-stack-row" data-value="${item.value}">
-            <span class="repl-stack-index">${item.index}:</span>
-            <code class="repl-stack-value">${item.value}</code>
-          </li>
-        `,
-      )}`,
-      replStack,
-    );
-    scrollToBottom(replStack);
+    render(replStackListTemplate(stack), replStack);
+    scrollElementToBottom(replStack);
   }
 
   function renderReplTranscript() {
     render(html`${replTranscript.join("\n\n")}`, replOutput);
-    scrollToBottom(replOutput);
+    scrollElementToBottom(replOutput);
   }
 
   async function runReplLine() {
@@ -616,71 +484,14 @@ export function mountApp(root: HTMLElement) {
   }
 
   function renderInspectPanel(info: ValueInspection | null) {
-    // If info is null, close the panel
     if (info === null) {
       replInspect.classList.remove("is-visible");
       return;
     }
 
     const isNested = inspectCurrentIndex > 0;
-    const isQuote = !info.name && info.value > 255n;
-
-    const definitionSection =
-      info.definition && info.definition.length > 0
-        ? html`
-            <div class="inspect-label">Definition:</div>
-            <div class="inspect-definition">
-              ${info.definition.map((token) => {
-                const display = token.name ?? String(token.value);
-                const tokenClass = token.isCall ? "token-call" : "token-literal";
-                const inspectable = token.isCall || token.isDefined ? "inspectable" : "";
-                const title = token.isCall || token.isDefined ? "Click to inspect" : "Literal value";
-                return html`
-                  <span
-                    class="inspect-token ${tokenClass} ${inspectable}"
-                    data-value="${String(token.value)}"
-                    title="${title}"
-                  >${display}</span>
-                `;
-              })}
-            </div>
-          `
-        : !info.isSystem && !info.isDefined
-        ? html`<div class="inspect-note">Plain value (not a word)</div>`
-        : nothing;
-
-    render(
-      html`
-        <div class="inspect-header">
-          <code class="inspect-value">${String(info.value)}</code>
-          ${info.name
-            ? html`<span class="inspect-name-label">KNOWN AS:</span><span class="inspect-name-value">${info.name}</span>`
-            : nothing}
-          ${info.isSystem
-            ? html`<span class="inspect-tag system">system</span>`
-            : info.isDefined
-            ? html`<span class="inspect-tag ${isQuote ? "quote" : "user"}">${isQuote ? "quote" : "user-defined"}</span>`
-            : nothing}
-        </div>
-        ${info.isSystem && (info.stackEffect || info.description)
-          ? html`
-              <div class="inspect-vocabulary">
-                ${info.stackEffect
-                  ? html`<div class="inspect-stack-effect"><code>${info.stackEffect}</code></div>`
-                  : nothing}
-                ${info.description
-                  ? html`<div class="inspect-description">${info.description}</div>`
-                  : nothing}
-              </div>
-            `
-          : nothing}
-        ${definitionSection}
-      `,
-      replInspectContent,
-    );
-    // Back button: disabled at root level, enabled when nested
+    render(replInspectContentTemplate(info), replInspectContent);
     replInspectBack.disabled = !isNested;
-    // Close button: always visible when panel is open
     replInspectClose.style.display = "inline-block";
     replInspect.classList.add("is-visible");
   }
