@@ -14,8 +14,9 @@ import { siteSections } from "../data/site";
       <p class="eyebrow">f-flat-minor / web2</p>
       <h1 class="hero-title">Bring the F♭m site into Astro without losing its voice.</h1>
       <p class="hero-lede">
-        This first step sets up Astro layouts, routes, and shared styling inspired by the current browser
-        app. The interactive playground, REPL, codettas, and tutorials stay in <code>/web</code> for now.
+        Astro now owns the site shell and route structure while the existing interactive playground, REPL,
+        codettas, and tutorials are mounted inside those routes with their current <code>lit-html</code>
+        rendering intact.
       </p>
       <div class="hero-actions">
         <a class="button-link primary" href="/playground/">Browse the new routes</a>
@@ -23,8 +24,8 @@ import { siteSections } from "../data/site";
       </div>
       <div class="migration-note">
         <p>
-          The intent here is structure first: Astro owns navigation, page layout, and static content framing;
-          the existing client-side tools can be embedded later.
+          The intent here is still incremental: keep the current interactive behavior working inside Astro
+          first, then extract cleaner boundaries and custom elements later.
         </p>
       </div>
     </div>

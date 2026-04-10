@@ -1,6 +1,9 @@
 ---
 import BaseLayout from "../layouts/BaseLayout.astro";
+import CodettasSurface from "../components/CodettasSurface.astro";
+import PlaygroundSurface from "../components/PlaygroundSurface.astro";
 import ReplSurface from "../components/ReplSurface.astro";
+import TutorialSurface from "../components/TutorialSurface.astro";
 import { siteSections, type SiteSection } from "../data/site";
 
 export function getStaticPaths() {
@@ -15,6 +18,20 @@ interface Props {
 }
 
 const { section } = Astro.props;
+const InteractiveSurface = (() => {
+  switch (section.slug) {
+    case "playground":
+      return PlaygroundSurface;
+    case "repl":
+      return ReplSurface;
+    case "codettas":
+      return CodettasSurface;
+    case "tutorial":
+      return TutorialSurface;
+    default:
+      return null;
+  }
+})();
 ---
 
 <BaseLayout
@@ -30,7 +47,7 @@ const { section } = Astro.props;
     <div class="status-badge">{section.status}</div>
   </section>
 
-  {section.slug === "repl" ? <ReplSurface /> : null}
+  {InteractiveSurface ? <InteractiveSurface /> : null}
 
   <section class="page-section grid route-grid">
     <article class="info-card">
@@ -49,8 +66,8 @@ const { section } = Astro.props;
         {section.nextSteps.map((item) => <li>{item}</li>)}
       </ul>
       <p>
-        This route is intentionally static for now so the eventual migration can embed the existing surface
-        instead of rebuilding its runtime behavior prematurely.
+        Each interactive route now mounts its existing controller inside Astro while keeping the current
+        `lit-html` rendering model intact.
       </p>
     </article>
   </section>

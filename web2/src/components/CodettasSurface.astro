@@ -1,0 +1,18 @@
+<section class="page-section">
+  <div id="codetta-mode-nav" class="codetta-mode-nav" aria-label="Navigate Codettas" hidden>
+    <button type="button" class="ghost codetta-detail-nav-btn" id="codetta-mode-prev">Previous</button>
+    <button type="button" class="ghost codetta-detail-nav-btn" id="codetta-mode-next">Next</button>
+  </div>
+  <div id="codetta-surface-root"></div>
+</section>
+
+<script>
+  import { mountCodettas } from "../client/mount-codettas.ts";
+
+  const surface = document.querySelector("#codetta-surface-root");
+  const nav = document.querySelector("#codetta-mode-nav");
+  if (surface instanceof HTMLElement && nav instanceof HTMLElement) {
+    surface.prepend(nav);
+    mountCodettas(surface);
+  }
+</script>
