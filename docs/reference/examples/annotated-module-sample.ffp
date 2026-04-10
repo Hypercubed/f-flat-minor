@@ -1,0 +1,20 @@
+/**
+ * Module: docs/reference/examples/annotated-module-sample.ffp
+ *
+ * Illustrative sample for the reference documentation model (DOCS-SPEC.md).
+ * Not loaded by the standard library. No .imports — keeps the sample self-contained for authors.
+ */
+
+/**
+ * Duplicate the top stack item (example public word).
+ *
+ * Stack: ( a -- a a )
+ */
+dup2-example: dup dup ;
+
+/**
+ * Add two integers (example).
+ *
+ * Stack: ( a b -- sum )
+ */
+add-example: + ;

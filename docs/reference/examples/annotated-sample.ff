@@ -1,0 +1,11 @@
+/**
+ * Sample module (plain .ff) for documentation authoring examples.
+ * See docs/reference/DOCS-SPEC.md. Not part of the standard test corpus.
+ */
+
+/**
+ * Illustrative increment; real code would use library words.
+ *
+ * Stack: ( n -- n' )
+ */
+bump: 1 + ;
