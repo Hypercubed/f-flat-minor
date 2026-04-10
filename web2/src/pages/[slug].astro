@@ -1,5 +1,6 @@
 ---
 import BaseLayout from "../layouts/BaseLayout.astro";
+import ReplSurface from "../components/ReplSurface.astro";
 import { siteSections, type SiteSection } from "../data/site";
 
 export function getStaticPaths() {
@@ -28,6 +29,8 @@ const { section } = Astro.props;
     <p class="page-copy">{section.description}</p>
     <div class="status-badge">{section.status}</div>
   </section>
+
+  {section.slug === "repl" ? <ReplSurface /> : null}
 
   <section class="page-section grid route-grid">
     <article class="info-card">

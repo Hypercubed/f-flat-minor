@@ -35,17 +35,17 @@ export const siteSections: SiteSection[] = [
     eyebrow: "Persistent session",
     summary: "A dedicated Astro route for the long-lived browser session, stack monitor, and console guidance.",
     description:
-      "The current REPL stays in the legacy site for now, but this page establishes the route, framing copy, and content structure needed for a later migration.",
-    status: "Persistent session UI remains in `web` for now.",
+      "This route now embeds the existing browser REPL behavior inside the Astro shell while still using the current lit-html rendering approach instead of a custom element.",
+    status: "Live lit-html REPL mounted here; custom element extraction comes later.",
     highlights: [
       "A standalone route instead of a tab inside one large SPA",
-      "Space for usage notes, keyboard hints, and examples",
-      "Shared site chrome without duplicating page structure",
+      "The existing stack monitor, transcript, and inspector behavior now run inside web2",
+      "Shared site chrome without forcing a LitElement rewrite yet",
     ],
     nextSteps: [
-      "Embed the current REPL panel into this page.",
-      "Document preload behavior and special commands.",
-      "Add session-specific support content around the live tool.",
+      "Factor the mounted REPL into a reusable boundary that can later become a custom element.",
+      "Document preload behavior and special commands around the embedded surface.",
+      "Repeat this migration pattern for the other interactive tools.",
     ],
   },
   {

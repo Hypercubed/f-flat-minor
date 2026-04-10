@@ -9,6 +9,7 @@
     "astro": "astro"
   },
   "dependencies": {
-    "astro": "^6.1.5"
+    "astro": "^6.1.5",
+    "lit-html": "^3.3.2"
   }
 }
