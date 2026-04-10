@@ -2,8 +2,8 @@
 etude: collatz
 title: "Collatz"
 leader: hypercubed
-bytes: 222
-date: 2026-04-07
+bytes: 212
+date: 2026-04-08
 ---
 
 Print the Collatz stopping times for the numbers 1 through 1,000, one per line.
