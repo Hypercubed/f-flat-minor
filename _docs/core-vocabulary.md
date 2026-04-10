@@ -1,3 +1,5 @@
+Per-runtime coverage (which implementations define each primitive): [`docs/reference/core-primitives.md`](../docs/reference/core-primitives.md).
+
 | Mnemonic | Syntax | Stack Effect                         | Op (Ascii)    | Version           |
 | -------- | :----: | ------------------------------------ | :-----------: | :---------------: |
 | NOP      |  nop   | `… nop == …`                         |   0 (null)    |        F♭m        |
@@ -23,6 +25,7 @@
 | FETCH    |   )    | `) == … {restores stack from queue}` |    41 ())     |        F♭m        |
 | MUL      |   \*   | `a b * == n`                         |    42 (\*)    | F♭m<sup>o</sup>   |
 | ADD      |   +    | `a b + == n`                         |    43 (+)     | F♭m<sup>o</sup>   |
+| CONS     |  cons  | `x y cons == q` {anonymous quotation} |    44 (,)  |        F♭m        |
 | SUB      |   -    | `a b - == n`                         |    45 (-)     | F♭m<sup>o</sup>   |
 | DUMP     |   .    | `… . == … {prints stack}`            |    46 (.)     | F♭m<sup>o</sup>   |
 | DIV      |   /    | `a b / == trunc(a/b)`                |    47 (/)     | F♭m<sup>o</sup>   |
