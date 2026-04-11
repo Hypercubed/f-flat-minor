@@ -47,7 +47,6 @@ const InteractiveSurface = (() => {
     <p class="eyebrow">{section.eyebrow}</p>
     <h1 class="route-title">{section.title}</h1>
     <p class="page-copy">{section.description}</p>
-    <div class="status-badge">{section.status}</div>
   </section>
 
   {InteractiveSurface ? <InteractiveSurface /> : null}
@@ -63,12 +62,12 @@ const InteractiveSurface = (() => {
     </article>
 
     <article class="info-card">
-      <p class="eyebrow">Route notes</p>
-      <h3>Where this route can grow</h3>
+      <p class="eyebrow">At a glance</p>
+      <h3>How this section fits together</h3>
       <ul class="bullet-list">
-        {section.nextSteps.map((item) => <li>{item}</li>)}
+        {section.details.map((item) => <li>{item}</li>)}
       </ul>
-      <p>This route now lives entirely inside the Astro site and can evolve independently from the old app.</p>
+      <p>This route now lives entirely inside the Astro site.</p>
     </article>
   </section>
 </BaseLayout>
