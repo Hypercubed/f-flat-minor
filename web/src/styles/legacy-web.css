@@ -10,6 +10,7 @@
   --accent-2: #17695d;
   --line: rgba(32, 22, 17, 0.12);
   --shadow: 0 24px 60px rgba(70, 39, 24, 0.12);
+  --run-button-inline-size: 9.5rem;
   /* Same fixed height for playground columns and REPL panes */
   --workspace-pane-height: 60vh;
   font-family: "Avenir Next", "Trebuchet MS", "Segoe UI", sans-serif;
@@ -889,7 +890,7 @@ textarea {
   align-items: center;
   justify-content: center;
   width: fit-content;
-  min-inline-size: 7.5rem;
+  min-inline-size: var(--run-button-inline-size);
   margin-left: auto;
 }
 
@@ -1108,13 +1109,13 @@ textarea {
   display: inline-flex;
   align-items: center;
   justify-content: center;
-  min-inline-size: 12rem;
+  min-inline-size: var(--run-button-inline-size);
 }
 
 .workspace .editor-panel #run {
-  min-inline-size: 4.75rem;
+  min-inline-size: var(--run-button-inline-size);
   min-height: 38px;
-  padding: 0.55rem 0.8rem;
+  padding: 0.45rem 0.65rem;
 }
 
 .run-flat-anchor {
@@ -1421,7 +1422,7 @@ button:disabled {
 }
 
 .tutorial-intro-body p {
-  margin: 0.85rem 0 0;
+  margin: 0;
 }
 
 .tutorial-list {
@@ -1534,9 +1535,9 @@ button:disabled {
   align-items: center;
   justify-content: center;
   box-sizing: border-box;
-  width: 12rem;
-  min-width: 12rem;
-  max-width: 12rem;
+  width: var(--run-button-inline-size);
+  min-width: var(--run-button-inline-size);
+  max-width: var(--run-button-inline-size);
   flex: 0 0 auto;
 }
 
@@ -1902,9 +1903,9 @@ button:disabled {
   }
 
   .tutorial-actions .tutorial-run-btn {
-    flex: 0 0 12rem;
-    width: 12rem;
-    max-width: 12rem;
+    flex: 0 0 var(--run-button-inline-size);
+    width: var(--run-button-inline-size);
+    max-width: var(--run-button-inline-size);
   }
 
   .summary-grid {

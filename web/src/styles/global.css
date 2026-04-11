@@ -216,7 +216,7 @@ img {
 }
 
 .route-title {
-  font-size: clamp(2.3rem, 5vw, 4rem);
+  font-size: 3rem;
   line-height: 0.98;
 }
 
@@ -328,7 +328,7 @@ img {
 .feature-card p,
 .info-card p,
 .section-summary p {
-  margin: 0.85rem 0 0;
+  margin: 0;
   color: var(--muted);
 }
 
