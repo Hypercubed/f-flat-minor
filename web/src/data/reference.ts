@@ -38,6 +38,17 @@ const REPO_ROOT = path.resolve(process.cwd(), "..");
 const REFERENCE_ROOT = path.resolve(REPO_ROOT, "_docs/reference");
 const GITHUB_BLOB_BASE = "https://github.com/Hypercubed/f-flat-minor/blob/main";
 const INCLUDED_REFERENCE_FILES = new Set(["index.md", "quickhelp.md", "core-primitives.md"]);
+const INCLUDED_REFERENCE_PREFIXES = [path.join("generated", "lib") + path.sep];
+
+function isIncludedReferenceFile(filePath: string): boolean {
+  const relativePath = path.relative(REFERENCE_ROOT, filePath);
+
+  if (INCLUDED_REFERENCE_FILES.has(relativePath)) {
+    return true;
+  }
+
+  return INCLUDED_REFERENCE_PREFIXES.some((prefix) => relativePath.startsWith(prefix));
+}
 
 function walkMarkdownFiles(dir: string): string[] {
   const entries = readdirSync(dir, { withFileTypes: true });
@@ -51,7 +62,7 @@ function walkMarkdownFiles(dir: string): string[] {
       continue;
     }
 
-    if (entry.isFile() && entry.name.endsWith(".md") && INCLUDED_REFERENCE_FILES.has(entry.name)) {
+    if (entry.isFile() && entry.name.endsWith(".md") && isIncludedReferenceFile(entryPath)) {
       files.push(entryPath);
     }
   }

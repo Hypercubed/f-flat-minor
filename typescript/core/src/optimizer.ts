@@ -171,11 +171,6 @@ const rules: Rule[] = [
       },
     ],
   },
-  {
-    name: "a q< b a> - b a",
-    pattern: [PushAny, Call(OpCodes.PUSHR), PushAny, Call(OpCodes.PULLR)],
-    replacement: (a, _, b) => [ b, a ],
-  },
   // Strength reduction
   // 2 * -> 1 <<
   // 2 / -> 1 >>

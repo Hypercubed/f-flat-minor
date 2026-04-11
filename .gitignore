@@ -20,3 +20,4 @@ rust/target/*
 */node_modules/*
 *.vsix
 __pycache__/
+.kilo

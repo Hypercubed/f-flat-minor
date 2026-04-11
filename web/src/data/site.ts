@@ -109,16 +109,16 @@ export const referenceSection: SiteSection = {
   slug: "reference",
   title: "Reference",
   eyebrow: "Language docs",
-  summary: "Browse the reference manual, quick help, and core primitives in one docs section.",
+  summary: "Browse the reference manual, quick help, core primitives, and standard-library docs in one section.",
   description:
-    "Use the integrated reference section to move between the overview, quick help, and primitive reference without leaving the active site.",
+    "Use the integrated reference section to move between the overview, quick help, primitive reference, and generated standard-library pages without leaving the active site.",
   highlights: [
     "Reference landing page with curated entry points",
-    "Quick help and primitive docs rendered from source Markdown",
+    "Quick help, primitive docs, and generated library pages rendered from source Markdown",
     "Docs navigation that keeps related reference pages together",
   ],
   details: [
-    "Start at the overview page, then drill into specific reference topics.",
+    "Start at the overview page, then drill into language and library reference topics.",
     "Follow source-authored links between reference pages.",
     "Keep docs and interactive tools under one site navigation.",
   ],
