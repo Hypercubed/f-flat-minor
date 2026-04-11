@@ -1,10 +1,5 @@
 <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 32 32" width="32" height="32">
-  <!-- Background -->
-  <rect width="32" height="32" rx="6" fill="#1a237e"/>
-  
-  <!-- F letter -->
+  <rect width="32" height="32" rx="6" fill="#1a237e" />
   <text x="6" y="24" font-family="Arial, sans-serif" font-size="22" font-weight="bold" fill="#fff">F</text>
-  
-  <!-- Flat symbol b -->
   <text x="18" y="22" font-family="Arial, sans-serif" font-size="18" font-weight="bold" fill="#ffab91">b</text>
 </svg>
