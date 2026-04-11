@@ -50,7 +50,7 @@ For clarity:
    - Treat VM primitives and true irreducible core floor words as floor (including combinators like `?` that may not live in `core.ff`).
    - Core convenience words such as `rot`, `dig`, `bury`, `over`, `nip`, `tuck`, `dip`, and `dipd` are **not** floor in full-floor mode; expand them when possible.
    - Do **not** stop at readable core aliases in full-floor mode; the point is to expose hidden stack shuffles before reduction.
-4. **Optional queue view:** expand **`[ X ] dip` → `q< X q>`** (inverse of mechanical rewrite in [`_docs/stack-rewrites-and-annotations.md`](../../../_docs/stack-rewrites-and-annotations.md)). Use this when queue pairing or `.unsafe` review matters.
+4. **Optional queue view:** expand **`[ X ] dip` → `q< X q>`** (inverse of mechanical rewrite in [`_docs/supplemental/stack-rewrites-and-annotations.md`](../../../_docs/supplemental/stack-rewrites-and-annotations.md)). Use this when queue pairing or `.unsafe` review matters.
 5. **`dip` definition:** `swap slip` with `slip` = `q< eval q>` — full expand may expose raw queue ops.
 6. In full-floor mode, continue expansion through convenience shuffles until reaching only floor words or an explicit stop boundary (`.unsafe`, user-capped depth, or black-boxed helper).
 7. **Single-word pointer normalization (expand phase):** when a pointer token is written as `[X]` (single word only, e.g. `[eval]`), normalize it to `[ X ]` before applying additional expansion rules.
@@ -61,7 +61,7 @@ For clarity:
 
 Before **every** nontrivial rewrite: write **before/after stack effects** (full depth; include **queue** if `q<`/`q>` appear). If the replacement needs a **different input shape**, it is invalid.
 
-Apply reductions from [`_docs/stack-rewrites-and-annotations.md`](../../../_docs/stack-rewrites-and-annotations.md), including:
+Apply reductions from [`_docs/supplemental/stack-rewrites-and-annotations.md`](../../../_docs/supplemental/stack-rewrites-and-annotations.md), including:
 
 - No-ops (`swap swap`, `q< q>`, `dup drop`, …), collapses (`drop2`, `nip`), **core canonicalizations** (`rot swapd` → `dig`, …).
 - **Queue ↔ `dip`:** usually **reduce** by **`q< X q>` → `[ X ] dip`** on **innermost** pairs (inside-out); respect `.unsafe` rules for cross-word queue.
@@ -250,8 +250,8 @@ This is a local "best-of-n" heuristic inspired by:
 
 ## References
 
-- [`_docs/stack-rewrites-and-annotations.md`](../../../_docs/stack-rewrites-and-annotations.md)
-- [`_docs/stack-notation.md`](../../../_docs/stack-notation.md)
+- [`_docs/supplemental/stack-rewrites-and-annotations.md`](../../../_docs/supplemental/stack-rewrites-and-annotations.md)
+- [`_docs/supplemental/stack-notation.md`](../../../_docs/supplemental/stack-notation.md)
 - [`_docs/core-vocabulary.md`](../../../_docs/core-vocabulary.md)
 
 ## Pilot example (exp)

@@ -20,7 +20,7 @@ Coverage was surveyed by:
 
 **Important:** This is **not** dynamic coverage. Words may still run as part of other definitions without ever being written in a test. Unchecked items are “no direct mention in `ff/lib` tests,” not “never executed.”
 
-Recommended runner: [`cd bun && mise exec -- chomp test:tap`](../AGENTS.md) (see [`_docs/tap-testing.md`](../_docs/tap-testing.md)).
+Recommended runner: [`cd bun && mise exec -- chomp test:tap`](../AGENTS.md) (see [`_docs/supplemental/tap-testing.md`](../_docs/supplemental/tap-testing.md)).
 
 ## Checklist
 

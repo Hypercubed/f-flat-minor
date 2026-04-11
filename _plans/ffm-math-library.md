@@ -1,3 +1,9 @@
+---
+status: superseded
+status_date: 2026-04-10
+creator: GPT-5.4
+---
+
 # F♭m Arbitrary Precision Math Library
 
 ## Design Plan and Mathematical Foundations

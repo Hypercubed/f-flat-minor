@@ -1,4 +1,4 @@
-.import ./lib/math/sqrt.ffp
+.import ../lib/math/sqrt.ffp
 
 /* Integer square root demo using `isqrt` and `isqrtrem` and some alternative methods */
 

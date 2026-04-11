@@ -1,0 +1,28 @@
+---
+import ReferenceContent from "../../components/ReferenceContent.astro";
+import { getReferencePages, getReferenceSidebarPages, renderReferencePage, type ReferencePage } from "../../data/reference";
+
+interface Props {
+  page: ReferencePage;
+}
+
+export function getStaticPaths() {
+  return getReferencePages()
+    .filter((page) => page.slugSegments.length > 0)
+    .map((page) => ({
+      params: { slug: page.slugSegments.join("/") },
+      props: { page },
+    }));
+}
+
+const pages = getReferenceSidebarPages();
+const { page } = Astro.props as Props;
+
+if (!page) {
+  throw new Error("Missing reference page.");
+}
+
+const html = await renderReferencePage(page);
+---
+
+<ReferenceContent page={page} pages={pages} html={html} />

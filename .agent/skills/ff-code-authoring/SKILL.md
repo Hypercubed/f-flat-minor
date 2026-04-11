@@ -49,7 +49,7 @@ mise x -- deno run -A deno/bin/ff-preprocess.ts my_file.ffp | ./ccp/build/run
 ## Authoring workflow
 
 1. Write the target stack effect before implementing a word.
-- Use the standard notation from `_docs/stack-notation.md`:
+- Use the standard notation from `_docs/supplemental/stack-notation.md`:
 ```ff
 /* n ! == n! */
 /* a [B] dip == b* a */
@@ -110,7 +110,7 @@ mise x -- node node/bin/ff-run.ts -t --trace-format jsonl <file>.ffp
 
 ## Rewriting techniques
 
-- Use `_docs/stack-rewrites-and-annotations.md` as the canonical guide for:
+- Use `_docs/supplemental/stack-rewrites-and-annotations.md` as the canonical guide for:
   - per-line stack-effect comments
   - queue-state annotation with `| queue`
   - no-op removal
@@ -131,6 +131,6 @@ mise x -- node node/bin/ff-run.ts -t --trace-format jsonl <file>.ffp
 
 ## Reference
 
-- Language examples: `_docs/fbm-by-example.md`
-- Stack notation: `_docs/stack-notation.md`
-- Stack rewrites and annotations: `_docs/stack-rewrites-and-annotations.md`
+- Language examples: `_docs/supplemental/fbm-by-example.md`
+- Stack notation: `_docs/supplemental/stack-notation.md`
+- Stack rewrites and annotations: `_docs/supplemental/stack-rewrites-and-annotations.md`

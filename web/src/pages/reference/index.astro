@@ -1,0 +1,15 @@
+---
+import ReferenceContent from "../../components/ReferenceContent.astro";
+import { getReferencePageBySlug, getReferenceSidebarPages, renderReferencePage } from "../../data/reference";
+
+const pages = getReferenceSidebarPages();
+const page = getReferencePageBySlug([]);
+
+if (!page) {
+  throw new Error("Missing reference index page.");
+}
+
+const html = await renderReferencePage(page);
+---
+
+<ReferenceContent page={page} pages={pages} html={html} />

@@ -1,3 +1,9 @@
+---
+status: in-progress
+status_date: 2026-04-10
+creator: GPT-5.4
+---
+
 # Hybrid ERS Implementation Plan
 
 Below is a concrete implementation plan for a **hybrid ERS system**: a small static tool handles the deterministic expand/reduce/resynthesize steps, while the skill remains responsible for ambiguous choices, reporting, and higher-level review.

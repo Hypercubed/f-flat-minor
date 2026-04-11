@@ -111,7 +111,7 @@ None — ready to implement.
 - `ff/lib/math/precision.ffp`
 - `ff/lib/math/pi.ffp`
 - `_plans/ffm-math-library.md`
-- `_docs/math-naming-convention.md`
+- `_docs/supplemental/math-naming-convention.md`
 
 ## Test Plan
 Add a new dedicated test file for `atan`, since none exists today.
@@ -143,6 +143,6 @@ Reference values should be generated from a high-precision external calculation 
 ## References
 - `_plans/ffm-math-library.md`
 - `_plans/nexp-implementation.md`
-- `_docs/math-naming-convention.md`
+- `_docs/supplemental/math-naming-convention.md`
 - `ff/lib/math/atan.ffp`
 - `ff/lib/math/pi.ffp`

@@ -12,7 +12,8 @@ Add a maintainable F♭m reference manual that defines a documentation model, pr
 
 ## Implementation status
 
-- **Phase 1** (2026-04-10): **Complete** — Deliverables: `docs/reference/DOCS-SPEC.md`, example snippets under `docs/reference/examples/`, draft tree `docs/DRAFT-DOCS-TREE.md`, plus stubs `docs/reference/index.md` and `docs/manual/introduction.md`. The spec was expanded to the **F♭m source documentation** format (module labeled fields, `@stack` / `@family` / `@kind` word tags, section markers, extraction rules).
+- **Phase 1** (2026-04-10): **Complete** — Landed under `_docs/`, not `docs/`. Current artifacts include `_docs/reference/DOCS-SPEC.md`, example snippets under `_docs/reference/examples/`, draft tree `_docs/supplemental/DRAFT-DOCS-TREE.md`, `_docs/reference/index.md`, and related reference/manual stubs. The spec now defines the **F♭m source documentation** format (module labeled fields, `@stack` / `@family` / `@kind` word tags, section markers, extraction rules).
+- **Phases 2-7**: **Not started** — extraction prototype, generation pipeline, combined manual/generated docs strategy, web integration, vertical slice, and workflow hardening remain roadmap items only.
 
 ## Context
 
@@ -22,7 +23,7 @@ The language and `ff/lib` grow faster than ad hoc prose can stay accurate. Sourc
 
 Phased delivery as originally scoped:
 
-1. **Phase 1 (done when spec lands):** Document the model — manual vs generated, information architecture, annotation and attachment rules, module vs word docs, minimum fields for public words. Deliverables: `docs/reference/DOCS-SPEC.md`, example annotated snippets, draft docs tree.
+1. **Phase 1 (done):** Document the model — manual vs generated, information architecture, annotation and attachment rules, module vs word docs, minimum fields for public words. Delivered in `_docs/reference/DOCS-SPEC.md`, `_docs/reference/examples/`, `_docs/supplemental/DRAFT-DOCS-TREE.md`, `_docs/reference/index.md`, and related stubs.
 2. **Phase 2:** Prototype extraction with `cdoc` on representative `.ff`/`.ffp` files; evaluate gaps.
 3. **Phase 3:** Design the end-state pipeline (extract → map → model → Markdown).
 4. **Phase 4:** Unify manual and generated content strategy, navigation, cross-linking.
@@ -56,9 +57,9 @@ Phased delivery as originally scoped:
 
 ## References
 
-- `_docs/stack-notation.md` — stack effect notation for words
+- `_docs/supplemental/stack-notation.md` — stack effect notation for words
 - `_docs/core-vocabulary.md` — core words (conceptual baseline)
-- `docs/reference/DOCS-SPEC.md` — authoritative source documentation format (module dossier + `@tag` word blocks)
+- `_docs/reference/DOCS-SPEC.md` — authoritative source documentation format (module dossier + `@tag` word blocks)
 
 ---
 
@@ -177,7 +178,7 @@ These pages answer questions like:
 A combined structure like this is a good starting point:
 
 ```
-docs/
+_docs/
   manual/
     introduction.md
     syntax.md
@@ -221,11 +222,11 @@ Define the shape, ownership, and rules of the new documentation system before bu
 
 ### Deliverables
 
-- `docs/reference/DOCS-SPEC.md`
+- `_docs/reference/DOCS-SPEC.md`
 - a short set of example annotated Fbm snippets
 - a draft docs tree showing manual and generated content
 
-**Status:** Delivered (2026-04-10).
+**Status:** Delivered (2026-04-10). Current repo artifacts live under `_docs/`, including `_docs/reference/DOCS-SPEC.md`, `_docs/reference/examples/`, `_docs/supplemental/DRAFT-DOCS-TREE.md`, `_docs/reference/index.md`, and related stubs.
 
 ---
 
@@ -401,10 +402,22 @@ A practical approach is:
 4. add a new site section for language docs/reference
 5. build a navigation layer that treats them as one coherent documentation area
 
+### Astro-correct architecture (preferred implementation)
+
+For Astro specifically, prefer a content-collections pipeline rather than custom Markdown parsing in runtime code.
+
+- Keep `_docs/` as the source-of-truth docs location.
+- Add a prebuild sync step that copies relevant docs into `web/src/content/docs/` (or `web/src/content/reference/`).
+- Define an Astro content collection schema in `web/src/content/config.ts` (for example: `title`, `summary`, `order`, `section`, `showInSidebar`).
+- Use `getCollection()` and `getEntryBySlug()` in Astro routes to build docs pages and navigation.
+- Render entries with Astro collection rendering (`<Content />`) rather than ad hoc Markdown-to-HTML transforms.
+
+This keeps the repository-level docs layout stable while using Astro's native model for type-safe frontmatter, predictable routing, and maintainable navigation.
+
 ### Example integration pattern
 
 ```
-docs/
+_docs/
   manual/
   reference/
     generated/

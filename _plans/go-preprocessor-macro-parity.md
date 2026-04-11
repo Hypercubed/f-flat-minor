@@ -1,3 +1,9 @@
+---
+status: proposed
+status_date: 2026-04-10
+creator: GPT-5.4
+---
+
 # Go Preprocessor Macro Parity Plan
 
 ## Overview

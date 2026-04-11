@@ -1,0 +1,53 @@
+---
+import BaseLayout from "../layouts/BaseLayout.astro";
+import { type ReferencePage } from "../data/reference";
+import { withBasePath } from "../data/site";
+
+interface Props {
+  page: ReferencePage;
+  pages: ReferencePage[];
+  html: string;
+}
+
+const { page, pages, html } = Astro.props;
+---
+
+<BaseLayout
+  title={page.title}
+  description={page.summary || "Language reference documentation for F-flat-minor."}
+  theme="reference"
+  activePath="/reference/"
+>
+  <section class="route-hero section-summary">
+    <p class="eyebrow">Language docs</p>
+    <h1 class="route-title">{page.title}</h1>
+    <p class="page-copy">
+      {page.summary || "Reference docs rendered from the source-authored Markdown pages in the repository."}
+    </p>
+  </section>
+
+  <section class="page-section reference-layout">
+    <aside class="panel reference-nav-panel" aria-label="Reference navigation">
+      <div class="panel-header">
+        <div>
+          <h2>Contents</h2>
+        </div>
+      </div>
+      <div class="help-copy reference-nav-copy">
+        <nav class="reference-doc-nav">
+          {
+            pages.map((entry) => (
+              <a class:list={["reference-doc-link", entry.routePath === page.routePath && "is-active"]} href={withBasePath(entry.routePath)}>
+                <span>{entry.title}</span>
+              </a>
+            ))
+          }
+        </nav>
+      </div>
+    </aside>
+
+    <article class="panel reference-doc-panel">
+      <div class="reference-doc-body" set:html={html} />
+    </article>
+  </section>
+</BaseLayout>

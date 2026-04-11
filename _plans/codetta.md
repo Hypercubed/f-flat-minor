@@ -1,6 +1,6 @@
 ---
-status: in_progress
-status_date: 2026-04-07
+status: in-progress
+status_date: 2026-04-10
 creator: cloud-agent
 ---
 
@@ -8,9 +8,23 @@ creator: cloud-agent
 
 ## Summary
 
-Codetta is now a shipped mode inside the existing web playground, not a separate app. It presents a curated set of Coda Etudes backed directly by files in `ff/codetta`, lets players load the current best solution, run edits in the browser, inspect output and compiled bytecode, and prepare a GitHub issue payload when they beat the current score.
+Codetta is now a shipped mode inside the existing web playground, not a separate app. It presents a curated set of Coda Etudes backed directly by files in `ff/codetta`, lets players load the current best solution, run edits in the browser, inspect output and compiled bytecode, and open a guided submission flow when they beat the current score.
 
-This plan records the implementation conventions that are already in use and narrows the remaining work to follow-on automation rather than the earlier greenfield draft.
+This plan records the implementation conventions already in use and narrows the remaining deferred work to repository automation around verification and contribution handling.
+
+## Current Status
+
+Codetta's shipped product surface is in place:
+
+- web app integration is live
+- file-driven etude loading from `ff/codetta` is live
+- browser compile/run/output validation is live
+- guided submission via prefilled GitHub issue URLs is live in `web/src/client/codetta.ts`
+
+Remaining work is backend and repository automation:
+
+- CI-side validation of submitted improvements
+- assisted PR creation for accepted winning entries
 
 ## Current Repository Shape
 
@@ -120,9 +134,9 @@ Shipped UI behavior:
 - compiled-byte status for the current attempt, including under / tied / over current best
 - load-current-best action
 - browser run flow using the existing playground/compiler pipeline
-- submit flow that reveals a copyable GitHub issue payload when the attempt both matches output and beats the current best
+- guided submit flow that opens a prefilled GitHub issue URL when the attempt both matches output and beats the current best
 
-The current submit UX is manual-copy issue creation; it does not yet create prefilled URLs, validate in CI, or open PRs automatically.
+The current submit UX already handles guided issue creation in the browser, but it does not yet validate submissions in CI or open PRs automatically.
 
 ## Validation Model In Use
 
@@ -156,19 +170,14 @@ These earlier-plan assumptions are now outdated and should not guide further wor
 
 The remaining roadmap is now incremental polish and automation on top of the shipped file/data model.
 
-### Phase 2 — Guided Submission
-
-- replace manual copy-only issue flow with prefilled GitHub issue URLs
-- keep the payload format aligned with the current `Étude` / `Bytes` / fenced-code submission block
-
-### Phase 3 — CI Validation
+### Phase 2 — CI Validation
 
 - validate issue or PR submissions against `solution.out`
 - recompute optimized compiled-byte score using the canonical toolchain
 - verify that updated README `bytes:` matches the compiled score
 - reject ties and non-improvements automatically
 
-### Phase 4 — Assisted PR Creation
+### Phase 3 — Assisted PR Creation
 
 - open a PR containing the updated `solution.ff` / `solution.ffp` and `README.md`
 - keep the final merge decision with a human maintainer

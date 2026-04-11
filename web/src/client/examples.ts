@@ -1,9 +1,4 @@
 import factExample from "../../../ff/fact.ffp?raw";
-import cbrtExample from "../../../ff/cbrt.ffp?raw";
-import sqrtExample from "../../../ff/sqrt.ffp?raw";
-import gcdExample from "../../../ff/gcd.ffp?raw";
-import ackExample from "../../../ff/ack.ffp?raw";
-import piExample from "../../../ff/pi.ffp?raw";
 
 import type { VirtualFiles } from "./runtime.ts";
 
@@ -37,6 +32,12 @@ const eulerExampleSources = import.meta.glob("../../../ff/euler/*.ffp", {
   query: "?raw",
 }) as Record<string, string>;
 
+const exampleSources = import.meta.glob("../../../ff/examples/*.ffp", {
+  eager: true,
+  import: "default",
+  query: "?raw",
+}) as Record<string, string>;
+
 function eulerExampleSortKey(vitePath: string): [number, string] {
   const base = vitePath.split("/").pop() ?? vitePath;
   const match = /^euler(\d+)\.ffp$/.exec(base);
@@ -62,6 +63,14 @@ const EULER_EXAMPLE_ENTRIES: ExampleEntry[] = Object.entries(eulerExampleSources
     source,
   }));
 
+const ROOT_EXAMPLE_ENTRIES: ExampleEntry[] = Object.entries(exampleSources)
+  .sort((a, b) => a[0].localeCompare(b[0]))
+  .map(([vitePath, source]) => ({
+    path: examplePath(vitePath),
+    label: exampleName(vitePath),
+    source,
+  }));
+
 function examplePath(globKey: string): string {
   const slash = globKey.lastIndexOf("/");
   const name = slash >= 0 ? globKey.slice(slash + 1) : globKey;
@@ -75,13 +84,14 @@ function exampleLabel(globKey: string): string {
   return relative;
 }
 
+function exampleName(globKey: string): string {
+  const slash = globKey.lastIndexOf("/");
+  return slash >= 0 ? globKey.slice(slash + 1) : globKey;
+}
+
 export const EXAMPLE_ENTRIES: ExampleEntry[] = [
   { path: "/examples/fact.ffp", label: "fact.ffp", source: factExample },
-  { path: "/examples/cbrt.ffp", label: "cbrt.ffp", source: cbrtExample },
-  { path: "/examples/sqrt.ffp", label: "sqrt.ffp", source: sqrtExample },
-  { path: "/examples/gcd.ffp", label: "gcd.ffp", source: gcdExample },
-  { path: "/examples/ack.ffp", label: "ack.ffp", source: ackExample },
-  { path: "/examples/pi.ffp", label: "pi.ffp", source: piExample },
+  ...ROOT_EXAMPLE_ENTRIES,
   ...EULER_EXAMPLE_ENTRIES,
 ];
 

@@ -1,4 +1,4 @@
-export const APP_TABS = ["playground", "repl", "codetta", "tutorial", "help"] as const;
+export const APP_TABS = ["playground", "repl", "codetta", "tutorial", "help", "reference"] as const;
 
 export type AppTab = typeof APP_TABS[number];
 
@@ -8,7 +8,8 @@ const TAB_ROUTE_PATHS: Record<AppTab, string> = {
   repl: "/repl/",
   codetta: "/codettas/",
   tutorial: "/tutorial/",
-  help: "/help/",
+  help: "/reference/",
+  reference: "/reference/",
 };
 const SITE_BASE_PATH = import.meta.env.BASE_URL.replace(/\/$/, "");
 

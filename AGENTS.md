@@ -86,7 +86,7 @@ mise exec -- chomp test:deno
 ```
 
 TAP-style library tests now also exist under `ff/lib/**/__tests__/*.test.ffp`.
-See `_docs/tap-testing.md` for the helper API and conventions, and run them with:
+See `_docs/supplemental/tap-testing.md` for the helper API and conventions, and run them with:
 ```bash
 cd bun && mise exec -- chomp test:tap
 ```
@@ -104,12 +104,12 @@ Node, Bun, and Deno support structured tracing:
 
 ## Documentation
 
-- Language examples and tutorials: `_docs/fbm-by-example.md`
-- Stack effect notation standard: `_docs/stack-notation.md`
+- Language examples and tutorials: `_docs/supplemental/fbm-by-example.md`
+- Stack effect notation standard: `_docs/supplemental/stack-notation.md`
 - Core words and their stack effects: `_docs/core-vocabulary.md`
-- TAP-style testing helper and `.test.ffp` conventions: `_docs/tap-testing.md`
-- Math library naming conventions: `_docs/math-naming-convention.md`
-- Math library internal naming: `_docs/math-naming-internal.md`
+- TAP-style testing helper and `.test.ffp` conventions: `_docs/supplemental/tap-testing.md`
+- Math library naming conventions: `_docs/supplemental/math-naming-convention.md`
+- Math library internal naming: `_docs/supplemental/math-naming-internal.md`
 
 ## Deno Implementation Notes
 
@@ -134,9 +134,9 @@ Reusable agent workflows have been extracted into local skills:
 - `.agent/skills/ff-code-authoring/SKILL.md`
 - `.agent/skills/ff-euler-ffp/SKILL.md`
 - `.agent/skills/ff-library-web-refactor/SKILL.md`
-- `.agent/skills/ff-math-internal-naming/SKILL.md` (see `_docs/math-naming-internal.md`)
-- `.agent/skills/ff-lib-word-rankings/SKILL.md` (see `_docs/ff-lib-word-definition-rankings.md`)
-- `.agent/skills/ff-expand-reduce/SKILL.md` (expand → reduce → resynthesize stack refactors; see `_docs/stack-rewrites-and-annotations.md`)
+- `.agent/skills/ff-math-internal-naming/SKILL.md` (see `_docs/supplemental/math-naming-internal.md`)
+- `.agent/skills/ff-lib-word-rankings/SKILL.md` (see `_docs/supplemental/ff-lib-word-definition-rankings.md`)
+- `.agent/skills/ff-expand-reduce/SKILL.md` (expand → reduce → resynthesize stack refactors; see `_docs/supplemental/stack-rewrites-and-annotations.md`)
 
 Use these when the task involves:
 

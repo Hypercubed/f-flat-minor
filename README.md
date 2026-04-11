@@ -141,7 +141,7 @@ Factorial 100:
 
 ### Vocabulary
 
-See [F♭m by example](./_docs/fbm-by-example.md) for a more detailed explanation of the vocabulary. A reusable copy of this table also lives in
+See [F♭m by example](./_docs/supplemental/fbm-by-example.md) for a more detailed explanation of the vocabulary. A reusable copy of this table also lives in
 [> \_docs/core-vocabulary.md](./_docs/core-vocabulary.md)
 
 <!-- BEGIN mdsh -->

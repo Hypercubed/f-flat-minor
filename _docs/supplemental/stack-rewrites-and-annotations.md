@@ -401,5 +401,5 @@ was a recurring slip during review.
 - `ff/lib/core/core.ff`
 - `ff/lib/math/atan.ffp` (scaled `dipd` range reduction, TAP branch coverage)
 - `ff/lib/math/atan-core.ffp`
-- `_docs/stack-notation.md`
+- `_docs/supplemental/stack-notation.md`
 - `_docs/core-vocabulary.md`

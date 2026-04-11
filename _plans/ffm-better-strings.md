@@ -1,3 +1,9 @@
+---
+status: in-progress
+status_date: 2026-04-10
+creator: GPT-5.4
+---
+
 # F♭m String Design: `cons` and `concat`
 
 ## Overview

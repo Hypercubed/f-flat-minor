@@ -1,7 +1,7 @@
 # Draft documentation tree (manual + generated)
 
-Normative rules: [reference/DOCS-SPEC.md](reference/DOCS-SPEC.md).  
-Plan: [_plans/f-flat-minor/source-driven-reference-manual.md](../_plans/f-flat-minor/source-driven-reference-manual.md).
+Normative rules: [reference/DOCS-SPEC.md](../reference/DOCS-SPEC.md).  
+Plan: [_plans/f-flat-minor/source-driven-reference-manual.md](../../_plans/f-flat-minor/source-driven-reference-manual.md).
 
 ```text
 docs/

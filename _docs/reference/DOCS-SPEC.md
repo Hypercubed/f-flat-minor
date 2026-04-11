@@ -263,7 +263,7 @@ pair: unit cons ;
 
 Required for public words.
 
-Describes the stack effect using F♭m stack notation (see `_docs/stack-notation.md`).
+Describes the stack effect using F♭m stack notation (see `_docs/supplemental/stack-notation.md`).
 
 Example:
 
@@ -660,7 +660,7 @@ The word name should be taken from the following definition, not repeated in met
 
 ### Inline stack comments
 
-Existing one-line stack-effect comments using `/* inputs word == outputs */` (`_docs/stack-notation.md`) may still appear on definition lines. They are **not** a substitute for `@stack` on public words. If both exist, generators should require agreement or emit a validation warning.
+Existing one-line stack-effect comments using `/* inputs word == outputs */` (`_docs/supplemental/stack-notation.md`) may still appear on definition lines. They are **not** a substitute for `@stack` on public words. If both exist, generators should require agreement or emit a validation warning.
 
 ---
 
@@ -800,6 +800,6 @@ Use those files to refine wording conventions, family vocabulary, and extraction
 
 ## See also
 
-- `_docs/stack-notation.md` — stack effect notation
+- `_docs/supplemental/stack-notation.md` — stack effect notation
 - `_docs/core-vocabulary.md` — conceptual core vocabulary
 - `_plans/f-flat-minor/source-driven-reference-manual.md` — phased rollout plan

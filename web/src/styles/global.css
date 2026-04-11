@@ -60,11 +60,11 @@ body.theme-tutorial {
   --page-bottom: #eee4cb;
 }
 
-body.theme-help {
-  --page-glow-left: rgba(113, 98, 145, 0.16);
-  --page-glow-right: rgba(143, 121, 177, 0.12);
-  --page-top: #f5f2f9;
-  --page-bottom: #e7e0ef;
+body.theme-reference {
+  --page-glow-left: rgba(37, 79, 112, 0.18);
+  --page-glow-right: rgba(96, 142, 150, 0.14);
+  --page-top: #f0f6f7;
+  --page-bottom: #dce8ea;
 }
 
 a {
@@ -420,6 +420,150 @@ img {
 
 .help-copy p:last-child {
   margin-bottom: 0;
+}
+
+.reference-layout {
+  display: grid;
+  grid-template-columns: minmax(240px, 0.34fr) minmax(0, 1fr);
+  gap: 1rem;
+  align-items: start;
+}
+
+.reference-nav-panel,
+.reference-doc-panel {
+  min-width: 0;
+}
+
+.reference-nav-panel {
+  position: sticky;
+  top: 1rem;
+}
+
+.reference-nav-copy {
+  display: grid;
+  gap: 1rem;
+}
+
+.reference-nav-copy p {
+  margin: 0;
+}
+
+.reference-doc-nav {
+  display: grid;
+  gap: 0.65rem;
+}
+
+.reference-doc-link {
+  display: grid;
+  gap: 0.2rem;
+  padding: 0.8rem 0.9rem;
+  border-radius: 16px;
+  border: 1px solid rgba(32, 22, 17, 0.08);
+  background: rgba(255, 255, 255, 0.34);
+  color: inherit;
+  text-decoration: none;
+  transition:
+    transform 160ms ease,
+    box-shadow 160ms ease,
+    border-color 160ms ease,
+    background 160ms ease;
+}
+
+.reference-doc-link:hover,
+.reference-doc-link:focus-visible {
+  transform: translateY(-1px);
+  box-shadow: 0 12px 24px rgba(32, 22, 17, 0.08);
+  border-color: rgba(23, 105, 93, 0.2);
+  background: rgba(255, 255, 255, 0.6);
+}
+
+.reference-doc-link.is-active {
+  border-color: rgba(23, 105, 93, 0.28);
+  background: rgba(23, 105, 93, 0.1);
+}
+
+.reference-doc-link span {
+  font-weight: 600;
+}
+
+.reference-doc-link small {
+  color: var(--muted);
+  font-size: 0.84rem;
+  line-height: 1.4;
+}
+
+.reference-doc-body {
+  padding: 0.9rem 1.2rem 1.3rem;
+  color: var(--ink);
+}
+
+.reference-doc-body > :first-child {
+  margin-top: 0;
+}
+
+.reference-doc-body > :last-child {
+  margin-bottom: 0;
+}
+
+.reference-doc-body :is(p, ul, ol, pre, table, blockquote) {
+  margin: 0 0 1rem;
+}
+
+.reference-doc-body :is(ul, ol) {
+  padding-left: 1.25rem;
+}
+
+.reference-doc-body li + li {
+  margin-top: 0.3rem;
+}
+
+.reference-doc-body h2,
+.reference-doc-body h3,
+.reference-doc-body h4 {
+  margin: 1.5rem 0 0.65rem;
+  font-family: Georgia, "Times New Roman", serif;
+}
+
+.reference-doc-body a {
+  color: var(--accent-2);
+  text-decoration-thickness: 0.08em;
+}
+
+.reference-doc-body pre {
+  overflow-x: auto;
+  padding: 1rem 1.1rem;
+  border-radius: 18px;
+  background: linear-gradient(180deg, rgba(32, 22, 17, 0.98), rgba(42, 28, 21, 0.95));
+  color: #f8eee2;
+}
+
+.reference-doc-body table {
+  width: 100%;
+  border-collapse: collapse;
+  overflow: hidden;
+  border-radius: 18px;
+  border: 1px solid rgba(32, 22, 17, 0.1);
+  background: rgba(255, 255, 255, 0.46);
+}
+
+.reference-doc-body th,
+.reference-doc-body td {
+  padding: 0.75rem 0.8rem;
+  border-bottom: 1px solid rgba(32, 22, 17, 0.08);
+  text-align: left;
+  vertical-align: top;
+}
+
+.reference-doc-body tr:last-child td {
+  border-bottom: none;
+}
+
+.reference-doc-body blockquote {
+  padding: 0.9rem 1rem;
+  border-left: 4px solid rgba(23, 105, 93, 0.32);
+  border-radius: 0 14px 14px 0;
+  background: rgba(23, 105, 93, 0.07);
+  color: var(--muted);
 }
 
 .field {
@@ -890,7 +1034,8 @@ code {
 @media (max-width: 900px) {
   .hero-grid,
   .route-grid,
-  .repl-layout {
+  .repl-layout,
+  .reference-layout {
     grid-template-columns: 1fr;
   }
 
@@ -901,6 +1046,10 @@ code {
   .repl-pane {
     height: auto;
     max-height: none;
+  }
+
+  .reference-nav-panel {
+    position: static;
   }
 }
 

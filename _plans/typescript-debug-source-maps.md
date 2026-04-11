@@ -1,6 +1,7 @@
 ---
+status: ready
+status_date: 2026-04-10
 creator: GPT-5.3-Codex
-created: 2026-03-24
 ---
 
 # Plan: TypeScript Debug Traceability (Compile + Runtime)

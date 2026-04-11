@@ -183,7 +183,7 @@ F♭m> 2 3 ^    /* power function */
 [ 8 ]
 ```
 
-These negative-operand examples show the documented language semantics. Some runtimes are still being aligned; see [`_docs/core-vocabulary.md`](./core-vocabulary.md) for the current implementation status.
+These negative-operand examples show the documented language semantics. Some runtimes are still being aligned; see [`_docs/core-vocabulary.md`](../reference/core-vocabulary.md) for the current implementation status.
 
 ### Bitwise operations
 

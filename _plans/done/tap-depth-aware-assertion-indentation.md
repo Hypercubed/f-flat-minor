@@ -27,7 +27,7 @@ This makes assertion/plan indentation derivable from active TAP state on the sta
   - `ff/lib/math/__tests__/sqrt.test.ffp`
   - `ff/lib/math/__tests__/math.test.ffp`
   - `ff/lib/math/__tests__/sqrt-flat.test.ffp`
-- Update `_docs/tap-testing.md` to document that assertion/plan words self-indent by depth and that the `@...` variants no longer exist.
+- Update `_docs/supplemental/tap-testing.md` to document that assertion/plan words self-indent by depth and that the `@...` variants no longer exist.
 - Leave `TEST` unchanged for now.
 
 ## Decisions already made
@@ -51,7 +51,7 @@ None — ready to implement.
 
 ## References
 - `ff/lib/tap.ffp`
-- `_docs/tap-testing.md`
+- `_docs/supplemental/tap-testing.md`
 - `ff/lib/math/__tests__/sqrt.test.ffp`
 - `ff/lib/math/__tests__/math.test.ffp`
 - `ff/lib/math/__tests__/sqrt-flat.test.ffp`

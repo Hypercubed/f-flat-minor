@@ -1,4 +1,4 @@
-.import ./lib/math/atan.ffp
+.import ../lib/math/atan.ffp
 
 /*
  * Pi using Machin's formula and Taylor series:

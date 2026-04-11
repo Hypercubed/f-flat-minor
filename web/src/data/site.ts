@@ -8,6 +8,12 @@ export interface SiteSection {
   details: string[];
 }
 
+export interface NavItem {
+  href: string;
+  path: string;
+  label: string;
+}
+
 const siteBasePath = import.meta.env.BASE_URL.replace(/\/$/, "");
 
 export function withBasePath(path: string): string {
@@ -24,7 +30,7 @@ export function stripBasePath(pathname: string): string {
   return stripped.startsWith("/") ? stripped : `/${stripped}`;
 }
 
-export const siteSections: SiteSection[] = [
+export const interactiveSections: SiteSection[] = [
   {
     slug: "playground",
     title: "Playground",
@@ -97,27 +103,30 @@ export const siteSections: SiteSection[] = [
       "Keep the lesson notes visible while you work.",
     ],
   },
-  {
-    slug: "help",
-    title: "Help",
-    eyebrow: "Reference",
-    summary: "Reference the language model, syntax, directives, and core words.",
-    description:
-      "Use the reference to look up execution basics, syntax, directives, common words, and example snippets while you work.",
-    highlights: [
-      "Execution model, syntax, directives, and vocabulary",
-      "Examples and snippets alongside the core docs",
-      "One place to keep the language reference close at hand",
-    ],
-    details: [
-      "Use it as the companion page for the interactive tools.",
-      "Scan common words and examples quickly.",
-      "Stay on the same site while moving between docs and tools.",
-    ],
-  },
 ];
 
-export const navItems = [
+export const referenceSection: SiteSection = {
+  slug: "reference",
+  title: "Reference",
+  eyebrow: "Language docs",
+  summary: "Browse the reference manual, quick help, and core primitives in one docs section.",
+  description:
+    "Use the integrated reference section to move between the overview, quick help, and primitive reference without leaving the active site.",
+  highlights: [
+    "Reference landing page with curated entry points",
+    "Quick help and primitive docs rendered from source Markdown",
+    "Docs navigation that keeps related reference pages together",
+  ],
+  details: [
+    "Start at the overview page, then drill into specific reference topics.",
+    "Follow source-authored links between reference pages.",
+    "Keep docs and interactive tools under one site navigation.",
+  ],
+};
+
+export const siteSections: SiteSection[] = [...interactiveSections, referenceSection];
+
+export const navItems: NavItem[] = [
   { href: withBasePath("/"), path: "/", label: "Overview" },
   ...siteSections.map((section) => ({
     href: withBasePath(`/${section.slug}/`),

@@ -53,5 +53,5 @@ For a new module `atan.ffp`:
 
 ## Reference
 
-- Full documentation: `_docs/math-naming-internal.md`
-- Public API convention: `_docs/math-naming-convention.md`
+- Full documentation: `_docs/supplemental/math-naming-internal.md`
+- Public API convention: `_docs/supplemental/math-naming-convention.md`

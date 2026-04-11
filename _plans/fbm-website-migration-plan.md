@@ -1,8 +1,21 @@
+---
+status: in-progress
+status_date: 2026-04-10
+creator: kilo
+---
+
 # Fbm Website Migration Plan
 
 ## Goal
 
-Improve componentization of the current Fbm website without forcing a full rewrite up front, while preserving a path toward future embeddable playground and REPL web components.
+Document the current state of the Fbm website migration, capture what has already landed, and keep the remaining work focused on future embeddable playground and REPL web components.
+
+## Implementation Status
+
+- **Stage 1 — `lit-html` migration:** effectively complete
+- **Stage 2 — shared internal UI modules:** substantially complete
+- **Stage 3 — Astro routing/layouts/page management:** effectively complete
+- **Stage 4 — public embeddable web components:** not implemented yet; this is the active roadmap
 
 ## Guiding Principles
 
@@ -13,16 +26,20 @@ Improve componentization of the current Fbm website without forcing a full rewri
 
 ---
 
-## Proposed Order
+## Migration Order and Current Status
 
-1. Convert hard-coded HTML strings to `lit-html`
-2. Extract shared internal UI modules
-3. Add Astro for routing, layouts, and page management
-4. Promote selected pieces into shareable web components
+1. Convert hard-coded HTML strings to `lit-html` - effectively done
+2. Extract shared internal UI modules - substantially done
+3. Add Astro for routing, layouts, and page management - effectively done
+4. Promote selected pieces into shareable web components - not started yet
 
 ---
 
 ## Stage 1 — Convert Hard-Coded HTML Strings to `lit-html`
+
+### Status
+
+Completed in practice. Keep this stage as historical context and as a reference for the architectural intent that now underpins the current site.
 
 ### Objective
 
@@ -58,9 +75,17 @@ Replace large raw HTML template strings and manual `innerHTML` rendering with `l
 At this stage, `lit-html` is only a rendering engine.  
 Do **not** introduce custom elements, Shadow DOM, or major app restructuring yet.
 
+### Outcome
+
+This stage no longer represents planned work. It describes the rendering shift that made later internal module extraction and Astro integration feasible.
+
 ---
 
 ## Stage 2 — Extract Shared Internal UI Modules
+
+### Status
+
+Substantially complete. Shared internal modules and boundaries now exist to a meaningful degree, though minor cleanup and refinement can continue opportunistically as part of normal feature work.
 
 ### Objective
 
@@ -105,9 +130,17 @@ These do **not** need to be web components yet.
 Focus on reuse inside the app first.  
 Do not optimize yet for third-party embedding.
 
+### Outcome
+
+This stage should now be treated as mostly-established architecture rather than a major pending migration track.
+
 ---
 
 ## Stage 3 — Add Astro for Routing, Layouts, and Page Management
+
+### Status
+
+Effectively complete. Astro now serves the role this stage envisioned, so this section primarily documents the architectural boundary between site-level page management and client-side interactive surfaces.
 
 ### Objective
 
@@ -161,9 +194,17 @@ Handling those separately reduces risk.
 Astro should be added when page management becomes painful enough to justify it.  
 It should not be introduced just because it is available.
 
+### Outcome
+
+This stage is no longer an active migration item; it is the current baseline for the website structure.
+
 ---
 
 ## Stage 4 — Promote Selected Pieces into Shareable Web Components
+
+### Status
+
+Not implemented yet. This is the remaining active roadmap item.
 
 ### Objective
 
@@ -186,6 +227,13 @@ This avoids prematurely forcing web-component concerns onto the whole site.
 - `<fbm-repl>`
 - `<fbm-code-example>`
 - `<fbm-output-panel>`
+
+### Current Focus
+
+- Identify which existing internal modules are stable enough to harden into public APIs
+- Decide the minimum embeddable surface area instead of exporting the whole internal UI model
+- Preserve the current Astro-hosted site architecture while extracting portable components selectively
+- Treat internal module reuse as a prerequisite, not as work that still needs to be invented from scratch
 
 ### Decisions to Make at This Stage
 
@@ -217,23 +265,23 @@ Not every internal shared module needs to become a public web component.
 ## Summary of the Strategy
 
 ### Immediate priority
-Improve rendering and internal reuse.
+Complete Stage 4 by turning selected, already-stabilized internal UI pieces into public embeddable components.
 
 ### Mid-term priority
-Improve site structure and page management.
+Define a documented embed API and packaging story that works outside the main site.
 
 ### Long-term priority
-Publish selected embeddable playground/REPL components for external use.
+Publish and support selected embeddable playground/REPL components for external use.
 
 ---
 
 ## Final Recommendation
 
-Use this order:
+Treat this plan as a current-state plus remaining-work document:
 
-1. **Convert raw HTML rendering to `lit-html`**
-2. **Extract shared internal UI modules**
-3. **Adopt Astro for pages, layouts, and routing**
-4. **Promote selected interactive pieces into shareable web components**
+1. **Keep Stage 1 as completed historical context for the rendering model**
+2. **Keep Stage 2 as mostly-complete guidance for internal UI boundaries and cleanup**
+3. **Keep Stage 3 as completed architectural context for Astro-based site structure**
+4. **Use Stage 4 as the active roadmap for public embeddable web components**
 
-This sequence keeps the migration incremental, reduces risk, and preserves flexibility for both internal maintainability and future third-party embedding.
+This framing preserves the original staged reasoning, reflects the repo's current state, and keeps the remaining effort focused on external embedding rather than repeating already-completed migration work.

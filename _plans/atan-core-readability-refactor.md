@@ -37,7 +37,7 @@ caller.
 6. **`sqr` adoption** — `__seed_taylor_state` uses `sqr` from `arith.ffp`.
 
 7. **Naming alignment** — helpers follow the `_{filename}__{name}` pattern from
-   `_docs/math-naming-internal.md` where appropriate.
+   `_docs/supplemental/math-naming-internal.md` where appropriate.
 
 ## Remaining Work
 
@@ -80,7 +80,7 @@ Already removed in atan-core.ffp. Verify no other files reference it.
 - `ff/lib/math/arith.ffp`
 - `ff/lib/math/precision.ffp`
 - `ff/lib/math/pi.ffp`
-- `_docs/math-naming-internal.md`
+- `_docs/supplemental/math-naming-internal.md`
 
 ## References
 
@@ -88,4 +88,4 @@ Already removed in atan-core.ffp. Verify no other files reference it.
 - `ff/lib/math/atan.ffp`
 - `ff/lib/math/pi.ffp`
 - `_plans/done/atan-precision-refactor.md`
-- `_docs/math-naming-internal.md`
+- `_docs/supplemental/math-naming-internal.md`

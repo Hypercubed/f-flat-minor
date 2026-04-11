@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Regenerate _docs/ff-lib-word-definition-rankings.md from ff/lib sources."""
+"""Regenerate _docs/supplemental/ff-lib-word-definition-rankings.md from ff/lib sources."""
 
 import os
 import re
@@ -7,7 +7,7 @@ import sys
 from datetime import date
 
 LIB_DIR = "ff/lib"
-OUTPUT = "_docs/ff-lib-word-definition-rankings.md"
+OUTPUT = "_docs/supplemental/ff-lib-word-definition-rankings.md"
 
 
 def parse_words(lib_dir):

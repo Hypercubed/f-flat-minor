@@ -1,6 +1,6 @@
 ---
-status: ready
-status_date: 2026-03-29
+status: in-progress
+status_date: 2026-04-10
 creator: codex
 ---
 
@@ -125,7 +125,7 @@ None — ready to implement.
 
 - [`README.md`](README.md)
 - [`_docs/core-vocabulary.md`](_docs/core-vocabulary.md)
-- [`_docs/fbm-by-example.md`](_docs/fbm-by-example.md)
+- [`_docs/supplemental/fbm-by-example.md`](_docs/supplemental/fbm-by-example.md)
 - [`typescript/core/src/engine.ts`](typescript/core/src/engine.ts)
 - [`python/execute.py`](python/execute.py)
 - [`dart/bin/dart.dart`](dart/bin/dart.dart)

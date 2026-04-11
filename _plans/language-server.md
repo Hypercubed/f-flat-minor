@@ -1,84 +1,94 @@
 ---
-status: draft
-status_date: 2026-03-23
+status: in-progress
+status_date: 2026-04-10
 creator: anthropic/claude-sonnet-4.6
 ---
 
 # Plan: F♭m Language Server (VSCode Extension)
 
 ## Summary
-Extract a shared `compile-service` package from the web editor's definition
-compiler and static analyzer, then wrap it in an LSP-compliant language server
-and a minimal VSCode extension — providing go-to-definition, hover docs,
-diagnostics, and word completion for `.ff` and `.ffp` files.
+Build a future `typescript/language-server/` package on top of the already-landed
+shared `typescript/compile-service/` foundation, then optionally migrate the
+existing `vscode-f-flat-minor/` extension from direct VS Code providers and
+commands to an LSP client for `.ff` and `.ffp` files.
+
+## Implementation status
+
+- **Phase 0** (2026-04-10): **Largely complete / foundation in place** — `typescript/compile-service/` now exists and already contains `compile-service.ts`, `analyzer.ts`, `word-signatures.ts`, `source-map.ts`, `tokenizer.ts`, `compiler.ts`, and `mod.ts`. The shared compile/analyze/source-map layer this plan depended on has effectively landed.
+- **Phase 1**: **Not started** — there is still no `typescript/language-server/` package in the repo.
+- **Phase 2**: **Existing non-LSP extension in place** — the repo already ships `vscode-f-flat-minor/`, but it is a direct VS Code extension with handwritten providers/commands (for example import-path navigation, core-vocabulary hover, and ERS audit integration), not a `vscode-languageclient`-based LSP client.
+- **Phase 3**: **Not started** — no language-server build/publish wiring exists yet because the server package does not exist.
 
 ## Context
-Three plans converge here:
+Three workstreams converge here:
 
-- `web-editor-word-inspector.md` — Phase B introduces `definition-compiler.ts`,
-  which tokenizes source, compiles to IR, extracts definition ranges, and maps
-  them back to source positions. This is the core of what a language server needs.
-- `static-code-analysis.md` — introduces `analyzer.ts` and a `Diagnostic` type
-  that is structurally identical to LSP's `Diagnostic`. The analyzer runs on the
-  same IR that `definition-compiler.ts` produces.
-- Prior discussion established that both pieces should live in a shared package
-  consumed by both the web inspector and the language server, rather than being
-  embedded in the web app.
+- `web-editor-word-inspector.md` — the source-range and definition-inspection work
+  motivated the shared compile/analyze/source-map layer.
+- `static-code-analysis.md` — the analyzer and diagnostics model also feed the same
+  shared layer.
+- That shared layer is no longer hypothetical: it now lives in
+  `typescript/compile-service/` and can be treated as the starting point rather
+  than the first deliverable.
 
-The language server is a thin LSP wrapper around those two existing subsystems.
-No new language logic is required; the work is extraction, packaging, and wiring.
+The remaining language-server work is now mostly packaging and protocol wiring:
+wrap `compile-service` in LSP, then decide whether `vscode-f-flat-minor/` should
+stay partly bespoke, become a thin LSP client, or use a hybrid approach.
 
 ## Approach
 
 ### Phase 0: Extract `compile-service` package
 
-Create `typescript/compile-service/` as a standalone package within the monorepo.
+Status: complete enough to serve as the foundation for the rest of this roadmap.
 
-**Move/refactor from planned web inspector work:**
+`typescript/compile-service/` already exists as a standalone package within the
+monorepo.
+
+**Current repo shape:**
 
 ```
 typescript/compile-service/
   src/
-    tokenizer.ts        # Must emit { line, character, length } spans per token
-    compiler.ts         # Re-export / thin wrapper of typescript/core compiler
-    analyzer.ts         # Moved from static-code-analysis plan (unchanged)
-    word-signatures.ts  # Moved from static-code-analysis plan (unchanged)
-    source-map.ts       # Token-position → IR-range → source-range mapping
-    compile-service.ts  # Public API (see below)
+    tokenizer.ts
+    compiler.ts
+    analyzer.ts
+    word-signatures.ts
+    source-map.ts
+    compile-service.ts
+    mod.ts
   package.json
-  tsconfig.json
 ```
 
-**Public API (`compile-service.ts`):**
+`compile-service.ts` already exposes a `compileSource()` entry point and returns
+definitions, diagnostics, source-map data, tokens, and IR. `source-map.ts`
+already supports token lookup by position/offset and `wordAt(position)`, which is
+the key primitive needed by hover/definition/completion handlers.
+
+**Phase 0 follow-up, if needed:**
+
+- Tighten package metadata / build wiring as needed for downstream consumers.
+- Confirm the public API shape is stable enough for both web and LSP callers.
+- Avoid re-embedding compiler/analyzer logic elsewhere.
+
+**Representative API shape today:**
 
 ```typescript
 export interface CompileResult {
-  definitions: Map<string, Definition>;  // word name → { body, range: SourceRange }
-  diagnostics: Diagnostic[];             // from analyzer.ts
-  sourceMap: SourceMap;                  // token offset ↔ { line, character }
-}
-
-export interface SourceRange {
-  start: { line: number; character: number };
-  end:   { line: number; character: number };
-}
-
-// Diagnostic already defined in static-code-analysis plan;
-// extend end position here:
-export interface Diagnostic {
-  severity: 'error' | 'warning';
-  message: string;
-  range: SourceRange;   // replaces bare line/column from analyzer plan
+  definitions: Map<string, Definition>;
+  diagnostics: Diagnostic[];
+  sourceMap: SourceMap;
+  tokens: SourceToken[];
+  ir: IrInstruction[];
 }
 
 export function compileSource(source: string, uri?: string): CompileResult;
 ```
 
 **Consumers:**
-- `web/src/definition-compiler.ts` (Phase B of word inspector) imports from this package
-- Language server (Phase 1 below) imports from this package
+- Existing and future TypeScript tooling can import from this package.
+- The future language server (Phase 1 below) should import from this package.
 
-The web app and language server never diverge — they share one implementation.
+The main Phase 0 objective is no longer extraction; it is preserving this package
+as the shared implementation boundary.
 
 ### Phase 1: Language server package
 
@@ -89,8 +99,8 @@ typescript/language-server/
   src/
     server.ts       # Entry point: LSP initialization and capability registration
     handlers.ts     # One function per LSP request type
-    documents.ts    # TextDocuments manager (vscode-languageserver/node)
-  package.json      # depends on compile-service, vscode-languageserver
+    documents.ts    # TextDocuments manager / compile-result cache
+  package.json      # depends on @f-flat-minor/compile-service, vscode-languageserver
   tsconfig.json
 ```
 
@@ -151,20 +161,40 @@ documents.onDidChangeContent(({ document }) => {
 All three handlers re-use the cached `CompileResult` from the last `didChange`
 event for the document — do not re-compile per request.
 
-### Phase 2: VSCode extension
+### Phase 2: VS Code client integration
 
-Create `vscode-extension/` at the repo root.
+Do not assume a new `vscode-extension/` package is needed. The repo already has
+`vscode-f-flat-minor/`, and that package is the natural place for client-side
+editor integration unless there is a strong reason to split it.
 
 ```
-vscode-extension/
+vscode-f-flat-minor/
   src/
-    extension.ts    # Activate: spawn server, connect LanguageClient
-  package.json      # Declares language, file associations, contributes
+    extension.ts    # Existing direct providers/commands; possible future client activation point
+  package.json      # Already declares language, file associations, commands, grammar
   tsconfig.json
   .vscodeignore
 ```
 
-**`package.json` contributions:**
+**Current status:**
+
+- `vscode-f-flat-minor/` already contributes the `f-flat-minor` language,
+  grammar, and language configuration.
+- It currently registers direct VS Code providers rather than using
+  `vscode-languageclient`.
+- It also includes extension-specific functionality that may remain client-side
+  even after an LSP migration, such as ERS command wiring.
+
+**Future direction:**
+
+- Keep the existing contributions package and add a `LanguageClient` there once
+  `typescript/language-server/` exists.
+- Migrate features that belong in a reusable language server (diagnostics,
+  definition lookup, completions, generic hovers) behind LSP.
+- Evaluate whether extension-specific features such as ERS commands should remain
+  bespoke in `vscode-f-flat-minor/`.
+
+**Existing `package.json` contributions remain the baseline:**
 
 ```json
 {
@@ -179,10 +209,10 @@ vscode-extension/
 }
 ```
 
-**`language-configuration.json`** — bracket pairs `[ ]`, line comment `/**/`
-(block only), word pattern matching F♭m word characters including `-`, `?`, `!`.
+**`language-configuration.json`** already exists in `vscode-f-flat-minor/` and
+should continue to live there.
 
-**`extension.ts`** (~40 lines):
+**Future `extension.ts` direction:**
 
 ```typescript
 import { LanguageClient, ServerOptions, TransportKind } from 'vscode-languageclient/node';
@@ -202,23 +232,24 @@ export function activate(context: ExtensionContext) {
 }
 ```
 
+That code is illustrative future-state wiring, not current repo state.
+
 ### Phase 3: Build and packaging
 
 - Add `compile-service` and `language-server` build targets to the monorepo
   build (alongside existing `typescript/core`).
-- Add `vscode:prepublish` script to `vscode-extension/package.json` that builds
-  the language server before packaging.
+- Update `vscode-f-flat-minor/package.json` so its publish/build flow also builds
+  the language server before packaging, if the extension becomes an LSP client.
 - Publish to the VSCode Marketplace as a separate step (out of scope for this plan).
 
 ## Decisions already made
 
 - **Shared `compile-service` package** — both web inspector and language server
-  import from it; logic is never duplicated.
+  import from it; logic is never duplicated. This has effectively landed.
 - **LSP wire protocol handled by `vscode-languageserver-node`** — do not
   implement JSON-RPC manually.
-- **`Diagnostic.range` replaces bare `line/column`** — the static analysis plan's
-  `Diagnostic` type is extended here to carry a full `SourceRange`; the analyzer
-  itself is otherwise unchanged.
+- **Current VS Code package is `vscode-f-flat-minor/`** — future client work
+  should start there rather than assuming a brand-new repo-root extension package.
 - **One `CompileResult` cached per open document** — handlers read from cache,
   not re-compiled per request.
 - **Core words always available** — sourced from `word-signatures.ts`
@@ -232,11 +263,11 @@ export function activate(context: ExtensionContext) {
 
 ## Open questions
 
-- Does the existing tokenizer in `typescript/core` emit token positions
-  (`line`, `character`) or only raw offsets? If only offsets, a position-tracking
-  wrapper must be added as part of Phase 0 before anything else can proceed.
-- Should `vscode-extension/` live at the repo root or under a `tools/` or
-  `editor/` subdirectory? (Aesthetic choice — doesn't affect implementation.)
+- Should the eventual LSP client fully replace the bespoke providers in
+  `vscode-f-flat-minor/`, or should some features remain direct extension code
+  (for example ERS-specific commands and hover affordances)?
+- Should `typescript/compile-service/` gain its own build/test/publish metadata,
+  or remain an internal monorepo package consumed by source imports?
 
 ## Out of scope
 
@@ -251,12 +282,12 @@ export function activate(context: ExtensionContext) {
 
 ## Dependencies
 
-- `_plans/web-editor-word-inspector.md` — Phase B (`definition-compiler.ts` and
-  source range mapping) must be designed concurrently with Phase 0 of this plan,
-  since `compile-service` is the extraction of that work.
-- `_plans/static-code-analysis.md` — `analyzer.ts` and `word-signatures.ts` must
-  exist before Phase 1 diagnostics can be wired up. Phase 1 can proceed without
-  them (diagnostics simply return empty) but full value requires them.
+- `_plans/web-editor-word-inspector.md` — relevant background for why the shared
+  compile/source-map layer exists, but no longer a blocker for Phase 0.
+- `_plans/static-code-analysis.md` — relevant background for analyzer and
+  signatures work that now feeds `typescript/compile-service/`.
+- Phase 1 depends primarily on stabilizing and consuming the existing
+  `typescript/compile-service/` package.
 
 ## References
 
@@ -264,6 +295,10 @@ export function activate(context: ExtensionContext) {
   `DefinitionState`, debounce strategy, and source range mapping design
 - `_plans/static-code-analysis.md` — source of `analyzer.ts`, `Diagnostic`,
   `word-signatures.ts`, and `AbstractValue` type
+- `typescript/compile-service/src/compile-service.ts` — current shared compile API
+- `typescript/compile-service/src/source-map.ts` — current position/word lookup API
+- `vscode-f-flat-minor/src/extension.ts` — current direct VS Code integration path
+- `vscode-f-flat-minor/package.json` — current extension packaging and contributed capabilities
 - `typescript/core/src/compiler.ts` — compiler pipeline being wrapped
 - `typescript/core/src/ir.ts` — IR structure consumed by the analyzer
 - `typescript/core/src/engine.ts` lines 278–315 — engine inspection API

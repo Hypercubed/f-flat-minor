@@ -1,85 +1,55 @@
+---
+title: Core primitives
+summary: VM primitive words, opcode table, stack effects, and runtime implementation coverage.
+order: 20
+---
+
 # Core primitives reference
 
-This page lists the **VM primitive words** documented in [`_docs/core-vocabulary.md`](../../_docs/core-vocabulary.md) (same set as [`_shared/core-vocabulary.json`](../../_shared/core-vocabulary.json)). It is hand-maintained; when you add a primitive, update the vocabulary doc, the shared JSON, and this file.
+This page lists the **VM primitive words**.
 
-## How to read “implemented”
+## Core primitives
 
-| Symbol | Meaning |
-|--------|---------|
-| **Yes** | The runtime exposes the word as a **system / primitive** operation (registered opcode or `defineSystem` / `systemWords` entry). |
-| **Lexer** | **`[`** and **`]`** only: quotations are built by the **lexer / parser** in that runtime. There is no separate registered word named `[` or `]` (Python and Ruby). Behavior is still available. |
-| **No** | Not wired as a primitive in that runtime (may be commented out or absent). |
-
-**TypeScript** here means the shared core used by **Deno, Node, and Bun** (`typescript/core/src/opcodes.ts` → `systemWords`).
-
-There is **no C implementation** in this repository; the matrix below covers only code that exists here.
-
-## Division and modulo note
-
-Integer `/` and `%` semantics for negative operands differ across runtimes. See the note at the bottom of [`_docs/core-vocabulary.md`](../../_docs/core-vocabulary.md).
-
----
-
-## Summary by implementation
-
-| Implementation | Full primitive set | Gaps (vs vocabulary) |
-|----------------|-------------------|----------------------|
-| **TypeScript** (Deno / Node / Bun) | Yes — all rows below are **Yes** | None |
-| **Go** | Yes — all rows below are **Yes** | None |
-| **Python** | Partial | Missing **`getc`**, **`exit`**, **`;`** (end definition). **`[`** / **`]`** via **Lexer** only. |
-| **Ruby** | Partial | Missing **`getc`**, **`exit`**, **`;`**. **`[`** / **`]`** via **Lexer** only. |
-| **Racket** | Partial | Missing **`getc`**, **`clock`**, **`exit`**, **`(`** (STASH), **`)`** (FETCH). |
-
----
-
-## Per-word reference
-
-Stack effects are quoted from `_docs/core-vocabulary.md` (ASCII forms; the doc table may use `|` for queue state).
-
-### Coverage matrix
-
-| Word | Opcode (dec) | Stack effect (summary) | TS | Go | Python | Ruby | Racket |
-|------|-------------|-------------------------|:--:|:--:|:------:|:----:|:------:|
-| `nop` | 0 | `… nop == …` | Yes | Yes | Yes | Yes | Yes |
-| `eval` | 1 | `[A] eval == a*` | Yes | Yes | Yes | Yes | Yes |
-| `putc` | 2 | `n putc == {prints char(n)}` | Yes | Yes | Yes | Yes | Yes |
-| `getc` | 3 | `getc == n {reads char}` | Yes | Yes | No | No | No |
-| `putn` | 5 | `n putn == {prints n}` | Yes | Yes | Yes | Yes | Yes |
-| `clock` | 6 | `clock == n {reads clock}` | Yes | Yes | Yes | Yes | No |
-| `drop` | 8 | `a drop ==` | Yes | Yes | Yes | Yes | Yes |
-| `q<` | 14 | `a q< == \| …a` | Yes | Yes | Yes | Yes | Yes |
-| `q>` | 15 | `q> == a \| a…` | Yes | Yes | Yes | Yes | Yes |
-| `<<` | 16 | `a b << == n` | Yes | Yes | Yes | Yes | Yes |
-| `>>` | 17 | `a b >> == n` | Yes | Yes | Yes | Yes | Yes |
-| `clr` | 24 | `… clr ==` | Yes | Yes | Yes | Yes | Yes |
-| `rand` | 26 | `n rand == r {0 <= r < n}` | Yes | Yes | Yes | Yes | Yes |
-| `exit` | 27 | `n exit == {exits with code n}` | Yes | Yes | No | No | No |
-| `dup` | 33 | `a dup == a a` | Yes | Yes | Yes | Yes | Yes |
-| `depth` | 35 | `… depth == … n` | Yes | Yes | Yes | Yes | Yes |
-| `swap` | 36 | `a b swap == b a` | Yes | Yes | Yes | Yes | Yes |
-| `%` | 37 | `a b % == r` | Yes | Yes | Yes | Yes | Yes |
-| `&` | 38 | `a b & == n` | Yes | Yes | Yes | Yes | Yes |
-| `(` | 40 | `… ( == {moves stack to queue}` | Yes | Yes | Yes | Yes | No |
-| `)` | 41 | `) == … {restores stack from queue}` | Yes | Yes | Yes | Yes | No |
-| `*` | 42 | `a b * == n` | Yes | Yes | Yes | Yes | Yes |
-| `+` | 43 | `a b + == n` | Yes | Yes | Yes | Yes | Yes |
-| `cons` | 44 | `x y cons == q` | Yes | Yes | Yes | Yes | Yes |
-| `-` | 45 | `a b - == n` | Yes | Yes | Yes | Yes | Yes |
-| `.` | 46 | `… . == … {prints stack}` | Yes | Yes | Yes | Yes | Yes |
-| `/` | 47 | `a b / == trunc(a/b)` | Yes | Yes | Yes | Yes | Yes |
-| `:` | 58 | `n : == {begin definition(n)}` | Yes | Yes | Yes | Yes | Yes |
-| `;` | 59 | `; == {end definition}` | Yes | Yes | No | No | Yes |
-| `<` | 60 | `a b < == flag` | Yes | Yes | Yes | Yes | Yes |
-| `=` | 61 | `a b = == flag` | Yes | Yes | Yes | Yes | Yes |
-| `>` | 62 | `a b > == flag` | Yes | Yes | Yes | Yes | Yes |
-| `?` | 63 | `flag [A] ? == a*` | Yes | Yes | Yes | Yes | Yes |
-| `[` | 91 | `[ == {begin quotation}` | Yes | Yes | Lexer | Lexer | Yes |
-| `]` | 93 | `] == [A] {end quotation}` | Yes | Yes | Lexer | Lexer | Yes |
-| `^` | 94 | `a b ^ == n` | Yes | Yes | Yes | Yes | Yes |
-| `\|` | 124 | `a b \| == n` | Yes | Yes | Yes | Yes | Yes |
-| `~` | 126 | `a ~ == n'` | Yes | Yes | Yes | Yes | Yes |
-
-**`cons` opcode:** TypeScript `OpCodes` name this **`CONS`** with value **ASCII 44** (comma `,`). In source you typically write the word `cons`, not the `,` token.
+| Syntax | Mnemonic | Opcode | Stack effect | Description |
+|--------|----------|--------|--------------|-------------|
+| `nop` | `NOP` | `0` | `... nop == ...` | No operation; does nothing. |
+| `eval` | `EVAL` | `1` | `[A] eval == a*` | Evaluates a quotation, executing its contents. |
+| `putc` | `PUTC` | `2` | `n putc == {prints char(n)}` | Prints a character given by its numeric code. |
+| `getc` | `GETC` | `3` | `getc == n {reads char}` | Reads a single character from input and pushes its code. |
+| `putn` | `PUTN` | `5` | `n putn == {prints n}` | Prints a number to output. |
+| `clock` | `CLOCK` | `6` | `clock == n {reads clock}` | Returns the current time as a Unix timestamp. |
+| `drop` | `DROP` | `8` | `a drop ==` | Removes the top value from the stack. |
+| `q<` | `PUSHR` | `14` | `a q< == | ...a` | Pushes a value onto the return stack. |
+| `q>` | `PULLR` | `15` | `q> == a | a...` | Pops a value from the return stack onto the main stack. |
+| `<<` | `SHIFTL` | `16` | `a b << == n` | Left-shifts `a` by `b` bits. |
+| `>>` | `SHIFTR` | `17` | `a b >> == n` | Right-shifts `a` by `b` bits. |
+| `clr` | `CLR` | `24` | `... clr ==` | Clears the entire stack. |
+| `rand` | `RAND` | `26` | `n rand == r {0 <= r < n}` | Generates a random number between `0` and `n-1`. |
+| `exit` | `EXIT` | `27` | `n exit == {exits with code n}` | Exits the program with the given exit code. |
+| `dup` | `DUP` | `33` | `a dup == a a` | Duplicates the top value on the stack. |
+| `depth` | `DEPTH` | `35` | `... depth == ... n` | Pushes the current stack depth. |
+| `swap` | `SWAP` | `36` | `a b swap == b a` | Swaps the top two values on the stack. |
+| `%` | `MOD` | `37` | `a b % == n` | Computes the remainder of `a` divided by `b`. |
+| `&` | `AND` | `38` | `a b & == n` | Bitwise AND of `a` and `b`. |
+| `(` | `STASH` | `40` | `... ( == {moves stack to queue}` | Moves values from the stack to the queue. |
+| `)` | `FETCH` | `41` | `) == ... {restores stack from queue}` | Moves values from the queue back to the stack. |
+| `*` | `MUL` | `42` | `a b * == n` | Multiplies `a` by `b`. |
+| `+` | `ADD` | `43` | `a b + == n` | Adds `a` and `b` together. |
+| `cons` | `CONS` | `44` | `x y cons == q` | Builds an anonymous quotation from two stack values. |
+| `-` | `SUB` | `45` | `a b - == n` | Subtracts `b` from `a`. |
+| `.` | `DUMP` | `46` | `... . == ... {prints stack}` | Prints the entire stack to output. |
+| `/` | `DIV` | `47` | `a b / == n` | Divides `a` by `b` using integer division. |
+| `:` | `MARK` | `58` | `n : == {begin definition(n)}` | Begins a new word definition with name `n`. |
+| `;` | `DEF` | `59` | `; == {end definition}` | Ends the current word definition. |
+| `<` | `LT` | `60` | `a b < == flag` | Pushes true if `a` is less than `b`. |
+| `=` | `EQ` | `61` | `a b = == flag` | Pushes true if `a` equals `b`. |
+| `>` | `GT` | `62` | `a b > == flag` | Pushes true if `a` is greater than `b`. |
+| `?` | `WHEN` | `63` | `flag [A] ? == a*` | Executes the quotation if `flag` is true. |
+| `[` | `BRA` | `91` | `[ == {begin quotation}` | Begins a quotation (anonymous code block). |
+| `]` | `KET` | `93` | `] == [A] {end quotation}` | Ends a quotation and pushes it to the stack. |
+| `^` | `POW` | `94` | `a b ^ == n` | Computes `a` raised to the power of `b`. |
+| `|` | `OR` | `124` | `a b | == n` | Bitwise OR of `a` and `b`. |
+| `~` | `NOT` | `126` | `a ~ == n'` | Bitwise NOT of `a`. |
 
 ---
 
@@ -87,7 +57,7 @@ Stack effects are quoted from `_docs/core-vocabulary.md` (ASCII forms; the doc t
 
 ### `(` (STASH)
 
-**Stack:** `… ( == {moves stack to queue}` (see `_docs/stack-notation.md` for queue notation).
+**Stack:** `… ( == {moves stack to queue}` (see `_docs/supplemental/stack-notation.md` for queue notation).
 
 **Implements:** TypeScript, Go, Python, Ruby — **Yes**. Racket — **No** (commented out in `racket/private/engine.rkt`).
 
@@ -346,23 +316,3 @@ Stack effects are quoted from `_docs/core-vocabulary.md` (ASCII forms; the doc t
 **Stack:** `a ~ == n'`.
 
 **Implements:** All listed runtimes — **Yes**.
-
----
-
-## Source map (for maintainers)
-
-| Runtime | Where primitives are wired |
-|---------|------------------------------|
-| TypeScript | `typescript/core/src/opcodes.ts` (`OpCodes`, `systemWords`) |
-| Go | `go/src/engine/engine.go` (`defSystem` in `Setup`), opcodes in `go/src/utils/opcodes.go` |
-| Python | `python/execute.py` (`defineSystem`) |
-| Ruby | `ruby/execute.rb` (`defineSystem`) |
-| Racket | `racket/private/engine.rkt` (`system_defs`), constants in `racket/private/ops.rkt` |
-
----
-
-## See also
-
-- [`_docs/core-vocabulary.md`](../../_docs/core-vocabulary.md) — canonical table and division note  
-- [`_docs/stack-notation.md`](../../_docs/stack-notation.md) — stack / queue effect notation  
-- [`typescript/core/src/opcodes.ts`](../../typescript/core/src/opcodes.ts) — opcode values and names  

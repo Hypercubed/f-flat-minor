@@ -16,6 +16,14 @@ const {
   theme = "home",
   activePath = stripBasePath(Astro.url.pathname),
 } = Astro.props;
+
+function isNavItemActive(itemPath: string, currentPath: string): boolean {
+  if (itemPath === "/") {
+    return currentPath === "/";
+  }
+
+  return currentPath === itemPath || currentPath.startsWith(itemPath);
+}
 ---
 
 <!doctype html>
@@ -40,7 +48,7 @@ const {
           <nav class="site-nav" aria-label="Primary">
             {
               navItems.map((item) => (
-                <a class:list={["nav-link", item.path === activePath && "is-active"]} href={item.href}>
+                <a class:list={["nav-link", isNavItemActive(item.path, activePath) && "is-active"]} href={item.href}>
                   {item.label}
                 </a>
               ))

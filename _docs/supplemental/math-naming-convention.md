@@ -86,7 +86,7 @@ Example:
 Internal constants and helper words currently use the soft-private `_{filename}__{name}` pattern.
 Example: `_log__n`, `_exp__e`
 
-See: `_docs/math-naming-internal.md`
+See: `_docs/supplemental/math-naming-internal.md`
 
 ---  
 *Adhering to this convention ensures discoverability, consistency, and clear documentation of the mathematical library's capabilities.*

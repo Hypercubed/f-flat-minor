@@ -142,5 +142,5 @@ Add or update focused tests in `ff/lib/math/__tests__/exp.ffp` to cover:
 
 ## References
 - `_plans/ffm-math-library.md`
-- `_docs/math-naming-convention.md`
+- `_docs/supplemental/math-naming-convention.md`
 - `ff/lib/math/exp.ffp`
