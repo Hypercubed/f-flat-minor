@@ -162,6 +162,13 @@
       "opcode": 43
     },
     {
+      "mnemonic": "CONS",
+      "syntax": "cons",
+      "stackEffect": "x y cons == q",
+      "description": "Builds an anonymous quotation from two stack values (opcode also maps to `,`).",
+      "opcode": 44
+    },
+    {
       "mnemonic": "SUB",
       "syntax": "-",
       "stackEffect": "a b - == n",
