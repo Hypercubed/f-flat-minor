@@ -1,0 +1,68 @@
+.import ../lib/math/sqrt.ffp
+
+/* Integer square root demo using `isqrt` and `isqrtrem` and some alternative methods */
+
+(_isqrt_newton):
+  dup2 / over + 1 >> /* update guess */
+  dup2 > [ /* continue? */
+    nip (_isqrt_newton)
+  ] ? ;
+
+/* newton's method with initial guess of x/2 */
+isqrt_newton:
+  dup 1 >> /* initial guess of x/2 */
+  (_isqrt_newton)
+  drop nip ;
+
+(_isqrt_jarvis): /* b a */
+  dup2 <
+  [
+    over - /* b a-b */
+    [ 10 + ] dip /* b+10 a-b */
+    (_isqrt_jarvis)
+  ]
+  ?
+;
+
+/* Jarvis (2006): a very strange method to work out square roots, using only subtraction */
+isqrt_jarvis:
+  5 *
+  0 swap
+  (_isqrt_jarvis)
+  drop 10 /
+;
+
+
+/* Benchmarking */
+N: 1000 ; .inline
+
+time: 
+  clock
+  swap N times
+  [ drop ] N -- times
+  swap clock swap -
+;
+
+0 isqrt . clr
+1 isqrt . clr
+2 isqrt . clr
+3 isqrt . clr
+4 isqrt . clr
+25 isqrt . clr
+125348 isqrt . clr
+100 8 ^ 2 * isqrt . clr
+
+1 isqrtrem . clr
+2 isqrtrem . clr
+3 isqrtrem . clr
+4 isqrtrem . clr
+
+7 isqrtrem . clr
+9 isqrtrem . clr
+11 isqrtrem . clr
+
+25 isqrtrem . clr
+24 isqrtrem . clr
+26 isqrtrem . clr
+
+1048576 isqrtrem . clr

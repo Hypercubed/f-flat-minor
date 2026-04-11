@@ -1,7 +1,7 @@
 ---
-+status: ready
-+status_date: 2026-04-11
-+creator: kilo
+status: in-progress
+status_date: 2026-04-11
+creator: kilo
 ---
 
 # Plan: Expand TypeScript Optimizer Peephole Rules
@@ -12,20 +12,19 @@ Document a practical shortlist of additional peephole optimizations for [`typesc
 
 ## Context
 
-The current optimizer already handles basic null sequences, direct-call lowering, arithmetic folding for `+ - * /`, a small amount of algebraic simplification, simple `IF` pruning, empty quotation folding, and small-word inlining. The opcode set in [`typescript/core/src/opcodes.ts`](typescript/core/src/opcodes.ts) and runtime behavior in [`typescript/core/src/engine.ts`](typescript/core/src/engine.ts) leave several obvious gaps:
+The current optimizer already handles basic null sequences, direct-call lowering, arithmetic folding for `+ - * /`, a small amount of algebraic simplification, simple `IF` pruning, empty quotation folding, and small-word inlining. Since this plan was created, the safe constant-folding, identity-rule, and commutativity-cleanup tranches have been implemented. The opcode set in [`typescript/core/src/opcodes.ts`](typescript/core/src/opcodes.ts) and runtime behavior in [`typescript/core/src/engine.ts`](typescript/core/src/engine.ts) still leave several obvious gaps:
 
-- no constant folding yet for `%`, `<<`, `>>`, `&`, `|`, `^`, `~`, `<`, `=`, `>`
-- no identity rules yet for `|`, shifts, or exponentiation
-- no commutativity cleanup yet for `&`, `|`, or `=`
 - no follow-on control-flow rules that collapse already-folded conditions into `IF`
 
 ## Approach
 
 Implement candidates in priority order, starting with rules that mirror existing arithmetic folds and require no optimizer architecture changes.
 
-1. Add safe constant-folding rules for currently uncovered pure ops.
+1. Done — add safe constant-folding rules for previously uncovered pure ops.
 
-   Highest-value additions:
+   Completed on 2026-04-11 in [`typescript/core/src/optimizer.ts`](typescript/core/src/optimizer.ts), with focused coverage in [`deno/src/optimizer_test.ts`](deno/src/optimizer_test.ts), optimizer reference updates in [`_docs/reference/optimized-compiler.md`](_docs/reference/optimized-compiler.md), and Codetta score recalculation.
+
+   Implemented additions:
 
    - `a b MOD` -> `push(a % b)` with `b != 0`
    - `a b SHIFTL` -> `push(a << b)`
@@ -44,23 +43,27 @@ Implement candidates in priority order, starting with rules that mirror existing
    - `^` should guard negative exponents because JS `bigint ** bigint` rejects them.
    - Shifts should only be added if the optimizer can safely mirror runtime semantics for all allowed `bigint` shift counts.
 
-2. Add simple algebraic identity rules that preserve stack shape.
+2. Done — add simple algebraic identity rules that preserve stack shape.
 
-   Good candidates that fit the existing 1- or 2-instruction replacement model:
+   Completed on 2026-04-11 in [`typescript/core/src/optimizer.ts`](typescript/core/src/optimizer.ts), with focused coverage in [`deno/src/optimizer_test.ts`](deno/src/optimizer_test.ts), optimizer reference updates in [`_docs/reference/optimized-compiler.md`](_docs/reference/optimized-compiler.md), and Codetta score recalculation.
+
+   Implemented additions that fit the existing 1- or 2-instruction replacement model:
 
    - `0 OR` -> no-op (`a 0 | == a`)
    - `0 SHIFTL` -> no-op (`a 0 << == a`)
    - `0 SHIFTR` -> no-op (`a 0 >> == a`)
    - `1 POW` -> no-op (`a 1 ^ == a`)
-   - `0 POW` -> `push 1` only when the left operand is already part of the matched window (for example as a 3-instruction fold), not as a 2-instruction rule
+   - `0 POW` -> `push 1` is covered for constant left operands by the safe constant-folding rule above.
 
    Important constraint:
 
    - Rules like `a 0 * -> 0` or `a 0 & -> 0` cannot be expressed as the current 2-instruction identity form unless the left operand is also matched, otherwise the original `a` would be left on the stack.
 
-3. Add commutativity-based cleanup rules similar to existing `swap ADD` and `swap MUL`.
+3. Done — add commutativity-based cleanup rules similar to existing `swap ADD` and `swap MUL`.
 
-   Natural additions:
+   Completed on 2026-04-11 in [`typescript/core/src/optimizer.ts`](typescript/core/src/optimizer.ts), with focused coverage in [`deno/src/optimizer_test.ts`](deno/src/optimizer_test.ts), optimizer reference updates in [`_docs/reference/optimized-compiler.md`](_docs/reference/optimized-compiler.md), and Codetta score recalculation.
+
+   Implemented additions:
 
    - `swap AND` -> `AND`
    - `swap OR` -> `OR`
@@ -68,7 +71,7 @@ Implement candidates in priority order, starting with rules that mirror existing
 
    These improve canonicalization and can expose later constant folds or inlining opportunities.
 
-4. Add short control-flow chain reductions once comparison folds exist.
+4. Add short control-flow chain reductions now that comparison folds exist.
 
    Useful follow-ons:
 
@@ -100,7 +103,9 @@ Implement candidates in priority order, starting with rules that mirror existing
 
 ## Decisions already made
 
-- The best immediate additions are the missing constant folds for pure deterministic ops.
+- The safe constant-folding tranche for pure deterministic ops has been implemented.
+- The algebraic identity tranche for `0 |`, zero shifts, and `1 ^` has been implemented.
+- The commutativity cleanup tranche for `swap &`, `swap |`, and `swap =` has been implemented.
 - Guarded rules are preferable to broader but partial rewrites; optimizer rules should never introduce runtime behavior that differs from the engine.
 - Commutativity cleanup should be limited to ops that are truly symmetric in the engine (`ADD`, `MUL`, `AND`, `OR`, `EQ`).
 - Comparison folding is worthwhile because it composes with the existing `IF` rewrites without needing a more advanced optimizer.

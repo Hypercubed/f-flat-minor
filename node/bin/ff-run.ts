@@ -3,7 +3,6 @@
 import fs from "node:fs";
 import path from "node:path";
 import { parseArgs } from "node:util";
-import { fileURLToPath } from "node:url";
 
 import { Compiler } from "../src/compiler.ts";
 import { HEADER } from "../src/constants.ts";
@@ -15,11 +14,9 @@ import { readStdin } from "../src/read.ts";
 import type { RunArgs } from "../src/ff-run-args.ts";
 import { buildParseArgsConfig, normalizeRunArgs } from "../src/ff-run-args.ts";
 import { buildStdlibRootList, FBM_STDLIB_PATH_ENV } from "../src/args.ts";
+import { resolveDefaultStdlibRoot } from "../src/stdlib-roots.ts";
 
-const STDLIB_ROOT = path.resolve(
-  path.dirname(fileURLToPath(import.meta.url)),
-  "../../ff/lib",
-);
+const STDLIB_ROOT = resolveDefaultStdlibRoot(import.meta.url);
 const PRELUDE = "<prelude>";
 
 function getStdlibRoots(argv: RunArgs): string[] {

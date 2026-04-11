@@ -2,7 +2,7 @@
 etude: sqrt-2
 title: "Digits of sqrt(2)"
 leader: hypercubed
-bytes: 439
+bytes: 425
 date: 2026-04-08
 ---
 

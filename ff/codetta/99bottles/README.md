@@ -2,7 +2,7 @@
 etude: 99bottles
 title: "99 Bottles of Beer"
 leader: hypercubed
-bytes: 564
+bytes: 561
 date: 2026-04-07
 ---
 

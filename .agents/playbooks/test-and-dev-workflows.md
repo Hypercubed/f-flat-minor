@@ -51,6 +51,15 @@ mise exec -- chomp test:{deno,node,bun,python,ruby}
 ## Quick selection guide
 
 - Editing language/runtime behavior broadly: run `mise exec -- chomp test:deno`.
+- Editing compiler or optimizer behavior: check and update
+  `_docs/reference/optimized-compiler.md` so it matches the current pipeline,
+  metadata, passes, and optimization rules.
+- Editing `typescript/core/src/optimizer.ts`: recalculate Codetta compiled-byte scores with
+  `python3 ff/codetta/score_codetta.py --update-readme-bytes`, then verify with
+  `python3 ff/codetta/score_codetta.py`.
+- Adding optimizer peepholes: test optimized IR shape, runtime behavior, and a
+  nearby negative case that must not fold; for stack-shape-sensitive rewrites,
+  include a nonconstant producer case such as `rand`.
 - Editing TAP-style library tests or helpers: run `cd bun && mise exec -- chomp test:tap`.
 - Editing Go implementation: run `cd go && mise exec -- go test ./...`.
 - Editing web playground integration: run the relevant `web` build or dev command.

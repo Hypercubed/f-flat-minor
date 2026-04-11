@@ -20,6 +20,11 @@ const Push = (value: number | bigint) => {
 const PushAny = (inst: IrInstruction) => inst.op === IROp.push;
 const PushNz = (inst: IrInstruction) =>
   inst.op === IROp.push && inst.value !== 0n;
+const PushNonNegative = (inst: IrInstruction) =>
+  inst.op === IROp.push && inst.value >= 0n;
+const SingleWordQuoteCall = (inst: IrInstruction) =>
+  inst.op === IROp.call &&
+  ![BRA, KET, MARK, DEF].includes(inst.value);
 
 interface Rule {
   name?: string;
@@ -125,9 +130,100 @@ const rules: Rule[] = [
     replacement: (_, b) => [b],
   },
   {
+    name: "Algebraic Simplification - swap AND",
+    pattern: [Call(OpCodes.SWAP), Call(OpCodes.AND)],
+    replacement: (_, b) => [b],
+  },
+  {
+    name: "Algebraic Simplification - swap OR",
+    pattern: [Call(OpCodes.SWAP), Call(OpCodes.OR)],
+    replacement: (_, b) => [b],
+  },
+  {
+    name: "Algebraic Simplification - swap EQ",
+    pattern: [Call(OpCodes.SWAP), Call(OpCodes.EQ)],
+    replacement: (_, b) => [b],
+  },
+  {
     name: "Constant Folding - a b DIV",
     pattern: [PushAny, PushNz, Call(OpCodes.DIV)],
     replacement: (a, b) => [{ op: IROp.push, value: a.value / b.value }],
+  },
+  {
+    name: "Constant Folding - a b MOD",
+    pattern: [PushAny, PushNz, Call(OpCodes.MOD)],
+    replacement: (a, b) => [{ op: IROp.push, value: a.value % b.value }],
+  },
+  {
+    name: "Constant Folding - a b SHIFTL",
+    pattern: [PushAny, PushAny, Call(OpCodes.SHIFTL)],
+    replacement: (a, b) => [{ op: IROp.push, value: a.value << b.value }],
+  },
+  {
+    name: "Constant Folding - a b SHIFTR",
+    pattern: [PushAny, PushAny, Call(OpCodes.SHIFTR)],
+    replacement: (a, b) => [{ op: IROp.push, value: a.value >> b.value }],
+  },
+  {
+    name: "Constant Folding - a b AND",
+    pattern: [PushAny, PushAny, Call(OpCodes.AND)],
+    replacement: (a, b) => [{ op: IROp.push, value: a.value & b.value }],
+  },
+  {
+    name: "Constant Folding - a b OR",
+    pattern: [PushAny, PushAny, Call(OpCodes.OR)],
+    replacement: (a, b) => [{ op: IROp.push, value: a.value | b.value }],
+  },
+  {
+    name: "Constant Folding - a NOT",
+    pattern: [PushAny, Call(OpCodes.NOT)],
+    replacement: (a) => [{ op: IROp.push, value: ~a.value }],
+  },
+  {
+    name: "Constant Folding - a b LT",
+    pattern: [PushAny, PushAny, Call(OpCodes.LT)],
+    replacement: (a, b) => [
+      { op: IROp.push, value: a.value < b.value ? 1n : 0n },
+    ],
+  },
+  {
+    name: "Constant Folding - a b EQ",
+    pattern: [PushAny, PushAny, Call(OpCodes.EQ)],
+    replacement: (a, b) => [
+      { op: IROp.push, value: a.value === b.value ? 1n : 0n },
+    ],
+  },
+  {
+    name: "Constant Folding - a b GT",
+    pattern: [PushAny, PushAny, Call(OpCodes.GT)],
+    replacement: (a, b) => [
+      { op: IROp.push, value: a.value > b.value ? 1n : 0n },
+    ],
+  },
+  {
+    name: "Constant Folding - a b POW",
+    pattern: [PushAny, PushNonNegative, Call(OpCodes.POW)],
+    replacement: (a, b) => [{ op: IROp.push, value: a.value ** b.value }],
+  },
+  {
+    name: "Algebraic Simplification - 0 OR",
+    pattern: [Push(0), Call(OpCodes.OR)],
+    replacement: () => [],
+  },
+  {
+    name: "Algebraic Simplification - 0 SHIFTL",
+    pattern: [Push(0), Call(OpCodes.SHIFTL)],
+    replacement: () => [],
+  },
+  {
+    name: "Algebraic Simplification - 0 SHIFTR",
+    pattern: [Push(0), Call(OpCodes.SHIFTR)],
+    replacement: () => [],
+  },
+  {
+    name: "Algebraic Simplification - 1 POW",
+    pattern: [Push(1), Call(OpCodes.POW)],
+    replacement: () => [],
   },
   {
     name: "Algebraic Simplification - 1 DIV",
@@ -168,6 +264,17 @@ const rules: Rule[] = [
         op: IROp.push,
         value: 0n,
         meta: { pointer: true, name: "0" },
+      },
+    ],
+  },
+  {
+    name: "Single-word Quote - [ word ]",
+    pattern: [Call(OpCodes.BRA), SingleWordQuoteCall, Call(OpCodes.KET)],
+    replacement: (_a, b) => [
+      {
+        op: IROp.push,
+        value: b.value,
+        meta: { pointer: true, name: b.meta?.name },
       },
     ],
   },

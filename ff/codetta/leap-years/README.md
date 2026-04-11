@@ -2,7 +2,7 @@
 etude: leap-years
 title: "Leap Years"
 leader: hypercubed
-bytes: 226
+bytes: 216
 date: 2026-04-07
 ---
 

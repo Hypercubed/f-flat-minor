@@ -4,7 +4,6 @@ import { Buffer } from "node:buffer";
 import fs from "node:fs";
 import path from "node:path";
 import { parseArgs } from "node:util";
-import { fileURLToPath } from "node:url";
 
 import { base64ToArrayBuffer, dumpByteArray } from "../src/dump.ts";
 import { readStdin } from "../src/read.ts";
@@ -17,9 +16,9 @@ import { dec2hex } from "../src/strings.ts";
 import { red } from "../src/colors.ts";
 import { CompileArgs } from "../src/args.ts";
 import { buildStdlibRootList, FBM_STDLIB_PATH_ENV, normalizeStdlibRootArgs } from "../src/args.ts";
+import { resolveDefaultStdlibRoot } from "../src/stdlib-roots.ts";
 
-const __dirname = path.dirname(fileURLToPath(import.meta.url));
-const STDLIB_ROOT = path.resolve(__dirname, "../../ff/lib");
+const STDLIB_ROOT = resolveDefaultStdlibRoot(import.meta.url);
 const PRELUDE = "<prelude>";
 
 function getStdlibRoots(argv: CompileArgs): string[] {

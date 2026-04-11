@@ -94,8 +94,8 @@ fi
 FF_COMPILE_TS="$REPO_ROOT/deno/bin/ff-compile.ts"
 
 deno_opt() {
-  print_command mise exec -- deno run --no-check --allow-read "$FF_COMPILE_TS" "$@"
-  exec mise exec -- deno run --no-check --allow-read "$FF_COMPILE_TS" "$@"
+  print_command mise exec -- deno run --no-check --allow-read --allow-env "$FF_COMPILE_TS" "$@"
+  exec mise exec -- deno run --no-check --allow-read --allow-env "$FF_COMPILE_TS" "$@"
 }
 
 case "$file" in
@@ -111,11 +111,11 @@ case "$file" in
       "$file" \
       "|" \
       mise exec -- \
-      deno run --no-check --allow-read "$FF_COMPILE_TS" \
+      deno run --no-check --allow-read --allow-env "$FF_COMPILE_TS" \
       --no-preprocess \
       --opt \
       -
     "$REPO_ROOT/shell/ff-preprocess.sh" --quiet --pp "$preprocessor" "$file" | \
-      mise exec -- deno run --no-check --allow-read "$FF_COMPILE_TS" --no-preprocess --opt -
+      mise exec -- deno run --no-check --allow-read --allow-env "$FF_COMPILE_TS" --no-preprocess --opt -
     ;;
 esac

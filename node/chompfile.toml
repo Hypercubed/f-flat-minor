@@ -59,6 +59,7 @@ run = '''
   shopt -s nullglob
   shopt -s extglob
   shopt -s globstar
+    prove --exec "$BIN" ../ff/**/*.test.ffp
   prove --exec "$BIN --opt" ../ff/**/*.test.ffp
 '''
 

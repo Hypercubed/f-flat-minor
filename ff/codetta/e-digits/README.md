@@ -2,7 +2,7 @@
 etude: e-digits
 title: "Digits of e"
 leader: hypercubed
-bytes: 1083
+bytes: 1013
 date: 2026-04-08
 ---
 

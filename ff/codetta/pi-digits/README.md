@@ -2,7 +2,7 @@
 etude: pi-digits
 title: "Digits of pi"
 leader: hypercubed
-bytes: 926
+bytes: 888
 date: 2026-04-08
 ---
 

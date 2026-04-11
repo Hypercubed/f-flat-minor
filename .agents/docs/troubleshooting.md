@@ -3,6 +3,32 @@
 Use this file for recurring issue patterns and validated recoveries that are too
 detailed for high-level agent guidance.
 
+## Compiled Bun Stdlib Imports
+
+### Symptom
+
+A compiled Bun executable fails on `.import <prelude>` with an error such as
+`Stdlib import not found: <prelude>`, and the searched roots include `/ff/lib`.
+
+### Likely Causes
+
+- the executable is using a stale stdlib-root resolver based on Bun's virtual
+  compiled executable module URL
+- the command is running from a directory that does not expose a discoverable
+  repo-relative `ff/lib`
+
+### Fix
+
+Rebuild after the TypeScript stdlib-root resolver fix. As a temporary
+workaround, pass `--stdlib-root ../ff/lib` from the runtime directory or set
+`FBM_STDLIB_PATH` to the repo's `ff/lib` path.
+
+### Validation
+
+Run the exact compiled executable from the user's working directory and confirm
+that `.import <prelude>` succeeds. If it still fails, inspect the searched roots
+printed in the thrown error.
+
 ## Repo Tool Resolution
 
 ### Symptom

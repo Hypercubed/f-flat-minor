@@ -2,7 +2,6 @@
 
 import path from "node:path";
 import { parseArgs } from "node:util";
-import { fileURLToPath } from "node:url";
 import { createInterface } from "node:readline";
 
 import { Compiler } from "../src/compiler.ts";
@@ -11,9 +10,9 @@ import { Preprocessor } from "../src/preprocess.ts";
 import { GREETINGS, SHORT } from "../src/constants.ts";
 import type { ReplArgs } from "../src/args.ts";
 import { buildStdlibRootList, FBM_STDLIB_PATH_ENV, normalizeStdlibRootArgs } from "../src/args.ts";
+import { resolveDefaultStdlibRoot } from "../src/stdlib-roots.ts";
 
-const __dirname = path.dirname(fileURLToPath(import.meta.url));
-const STDLIB_ROOT = path.resolve(__dirname, "../../ff/lib");
+const STDLIB_ROOT = resolveDefaultStdlibRoot(import.meta.url);
 const CORE = "<core>";
 const PRELUDE = "<prelude>";
 

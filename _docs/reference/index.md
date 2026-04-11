@@ -10,6 +10,7 @@ showInSidebar: false
 - [Introduction](../manual/introduction.md) — starting point for the manual section and overall docs map
 - [Quick help](./quickhelp.md) — compact language overview adapted from the current web help page
 - [Core primitives reference](./core-primitives.md) — VM primitives (`_docs/core-vocabulary.md`) and which runtimes implement each word
+- [Optimized compiler](./optimized-compiler.md) — shared TypeScript compiler pipeline, optimizer passes, and current peephole rules
 
 ## Standard library reference
 

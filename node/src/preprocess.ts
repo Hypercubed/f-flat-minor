@@ -2,13 +2,9 @@ import { Preprocessor as CorePreprocessor } from "../../typescript/core/src/prep
 import { Compiler } from "./compiler.ts";
 import { Engine } from "./engine.ts";
 import { createNodePreprocessHost } from "./runtime.ts";
-import path from "node:path";
-import { fileURLToPath } from "node:url";
+import { resolveDefaultStdlibRoot } from "./stdlib-roots.ts";
 
-const DEFAULT_STDLIB_ROOT = path.resolve(
-  path.dirname(fileURLToPath(import.meta.url)),
-  "../../ff/lib",
-);
+const DEFAULT_STDLIB_ROOT = resolveDefaultStdlibRoot(import.meta.url);
 
 export class Preprocessor extends CorePreprocessor {
   constructor(options?: { macroEngineBootstrapFile?: string; stdlibRoots?: string[] }) {

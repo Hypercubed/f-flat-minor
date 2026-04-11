@@ -2,7 +2,7 @@
 etude: ln-2
 title: "ln 2"
 leader: hypercubed
-bytes: 1043
+bytes: 993
 date: 2026-04-08
 ---
 

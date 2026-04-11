@@ -2,7 +2,7 @@
 etude: catalan-numbers
 title: "Catalan Numbers"
 leader: hypercubed
-bytes: 222
+bytes: 212
 date: 2026-04-08
 ---
 The nth Catalan number can be expressed as C(n) = binomial(2n,n)/(n+1).

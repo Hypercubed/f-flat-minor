@@ -2,7 +2,7 @@
 etude: prime-numbers
 title: "Prime Numbers"
 leader: hypercubed
-bytes: 1144
+bytes: 1140
 date: 2026-04-08
 ---
 
