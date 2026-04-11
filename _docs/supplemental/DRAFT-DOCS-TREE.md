@@ -1,7 +1,7 @@
 # Draft documentation tree (manual + generated)
 
-Normative rules: [reference/DOCS-SPEC.md](../reference/DOCS-SPEC.md).  
-Plan: [_plans/f-flat-minor/source-driven-reference-manual.md](../../_plans/f-flat-minor/source-driven-reference-manual.md).
+Normative rules: [../../.agent/rules/ff-lib-source-docs.md](../../.agent/rules/ff-lib-source-docs.md).  
+Plan: [`_plans/source-driven-reference-manual.md`](../../_plans/source-driven-reference-manual.md).
 
 ```text
 docs/
@@ -13,7 +13,6 @@ docs/
 │   └── tutorials/
 │       └── README.md         # (placeholder)
 └── reference/
-    ├── DOCS-SPEC.md            # source doc format: module dossier + @tag word blocks (Phase 1)
     ├── index.md                # reference landing
     ├── examples/               # authoring samples (not generated)
     │   ├── annotated-sample.ff
@@ -33,3 +32,4 @@ docs/
 - **manual/** — hand-written; stable paths for the site.
 - **reference/generated/** — produced by the doc pipeline; may be gitignored once CI regenerates it.
 - **reference/examples/** — normative examples for comment style only.
+- **.agent/rules/ff-lib-source-docs.md** — normative authoring rule for source doc blocks in `ff/lib`.
