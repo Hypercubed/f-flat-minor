@@ -2,6 +2,10 @@
 
 f-flat-minor (_F♭m_ for short) is a tiny toy language and baby brother to [f-flat](https://github.com/Hypercubed/f-flat_node#readme). It is meant to be a tiny stack-oriented language used for learning new languages. The challenge is to implement f-flat-minor in as many languages as possible within the rules listed below.
 
+## AI Disclaimer
+
+_F♭m_ (the language) was all designed by me, a human.  Almost all of the implementations of _F♭m_ were implemented before modern AI tools were widely available.  The only exception so far is the separation of the TypeScript core from the original Deno runtime.  Some implementations of _F♭m_ were later refactored with the help of AI tools.  I have used AI tools extensively for planning, documentation, tooling, testing, and constructing the website.  _F♭m_ has always been a learning project and hobby for me.  Learning how to use AI tools effectively is part of the fun and learning experience.  I understand that some people may have strong feelings about the use of AI tools in open source projects.  If you think this project is slop purely because some content is AI generated, we simply have different points of view.  If you think this project is slop because of utter sloppiness, then that is all on me.
+
 ## The Rules
 
 - Minimal dependencies (standard library for each language)
