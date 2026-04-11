@@ -11,14 +11,19 @@ f-flat-minor (F♭m) is a minimal stack-oriented programming language. It featur
 ## Agent docs layout
 
 - `AGENTS.md` — repo entry point and navigation
+- `.agents/AGENTS.md` — concise agent knowledge-layer entry point
+- `.agents/docs/` — durable decisions, troubleshooting, index, and maintenance log
 - `.agents/rules/` — normative repo and authoring constraints
 - `.agents/playbooks/` — concise step-by-step operational workflows
 - `.agents/skills/` — reusable task-specific agent workflows
+- `.agents/agents/` — role notes for coding, learning, and knowledge-lint agents
+- `.agents/sessions/` — local, gitignored task-closeout bundles
 
 Key rule and playbook entry points:
 
 - `.agents/rules/repo-runtime-invariants.md`
 - `.agents/rules/ff-lib-source-docs.md`
+- `.agents/docs/index.md`
 - `.agents/playbooks/run-code.md`
 - `.agents/playbooks/test-and-dev-workflows.md`
 
@@ -51,8 +56,18 @@ Key rule and playbook entry points:
 
 ## Playbooks
 
+- `.agents/playbooks/README.md` — playbook directory purpose and catalog notes
 - `.agents/playbooks/run-code.md` — choose a runtime and run `.ff` / `.ffp` code
 - `.agents/playbooks/test-and-dev-workflows.md` — common test, lint, and service commands
+
+## Agent knowledge layer
+
+- Keep durable repo knowledge under `.agents/`; keep temporary task evidence under `.agents/sessions/`.
+- `.agents/sessions/*` is gitignored except `.agents/sessions/README.md`.
+- Use `.agents/skills/task-closeout/SKILL.md` to capture meaningful completed, blocked, or abandoned work into a local session bundle.
+- Use `.agents/skills/learning-distill/SKILL.md` to convert a completed session bundle into concise durable updates under `.agents/`.
+- Use `.agents/skills/knowledge-lint/SKILL.md` for periodic checks of duplication, contradictions, stale guidance, and misplaced knowledge.
+- Record durable knowledge maintenance in `.agents/docs/log.md`.
 
 ## Documentation
 
@@ -80,6 +95,9 @@ Reusable agent workflows live under `.agents/skills/`:
 - `.agents/skills/ff-math-internal-naming/SKILL.md` (see `_docs/supplemental/math-naming-internal.md`)
 - `.agents/skills/ff-lib-word-rankings/SKILL.md` (see `_docs/supplemental/ff-lib-word-definition-rankings.md`)
 - `.agents/skills/ff-expand-reduce/SKILL.md` (expand → reduce → resynthesize stack refactors; see `_docs/supplemental/stack-rewrites-and-annotations.md`)
+- `.agents/skills/task-closeout/SKILL.md`
+- `.agents/skills/learning-distill/SKILL.md`
+- `.agents/skills/knowledge-lint/SKILL.md`
 
 Use these when the task involves:
 
@@ -90,6 +108,7 @@ Use these when the task involves:
 - Defining internal math functions with proper naming conventions
 - Regenerating the ff/lib word definition rankings table
 - Simplifying or auditing stack-heavy words (expand–reduce–resynthesize)
+- Capturing session evidence, distilling durable agent knowledge, or linting `.agents/` content
 
 ## Plans
 

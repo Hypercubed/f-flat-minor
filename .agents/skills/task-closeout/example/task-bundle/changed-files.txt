@@ -1,0 +1,2 @@
+src/editor/monaco.ts
+vite.config.ts

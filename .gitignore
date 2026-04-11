@@ -21,3 +21,7 @@ rust/target/*
 *.vsix
 __pycache__/
 .kilo
+
+# Local agent session bundles; keep only the README tracked.
+.agents/sessions/*
+!.agents/sessions/README.md
