@@ -1,0 +1,53 @@
+---
+import BaseLayout from "../layouts/BaseLayout.astro";
+import CodettasSurface from "../components/CodettasSurface.astro";
+import HelpContent from "../components/HelpContent.astro";
+import PlaygroundSurface from "../components/PlaygroundSurface.astro";
+import ReplSurface from "../components/ReplSurface.astro";
+import TutorialSurface from "../components/TutorialSurface.astro";
+import { siteSections, type SiteSection } from "../data/site";
+
+export function getStaticPaths() {
+  return siteSections.map((section) => ({
+    params: { slug: section.slug },
+    props: { section },
+  }));
+}
+
+interface Props {
+  section: SiteSection;
+}
+
+const { section } = Astro.props;
+const InteractiveSurface = (() => {
+  switch (section.slug) {
+    case "playground":
+      return PlaygroundSurface;
+    case "repl":
+      return ReplSurface;
+    case "codettas":
+      return CodettasSurface;
+    case "tutorial":
+      return TutorialSurface;
+    case "help":
+      return HelpContent;
+    default:
+      return null;
+  }
+})();
+---
+
+<BaseLayout
+  title={section.title}
+  description={section.summary}
+  theme={section.slug}
+  activePath={`/${section.slug}/`}
+>
+  <section class="route-hero section-summary">
+    <p class="eyebrow">{section.eyebrow}</p>
+    <h1 class="route-title">{section.title}</h1>
+    <p class="page-copy">{section.description}</p>
+  </section>
+
+  {InteractiveSurface ? <InteractiveSurface /> : null}
+</BaseLayout>

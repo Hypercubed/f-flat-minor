@@ -1,0 +1,18 @@
+---
+import CodettasIntro from "./CodettasIntro.astro";
+---
+
+<CodettasIntro />
+
+<section class="page-section">
+  <div id="codetta-surface-root"></div>
+</section>
+
+<script>
+  import { mountCodettas } from "../client/mount-codettas.ts";
+
+  const surface = document.querySelector("#codetta-surface-root");
+  if (surface instanceof HTMLElement) {
+    mountCodettas(surface);
+  }
+</script>

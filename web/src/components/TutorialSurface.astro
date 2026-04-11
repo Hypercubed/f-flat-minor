@@ -1,0 +1,17 @@
+---
+import TutorialIntro from "./TutorialIntro.astro";
+---
+
+<section class="page-section tutorial-page">
+  <TutorialIntro />
+  <div id="tutorial-surface-root"></div>
+</section>
+
+<script>
+  import { mountTutorialSurface } from "../client/mount-tutorial.ts";
+
+  const root = document.querySelector("#tutorial-surface-root");
+  if (root instanceof HTMLElement) {
+    mountTutorialSurface(root);
+  }
+</script>

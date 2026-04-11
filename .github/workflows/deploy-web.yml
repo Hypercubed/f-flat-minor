@@ -6,6 +6,7 @@ on:
       - main
     paths:
       - "web/**"
+      - "ff/**"
       - "typescript/core/**"
       - ".github/workflows/deploy-web.yml"
   workflow_dispatch:

@@ -1,0 +1,12 @@
+<section class="page-section">
+  <div id="playground-surface-root"></div>
+</section>
+
+<script>
+  import { mountPlaygroundSurface } from "../client/mount-playground.ts";
+
+  const root = document.querySelector("#playground-surface-root");
+  if (root instanceof HTMLElement) {
+    mountPlaygroundSurface(root);
+  }
+</script>

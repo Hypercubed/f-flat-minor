@@ -1,0 +1,12 @@
+<section class="page-section">
+  <div id="repl-surface-root"></div>
+</section>
+
+<script>
+  import { mountRepl } from "../client/mount-repl.ts";
+
+  const root = document.querySelector("#repl-surface-root");
+  if (root instanceof HTMLElement) {
+    mountRepl(root);
+  }
+</script>
