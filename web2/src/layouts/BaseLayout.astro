@@ -67,11 +67,16 @@ const {
         toggleRunFeedback,
       } from "../client/run-feedback.ts";
 
-      const legacyRedirectUrl = getLegacyRouteRedirectUrl(window.location);
+      function syncLegacyHashRouting() {
+        const legacyRedirectUrl = getLegacyRouteRedirectUrl(window.location);
+        if (legacyRedirectUrl) {
+          window.location.replace(legacyRedirectUrl);
+          return true;
+        }
+        return false;
+      }
 
-      if (legacyRedirectUrl) {
-        window.location.replace(legacyRedirectUrl);
-      } else {
+      if (!syncLegacyHashRouting()) {
         loadRunFeedbackPreference();
 
         const runFeedbackToggle = document.querySelector("#run-feedback-toggle");
@@ -82,6 +87,10 @@ const {
             syncRunFeedbackToggleButton(runFeedbackToggle);
           });
         }
+
+        window.addEventListener("hashchange", () => {
+          syncLegacyHashRouting();
+        });
       }
       </script>
       <slot />
