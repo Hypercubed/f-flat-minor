@@ -10,7 +10,8 @@ This page lists the public words currently defined in the top-level `seq` librar
 
 ## `seq.ffp`
 
-Source: `ff/lib/seq/seq.ffp`
+Source: `ff/lib/seq/seq.ffp`  
+Import: `.import <seq/seq>`
 
 | Word | Stack effect | Description |
 |------|--------------|-------------|

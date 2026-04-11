@@ -83,6 +83,14 @@ export function createPreprocessHost(files: VirtualFiles): PreprocessHost {
     fileExists(path: string) {
       return typeof files[normalizePath(path)] === "string";
     },
+    directoryExists(path: string) {
+      const normalized = normalizePath(path).replace(/\/+$/, "");
+      const prefix = normalized === "/" ? "/" : `${normalized}/`;
+      return Object.keys(files).some((entry) => entry.startsWith(prefix));
+    },
+    realpath(path: string) {
+      return normalizePath(path);
+    },
     path: {
       isAbsolute(path: string) {
         return path.startsWith("/");

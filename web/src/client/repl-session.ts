@@ -4,7 +4,7 @@ import type { ValueInspection } from "../../../typescript/core/src/engine.ts";
 import { createReplVirtualFiles } from "./repl-files.ts";
 import { createBrowserPlatform, createPreprocessHost, type VirtualFiles } from "./runtime.ts";
 
-const PRELUDE = "/lib/prelude.ffp";
+const DEFAULT_STDLIB_ROOTS = ["/lib"];
 
 export interface StackItem {
   value: string;
@@ -66,11 +66,12 @@ export class ReplSession {
         compiler: macroCompiler,
       },
       {
-        macroEngineBootstrapFile: PRELUDE,
+        macroEngineBootstrapFile: "<prelude>",
+        stdlibRoots: DEFAULT_STDLIB_ROOTS,
       },
     );
 
-    this.execute(`.import ${PRELUDE}`);
+    this.execute(".import <prelude>");
   }
 
   inspectValue(valueStr: string): ValueInspection {

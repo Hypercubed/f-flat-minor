@@ -27,5 +27,7 @@ export interface PreprocessHost {
   exit?: (code?: number) => void;
   readTextFile(path: string): string;
   fileExists(path: string): boolean;
+  directoryExists(path: string): boolean;
+  realpath(path: string): string;
   path: PathHost;
 }

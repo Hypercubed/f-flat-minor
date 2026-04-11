@@ -9,4 +9,4 @@ __closer: dup2 2 ^ / over 2 * + 3 / ;
 __loop: __closer dup2 > [ nip __loop ] ? ;
 __cbrtn: dup 3 / __loop drop nip ;
 
-icbrt: dup sgn swap over * dup 1 > [ __cbrtn ] ? * ;
+icbrt: dup sgn swap over * dup 1 > [ __cbrtn ] ? * ; /* x icbrt == ⌊cbrt(x)⌋₀ */

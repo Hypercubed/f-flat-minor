@@ -1,4 +1,4 @@
-.import ../../lib/prelude.ffp
+.import <prelude>
 
 next-collatz: dup even? [ 2 / ] [ 3 * 1 + ] branch ;
 collatz-steps: dup 1 > [ next-collatz collatz-steps ++ ] [ drop 0 ] branch ;

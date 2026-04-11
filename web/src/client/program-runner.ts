@@ -12,8 +12,8 @@ import {
 import { createVirtualFiles } from "./examples.ts";
 import { createBrowserPlatform, createPreprocessHost } from "./runtime.ts";
 
-const PRELUDE = "/lib/prelude.ffp";
 const DEFAULT_PROGRAM_FILENAME = "/main.ffp";
+const DEFAULT_STDLIB_ROOTS = ["/lib"];
 
 export type RunTerminalState = "done" | "cancelled" | "error";
 
@@ -128,7 +128,8 @@ function createProgramContext(source: string, stdin: string, options: ProgramRun
       compiler: macroCompiler,
     },
     {
-      macroEngineBootstrapFile: PRELUDE,
+      macroEngineBootstrapFile: "<prelude>",
+      stdlibRoots: DEFAULT_STDLIB_ROOTS,
     },
   );
 

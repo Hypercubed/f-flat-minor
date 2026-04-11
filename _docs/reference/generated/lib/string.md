@@ -10,7 +10,8 @@ This page lists the public words currently defined in the top-level `string` lib
 
 ## `char.ffp`
 
-Source: `ff/lib/string/char.ffp`
+Source: `ff/lib/string/char.ffp`  
+Import: `.import <string/char>`
 
 | Word | Stack effect | Description |
 |------|--------------|-------------|
@@ -26,7 +27,8 @@ Source: `ff/lib/string/char.ffp`
 
 ## `str.ffp`
 
-Source: `ff/lib/string/str.ffp`
+Source: `ff/lib/string/str.ffp`  
+Import: `.import <string/str>`
 
 | Word | Stack effect | Description |
 |------|--------------|-------------|

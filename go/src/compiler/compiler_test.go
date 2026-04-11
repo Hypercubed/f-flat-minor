@@ -1,6 +1,7 @@
 package compiler
 
 import (
+	"m/src/preprocess"
 	. "m/src/utils"
 	"math/big"
 	"os"
@@ -62,5 +63,42 @@ func TestCompileToIRManglesImportedPrivateWords(t *testing.T) {
 	)
 	if len(ir) == 0 {
 		t.Fatalf("expected compiled IR for imported files")
+	}
+}
+
+func TestCompileToIRResolvesStdlibImports(t *testing.T) {
+	resetCompilerStateForTest()
+	Setup()
+
+	tmpDir := t.TempDir()
+	mainFile := filepath.Join(tmpDir, "main.ffp")
+	stdlibRoot := filepath.Join(tmpDir, "stdlib")
+	stdlibFile := filepath.Join(stdlibRoot, "prelude.ffp")
+
+	check(os.MkdirAll(filepath.Dir(stdlibFile), 0o755))
+	check(os.WriteFile(stdlibFile, []byte("answer: 42 ;\n"), 0o644))
+
+	ir := CompileToIRWithOptions(Tokenize(".import <prelude>\nanswer\n"), mainFile, preprocess.Options{
+		StdlibRoots: []string{stdlibRoot},
+	})
+	if len(ir) == 0 {
+		t.Fatalf("expected compiled IR for stdlib import")
+	}
+}
+
+func TestCompileToIRDedupesCanonicalImportedPaths(t *testing.T) {
+	resetCompilerStateForTest()
+	Setup()
+
+	tmpDir := t.TempDir()
+	mainFile := filepath.Join(tmpDir, "main.ffp")
+	importedFile := filepath.Join(tmpDir, "lib", "private.ffp")
+
+	check(os.MkdirAll(filepath.Dir(importedFile), 0o755))
+	check(os.WriteFile(importedFile, []byte("__hidden: 1 ;\n"), 0o644))
+
+	ir := CompileToIR(Tokenize(".import ./lib/private.ffp\n.import ./lib/../lib/private.ffp\n"), mainFile)
+	if len(ir) == 0 {
+		t.Fatalf("expected compiled IR for canonical dedup test")
 	}
 }

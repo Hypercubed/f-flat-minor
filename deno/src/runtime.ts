@@ -55,11 +55,20 @@ export function createDenoPreprocessHost(): PreprocessHost {
     },
     fileExists(pathname: string) {
       try {
-        Deno.statSync(pathname);
-        return true;
+        return Deno.statSync(pathname).isFile;
       } catch {
         return false;
       }
+    },
+    directoryExists(pathname: string) {
+      try {
+        return Deno.statSync(pathname).isDirectory;
+      } catch {
+        return false;
+      }
+    },
+    realpath(pathname: string) {
+      return Deno.realPathSync(pathname);
     },
     path,
   };

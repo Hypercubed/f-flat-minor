@@ -1,4 +1,4 @@
-.import ../../lib/prelude.ffp
+.import <prelude>
 
 next: dup even? [ 2 / ] [ 3 * 1 + ] branch ;
 steps: dup 1 > [ next steps ++ ] [ drop 0 ] branch ;

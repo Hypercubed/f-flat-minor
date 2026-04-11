@@ -5,12 +5,12 @@
 __base: 2 >> __next 1 << ; /* n __base == 2*sqrt(n/4) */
 
 __pick:
-  dup ++ dup * /* n x (x+1)^2 */
-  dig /* x (x+1)^2 n */
+  dup ++ dup * /* n x (x+1)² */
+  dig /* x (x+1)² n */
   <=
   [ ++ ] /* x+1 */
   ? /* else x */
-; /* n x __pick == floor(sqrt(n)) */
+; /* n x __pick == ⌊sqrt(n)⌋ */
 
 __next:
   dup 1 > [ /* n if n < 2 */
@@ -20,15 +20,15 @@ __next:
   ] ?
 ;
 
-/* x -- floor(sqrt(x)) | errors on negative x (division by zero) */
+/* x -- ⌊sqrt(x)⌋ | errors on negative x (division by zero) */
 isqrt:
   dup 0 < [ 1 0 / ] ? /* error: negative input */
   __next ;
 
-/* x -- floor(sqrt(x)) x-floor(sqrt(x))^2 */
+/* x -- ⌊sqrt(x)⌋ x-⌊sqrt(x)⌋² */
 isqrtrem: dup isqrt tuck 2 ^ - ;
 
-/* n x -- floor(10^n*sqrt(x)) | errors on negative x (division by zero) */
+/* n x -- ⌊10ⁿ*sqrt(x)⌋ | errors on negative x (division by zero) */
 nsqrt:
   dup 0 < [ 1 0 / ] ? /* error: negative input */
   swap n->S2 * isqrt

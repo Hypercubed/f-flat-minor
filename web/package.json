@@ -3,7 +3,9 @@
   "private": true,
   "type": "module",
   "scripts": {
-    "dev": "astro dev",
+    "sync-docs": "node ./scripts/sync-docs.mjs",
+    "prebuild": "npm run sync-docs",
+    "dev": "sh -c 'node ./scripts/sync-docs.mjs --watch & watcher=$!; trap \"kill $watcher 2>/dev/null\" EXIT INT TERM; astro dev'",
     "build": "astro build",
     "preview": "astro preview",
     "astro": "astro"

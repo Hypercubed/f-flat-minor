@@ -1,12 +1,13 @@
 ---
 title: Reference
-summary: Browse quick help, core primitives, and generated standard-library reference pages for the current F-flat-minor manual.
+summary: Browse the manual introduction, quick help, core primitives, and generated standard-library reference pages for the current F-flat-minor manual.
 order: 0
 showInSidebar: false
 ---
 
 # Reference
 
+- [Introduction](../manual/introduction.md) — starting point for the manual section and overall docs map
 - [Quick help](./quickhelp.md) — compact language overview adapted from the current web help page
 - [Core primitives reference](./core-primitives.md) — VM primitives (`_docs/core-vocabulary.md`) and which runtimes implement each word
 

@@ -14,9 +14,20 @@ import { Preprocessor } from "../src/preprocess.ts";
 import { dec2hex } from "../src/strings.ts";
 import { red as coreRed } from "../src/colors.ts";
 import type { CompileArgs } from "../src/args.ts";
+import { buildStdlibRootList, FBM_STDLIB_PATH_ENV, normalizeStdlibRootArgs } from "../src/args.ts";
+import { resolveDefaultStdlibRoot } from "../src/stdlib-roots.ts";
 
-const __dirname = path.dirname(path.fromFileUrl(import.meta.url));
-const PRELUDE = path.resolve(__dirname, "../../ff/lib/prelude.ffp");
+const STDLIB_ROOT = resolveDefaultStdlibRoot(import.meta.url);
+const PRELUDE = "<prelude>";
+
+function getStdlibRoots(argv: CompileArgs): string[] {
+  return buildStdlibRootList({
+    defaultRoot: STDLIB_ROOT,
+    delimiter: path.DELIMITER,
+    envValue: Deno.env.get(FBM_STDLIB_PATH_ENV),
+    cliRoots: argv["stdlib-root"],
+  });
+}
 
 export function run(argv: CompileArgs) {
   const filename = argv.file || "-";
@@ -27,7 +38,10 @@ export function run(argv: CompileArgs) {
   if (!('preprocess' in argv) || argv.preprocess) {
     const loadPreprocessorPrelude = !!(argv["preprocessor-prelude"] || argv.prelude);
     const preprocessor = new Preprocessor(
-      loadPreprocessorPrelude ? { macroEngineBootstrapFile: PRELUDE } : undefined,
+      {
+        stdlibRoots: getStdlibRoots(argv),
+        ...(loadPreprocessorPrelude ? { macroEngineBootstrapFile: PRELUDE } : {}),
+      },
     );
     code = preprocessor.preprocess(Preprocessor.tokenize(code), filename);
   }
@@ -143,7 +157,8 @@ if (import.meta.main) {
       "preprocessor-prelude",
       "prelude",
     ],
-    string: ["file"],
+    string: ["file", "stdlib-root"],
+    collect: ["stdlib-root"],
     default: {
       preprocess: true,
       stats: false,
@@ -179,6 +194,7 @@ if (import.meta.main) {
   const argv: CompileArgs = {
     ...parsed,
     file: (parsed._?.[0] as string) || parsed.file || "-",
+    "stdlib-root": normalizeStdlibRootArgs(parsed["stdlib-root"]),
   };
 
   run(argv);

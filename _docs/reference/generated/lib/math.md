@@ -10,7 +10,8 @@ This page groups the public words from the files imported by `ff/lib/math/math.f
 
 ## `pred.ffp`
 
-Source: `ff/lib/math/pred.ffp`
+Source: `ff/lib/math/pred.ffp`  
+Import: `.import <math/pred>`
 
 | Word | Stack effect | Description |
 |------|--------------|-------------|
@@ -22,72 +23,79 @@ Source: `ff/lib/math/pred.ffp`
 
 ## `arith.ffp`
 
-Source: `ff/lib/math/arith.ffp`
+Source: `ff/lib/math/arith.ffp`  
+Import: `.import <math/arith>`
 
 | Word | Stack effect | Description |
 |------|--------------|-------------|
-| `sgn` | `n -- -1 or 0 or 1` | Returns the sign of a number. |
-| `abs` | `n -- |n|` | Returns the absolute value. |
-| `sqr` | `n -- n^2` | Squares a number. |
+| `sgn` | `x -- sgn(x)` | Returns the sign of a number. |
+| `abs` | `x -- \|x\|` | Returns the absolute value. |
+| `sqr` | `x -- x²` | Squares a number. |
 | `min` | `a b -- min` | Returns the smaller of two values. |
 | `max` | `a b -- max` | Returns the larger of two values. |
-| `clamp` | `lo hi n -- n'` | Constrains a value to an inclusive range. |
+| `clamp` | `lo hi x -- x'` | Constrains a value to an inclusive range. |
 | `divrem` | `a b -- q r` | Returns quotient and remainder together. |
 
 ## `num.ffp`
 
-Source: `ff/lib/math/num.ffp`
+Source: `ff/lib/math/num.ffp`  
+Import: `.import <math/num>`
 
 | Word | Stack effect | Description |
 |------|--------------|-------------|
 | `!` | `n -- n!` | Computes factorial. |
 | `nck` | `n k -- C(n,k)` | Computes a binomial coefficient. |
-| `^^` | `a b -- n` | Applies Knuth up-arrow tetration. |
-| `^^^` | `a b -- n` | Applies the next higher Knuth hyper-operator. |
+| `^^` | `a b -- a↑↑b` | Applies Knuth up-arrow tetration. |
+| `^^^` | `a b -- a↑↑↑b` | Applies the next higher Knuth hyper-operator. |
 
 ## `atan.ffp`
 
-Source: `ff/lib/math/atan.ffp`
+Source: `ff/lib/math/atan.ffp`  
+Import: `.import <math/atan>`
 
 | Word | Stack effect | Description |
 |------|--------------|-------------|
-| `iatan` | `x -- floor(atan(x))` | Integer arctangent with zero decimal places. |
-| `natan` | `n x -- floor(10^n*atan(x))` | Fixed-point arctangent at decimal precision `n`. |
-| `qatan` | `u v -- floor(atan(u/v))` | Integer arctangent of a rational input. |
-| `atan-inv` | `n x -- floor(10^n*atan(1/x))` | Fixed-point arctangent of the reciprocal input. |
+| `iatan` | `x -- ⌊atan(x)⌋₀` | Integer arctangent with zero decimal places. |
+| `natan` | `n x -- ⌊10ⁿ*atan(x)⌋₀` | Fixed-point arctangent at decimal precision `n`. |
+| `qatan` | `u v -- ⌊atan(u/v)⌋₀` | Integer arctangent of a rational input. |
+| `atan-inv` | `n x -- ⌊10ⁿ*atan(1/x)⌋₀` | Fixed-point arctangent of the reciprocal input. |
 
 ## `atanh.ffp`
 
-Source: `ff/lib/math/atanh.ffp`
+Source: `ff/lib/math/atanh.ffp`  
+Import: `.import <math/atanh>`
 
 | Word | Stack effect | Description |
 |------|--------------|-------------|
-| `iatanh` | `x -- floor(atanh(x))` | Integer inverse hyperbolic tangent with zero decimal places. |
-| `natanh` | `n x -- floor(10^n*atanh(x))` | Fixed-point inverse hyperbolic tangent at decimal precision `n`. |
-| `qatanh` | `u v -- floor(atanh(u/v))` | Integer inverse hyperbolic tangent of a rational input. |
-| `atanh-inv` | `n x -- floor(10^n*atanh(1/x))` | Fixed-point inverse hyperbolic tangent of the reciprocal input. |
+| `iatanh` | `x -- ⌊atanh(x)⌋₀` | Integer inverse hyperbolic tangent with zero decimal places. |
+| `natanh` | `n x -- ⌊10ⁿ*atanh(x)⌋₀` | Fixed-point inverse hyperbolic tangent at decimal precision `n`. |
+| `qatanh` | `u v -- ⌊atanh(u/v)⌋₀` | Integer inverse hyperbolic tangent of a rational input. |
+| `atanh-inv` | `n x -- ⌊10ⁿ*atanh(1/x)⌋₀` | Fixed-point inverse hyperbolic tangent of the reciprocal input. |
 
 ## `sqrt.ffp`
 
-Source: `ff/lib/math/sqrt.ffp`
+Source: `ff/lib/math/sqrt.ffp`  
+Import: `.import <math/sqrt>`
 
 | Word | Stack effect | Description |
 |------|--------------|-------------|
-| `isqrt` | `x -- floor(sqrt(x))` | Returns the integer square root of a non-negative input. |
-| `isqrtrem` | `x -- floor(sqrt(x)) x-floor(sqrt(x))^2` | Returns the integer square root and leftover remainder. |
-| `nsqrt` | `n x -- floor(10^n*sqrt(x))` | Returns a fixed-point square root with `n` decimal digits. |
+| `isqrt` | `x -- ⌊sqrt(x)⌋` | Returns the integer square root of a non-negative input. |
+| `isqrtrem` | `x -- ⌊sqrt(x)⌋ x-⌊sqrt(x)⌋²` | Returns the integer square root and leftover remainder. |
+| `nsqrt` | `n x -- ⌊10ⁿ*sqrt(x)⌋` | Returns a fixed-point square root with `n` decimal digits. |
 
 ## `cbrt.ffp`
 
-Source: `ff/lib/math/cbrt.ffp`
+Source: `ff/lib/math/cbrt.ffp`  
+Import: `.import <math/cbrt>`
 
 | Word | Stack effect | Description |
 |------|--------------|-------------|
-| `icbrt` | `x -- trunc(cbrt(x))` | Returns the integer cube root, truncated toward zero. |
+| `icbrt` | `x -- ⌊cbrt(x)⌋₀` | Returns the integer cube root, truncated toward zero. |
 
 ## `gcd.ffp`
 
-Source: `ff/lib/math/gcd.ffp`
+Source: `ff/lib/math/gcd.ffp`  
+Import: `.import <math/gcd>`
 
 | Word | Stack effect | Description |
 |------|--------------|-------------|
@@ -96,7 +104,8 @@ Source: `ff/lib/math/gcd.ffp`
 
 ## `ack.ffp`
 
-Source: `ff/lib/math/ack.ffp`
+Source: `ff/lib/math/ack.ffp`  
+Import: `.import <math/ack>`
 
 | Word | Stack effect | Description |
 |------|--------------|-------------|
@@ -104,7 +113,8 @@ Source: `ff/lib/math/ack.ffp`
 
 ## `primes.ffp`
 
-Source: `ff/lib/math/primes.ffp`
+Source: `ff/lib/math/primes.ffp`  
+Import: `.import <math/primes>`
 
 | Word | Stack effect | Description |
 |------|--------------|-------------|
@@ -115,47 +125,52 @@ Source: `ff/lib/math/primes.ffp`
 
 ## `log.ffp`
 
-Source: `ff/lib/math/log.ffp`
+Source: `ff/lib/math/log.ffp`  
+Import: `.import <math/log>`
 
 | Word | Stack effect | Description |
 |------|--------------|-------------|
-| `nln2` | `n -- floor(10^n*ln(2))` | Computes a fixed-point approximation of `ln(2)`. |
-| `ilb` | `x -- floor(log2(x))` | Returns the integer base-2 logarithm. |
-| `ilog` | `x -- floor(log10(x))` | Returns the integer base-10 logarithm. |
-| `iln` | `x -- floor(ln(x))` | Returns an integer natural logarithm approximation. |
+| `nln2` | `n -- ⌊10ⁿ*ln(2)⌋` | Computes a fixed-point approximation of `ln(2)`. |
+| `ilb` | `x -- ⌊log2(x)⌋` | Returns the integer base-2 logarithm. |
+| `ilog` | `x -- ⌊log10(x)⌋` | Returns the integer base-10 logarithm. |
+| `iln` | `x -- ⌊ln(x)⌋` | Returns an integer natural logarithm approximation. |
 
 ## `exp.ffp`
 
-Source: `ff/lib/math/exp.ffp`
+Source: `ff/lib/math/exp.ffp`  
+Import: `.import <math/exp>`
 
 | Word | Stack effect | Description |
 |------|--------------|-------------|
-| `iexp` | `x -- floor(e^x)` | Computes a floored integer exponential using a fixed fast path. |
-| `nexp` | `n x -- floor(10^n*e^x)` | Computes a fixed-point exponential at decimal precision `n`. |
-| `ncosh` | `n x -- floor(cosh(x)*10^n)` | Computes fixed-point hyperbolic cosine. |
-| `nsinh` | `n x -- floor(sinh(x)*10^n)` | Computes fixed-point hyperbolic sine. |
-| `icosh` | `x -- floor(cosh(x))` | Integer hyperbolic cosine wrapper around `ncosh`. |
-| `isinh` | `x -- floor(sinh(x))` | Integer hyperbolic sine wrapper around `nsinh`. |
+| `iexp` | `x -- ⌊eˣ⌋` | Computes a floored integer exponential using a fixed fast path. |
+| `nexp` | `n x -- ⌊10ⁿ*eˣ⌋` | Computes a fixed-point exponential at decimal precision `n`. |
+| `ncosh` | `n x -- ⌊cosh(x)*10ⁿ⌋` | Computes fixed-point hyperbolic cosine. |
+| `nsinh` | `n x -- ⌊sinh(x)*10ⁿ⌋` | Computes fixed-point hyperbolic sine. |
+| `icosh` | `x -- ⌊cosh(x)⌋` | Integer hyperbolic cosine wrapper around `ncosh`. |
+| `isinh` | `x -- ⌊sinh(x)⌋` | Integer hyperbolic sine wrapper around `nsinh`. |
 
 ## `pi.ffp`
 
-Source: `ff/lib/math/pi.ffp`
+Source: `ff/lib/math/pi.ffp`  
+Import: `.import <math/pi>`
 
 | Word | Stack effect | Description |
 |------|--------------|-------------|
-| `npi` | `n -- floor(10^n*pi)` | Computes `pi` to `n` decimal places in fixed-point form. |
-| `tau` | `n -- floor(10^n*2*pi)` | Computes `tau` to `n` decimal places in fixed-point form. |
-| `half_pi` | `n -- floor(10^n*pi/2)` | Computes `pi/2` to `n` decimal places in fixed-point form. |
+| `npi` | `n -- ⌊10ⁿ*π⌋` | Computes `pi` to `n` decimal places in fixed-point form. |
+| `tau` | `n -- ⌊10ⁿ*2*π⌋` | Computes `tau` to `n` decimal places in fixed-point form. |
+| `half_pi` | `n -- ⌊10ⁿ*π/2⌋` | Computes `pi/2` to `n` decimal places in fixed-point form. |
 
 ## `trig.ffp`
 
-Source: `ff/lib/math/trig.ffp`
+Source: `ff/lib/math/trig.ffp`  
+Import: `.import <math/trig>`
 
 This file is currently a placeholder and does not define public words yet.
 
 ## `prn.ffp`
 
-Source: `ff/lib/math/prn.ffp`
+Source: `ff/lib/math/prn.ffp`  
+Import: `.import <math/prn>`
 
 | Word | Stack effect | Description |
 |------|--------------|-------------|

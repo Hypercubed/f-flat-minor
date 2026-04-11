@@ -1,14 +1,16 @@
 ---
-status: proposed
-status_date: 2026-04-10
+status: done
+status_date: 2026-04-11
 creator: GPT-5.4
 ---
 
 # Plan: Directory Loading for `.import`
 
+Implemented as part of `_plans/fbm-preprocessor-import-path-overhaul.md` via the shared import resolver.
+
 ## Goal
 
-When `.import math` is encountered and `math` is a directory (not a file), the preprocessor should automatically resolve it to `math/math.ffp` — the same-named index file inside that directory.
+When `.import math` is encountered and `math` is a directory (not a file), the preprocessor automatically resolves it to `math/math.ffp` — the same-named index file inside that directory.
 
 ## Current Behavior
 
@@ -16,7 +18,7 @@ When `.import math` is encountered and `math` is a directory (not a file), the p
 
 ## Desired Behavior
 
-`.import <path>` resolution order:
+`.import <path>` resolution order is:
 
 1. If `<path>` exists as a file → load it (current behavior, unchanged)
 2. If `<path>` is a directory → resolve to `<path>/<basename>.ffp` and load that
@@ -56,11 +58,11 @@ function resolveImport(rawPath, baseDir):
 
 ### Integration point
 
-This logic belongs in the preprocessor's import resolver, before the file is opened for reading. No changes are needed to the parser, tokenizer, or VM.
+This logic now lives in the preprocessor's import resolver, before the file is opened for reading. No changes were needed to the parser, tokenizer, or VM.
 
 ### Extension stripping (optional)
 
-If `.import math.ffp` and `.import math` should both work, the resolver can additionally try stripping the `.ffp` extension and retrying as a directory lookup. Suggested resolution order if this is desired:
+If `.import math.ffp` and `.import math` both need to work, the resolver can additionally try stripping the `.ffp` extension and retrying as a directory lookup. Suggested resolution order for that optional behavior is:
 
 1. Exact file match
 2. Exact file match with `.ffp` appended (if no extension given)
@@ -69,7 +71,7 @@ If `.import math.ffp` and `.import math` should both work, the resolver can addi
 
 ## Guard: already-loaded files
 
-Directory resolution should participate in the existing already-loaded guard (if one exists) so that `.import seq` and `.import seq/seq.ffp` in the same session do not load the file twice. The canonical key should be the fully resolved absolute path after directory expansion.
+Directory resolution participates in the existing already-loaded guard so that `.import seq` and `.import seq/seq.ffp` in the same session do not load the file twice. The canonical key is the fully resolved absolute path after directory expansion.
 
 ## Error messages
 

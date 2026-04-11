@@ -4,6 +4,7 @@ import (
 	"flag"
 	"fmt"
 	"io/ioutil"
+	"m/cmd/internal/stdlibroots"
 	"m/src/compiler"
 	"m/src/engine"
 	"m/src/preprocess"
@@ -22,7 +23,12 @@ func main() {
 
 	preprocessFlagPtr := flag.Bool("preprocess", false, "only preprocess, don't execute")
 	inFlagPtr := flag.String("in", "-", "the input file")
+	var stdlibRootFlags stdlibroots.Flag
+	flag.Var(&stdlibRootFlags, "stdlib-root", "append a standard library search root")
 	flag.Parse()
+	stdlibOptions := preprocess.Options{
+		StdlibRoots: preprocess.BuildStdlibRoots(stdlibRootFlags.Values()),
+	}
 
 	code := ""
 
@@ -38,14 +44,14 @@ func main() {
 
 	if *preprocessFlagPtr {
 		// Preprocess mode: resolve imports and output flat .ff source
-		preprocessed := preprocess.New(*inFlagPtr).Process(code, *inFlagPtr)
+		preprocessed := preprocess.NewWithOptions(*inFlagPtr, stdlibOptions).Process(code, *inFlagPtr)
 		fmt.Println(preprocessed)
 		return
 	}
 
 	tokens := compiler.Tokenize(code)
 
-	ir := compiler.CompileToIR(tokens, *inFlagPtr)
+	ir := compiler.CompileToIRWithOptions(tokens, *inFlagPtr, stdlibOptions)
 
 	bigInt := compiler.CompileToBigIntArray(ir)
 

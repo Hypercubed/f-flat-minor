@@ -10,7 +10,8 @@ This page lists the public words currently defined in the top-level `time` libra
 
 ## `utc.ffp`
 
-Source: `ff/lib/time/utc.ffp`
+Source: `ff/lib/time/utc.ffp`  
+Import: `.import <time/utc>`
 
 | Word | Stack effect | Description |
 |------|--------------|-------------|

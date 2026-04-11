@@ -104,7 +104,10 @@ Common flags:
 - `-p, --profile` — Enable profiling output
 - `-E, --preprocess` / `--no-preprocess` — Enable/disable preprocessing (default: enabled)
 - `-P, --preprocessor-prelude, --prelude` — Load the preprocessor prelude macros
+- `--stdlib-root <path>` — Append an additional stdlib search root (repeatable)
 - `--base` — Numeric base for output (default: 10)
+
+Preprocessor import rules match Deno: relative-style imports stay source-file-relative, angle-bracket imports resolve through built-in `ff/lib`, `FBM_STDLIB_PATH`, then repeated `--stdlib-root` entries, and directory imports resolve to same-name index files.
 
 ### `bin/ers.ts`
 

@@ -453,6 +453,24 @@ img {
   gap: 0.65rem;
 }
 
+.reference-nav-group {
+  display: grid;
+  gap: 0.65rem;
+}
+
+.reference-nav-group + .reference-nav-group {
+  padding-top: 0.2rem;
+}
+
+.reference-nav-group-label {
+  margin: 0;
+  font-size: 0.78rem;
+  font-weight: 700;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--muted);
+}
+
 .reference-doc-link {
   display: grid;
   gap: 0.2rem;
@@ -1027,7 +1045,7 @@ img {
 }
 
 code {
-  font-family: "Iosevka", "Cascadia Code", "SFMono-Regular", monospace;
+  font-family: "SFMono-Regular", monospace;
   font-size: 0.95em;
 }
 

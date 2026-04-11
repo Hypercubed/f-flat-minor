@@ -1,4 +1,4 @@
-.import ./lib/prelude.ffp
+.import <prelude>
 
 1 q< 2 q>
 

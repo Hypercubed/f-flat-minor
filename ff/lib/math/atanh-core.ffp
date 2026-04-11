@@ -4,7 +4,7 @@
  * Shared artanh Taylor core without log-dependent range reduction.
  *
  * Public contract:
- *   n u v _atanh__core_scaled -- floor(10^n * atanh(u/v))
+ *   n u v _atanh__core_scaled -- ⌊10^n*atanh(u/v)⌋
  *
  * for reduced positive ratios satisfying 0 <= u < v.
  */
@@ -45,4 +45,4 @@ _atanh__core_scaled:
   dup
   [ rot __parts ] dip
   p/q*S
-; /* n u v _atanh__core_scaled == floor(10^n*atanh(u/v)) for reduced positive ratios */
+; /* n u v _atanh__core_scaled == ⌊10^n*atanh(u/v)⌋ for reduced positive ratios */

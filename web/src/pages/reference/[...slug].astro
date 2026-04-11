@@ -1,28 +1,27 @@
 ---
+import { getCollection, render } from "astro:content";
 import ReferenceContent from "../../components/ReferenceContent.astro";
-import { getReferencePages, getReferenceSidebarPages, renderReferencePage, type ReferencePage } from "../../data/reference";
+import { getDocsSidebarGroups, getDocsSlug } from "../../data/docs";
 
-interface Props {
-  page: ReferencePage;
-}
+export async function getStaticPaths() {
+  const pages = await getCollection("docs");
 
-export function getStaticPaths() {
-  return getReferencePages()
-    .filter((page) => page.slugSegments.length > 0)
+  return pages
+    .filter((page) => getDocsSlug(page) !== "")
     .map((page) => ({
-      params: { slug: page.slugSegments.join("/") },
-      props: { page },
+      params: { slug: getDocsSlug(page) },
     }));
 }
 
-const pages = getReferenceSidebarPages();
-const { page } = Astro.props as Props;
+const slug = Astro.params.slug;
+const page = slug ? (await getCollection("docs")).find((entry) => getDocsSlug(entry) === slug) : undefined;
 
 if (!page) {
   throw new Error("Missing reference page.");
 }
 
-const html = await renderReferencePage(page);
+const sidebarGroups = await getDocsSidebarGroups();
+const { Content } = await render(page);
 ---
 
-<ReferenceContent page={page} pages={pages} html={html} />
+<ReferenceContent page={page} sidebarGroups={sidebarGroups} Content={Content} />

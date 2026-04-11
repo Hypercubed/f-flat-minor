@@ -76,8 +76,8 @@ branch: choose eval ; /* a flag [B] [C] branch == b* or c* */
 
 /* stack */
 
-empty?: depth zero? ; /* .. empty? == .. flag */
-pushtop: depth 1 > [ swap [pushtop] dip ] ? ; /* .. a pushtop == a .. */
+empty?: depth zero? ; /* … empty? == … flag */
+pushtop: depth 1 > [ swap [pushtop] dip ] ? ; /* … a pushtop == a … */
 
 /* counters */
 

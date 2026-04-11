@@ -4,6 +4,7 @@ export interface CommonArgs {
   file?: string;
   prelude?: boolean;
   "preprocessor-prelude"?: boolean;
+  "stdlib-root"?: string[];
 }
 
 export interface PreprocessArgs extends CommonArgs {
@@ -49,4 +50,40 @@ export interface ReplArgs {
   core?: boolean;
   prelude?: boolean;
   "preprocessor-prelude"?: boolean;
+  "stdlib-root"?: string[];
+}
+
+export const FBM_STDLIB_PATH_ENV = "FBM_STDLIB_PATH";
+
+export function normalizeStdlibRootArgs(value: unknown): string[] {
+  if (Array.isArray(value)) {
+    return value.filter((entry): entry is string => typeof entry === "string" && entry.length > 0);
+  }
+  if (typeof value === "string" && value.length > 0) {
+    return [value];
+  }
+  return [];
+}
+
+export function splitStdlibEnvRoots(
+  value: string | undefined,
+  delimiter: string,
+): string[] {
+  if (!value) {
+    return [];
+  }
+  return value.split(delimiter).filter((entry) => entry.length > 0);
+}
+
+export function buildStdlibRootList(options: {
+  defaultRoot: string;
+  delimiter: string;
+  envValue?: string;
+  cliRoots?: unknown;
+}): string[] {
+  return [
+    options.defaultRoot,
+    ...splitStdlibEnvRoots(options.envValue, options.delimiter),
+    ...normalizeStdlibRootArgs(options.cliRoots),
+  ];
 }

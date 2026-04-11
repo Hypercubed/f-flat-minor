@@ -1,4 +1,4 @@
-.import ./lib/prelude.ffp
+.import <prelude>
 .import ./lib/string/string.ffp
 
 cond: q< sip swap q> swap [ eval ] [ drop ] branch ;

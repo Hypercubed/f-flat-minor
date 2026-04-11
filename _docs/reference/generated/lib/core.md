@@ -10,7 +10,8 @@ This page lists the public words currently defined in the top-level `core` libra
 
 ## `core.ff`
 
-Source: `ff/lib/core/core.ff`
+Source: `ff/lib/core/core.ff`  
+Import: `.import <core/core>`
 
 | Word | Stack effect | Description |
 |------|--------------|-------------|
@@ -57,8 +58,8 @@ Source: `ff/lib/core/core.ff`
 | `and_also` | `a [B] [C] -- flag` | Short-circuits to false or evaluates a continuation quotation. |
 | `choose` | `a b flag -- a or b` | Selects one of two values based on a flag. |
 | `branch` | `a flag [B] [C] -- b* or c*` | Evaluates one of two quotations based on a flag. |
-| `empty?` | `.. -- .. flag` | Tests whether the data stack is empty. |
-| `pushtop` | `.. a -- a ..` | Moves the top item to the bottom of the current stack. |
+| `empty?` | `… -- … flag` | Tests whether the data stack is empty. |
+| `pushtop` | `… a -- a …` | Moves the top item to the bottom of the current stack. |
 | `loop` | `a [B] n -- a b* [B]` | Repeats a quotation `n` times, leaving the quotation. |
 | `times` | `a [B] n -- a b*` | Repeats a quotation `n` times and discards the quotation. |
 | `seq` | `a n [B] -- a b*` | Builds a sequence of repeated quotation applications from a seed value. |

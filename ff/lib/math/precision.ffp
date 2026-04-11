@@ -2,10 +2,10 @@
 .import ./arith.ffp
 
 /* Internal precision helpers shared by variable-precision math words. */
-n->S: 10 swap ^ ; /* n n->S == 10^n */
-n->S2: 2 * n->S ; /* n n->S2 == 10^(2n) */
-n->K: 6 * 4 + 5 / 10 + ; /* n n->K == ceil(6*n/5)+10 */
-p/q*S: n->S swap rot * swap / ; /* p q n p/q*S == floor(p*10^n/q) */
+n->S: 10 swap ^ ; /* n n->S == 10ⁿ */
+n->S2: 2 * n->S ; /* n n->S2 == 10²ⁿ */
+n->K: 6 * 4 + 5 / 10 + ; /* n n->K == ⌈6*n/5⌉+10 */
+p/q*S: n->S swap rot * swap / ; /* p q n p/q*S == ⌊p*10ⁿ/q⌋₀ */
 
-ntrunc: n->S / ; /* x n ntrunc == floor(x/10^n) */
-nfrac: [ abs ] dip n->S % ; /* x n nfrac == (x - floor(x/10^n))*10^n */
+ntrunc: n->S / ; /* x n ntrunc == ⌊x/10ⁿ⌋₀ */
+nfrac: [ abs ] dip n->S % ; /* x n nfrac == (x - ⌊x/10ⁿ⌋₀)*10ⁿ */

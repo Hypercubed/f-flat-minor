@@ -1,6 +1,6 @@
 ---
 status: in-progress
-status_date: 2026-04-10
+status_date: 2026-04-11
 creator: kilo
 ---
 
@@ -14,7 +14,7 @@ Document the current state of the Fbm website migration, capture what has alread
 
 - **Stage 1 — `lit-html` migration:** effectively complete
 - **Stage 2 — shared internal UI modules:** substantially complete
-- **Stage 3 — Astro routing/layouts/page management:** effectively complete
+- **Stage 3 — Astro routing/layouts/page management:** effectively complete; now exercised by the shipped `/reference/` docs section backed by Astro content
 - **Stage 4 — public embeddable web components:** not implemented yet; this is the active roadmap
 
 ## Guiding Principles
@@ -140,7 +140,7 @@ This stage should now be treated as mostly-established architecture rather than 
 
 ### Status
 
-Effectively complete. Astro now serves the role this stage envisioned, so this section primarily documents the architectural boundary between site-level page management and client-side interactive surfaces.
+Effectively complete. Astro now serves the role this stage envisioned, so this section primarily documents the architectural boundary between site-level page management and client-side interactive surfaces. The docs/content architecture is also now exercised in production by the `/reference/` section, with repo docs synced into `web/src/content/docs/` via `web/scripts/sync-docs.mjs`, wired through `web/package.json`, and rendered under `/reference/` by `web/src/pages/reference/index.astro` and `web/src/pages/reference/[...slug].astro`.
 
 ### Objective
 
@@ -196,7 +196,7 @@ It should not be introduced just because it is available.
 
 ### Outcome
 
-This stage is no longer an active migration item; it is the current baseline for the website structure.
+This stage is no longer an active migration item; it is the current baseline for the website structure. Generated stdlib reference pages for `core`, `math`, `string`, `seq`, and `time` now flow through that Astro/content path as a concrete proof point, not just a planned architecture.
 
 ---
 

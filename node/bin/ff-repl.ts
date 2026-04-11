@@ -10,17 +10,32 @@ import { Engine } from "../src/engine.ts";
 import { Preprocessor } from "../src/preprocess.ts";
 import { GREETINGS, SHORT } from "../src/constants.ts";
 import type { ReplArgs } from "../src/args.ts";
+import { buildStdlibRootList, FBM_STDLIB_PATH_ENV, normalizeStdlibRootArgs } from "../src/args.ts";
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
-const CORE = path.resolve(__dirname, "../../ff/lib/core.ff");
-const PRELUDE = path.resolve(__dirname, "../../ff/lib/prelude.ffp");
+const STDLIB_ROOT = path.resolve(__dirname, "../../ff/lib");
+const CORE = "<core>";
+const PRELUDE = "<prelude>";
+
+function getStdlibRoots(argv: ReplArgs): string[] {
+  return buildStdlibRootList({
+    defaultRoot: STDLIB_ROOT,
+    delimiter: path.delimiter,
+    envValue: process.env[FBM_STDLIB_PATH_ENV],
+    cliRoots: argv["stdlib-root"],
+  });
+}
 
 export function run(args: ReplArgs) {
   const loadPreprocessorPrelude = !!(args["preprocessor-prelude"] || args.prelude);
+  const stdlibRoots = getStdlibRoots(args);
   let compiler = new Compiler();
   let interpreter = new Engine();
   let preprocessor = new Preprocessor(
-    loadPreprocessorPrelude ? { macroEngineBootstrapFile: PRELUDE } : undefined,
+    {
+      stdlibRoots,
+      ...(loadPreprocessorPrelude ? { macroEngineBootstrapFile: PRELUDE } : {}),
+    },
   );
 
   console.log();
@@ -57,7 +72,10 @@ export function run(args: ReplArgs) {
       compiler = new Compiler();
       interpreter = new Engine();
       preprocessor = new Preprocessor(
-        loadPreprocessorPrelude ? { macroEngineBootstrapFile: PRELUDE } : undefined,
+        {
+          stdlibRoots,
+          ...(loadPreprocessorPrelude ? { macroEngineBootstrapFile: PRELUDE } : {}),
+        },
       );
       return;
     }
@@ -85,6 +103,7 @@ if (import.meta.main) {
       "no-core": { type: "boolean", default: false },
       "preprocessor-prelude": { type: "boolean", short: "P", default: false },
       prelude: { type: "boolean", default: false },
+      "stdlib-root": { type: "string", multiple: true },
     },
     allowPositionals: true,
     allowNegative: true,
@@ -93,6 +112,7 @@ if (import.meta.main) {
   const argv: ReplArgs = {
     ...values,
     core: values["no-core"] ? false : values.core,
+    "stdlib-root": normalizeStdlibRootArgs(values["stdlib-root"]),
   };
 
   run(argv);

@@ -1,28 +1,29 @@
 ---
 import BaseLayout from "../layouts/BaseLayout.astro";
-import { type ReferencePage } from "../data/reference";
+import { getDocsRoutePath, type DocsEntry, type DocsSidebarGroup } from "../data/docs";
 import { withBasePath } from "../data/site";
 
 interface Props {
-  page: ReferencePage;
-  pages: ReferencePage[];
-  html: string;
+  page: DocsEntry;
+  sidebarGroups: DocsSidebarGroup[];
+  Content: any;
 }
 
-const { page, pages, html } = Astro.props;
+const { page, sidebarGroups, Content } = Astro.props;
+const pageRoutePath = getDocsRoutePath(page);
 ---
 
 <BaseLayout
-  title={page.title}
-  description={page.summary || "Language reference documentation for F-flat-minor."}
+  title={page.data.title}
+  description={page.data.summary || "Language reference documentation for F-flat-minor."}
   theme="reference"
   activePath="/reference/"
 >
   <section class="route-hero section-summary">
     <p class="eyebrow">Language docs</p>
-    <h1 class="route-title">{page.title}</h1>
+    <h1 class="route-title">{page.data.title}</h1>
     <p class="page-copy">
-      {page.summary || "Reference docs rendered from the source-authored Markdown pages in the repository."}
+      {page.data.summary || "Reference docs rendered from the source-authored Markdown pages in the repository."}
     </p>
   </section>
 
@@ -34,12 +35,21 @@ const { page, pages, html } = Astro.props;
         </div>
       </div>
       <div class="help-copy reference-nav-copy">
-        <nav class="reference-doc-nav">
+        <nav class="reference-doc-nav" aria-label="Reference document navigation">
           {
-            pages.map((entry) => (
-              <a class:list={["reference-doc-link", entry.routePath === page.routePath && "is-active"]} href={withBasePath(entry.routePath)}>
-                <span>{entry.title}</span>
-              </a>
+            sidebarGroups.map((group) => (
+              <section class="reference-nav-group">
+                <p class="reference-nav-group-label">{group.label}</p>
+                {group.entries.map((entry) => (
+                  <a
+                    class:list={["reference-doc-link", getDocsRoutePath(entry) === pageRoutePath && "is-active"]}
+                    href={withBasePath(getDocsRoutePath(entry))}
+                  >
+                    <span>{entry.data.title}</span>
+                    {entry.data.summary && <small>{entry.data.summary}</small>}
+                  </a>
+                ))}
+              </section>
             ))
           }
         </nav>
@@ -47,7 +57,9 @@ const { page, pages, html } = Astro.props;
     </aside>
 
     <article class="panel reference-doc-panel">
-      <div class="reference-doc-body" set:html={html} />
+      <div class="reference-doc-body">
+        <Content />
+      </div>
     </article>
   </section>
 </BaseLayout>

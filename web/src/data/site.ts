@@ -109,12 +109,12 @@ export const referenceSection: SiteSection = {
   slug: "reference",
   title: "Reference",
   eyebrow: "Language docs",
-  summary: "Browse the reference manual, quick help, core primitives, and standard-library docs in one section.",
+  summary: "Browse the manual introduction, quick help, core primitives, and standard-library docs in one section.",
   description:
-    "Use the integrated reference section to move between the overview, quick help, primitive reference, and generated standard-library pages without leaving the active site.",
+    "Use the integrated reference section to move between the manual introduction, quick help, primitive reference, and generated standard-library pages without leaving the active site.",
   highlights: [
     "Reference landing page with curated entry points",
-    "Quick help, primitive docs, and generated library pages rendered from source Markdown",
+    "Manual and generated docs rendered through Astro content collections",
     "Docs navigation that keeps related reference pages together",
   ],
   details: [

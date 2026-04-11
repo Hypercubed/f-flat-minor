@@ -7,8 +7,6 @@ import (
 	. "m/src/utils"
 	. "math/big"
 	"os"
-	"path"
-	"path/filepath"
 	"regexp"
 	"strconv"
 	"strings"
@@ -161,7 +159,11 @@ func getInteger(s string) *Int {
 }
 
 func CompileToIR(t []string, filename string) []IrInstruction {
-	return compileToIR(t, filename, preprocess.New(filename))
+	return CompileToIRWithOptions(t, filename, preprocess.Options{})
+}
+
+func CompileToIRWithOptions(t []string, filename string, options preprocess.Options) []IrInstruction {
+	return compileToIR(t, filename, preprocess.NewWithOptions(filename, options))
 }
 
 func compileToIR(
@@ -190,7 +192,7 @@ func compileToIR(
 		} else if strings.HasPrefix(element, ".") && (len(element) > 1) {
 			tokens := regexp.MustCompile("\\s").Split(element, 2)
 			if tokens[0] == ".load" {
-				filepath := getFilepath(tokens[1], filename)
+				filepath := preprocessor.ResolveImport(tokens[1], filename)
 				dat, err := os.ReadFile(filepath)
 				check(err)
 				preprocessed := preprocessor.ProcessLoadedForCompile(
@@ -200,7 +202,7 @@ func compileToIR(
 				ir := compileToIR(Tokenize(preprocessed), filepath, preprocessor)
 				ret = append(ret, ir...)
 			} else if tokens[0] == ".import" {
-				filepath := getFilepath(tokens[1], filename)
+				filepath := preprocessor.ResolveImport(tokens[1], filename)
 				if preprocessor.MarkImported(filepath) {
 					dat, err := os.ReadFile(filepath)
 					check(err)
@@ -334,17 +336,4 @@ func convertEsc2Char(str string) string {
 	str = strings.Replace(str, "\\\\", "\\", -1)
 
 	return str
-}
-
-func getFilepath(filename string, source string) string {
-	if filename != "" && !path.IsAbs(filename) {
-		relative := path.Join(filepath.Dir(source), filename)
-		if _, err := os.Stat(relative); err == nil {
-			return relative
-		}
-	}
-	if _, err := os.Stat(filename); err == nil {
-		return filename
-	}
-	panic(fmt.Sprintf("File not found: %s", filename))
 }

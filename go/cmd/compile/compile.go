@@ -3,7 +3,9 @@ package main
 import (
 	"flag"
 	"io/ioutil"
+	"m/cmd/internal/stdlibroots"
 	"m/src/compiler"
+	"m/src/preprocess"
 	"os"
 )
 
@@ -17,6 +19,8 @@ func main() {
 	compiler.Setup()
 
 	inFlagPtr := flag.String("in", "-", "the input file")
+	var stdlibRootFlags stdlibroots.Flag
+	flag.Var(&stdlibRootFlags, "stdlib-root", "append a standard library search root")
 	flag.Parse()
 
 	code := ""
@@ -33,7 +37,9 @@ func main() {
 
 	tokens := compiler.Tokenize(code)
 
-	ir := compiler.CompileToIR(tokens, *inFlagPtr)
+	ir := compiler.CompileToIRWithOptions(tokens, *inFlagPtr, preprocess.Options{
+		StdlibRoots: preprocess.BuildStdlibRoots(stdlibRootFlags.Values()),
+	})
 
 	base64Code := compiler.CompileToBase64(ir)
 

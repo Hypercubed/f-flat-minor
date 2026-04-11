@@ -14,11 +14,22 @@ import { Preprocessor } from "../src/preprocess.ts";
 import { readStdin } from "../src/read.ts";
 import type { RunArgs } from "../src/ff-run-args.ts";
 import { buildParseArgsConfig, normalizeRunArgs } from "../src/ff-run-args.ts";
+import { buildStdlibRootList, FBM_STDLIB_PATH_ENV } from "../src/args.ts";
 
-const PRELUDE = path.resolve(
+const STDLIB_ROOT = path.resolve(
   path.dirname(fileURLToPath(import.meta.url)),
-  "../../ff/lib/prelude.ffp",
+  "../../ff/lib",
 );
+const PRELUDE = "<prelude>";
+
+function getStdlibRoots(argv: RunArgs): string[] {
+  return buildStdlibRootList({
+    defaultRoot: STDLIB_ROOT,
+    delimiter: path.delimiter,
+    envValue: process.env[FBM_STDLIB_PATH_ENV],
+    cliRoots: argv["stdlib-root"],
+  });
+}
 
 function getRuntimeArgs() {
   // Bun exposes its canonical argv via `Bun.argv`; relying on `process.argv`
@@ -49,7 +60,10 @@ export function run(argv: RunArgs) {
   if (argv.preprocess !== false) {
     const loadPreprocessorPrelude = !!(argv["preprocessor-prelude"] || argv.prelude);
     const preprocessor = new Preprocessor(
-      loadPreprocessorPrelude ? { macroEngineBootstrapFile: PRELUDE } : undefined,
+      {
+        stdlibRoots: getStdlibRoots(argv),
+        ...(loadPreprocessorPrelude ? { macroEngineBootstrapFile: PRELUDE } : {}),
+      },
     );
     code = preprocessor.preprocess(Preprocessor.tokenize(code), filename);
   }

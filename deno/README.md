@@ -61,7 +61,13 @@ Common flags:
 - `-p, --profile` — Enable profiling output
 - `-E, --preprocess` / `--no-preprocess` — Enable/disable preprocessing (default: enabled)
 - `-P, --preprocessor-prelude, --prelude` — Load the preprocessor prelude macros
+- `--stdlib-root <path>` — Append an additional stdlib search root (repeatable)
 - `--base` — Numeric base for output (default: 10)
+
+Preprocessor import rules:
+- `./`, `../`, `/`, and legacy bare imports stay relative to the importing file
+- `<...>` imports resolve through stdlib roots in order: built-in `ff/lib`, `FBM_STDLIB_PATH`, then `--stdlib-root`
+- Directory imports resolve to same-name index files like `math/math.ffp`
 
 ### `bin/ff-compile.ts`
 
@@ -76,6 +82,7 @@ Primary use: produce bytecode artifacts.
 
 Common flags:
 - `-f, --file`
+- `--stdlib-root <path>`
 - `-E, --preprocess` / `--no-preprocess`
 - `-s, --stats`
 - `-V, --validate` / `--no-validate`
@@ -126,6 +133,7 @@ Primary use: inspect/debug preprocessing without compiling/executing.
 
 Common flags:
 - `-f, --file`
+- `--stdlib-root <path>`
 
 ### `bin/ff-repl.ts`
 
@@ -140,6 +148,7 @@ Supports REPL commands:
 - `.exit` or `.quit` (leave REPL)
 
 Flags:
+- `--stdlib-root <path>`
 - `--no-core` / `-nc` (skip loading `core.ff`)
 
 ## Deno Tasks (`deno.json`)

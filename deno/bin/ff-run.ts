@@ -12,10 +12,20 @@ import { Optimizer } from "../src/optimizer.ts";
 import { HEADER } from "../src/constants.ts";
 import type { RunArgs } from "../src/ff-run-args.ts";
 import { buildDenoParseArgsConfig, normalizeRunArgs } from "../src/ff-run-args.ts";
+import { buildStdlibRootList, FBM_STDLIB_PATH_ENV } from "../src/args.ts";
+import { resolveDefaultStdlibRoot } from "../src/stdlib-roots.ts";
 
-const PRELUDE = path.fromFileUrl(
-  new URL("../../ff/lib/prelude.ffp", import.meta.url),
-);
+const STDLIB_ROOT = resolveDefaultStdlibRoot(import.meta.url);
+const PRELUDE = "<prelude>";
+
+function getStdlibRoots(argv: RunArgs): string[] {
+  return buildStdlibRootList({
+    defaultRoot: STDLIB_ROOT,
+    delimiter: path.DELIMITER,
+    envValue: Deno.env.get(FBM_STDLIB_PATH_ENV),
+    cliRoots: argv["stdlib-root"],
+  });
+}
 
 export function run(argv: RunArgs) {
   const textDecoder = new TextDecoder();
@@ -30,7 +40,10 @@ export function run(argv: RunArgs) {
   if (!("preprocess" in argv) || argv.preprocess) {
     const loadPreprocessorPrelude = !!(argv["preprocessor-prelude"] || argv.prelude);
     const preprocessor = new Preprocessor(
-      loadPreprocessorPrelude ? { macroEngineBootstrapFile: PRELUDE } : undefined,
+      {
+        stdlibRoots: getStdlibRoots(argv),
+        ...(loadPreprocessorPrelude ? { macroEngineBootstrapFile: PRELUDE } : {}),
+      },
     );
     code = preprocessor.preprocess(Preprocessor.tokenize(code), filename);
   }

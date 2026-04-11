@@ -45,7 +45,7 @@ Library files are loaded with the `.import` preprocessor directive.
 From a file in `ff/`, typical imports look like this:
 
 ```forth
-.import ./lib/prelude.ffp
+.import <prelude>
 .import ./lib/math/math.ffp
 .import ./lib/string/string.ffp
 .import ./lib/testing.ffp

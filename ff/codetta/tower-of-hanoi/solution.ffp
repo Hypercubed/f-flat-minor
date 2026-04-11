@@ -1,4 +1,4 @@
-.import ../../lib/prelude.ffp
+.import <prelude>
 
 over2: [ over ] dip swap ;
 over3: [ over2 ] dip swap ;

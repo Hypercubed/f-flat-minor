@@ -9,8 +9,9 @@ Use this skill when the task is to implement or fix f-flat-minor code.
 
 ## Tool bootstrap
 
-- Use `mise x -- ...` for commands that depend on repo-managed tools such as `node`, `bun`, `deno`, `npm`, and `chomp`.
-- If a managed tool is missing, run `mise install` once from the repo root, then retry the command with `mise x -- ...`.
+- Follow `.agent/rules/repo-runtime-invariants.md` for repo-level runtime and test constraints.
+- Use `mise exec -- ...` for commands that depend on repo-managed tools such as `node`, `bun`, `deno`, `npm`, and `chomp`.
+- If a managed tool is missing, run `mise install` once from the repo root, then retry the command with `mise exec -- ...`.
 - Do not switch runtimes just because a bare command is missing from `PATH`.
 
 ## Pick the right runtime first
@@ -21,8 +22,8 @@ cat <file>.ff | python3 python/execute.py
 ```
 - Use Node or Deno for `.ffp` (preprocessor required):
 ```bash
-mise x -- node node/bin/ff-run.ts <file>.ffp
-mise x -- node node/bin/ff-run.ts -t <file>.ffp
+mise exec -- node node/bin/ff-run.ts <file>.ffp
+mise exec -- node node/bin/ff-run.ts -t <file>.ffp
 ```
 - Do not use Python for `.ffp`.
 
@@ -42,7 +43,7 @@ Common commands:
 
 Practical preprocessing pipelines from `README.md`:
 ```bash
-mise x -- deno run -A deno/bin/ff-preprocess.ts my_file.ffp | ./ccp/build/run
+mise exec -- deno run -A deno/bin/ff-preprocess.ts my_file.ffp | ./ccp/build/run
 ./racket/main.rkt --pp-only ./ff/fact.ffp | python3 python/execute.py
 ```
 
@@ -64,11 +65,11 @@ mise x -- deno run -A deno/bin/ff-preprocess.ts my_file.ffp | ./ccp/build/run
 - Run tiny probes before integrating into larger programs.
 - For stack-order bugs, use trace mode:
 ```bash
-mise x -- node node/bin/ff-run.ts -t <file>.ffp
+mise exec -- node node/bin/ff-run.ts -t <file>.ffp
 ```
 - For LLM/agent parsing, prefer machine-readable traces:
 ```bash
-mise x -- node node/bin/ff-run.ts -t --trace-format jsonl <file>.ffp
+mise exec -- node node/bin/ff-run.ts -t --trace-format jsonl <file>.ffp
 ```
 - Add `--trace-verbose` for extra fields, and bound output with
   `--trace-queue-max` / `--trace-stack-max` when debugging large programs.
@@ -131,6 +132,8 @@ mise x -- node node/bin/ff-run.ts -t --trace-format jsonl <file>.ffp
 
 ## Reference
 
+- Repo workflows: `.agent/playbooks/run-code.md`, `.agent/playbooks/test-and-dev-workflows.md`
+- Repo execution rules: `.agent/rules/repo-runtime-invariants.md`
 - Language examples: `_docs/supplemental/fbm-by-example.md`
 - Stack notation: `_docs/supplemental/stack-notation.md`
 - Stack rewrites and annotations: `_docs/supplemental/stack-rewrites-and-annotations.md`

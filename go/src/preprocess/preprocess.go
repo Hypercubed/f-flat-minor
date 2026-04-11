@@ -5,13 +5,23 @@ import (
 	"os"
 	"path/filepath"
 	"regexp"
+	"runtime"
 	"strings"
 )
+
+type Options struct {
+	StdlibRoots []string
+}
+
+type Resolver struct {
+	stdlibRoots []string
+}
 
 type Processor struct {
 	imported       map[string]bool
 	importPrefixes map[string]string
 	rootFilename   string
+	resolver       *Resolver
 }
 
 var reMacro = regexp.MustCompile(`^\.[^\s]`)
@@ -19,14 +29,73 @@ var reSafePath = regexp.MustCompile(`[^A-Za-z0-9]+`)
 var reUnderscores = regexp.MustCompile(`_+`)
 
 func New(rootFilename string) *Processor {
+	return NewWithOptions(rootFilename, Options{})
+}
+
+func NewWithOptions(rootFilename string, options Options) *Processor {
 	if rootFilename == "-" {
 		rootFilename = ""
 	}
+	rootFilename = canonicalizePath(rootFilename)
 	return &Processor{
 		imported:       make(map[string]bool),
 		importPrefixes: make(map[string]string),
 		rootFilename:   rootFilename,
+		resolver:       NewResolver(options),
 	}
+}
+
+func NewResolver(options Options) *Resolver {
+	return &Resolver{stdlibRoots: normalizePaths(options.StdlibRoots)}
+}
+
+func DefaultStdlibRoots() []string {
+	roots := make([]string, 0, 2)
+	seen := make(map[string]bool)
+	add := func(candidate string) {
+		if candidate == "" {
+			return
+		}
+		candidate = canonicalizePath(candidate)
+		if candidate == "" || seen[candidate] {
+			return
+		}
+		if info, err := os.Stat(candidate); err == nil && info.IsDir() {
+			seen[candidate] = true
+			roots = append(roots, candidate)
+		}
+	}
+
+	if executable, err := os.Executable(); err == nil {
+		dir := filepath.Dir(canonicalizePath(executable))
+		for i := 0; i < 6; i++ {
+			add(filepath.Join(dir, "ff", "lib"))
+			dir = filepath.Dir(dir)
+		}
+	}
+
+	if _, currentFile, _, ok := runtime.Caller(0); ok {
+		repoRoot := filepath.Clean(filepath.Join(filepath.Dir(currentFile), "..", "..", ".."))
+		add(filepath.Join(repoRoot, "ff", "lib"))
+	}
+
+	return roots
+}
+
+func StdlibRootsFromEnv() []string {
+	value := os.Getenv("FBM_STDLIB_PATH")
+	if value == "" {
+		return nil
+	}
+	return normalizePaths(filepath.SplitList(value))
+}
+
+func BuildStdlibRoots(extra []string) []string {
+	roots := make([]string, 0, len(extra)+4)
+	roots = append(roots, DefaultStdlibRoots()...)
+	roots = append(roots, StdlibRootsFromEnv()...)
+	roots = append(roots, normalizePaths(extra)...)
+	return dedupePaths(roots)
 }
 
 func (p *Processor) Process(code string, filename string) string {
@@ -92,7 +161,7 @@ func (p *Processor) processLine(
 		if len(tokens) < 2 {
 			return ""
 		}
-		filepath := findFile(tokens[1], filename)
+		filepath := p.ResolveImport(tokens[1], filename)
 		dat, err := os.ReadFile(filepath)
 		check(err)
 		return p.processCode(
@@ -105,7 +174,7 @@ func (p *Processor) processLine(
 		if len(tokens) < 2 {
 			return ""
 		}
-		filepath := findFile(tokens[1], filename)
+		filepath := p.ResolveImport(tokens[1], filename)
 		if !p.MarkImported(filepath) {
 			return ""
 		}
@@ -134,6 +203,10 @@ func (p *Processor) processLine(
 		}
 		return ""
 	}
+}
+
+func (p *Processor) ResolveImport(specifier string, source string) string {
+	return p.resolver.ResolveImport(specifier, source)
 }
 
 func (p *Processor) mangleImportedLine(line string, importScopeFilename string) string {
@@ -224,17 +297,135 @@ func toBase36(value uint64) string {
 	return string(buf)
 }
 
-func findFile(filename string, source string) string {
-	if filename != "" && !filepath.IsAbs(filename) && source != "" && source != "-" {
-		relative := filepath.Join(filepath.Dir(source), filename)
-		if _, err := os.Stat(relative); err == nil {
-			return relative
+func (r *Resolver) ResolveImport(specifier string, source string) string {
+	if isStdlibSpecifier(specifier) {
+		return r.resolveStdlibImport(specifier)
+	}
+	return r.resolveFilesystemImport(specifier, source)
+}
+
+func (r *Resolver) resolveFilesystemImport(specifier string, source string) string {
+	if specifier != "" && !filepath.IsAbs(specifier) && source != "" && source != "-" {
+		relative := filepath.Join(filepath.Dir(source), specifier)
+		if resolved, ok := resolveFilesystemCandidate(relative); ok {
+			return resolved
 		}
 	}
-	if _, err := os.Stat(filename); err == nil {
-		return filename
+	if resolved, ok := resolveFilesystemCandidate(specifier); ok {
+		return resolved
 	}
-	panic(fmt.Sprintf("File not found: %s", filename))
+	panic(fmt.Sprintf("File not found: %s", specifier))
+}
+
+func (r *Resolver) resolveStdlibImport(specifier string) string {
+	logicalPath := specifier[1 : len(specifier)-1]
+	logicalPath = filepath.FromSlash(logicalPath)
+	for _, root := range r.stdlibRoots {
+		base := filepath.Join(root, logicalPath)
+		if resolved, ok := resolveStdlibCandidate(base); ok {
+			return resolved
+		}
+	}
+	panic(fmt.Sprintf(
+		"Stdlib import not found: %s (searched roots: %s)",
+		specifier,
+		strings.Join(r.stdlibRoots, ", "),
+	))
+}
+
+func resolveFilesystemCandidate(candidate string) (string, bool) {
+	if resolved, ok := resolveExistingFile(candidate); ok {
+		return resolved, true
+	}
+	return resolveDirectoryIndex(candidate, false)
+}
+
+func resolveStdlibCandidate(candidate string) (string, bool) {
+	if resolved, ok := resolveExistingFile(candidate); ok {
+		return resolved, true
+	}
+	if resolved, ok := resolveExistingFile(candidate + ".ffp"); ok {
+		return resolved, true
+	}
+	if resolved, ok := resolveExistingFile(candidate + ".ff"); ok {
+		return resolved, true
+	}
+	if resolved, ok := resolveDirectoryIndex(candidate, true); ok {
+		return resolved, true
+	}
+	return "", false
+}
+
+func resolveDirectoryIndex(candidate string, allowFF bool) (string, bool) {
+	info, err := os.Stat(candidate)
+	if err != nil || !info.IsDir() {
+		return "", false
+	}
+	basename := filepath.Base(filepath.Clean(candidate))
+	if basename == "." || basename == string(filepath.Separator) || basename == "" {
+		return "", false
+	}
+	if resolved, ok := resolveExistingFile(filepath.Join(candidate, basename+".ffp")); ok {
+		return resolved, true
+	}
+	if allowFF {
+		if resolved, ok := resolveExistingFile(filepath.Join(candidate, basename+".ff")); ok {
+			return resolved, true
+		}
+	}
+	return "", false
+}
+
+func resolveExistingFile(candidate string) (string, bool) {
+	info, err := os.Stat(candidate)
+	if err != nil || info.IsDir() {
+		return "", false
+	}
+	return canonicalizePath(candidate), true
+}
+
+func isStdlibSpecifier(specifier string) bool {
+	return strings.HasPrefix(specifier, "<") && strings.HasSuffix(specifier, ">") && len(specifier) > 2
+}
+
+func normalizePaths(paths []string) []string {
+	normalized := make([]string, 0, len(paths))
+	for _, candidate := range paths {
+		candidate = strings.TrimSpace(candidate)
+		if candidate == "" {
+			continue
+		}
+		normalized = append(normalized, canonicalizePath(candidate))
+	}
+	return dedupePaths(normalized)
+}
+
+func dedupePaths(paths []string) []string {
+	ret := make([]string, 0, len(paths))
+	seen := make(map[string]bool, len(paths))
+	for _, candidate := range paths {
+		if candidate == "" || seen[candidate] {
+			continue
+		}
+		seen[candidate] = true
+		ret = append(ret, candidate)
+	}
+	return ret
+}
+
+func canonicalizePath(path string) string {
+	if path == "" {
+		return ""
+	}
+	abs, err := filepath.Abs(path)
+	if err != nil {
+		abs = filepath.Clean(path)
+	}
+	resolved, err := filepath.EvalSymlinks(abs)
+	if err == nil {
+		return resolved
+	}
+	return filepath.Clean(abs)
 }
 
 func isWhitespace(b byte) bool {

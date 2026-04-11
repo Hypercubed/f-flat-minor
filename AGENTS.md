@@ -8,54 +8,28 @@ f-flat-minor (F♭m) is a minimal stack-oriented programming language. It featur
 - Compiles to "bytecode" (base64 VLQ encoded big integers)
 - Multiple implementations in different languages (Deno/TypeScript, Go, Python, Ruby, etc.)
 
-## Development Tools
+## Agent docs layout
 
-This repo includes [`mise.toml`](mise.toml) and [`mise.lock`](mise.lock) for pinned development tools.
+- `AGENTS.md` — repo entry point and navigation
+- `.agent/rules/` — normative repo and authoring constraints
+- `.agent/playbooks/` — concise step-by-step operational workflows
+- `.agent/skills/` — reusable task-specific agent workflows
 
-- Prefer activating the repo toolchain in your shell before running repo commands so tools like `chomp` and `go` resolve to the versions locked for this workspace.
-- If your shell is not activated, use `mise exec -- ...` for commands that depend on the pinned toolchain.
-- This is especially important for repo-level `chomp` tasks and for Go commands, because running outside the [`mise.toml`](mise.toml) environment can miss `chomp` entirely or pick an incompatible Go version for [`go/go.mod`](go/go.mod).
+Key rule and playbook entry points:
 
-## Running Code
+- `.agent/rules/repo-runtime-invariants.md`
+- `.agent/rules/ff-lib-source-docs.md`
+- `.agent/playbooks/run-code.md`
+- `.agent/playbooks/test-and-dev-workflows.md`
 
-The simplest way to run f-flat-minor code is using the Python interpreter:
+## Critical repo guidance
 
-```bash
-cat <file>.ff | python3 python/execute.py
-```
-
-For example, to run the factorial example:
-```bash
-cat ff/example_v0.ff | python3 python/execute.py
-```
-
-### Running .ffp Files (with preprocessor)
-
-The Python interpreter doesn't support `.ffp` files (which require preprocessing).
-
-Use an implementation with preprocessor support:
-- `deno/README.md` for the Deno implementation
-- `node/README.md` for the Node implementation
-- `bun/README.md` for the Bun implementation
-- `go/README.md` for the Go implementation
-
-### Running Tests
-
-The most complete test set is the deno tests. From the project root:
-
-```bash
-mise exec -- chomp test:deno
-```
-
-This runs all `.ff` and `.ffp` tests, comparing output to corresponding `.out` files.
-
-**Note:** f-flat-minor uses relative `.import` directives that are resolved from the source file's directory, not the current working directory. For individual test files, run from the test directory:
-
-```bash
-cd ff/lib/math/__tests__ && cat sqrt.ffp | deno run - ../../../../deno/bin/ff-run.ts
-```
-
-Or use the chomp build system inside the activated [`mise.toml`](mise.toml) environment, which handles paths correctly.
+- Prefer `mise exec -- ...` for repo-managed tools such as `chomp`, `go`, `deno`, `node`, `bun`, and `npm`.
+- Use Python only for `.ff`; do not use `python/execute.py` for `.ffp`.
+- Treat `mise exec -- chomp test:deno` as the primary/fullest repo test suite.
+- Treat `cd bun && mise exec -- chomp test:tap` as the default TAP runner for `ff/lib/**/__tests__/*.test.ffp`.
+- Run Go commands from `go/` or through `mise exec -- ...`; the repo root has no `go.mod`.
+- TypeScript runtimes write trace output to `stderr`; use `--trace --trace-format jsonl` when machine-readable traces are useful.
 
 ### File Types
 - `.ff` - Basic f-flat-minor source files (works with Python, Deno, Node, or Bun)
@@ -70,37 +44,15 @@ Or use the chomp build system inside the activated [`mise.toml`](mise.toml) envi
 - **Ruby**: Basic interpreter
 - **Racket**: Full implementation
 
-To use other implementations, activate the repo [`mise.toml`](mise.toml) environment and use the `chomp` build tool:
-```bash
-chomp build   # Build all projects
-chomp test    # Run tests
-```
+## Rules
 
-If your shell is not activated, run the same commands with `mise exec -- ...`.
+- `.agent/rules/repo-runtime-invariants.md` — stable execution, runtime, test, import, and trace constraints
+- `.agent/rules/ff-lib-source-docs.md` — normative source-doc rule for `ff/lib/**/*.ff` and `ff/lib/**/*.ffp`
 
-## Testing
+## Playbooks
 
-The most complete test set is the deno tests. To run the deno tests you can run:
-```bash
-mise exec -- chomp test:deno
-```
-
-TAP-style library tests now also exist under `ff/lib/**/__tests__/*.test.ffp`.
-See `_docs/supplemental/tap-testing.md` for the helper API and conventions, and run them with:
-```bash
-cd bun && mise exec -- chomp test:tap
-```
-
-Treat [`cd bun && mise exec -- chomp test:tap`](AGENTS.md) as the default TAP runner for `.test.ffp` library tests. Do not try multiple runtimes first unless this documented path is failing.
-
-## Trace output modes (TypeScript runtimes)
-
-Node, Bun, and Deno support structured tracing:
-- `--trace --trace-format human` (default) for concise human-readable traces.
-- `--trace --trace-format jsonl` for one JSON object per VM step (recommended for agents/LLM tooling).
-- `--trace-verbose` to include additional per-step details.
-- `--trace-queue-max` and `--trace-stack-max` to bound trace output size.
-- Trace output is written to `stderr`, so normal program output remains on `stdout`.
+- `.agent/playbooks/run-code.md` — choose a runtime and run `.ff` / `.ffp` code
+- `.agent/playbooks/test-and-dev-workflows.md` — common test, lint, and service commands
 
 ## Documentation
 
@@ -111,25 +63,16 @@ Node, Bun, and Deno support structured tracing:
 - Math library naming conventions: `_docs/supplemental/math-naming-convention.md`
 - Math library internal naming: `_docs/supplemental/math-naming-internal.md`
 
-## Deno Implementation Notes
+## Runtime docs
 
-For Deno-specific usage, tasks, CLI entrypoints, and implementation notes, see `deno/README.md`.
-
-## Node Implementation Notes
-
-For Node-specific usage, entrypoints, and implementation notes, see `node/README.md`.
-
-## Bun Implementation Notes
-
-For Bun-specific usage, entrypoints, and implementation notes, see `bun/README.md`.
-
-## Go Implementation Notes
-
-For Go-specific usage, entrypoints, and testing notes, see [`go/README.md`](go/README.md).
+- Deno: `deno/README.md`
+- Node: `node/README.md`
+- Bun: `bun/README.md`
+- Go: `go/README.md`
 
 ## Project Skills
 
-Reusable agent workflows have been extracted into local skills:
+Reusable agent workflows live under `.agent/skills/`:
 
 - `.agent/skills/ff-code-authoring/SKILL.md`
 - `.agent/skills/ff-euler-ffp/SKILL.md`
@@ -150,30 +93,12 @@ Use these when the task involves:
 
 ## Plans
 
-`_plans` contains deferred implementation plans — work that has been scoped and decided but not yet
-implemented. Before starting any implementation task, check whether a relevant
-plan exists here.
+- `_plans/` contains deferred implementation plans that should be checked before implementation work.
+- Use `.agent/skills/plans/SKILL.md` for the plan workflow.
 
-See `.agent/skills/plans/SKILL.md` for how to read, create, and update plan files.
+## Environment notes
 
-## Cursor Cloud specific instructions
-
-### Environment bootstrap
-
-The VM update script runs `mise install` and `npm install` (for the web playground). Ruby is installed via system apt. After that, all runtimes (Deno, Node, Bun, Go, Python, Ruby) and the `chomp` task runner are available via `mise exec -- ...`.
-
-### Running services
-
-- **Quick smoke-test**: `cat ff/example_v0.ff | python3 python/execute.py` (no mise needed).
-- **Primary test suite**: `mise exec -- chomp test:deno` (runs `.ff` + `.ffp` output comparisons and TAP tests).
-- **TAP library tests**: `cd bun && mise exec -- chomp test:tap`.
-- **Individual runtime tests**: `mise exec -- chomp test:{deno,node,bun,python,ruby}`.
-- **Go tests**: `cd go && mise exec -- go test ./...`.
-- **Web playground**: `cd web && mise exec -- npm run dev` (Vite on port 5173). Note: some `vitest` web tests fail due to a missing `path.relative` in the browser preprocessor host; this is a pre-existing issue, not an environment problem.
-- **Lint**: `cd deno && mise exec -- deno lint` (pre-existing `no-import-prefix` warnings on inline URL imports are expected).
-
-### Gotchas
-
-- Go commands must run from inside `go/` or use `mise exec` — the repo root has no `go.mod`.
-- `mise.toml` specifies tool versions as `"latest"` for some tools; `mise install` may pull newer versions than `mise.lock` pins. This is expected.
-- `nvm` is pre-installed on the VM but mise manages Node; both coexist because mise's shims take priority when the shell is activated.
+- The environment bootstrap installs runtimes with `mise install` and runs `npm install` for the web playground.
+- Some `vitest` web tests fail due to a pre-existing missing `path.relative` in the browser preprocessor host.
+- Deno lint may report expected `no-import-prefix` warnings on inline URL imports.
+- `mise.toml` may resolve some tools to versions newer than `mise.lock`; this is expected.

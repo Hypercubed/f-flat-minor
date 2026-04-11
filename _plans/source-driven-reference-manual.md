@@ -1,6 +1,6 @@
 ---
 status: in-progress
-status_date: 2026-04-10
+status_date: 2026-04-11
 creator: cursor-agent
 ---
 
@@ -13,7 +13,9 @@ Add a maintainable F♭m reference manual that defines a documentation model, pr
 ## Implementation status
 
 - **Phase 1** (2026-04-10): **Complete** — Landed under `_docs/` plus agent guidance under `.agent/`. Current artifacts include `.agent/rules/ff-lib-source-docs.md`, example snippets under `_docs/reference/examples/`, draft tree `_docs/supplemental/DRAFT-DOCS-TREE.md`, `_docs/reference/index.md`, and related reference/manual stubs. The rule now defines the **F♭m source documentation** format for agents (module labeled fields, `@stack` / `@family` / `@kind` word tags, section markers, extraction rules).
-- **Phases 2-7**: **Not started** — extraction prototype, generation pipeline, combined manual/generated docs strategy, web integration, vertical slice, and workflow hardening remain roadmap items only.
+- **Phases 2-4** (2026-04-11): **Partially implemented / not closed** — Generated standard-library reference pages now exist under `_docs/reference/generated/lib/` for `core`, `math`, `string`, `seq`, and `time`, and `_docs/reference/index.md` links to those generated pages. This is meaningful progress on extraction/generation, output structure, and manual/generated composition, but it should be treated as a head start rather than a claim that the full prototype, pipeline design, or integration conventions are completely finished.
+- **Phase 5** (2026-04-11): **Complete** — The web app now uses Astro content collections with synced docs under `web/src/content/docs/`, keeping `_docs/` as the source of truth. The old ad hoc runtime Markdown loader has been replaced, `/reference/` remains the stable landing route, manual intro content is live at `/reference/manual/introduction/`, the navigation/reference copy now describes the combined manual/reference docs area, docs syncing runs in watch mode during `npm run dev` with a one-shot sync for build, and generated synced docs under `web/src/content/docs/` are gitignored.
+- **Phases 6-7**: **Partially started / not complete** — the shipped `/reference/` section plus synced generated stdlib pages provide a real end-to-end slice, but broader validation, fuller coverage, regeneration workflow definition, and contributor hardening remain open.
 
 ## Context
 
@@ -24,10 +26,10 @@ The language and `ff/lib` grow faster than ad hoc prose can stay accurate. Sourc
 Phased delivery as originally scoped:
 
 1. **Phase 1 (done):** Document the model — manual vs generated, information architecture, annotation and attachment rules, module vs word docs, minimum fields for public words. Delivered in `.agent/rules/ff-lib-source-docs.md`, `_docs/reference/examples/`, `_docs/supplemental/DRAFT-DOCS-TREE.md`, `_docs/reference/index.md`, and related stubs.
-2. **Phase 2:** Prototype extraction with `cdoc` on representative `.ff`/`.ffp` files; evaluate gaps.
-3. **Phase 3:** Design the end-state pipeline (extract → map → model → Markdown).
-4. **Phase 4:** Unify manual and generated content strategy, navigation, cross-linking.
-5. **Phase 5:** Web integration plan (paths, build, routes).
+2. **Phase 2:** Prototype extraction with `cdoc` on representative `.ff`/`.ffp` files; evaluate gaps. Partial progress is now visible through generated stdlib reference output under `_docs/reference/generated/lib/`, but the prototype/evaluation work is not yet closed here.
+3. **Phase 3:** Design the end-state pipeline (extract → map → model → Markdown). Some pipeline intent is now exercised by the generated pages and site sync flow, but the explicit pipeline design milestone remains open.
+4. **Phase 4:** Unify manual and generated content strategy, navigation, cross-linking. `_docs/reference/index.md` and the live `/reference/` section now provide a partial implementation of this integration, without closing the broader content-strategy work.
+5. **Phase 5 (done 2026-04-11):** Web integration implemented in Astro (paths, sync/build flow, routes).
 6. **Phase 6:** Thin end-to-end slice (one manual page, one core reference page, one lib module page, one site section).
 7. **Phase 7:** Expand coverage, scripts, validation, contributor workflow.
 
@@ -376,6 +378,8 @@ A likely top-level documentation structure could be:
 
 ## Phase 5 — Define the Web Project Integration Path
 
+**Status:** Complete (2026-04-11). Astro integration is now in place: `_docs/` remains the source of truth, docs are synced into `web/src/content/docs/`, Astro content collections replaced the old runtime Markdown loader, `/reference/` remains the stable landing route, `/reference/manual/introduction/` now hosts the integrated manual intro content, generated stdlib pages are linked from `_docs/reference/index.md` and exposed in the site Reference section, site copy/navigation has been updated for the combined manual/reference area, dev uses live sync watch mode, build uses one-shot sync, and generated synced docs are gitignored.
+
 ### Objective
 
 Plan how the docs become a new section inside the existing web project.
@@ -473,6 +477,8 @@ It is much better to prove this on a narrow slice first than to attempt full-lib
 - sample annotated source
 - sample generated reference output
 - a visible documentation section in the web project
+
+**Current note:** A meaningful thin slice now exists in practice via the shipped `/reference/` docs section and generated stdlib pages for `core`, `math`, `string`, `seq`, and `time`, but this plan still treats the phase as only partially satisfied until the slice is explicitly validated against the intended extraction/generation workflow.
 
 ---
 

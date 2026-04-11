@@ -1,5 +1,5 @@
 ---
-status: ready
+status: done
 status_date: 2026-04-11
 creator: Kilo
 ---
@@ -8,7 +8,7 @@ creator: Kilo
 
 ## Summary
 
-Add a two-tier import resolver to the FBM preprocessor: explicit file-relative imports keep current behavior, while angle-bracket imports resolve through a configurable standard-library search path. Seed that search path with the built-in stdlib root and allow runtimes/CLI tools to append or replace additional roots.
+Implemented a two-tier import resolver for the FBM preprocessor: explicit file-relative imports keep current behavior, while angle-bracket imports resolve through a configurable standard-library search path. The shipped shared resolver also includes same-name directory-index resolution, so directory loads like `math -> math/math.ffp` landed as part of this work.
 
 ## Context
 
@@ -204,7 +204,7 @@ Document the resolution model plainly:
 - Use an ordered stdlib root list with a built-in default plus user-configurable additions.
 - Keep resolution deterministic; do not add Python-style global hook complexity or Node-style parent-directory walking.
 - Canonical resolved file paths remain the source of truth for `.import` deduplication and imported-symbol privacy mangling.
-- Coordinate stdlib import work with `_plans/directory-loading.md` so directory-index resolution is implemented once inside the shared resolver.
+- `_plans/directory-loading.md` was folded into this implementation so directory-index resolution shipped once inside the shared resolver.
 
 ## Open questions
 
@@ -220,7 +220,7 @@ Document the resolution model plainly:
 
 ## Dependencies
 
-- `_plans/directory-loading.md` should either be folded into this implementation or treated as a prerequisite resolver enhancement, since both features modify the same path-resolution layer.
+- `_plans/directory-loading.md` was folded into this implementation, since both features modified the same path-resolution layer and shipped together.
 
 ## References
 

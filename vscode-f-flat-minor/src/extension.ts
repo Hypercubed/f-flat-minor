@@ -17,6 +17,83 @@ import {
  * Uses workspace.fs (not Node fs) so existence checks work in Remote — WSL/SSH
  * when the extension runs on the UI host or the path only exists on the remote.
  */
+async function statPath(uri: vscode.Uri): Promise<vscode.FileStat | null> {
+  try {
+    return await vscode.workspace.fs.stat(uri);
+  } catch {
+    return null;
+  }
+}
+
+function isStdlibImportPath(userPath: string): boolean {
+  return userPath.startsWith("<") && userPath.endsWith(">") && userPath.length > 2;
+}
+
+function importDirectoryIndexCandidates(resolvedPath: string): string[] {
+  const trimmed = resolvedPath.replace(/[\\/]+$/, "");
+  const base = path.basename(trimmed);
+  return [
+    path.join(trimmed, `${base}.ffp`),
+    path.join(trimmed, `${base}.ff`),
+  ];
+}
+
+async function resolveFileOrDirectory(
+  documentUri: vscode.Uri,
+  resolvedPath: string,
+  options: { extensions?: string[] } = {},
+): Promise<string | null> {
+  const exact = await statPath(uriForResolvedPath(documentUri, resolvedPath));
+  if (exact?.type === vscode.FileType.File) {
+    return resolvedPath;
+  }
+
+  for (const extension of options.extensions ?? []) {
+    const withExtension = `${resolvedPath}${extension}`;
+    const withExtensionStat = await statPath(uriForResolvedPath(documentUri, withExtension));
+    if (withExtensionStat?.type === vscode.FileType.File) {
+      return withExtension;
+    }
+  }
+
+  if (exact?.type === vscode.FileType.Directory) {
+    for (const candidate of importDirectoryIndexCandidates(resolvedPath)) {
+      const indexStat = await statPath(uriForResolvedPath(documentUri, candidate));
+      if (indexStat?.type === vscode.FileType.File) {
+        return candidate;
+      }
+    }
+  }
+
+  return null;
+}
+
+function stdlibRootCandidates(sourceFile: string): string[] {
+  const roots: string[] = [];
+
+  const addRoot = (candidate: string) => {
+    if (!roots.includes(candidate)) {
+      roots.push(candidate);
+    }
+  };
+
+  let dir = path.resolve(path.dirname(sourceFile));
+  for (;;) {
+    addRoot(path.join(dir, "ff", "lib"));
+    const parent = path.dirname(dir);
+    if (parent === dir) {
+      break;
+    }
+    dir = parent;
+  }
+
+  for (const folder of vscode.workspace.workspaceFolders ?? []) {
+    addRoot(path.join(folder.uri.fsPath, "ff", "lib"));
+  }
+
+  return roots;
+}
+
 async function resolveImportPath(
   documentUri: vscode.Uri,
   sourceFile: string,
@@ -24,6 +101,21 @@ async function resolveImportPath(
 ): Promise<string | null> {
   const filename = userPath.trim();
   if (!filename) {
+    return null;
+  }
+
+  if (isStdlibImportPath(filename)) {
+    const logicalPath = filename.slice(1, -1).trim();
+    for (const root of stdlibRootCandidates(sourceFile)) {
+      const resolved = await resolveFileOrDirectory(
+        documentUri,
+        path.resolve(root, logicalPath),
+        { extensions: [".ffp", ".ff"] },
+      );
+      if (resolved) {
+        return resolved;
+      }
+    }
     return null;
   }
 
@@ -39,12 +131,9 @@ async function resolveImportPath(
       continue;
     }
     seen.add(p);
-    const uri = uriForResolvedPath(documentUri, p);
-    try {
-      await vscode.workspace.fs.stat(uri);
-      return p;
-    } catch {
-      // try next candidate
+    const resolved = await resolveFileOrDirectory(documentUri, p);
+    if (resolved) {
+      return resolved;
     }
   }
   return null;

@@ -42,7 +42,7 @@ _atan__core_scaled:
   dup
   [ rot __parts ] dip
   p/q*S
-; /* n u v _atan__core_scaled == floor(10^n*atan(u/v)) for reduced positive ratios */
+; /* n u v _atan__core_scaled == ⌊10^n*atan(u/v)⌋ for reduced positive ratios */
 
 _atan__needs_pi4:
   [ + sqr ] [ nip sqr 2 * ] bi2

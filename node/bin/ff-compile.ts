@@ -16,9 +16,20 @@ import { Preprocessor } from "../src/preprocess.ts";
 import { dec2hex } from "../src/strings.ts";
 import { red } from "../src/colors.ts";
 import type { CompileArgs } from "../src/args.ts";
+import { buildStdlibRootList, FBM_STDLIB_PATH_ENV, normalizeStdlibRootArgs } from "../src/args.ts";
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
-const PRELUDE = path.resolve(__dirname, "../../ff/lib/prelude.ffp");
+const STDLIB_ROOT = path.resolve(__dirname, "../../ff/lib");
+const PRELUDE = "<prelude>";
+
+function getStdlibRoots(argv: CompileArgs): string[] {
+  return buildStdlibRootList({
+    defaultRoot: STDLIB_ROOT,
+    delimiter: path.delimiter,
+    envValue: process.env[FBM_STDLIB_PATH_ENV],
+    cliRoots: argv["stdlib-root"],
+  });
+}
 
 export function run(argv: CompileArgs) {
   const textEncoder = new TextEncoder();
@@ -31,7 +42,10 @@ export function run(argv: CompileArgs) {
   if (!('preprocess' in argv) || argv.preprocess) {
     const loadPreprocessorPrelude = !!(argv["preprocessor-prelude"] || argv.prelude);
     const preprocessor = new Preprocessor(
-      loadPreprocessorPrelude ? { macroEngineBootstrapFile: PRELUDE } : undefined,
+      {
+        stdlibRoots: getStdlibRoots(argv),
+        ...(loadPreprocessorPrelude ? { macroEngineBootstrapFile: PRELUDE } : {}),
+      },
     );
     code = preprocessor.preprocess(Preprocessor.tokenize(code), filename);
   }
@@ -147,6 +161,7 @@ if (import.meta.main) {
       dump: { type: "boolean", default: false },
       "preprocessor-prelude": { type: "boolean", short: "P", default: false },
       prelude: { type: "boolean", default: false },
+      "stdlib-root": { type: "string", multiple: true },
     },
     allowPositionals: true,
     allowNegative: true,
@@ -155,6 +170,7 @@ if (import.meta.main) {
   const argv: CompileArgs = {
     ...values,
     file: values.file || (typeof positionals[0] === "string" ? positionals[0] : "-"),
+    "stdlib-root": normalizeStdlibRootArgs(values["stdlib-root"]),
   };
 
   run(argv);

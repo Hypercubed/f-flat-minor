@@ -1,4 +1,4 @@
-.import ../lib/prelude.ffp
+.import <prelude>
 
 /* Project Euler #1: sum multiples of 3 or 5 below 1000. */
 /* http://projecteuler.net/index.php?section=problems&id=1 */

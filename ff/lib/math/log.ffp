@@ -3,15 +3,15 @@
 
 __n: 20 ; /* number of digits to use for fixed-point calculations */
 __s: 100000000000000000000 ; /* 10^n */
-__ln2: 69314718055994530941 ; /* floor(ln(2)*10^n) */
+__ln2: 69314718055994530941 ; /* ⌊ln(2)*10^n⌋ */
 
 nln2:
   ++
   3 atanh-inv
   2 *
   10 /
-; /* n nln2 == floor(10^n*ln(2)) */
+; /* n nln2 == ⌊10^n*ln(2)⌋ */
 
-ilb: dup 1 > [ 1 >> ilb ++ ] [ drop 0 ] branch ; /* x ilb == floor(log2(x)) */
-ilog: dup 10 >= [ 10 / ilog ++ ] [ drop 0 ] branch ; /* x ilog == floor(log10(x)) */
-iln: ilb __ln2 * __s / ; /* x iln == floor(ln(x)) */
+ilb: dup 1 > [ 1 >> ilb ++ ] [ drop 0 ] branch ; /* x ilb == ⌊log2(x)⌋ */
+ilog: dup 10 >= [ 10 / ilog ++ ] [ drop 0 ] branch ; /* x ilog == ⌊log10(x)⌋ */
+iln: ilb __ln2 * __s / ; /* x iln == ⌊ln(x)⌋ */

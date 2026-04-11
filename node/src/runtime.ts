@@ -56,7 +56,21 @@ export function createNodePreprocessHost(): PreprocessHost {
       return fs.readFileSync(pathname, "utf8");
     },
     fileExists(pathname: string) {
-      return fs.existsSync(pathname);
+      try {
+        return fs.statSync(pathname).isFile();
+      } catch {
+        return false;
+      }
+    },
+    directoryExists(pathname: string) {
+      try {
+        return fs.statSync(pathname).isDirectory();
+      } catch {
+        return false;
+      }
+    },
+    realpath(pathname: string) {
+      return fs.realpathSync.native(pathname);
     },
     path,
   };

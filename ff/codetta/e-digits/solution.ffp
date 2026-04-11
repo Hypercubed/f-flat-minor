@@ -1,4 +1,4 @@
-.import ../../lib/prelude.ffp
+.import <prelude>
 
 N: 1000 ;
 E: N 1 nexp ;

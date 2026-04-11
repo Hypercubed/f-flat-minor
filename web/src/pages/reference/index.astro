@@ -1,15 +1,16 @@
 ---
+import { getCollection, render } from "astro:content";
 import ReferenceContent from "../../components/ReferenceContent.astro";
-import { getReferencePageBySlug, getReferenceSidebarPages, renderReferencePage } from "../../data/reference";
+import { getDocsSidebarGroups, getDocsSlug } from "../../data/docs";
 
-const pages = getReferenceSidebarPages();
-const page = getReferencePageBySlug([]);
+const page = (await getCollection("docs")).find((entry) => getDocsSlug(entry) === "");
 
 if (!page) {
   throw new Error("Missing reference index page.");
 }
 
-const html = await renderReferencePage(page);
+const sidebarGroups = await getDocsSidebarGroups();
+const { Content } = await render(page);
 ---
 
-<ReferenceContent page={page} pages={pages} html={html} />
+<ReferenceContent page={page} sidebarGroups={sidebarGroups} Content={Content} />

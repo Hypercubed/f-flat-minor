@@ -4,7 +4,7 @@ f-flat-minor (_F♭m_ for short) is a tiny toy language and baby brother to [f-f
 
 ## AI Disclaimer
 
-_F♭m_ (the language) was all designed by me, a human.  Almost all of the implementations of _F♭m_ were implemented before modern AI tools were widely available.  The only exception so far is the separation of the TypeScript core from the original Deno runtime.  Some implementations of _F♭m_ were later refactored with the help of AI tools.  I have used AI tools extensively for planning, documentation, tooling, testing, and constructing the website.  _F♭m_ has always been a learning project and hobby for me.  Learning how to use AI tools effectively is part of the fun and learning experience.  I understand that some people may have strong feelings about the use of AI tools in open source projects.  If you think this project is slop purely because some content is AI generated, we simply have different points of view.  If you think this project is slop because of utter sloppiness, then that is all on me.
+_F♭m_ (the language) was all designed by me, a human.  Almost all of the implementations of _F♭m_ were implemented before modern AI tools were widely available.  The only exception so far is the separation of the TypeScript core from the original Deno runtime.  Some implementations of _F♭m_ were later refactored with the help of AI tools.  I have used AI tools extensively for planning, documentation, tooling, testing, and constructing the website.  _F♭m_ has always been a learning project and hobby for me.  Learning how to use AI tools effectively is part of the fun and learning experience.  I understand that some people may have strong feelings about the use of AI tools in open source projects.  If you think this project is slop purely because some of it was AI-generated, that's on you. If you think it's slop because it's sloppy, that's on me.
 
 ## The Rules
 
@@ -202,15 +202,24 @@ _F♭m<sup>+</sup>_ adds a preprocessor and compiler commands. A word starting w
 
 | Command   |                                           Description                                            |       Support       |
 | --------- | :----------------------------------------------------------------------------------------------: | :-----------------: |
-| `.load`   |                                   loads another file in place                                    | Deno, Go and Racket |
-| `.import` | loads another file in place only once (same as `.load` except a file will not be imported twice) | Deno, Go and Racket |
+| `.load`   |                                   loads another file in place                                    | Deno, Node, Bun, Go and Racket |
+| `.import` | loads another file in place only once (same as `.load` except a file will not be imported twice) | Deno, Node, Bun, Go and Racket |
 | `.m`      | macro command, the rest of the line will be executed at compile time and included in the output. |      Deno, Go       |
 | `.inline` |      indicates that a previous definition is safe for inlining (using during optimization)       |        Deno         |
 | `.unsafe` |    indicates that a previous definition is not safe for inlining (using during optimization)     |        Deno         |
 
 ### Standard Library and Preprocessor
 
-[core.ff](./ff/lib/core.ff) Contains definitions of commonly used _F♭m_ words. This can be included in other files by using the `.load` or `.import` command in implementations that support _F♭m<sup>+</sup>_ (currently Deno, Go, and Racket). By convention _F♭m_ files that require the preprocessor have the `.ffp` extension. For implementations that don't support _F♭m<sup>+</sup>_ compiler commands, the source file can be preprocessed using Deno, Go, or Racket. Example:
+[core.ff](./ff/lib/core.ff) Contains definitions of commonly used _F♭m_ words. This can be included in other files by using the `.load` or `.import` command in implementations that support _F♭m<sup>+</sup>_. By convention _F♭m_ files that require the preprocessor have the `.ffp` extension.
+
+Import resolution rules:
+
+- `./foo`, `../foo`, `/abs/path`, and legacy bare paths like `lib/helper.ffp` stay file-relative to the importing source file.
+- `<prelude>`, `<math/sqrt>`, and other angle-bracket imports resolve through the ordered stdlib search path.
+- Stdlib imports search the built-in stdlib root first, then any `FBM_STDLIB_PATH` entries, then repeatable `--stdlib-root` CLI entries.
+- Directory imports resolve through same-name index files such as `math/math.ffp` or `math/math.ff`.
+
+For implementations that don't support _F♭m<sup>+</sup>_ compiler commands, the source file can be preprocessed using Deno, Go, or Racket. Example:
 
 ```sh
 mise exec -- go run ./go/cmd/preprocess --in my_file.ffp | ./python/execute.py

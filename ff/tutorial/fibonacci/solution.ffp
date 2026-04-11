@@ -1,4 +1,4 @@
-.import ../../lib/prelude.ffp
+.import <prelude>
 
 fib: dup 2 < [ ] [ -- dup fib swap -- fib + ] branch ;
 

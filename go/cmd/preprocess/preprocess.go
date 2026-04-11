@@ -4,6 +4,7 @@ import (
 	"flag"
 	"fmt"
 	"io/ioutil"
+	"m/cmd/internal/stdlibroots"
 	"m/src/preprocess"
 	"os"
 )
@@ -16,6 +17,8 @@ func check(e error) {
 
 func main() {
 	inFlagPtr := flag.String("in", "-", "the input file")
+	var stdlibRootFlags stdlibroots.Flag
+	flag.Var(&stdlibRootFlags, "stdlib-root", "append a standard library search root")
 	flag.Parse()
 
 	code := ""
@@ -30,6 +33,8 @@ func main() {
 		code = string(data)
 	}
 
-	preprocessed := preprocess.New(*inFlagPtr).Process(code, *inFlagPtr)
+	preprocessed := preprocess.NewWithOptions(*inFlagPtr, preprocess.Options{
+		StdlibRoots: preprocess.BuildStdlibRoots(stdlibRootFlags.Values()),
+	}).Process(code, *inFlagPtr)
 	fmt.Println(preprocessed)
 }

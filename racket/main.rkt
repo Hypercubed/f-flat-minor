@@ -25,6 +25,7 @@
   (define evaluate (make-parameter ""))
   (define compile (make-parameter #f))
   (define binary (make-parameter null))
+  (define extra-stdlib-roots (make-parameter '()))
 
   (command-line
     #:usage-help
@@ -59,6 +60,11 @@
       (*trace* #t)]
 
     #:multi
+    [("--stdlib-root") root
+      "Append a stdlib search root for angle-bracket imports"
+      (extra-stdlib-roots (append (extra-stdlib-roots)
+                                  (list (simplify-path (path->complete-path root) #t))))]
+
     [("-e" "--eval") expression
       "Evaluate expression and exit"
       (evaluate (string-append (evaluate) expression "\n"))]
@@ -79,6 +85,9 @@
       (ff-eval (evaluate))
       (exit)
     )
+
+    (current-stdlib-roots (append (current-stdlib-roots)
+                                  (extra-stdlib-roots)))
 
     (when (pp-only)
       (define port (open-input-file filename))

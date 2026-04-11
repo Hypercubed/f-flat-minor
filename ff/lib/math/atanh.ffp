@@ -13,7 +13,7 @@
 
 __atanh_pos_scaled:
   _atanh__core_scaled
-; /* n u v (u,v > 0 and u < v) __atanh_pos_scaled == floor(10ⁿ*atanh(u/v)) */
+; /* n u v (u,v > 0 and u < v) __atanh_pos_scaled == ⌊10ⁿ*atanh(u/v)⌋ */
 
 __finite:
   atan_shared_sign_pair_product
@@ -26,9 +26,9 @@ _atanh__scaled:
   [ atan_shared_num_zero ]
   [ __finite ]
   branch
-; /* n u v _atanh__scaled == floor(10ⁿ*atanh(u/v)) for |u| < |v| */
+; /* n u v _atanh__scaled == ⌊10ⁿ*atanh(u/v)⌋₀ for |u| < |v| */
 
-iatanh: 0 swap 1 _atanh__scaled ; /* x iatanh == floor(atanh(x)) */
-natanh: 1 _atanh__scaled ; /* n x natanh == floor(10ⁿ*atanh(x)) */
-qatanh: 0 bury _atanh__scaled ; /* u v qatanh == floor(atanh(u/v)) */
-atanh-inv: 1 swap _atanh__scaled ; /* n x atanh-inv == floor(10ⁿ*atanh(1/x)) */
+iatanh: 0 swap 1 _atanh__scaled ; /* x iatanh == ⌊atanh(x)⌋₀ */
+natanh: 1 _atanh__scaled ; /* n x natanh == ⌊10ⁿ*atanh(x)⌋₀ */
+qatanh: 0 bury _atanh__scaled ; /* u v qatanh == ⌊atanh(u/v)⌋₀ */
+atanh-inv: 1 swap _atanh__scaled ; /* n x atanh-inv == ⌊10ⁿ*atanh(1/x)⌋₀ */

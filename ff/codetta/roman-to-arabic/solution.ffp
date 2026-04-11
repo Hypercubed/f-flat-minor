@@ -1,4 +1,4 @@
-.import ../../lib/prelude.ffp
+.import <prelude>
 .import ../../lib/seq/seq.ffp
 
 I: 1 'I' putc ;

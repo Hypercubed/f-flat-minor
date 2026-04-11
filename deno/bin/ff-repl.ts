@@ -7,17 +7,32 @@ import { Engine } from "../src/engine.ts";
 import { Preprocessor } from "../src/preprocess.ts";
 import { GREETINGS, SHORT } from "../src/constants.ts";
 import type { ReplArgs } from "../src/args.ts";
+import { buildStdlibRootList, FBM_STDLIB_PATH_ENV, normalizeStdlibRootArgs } from "../src/args.ts";
+import { resolveDefaultStdlibRoot } from "../src/stdlib-roots.ts";
 
-const __dirname = path.dirname(path.fromFileUrl(import.meta.url));
-const CORE = path.resolve(__dirname, "../../ff/lib/core.ff");
-const PRELUDE = path.resolve(__dirname, "../../ff/lib/prelude.ffp");
+const STDLIB_ROOT = resolveDefaultStdlibRoot(import.meta.url);
+const CORE = "<core>";
+const PRELUDE = "<prelude>";
+
+function getStdlibRoots(argv: ReplArgs): string[] {
+  return buildStdlibRootList({
+    defaultRoot: STDLIB_ROOT,
+    delimiter: path.DELIMITER,
+    envValue: Deno.env.get(FBM_STDLIB_PATH_ENV),
+    cliRoots: argv["stdlib-root"],
+  });
+}
 
 export async function run(args: ReplArgs) {
   const loadPreprocessorPrelude = !!(args["preprocessor-prelude"] || args.prelude);
+  const stdlibRoots = getStdlibRoots(args);
   let compiler = new Compiler();
   let interpreter = new Engine();
   let preprocessor = new Preprocessor(
-    loadPreprocessorPrelude ? { macroEngineBootstrapFile: PRELUDE } : undefined,
+    {
+      stdlibRoots,
+      ...(loadPreprocessorPrelude ? { macroEngineBootstrapFile: PRELUDE } : {}),
+    },
   );
 
   console.log();
@@ -51,7 +66,10 @@ export async function run(args: ReplArgs) {
       compiler = new Compiler();
       interpreter = new Engine();
       preprocessor = new Preprocessor(
-        loadPreprocessorPrelude ? { macroEngineBootstrapFile: PRELUDE } : undefined,
+        {
+          stdlibRoots,
+          ...(loadPreprocessorPrelude ? { macroEngineBootstrapFile: PRELUDE } : {}),
+        },
       );
       return;
     }
@@ -73,15 +91,24 @@ export async function run(args: ReplArgs) {
 
 if (import.meta.main) {
   const parsed = parseArgs(Deno.args, {
-    core: { type: "boolean", default: true },
-    "no-core": { type: "boolean", default: false },
-    "preprocessor-prelude": { short: "P", default: false },
-    prelude: { type: "boolean", default: false },
+    boolean: ["core", "no-core", "preprocessor-prelude", "prelude"],
+    string: ["stdlib-root"],
+    collect: ["stdlib-root"],
+    default: {
+      core: true,
+      "no-core": false,
+      "preprocessor-prelude": false,
+      prelude: false,
+    },
+    alias: {
+      "preprocessor-prelude": ["P", "prelude"],
+    },
   });
 
   const argv: ReplArgs = {
     ...parsed,
     core: parsed["no-core"] ? false : parsed.core,
+    "stdlib-root": normalizeStdlibRootArgs(parsed["stdlib-root"]),
   };
 
   await run(argv);

@@ -2,6 +2,7 @@
 // This file provides the canonical CLI contract for ff-run across all runtimes
 
 import type { RunArgs } from "./args.ts";
+import { normalizeStdlibRootArgs } from "./args.ts";
 export type { RunArgs } from "./args.ts";
 
 /**
@@ -24,6 +25,7 @@ export const RUN_ARG_DEFAULTS = {
   profile: false,
   "preprocessor-prelude": false,
   prelude: false,
+  "stdlib-root": [] as string[],
 } as const;
 
 /**
@@ -76,6 +78,7 @@ export const RUN_ARG_STRINGS = [
   "trace-format",
   "trace-queue-max",
   "trace-stack-max",
+  "stdlib-root",
 ] as const;
 
 /**
@@ -121,6 +124,8 @@ export function normalizeRunArgs(
     }
   }
 
+  normalized["stdlib-root"] = normalizeStdlibRootArgs(normalized["stdlib-root"]);
+
   return normalized;
 }
 
@@ -148,6 +153,7 @@ export function buildParseArgsConfig(): {
   "preprocessor-prelude": { type: "boolean"; short: "P"; default: false };
   prelude: { type: "boolean"; default: false };
   base: { type: "string" };
+  "stdlib-root": { type: "string"; multiple: true };
 } {
   return {
     file: { type: "string", short: "f" },
@@ -169,6 +175,7 @@ export function buildParseArgsConfig(): {
     "preprocessor-prelude": { type: "boolean", short: "P", default: false },
     prelude: { type: "boolean", default: false },
     base: { type: "string" },
+    "stdlib-root": { type: "string", multiple: true },
   };
 }
 
@@ -178,13 +185,15 @@ export function buildParseArgsConfig(): {
 export function buildDenoParseArgsConfig(): {
   string: string[];
   boolean: string[];
-  default: Record<string, string | boolean>;
+  default: Record<string, string | boolean | string[]>;
   alias: Record<string, string[]>;
+  collect: string[];
 } {
   return {
     string: [...RUN_ARG_STRINGS],
     boolean: [...RUN_ARG_BOOLEANS],
     default: { ...RUN_ARG_DEFAULTS },
     alias: { ...RUN_ARG_ALIASES } as Record<string, string[]>,
+    collect: ["stdlib-root"],
   };
 }

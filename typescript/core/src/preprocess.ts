@@ -12,29 +12,34 @@ export class Preprocessor {
   private readonly compiler: Compiler;
   private readonly imported = new Set<string>();
   private readonly importPrefixes = new Map<string, string>();
+  private readonly stdlibRoots: string[];
   private macroPreludeReady = false;
   private rootFilename: string | null = null;
 
   constructor(
     host: PreprocessHost,
     deps: { engine: Engine; compiler?: Compiler },
-    options?: { macroEngineBootstrapFile?: string },
+    options?: { macroEngineBootstrapFile?: string; stdlibRoots?: string[] },
   ) {
     this.host = host;
     this.engine = deps.engine;
     this.compiler = deps.compiler || new Compiler();
+    this.stdlibRoots = options?.stdlibRoots ?? [];
     if (options?.macroEngineBootstrapFile) {
       this.bootstrapMacroEngine(options.macroEngineBootstrapFile);
     }
   }
 
   preprocess(lines: string[], filename = "-"): string {
+    const resolvedFilename = filename !== "-" && this.host.fileExists(filename)
+      ? this.host.realpath(filename)
+      : filename;
     const isTopLevel = this.rootFilename === null;
-    if (isTopLevel && filename !== "-") {
-      this.rootFilename = filename;
+    if (isTopLevel && resolvedFilename !== "-") {
+      this.rootFilename = resolvedFilename;
     }
     try {
-      return this.preprocessLines(lines, filename);
+      return this.preprocessLines(lines, resolvedFilename);
     } finally {
       if (isTopLevel) {
         this.rootFilename = null;
@@ -107,19 +112,95 @@ export class Preprocessor {
   }
 
   findFile(filename: string, source = "-"): string {
-    if (source && source !== "-" && !this.host.path.isAbsolute(filename)) {
+    const specifier = filename.trim();
+    if (!specifier) {
+      throw new Error("Preprocessor: missing import path");
+    }
+
+    if (this.isStdlibImport(specifier)) {
+      return this.resolveStdlibImport(specifier);
+    }
+
+    return this.resolveFilesystemImport(specifier, source);
+  }
+
+  private isStdlibImport(specifier: string): boolean {
+    return specifier.startsWith("<") && specifier.endsWith(">") && specifier.length > 2;
+  }
+
+  private resolveFilesystemImport(specifier: string, source: string): string {
+    if (source && source !== "-" && !this.host.path.isAbsolute(specifier)) {
       const dir = this.host.path.dirname(source);
-      const relative = this.host.path.resolve(dir, filename);
-      if (this.host.fileExists(relative)) {
-        return relative;
+      const relative = this.host.path.resolve(dir, specifier);
+      const resolved = this.resolveFileOrDirectory(relative);
+      if (resolved) {
+        return resolved;
       }
     }
 
-    if (this.host.fileExists(filename)) {
-      return filename;
+    const resolved = this.resolveFileOrDirectory(specifier);
+    if (resolved) {
+      return resolved;
     }
 
-    throw 'File not found: "' + filename + '"';
+    throw new Error(`File not found: "${specifier}"`);
+  }
+
+  private resolveStdlibImport(specifier: string): string {
+    const logicalPath = specifier.slice(1, -1).trim();
+    const searchedRoots: string[] = [];
+
+    for (const root of this.stdlibRoots) {
+      searchedRoots.push(root);
+      const basePath = this.host.path.resolve(root, logicalPath);
+      const resolved = this.resolveFileOrDirectory(basePath, {
+        extensions: [".ffp", ".ff"],
+      });
+      if (resolved) {
+        return resolved;
+      }
+    }
+
+    const rootsMessage = searchedRoots.length > 0
+      ? searchedRoots.join(", ")
+      : "(no stdlib roots configured)";
+    throw new Error(
+      `Stdlib import not found: ${specifier} (searched roots: ${rootsMessage})`,
+    );
+  }
+
+  private resolveFileOrDirectory(
+    path: string,
+    options?: { extensions?: string[] },
+  ): string | null {
+    if (this.host.fileExists(path)) {
+      return this.host.realpath(path);
+    }
+
+    for (const extension of options?.extensions ?? []) {
+      const withExtension = `${path}${extension}`;
+      if (this.host.fileExists(withExtension)) {
+        return this.host.realpath(withExtension);
+      }
+    }
+
+    if (this.host.directoryExists(path)) {
+      const basename = this.getBasename(path);
+      for (const extension of [".ffp", ".ff"]) {
+        const indexPath = this.host.path.resolve(path, `${basename}${extension}`);
+        if (this.host.fileExists(indexPath)) {
+          return this.host.realpath(indexPath);
+        }
+      }
+    }
+
+    return null;
+  }
+
+  private getBasename(path: string): string {
+    const trimmed = path.replace(/[\\/]+$/, "");
+    const parts = trimmed.split(/[\\/]+/).filter(Boolean);
+    return parts[parts.length - 1] ?? trimmed;
   }
 
   private bootstrapMacroEngine(filename: string) {
@@ -130,6 +211,8 @@ export class Preprocessor {
     const bootstrapPreprocessor = new Preprocessor(this.host, {
       engine: this.engine,
       compiler: this.compiler,
+    }, {
+      stdlibRoots: this.stdlibRoots,
     });
     const preprocessed = bootstrapPreprocessor.preprocess(
       Preprocessor.tokenize(code),
