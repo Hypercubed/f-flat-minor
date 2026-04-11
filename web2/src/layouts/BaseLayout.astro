@@ -37,16 +37,53 @@ const {
             <span>Astro site bootstrap</span>
           </span>
         </a>
-        <nav class="site-nav" aria-label="Primary">
-          {
-            navItems.map((item) => (
-              <a class:list={["nav-link", item.href === activePath && "is-active"]} href={item.href}>
-                {item.label}
-              </a>
-            ))
-          }
-        </nav>
+        <div class="site-header-actions">
+          <nav class="site-nav" aria-label="Primary">
+            {
+              navItems.map((item) => (
+                <a class:list={["nav-link", item.href === activePath && "is-active"]} href={item.href}>
+                  {item.label}
+                </a>
+              ))
+            }
+          </nav>
+          <button
+            type="button"
+            id="run-feedback-toggle"
+            class="run-feedback-toggle"
+            aria-label="Run sound and animations on"
+            aria-pressed="true"
+            title="Turn off run sound and animations"
+          >
+            <span class="run-feedback-toggle__glyph" aria-hidden="true">♭</span>
+          </button>
+        </div>
       </header>
+      <script>
+      import { getLegacyRouteRedirectUrl } from "../client/location-search.ts";
+      import {
+        loadRunFeedbackPreference,
+        syncRunFeedbackToggleButton,
+        toggleRunFeedback,
+      } from "../client/run-feedback.ts";
+
+      const legacyRedirectUrl = getLegacyRouteRedirectUrl(window.location);
+
+      if (legacyRedirectUrl) {
+        window.location.replace(legacyRedirectUrl);
+      } else {
+        loadRunFeedbackPreference();
+
+        const runFeedbackToggle = document.querySelector("#run-feedback-toggle");
+        if (runFeedbackToggle instanceof HTMLButtonElement) {
+          syncRunFeedbackToggleButton(runFeedbackToggle);
+          runFeedbackToggle.addEventListener("click", () => {
+            toggleRunFeedback();
+            syncRunFeedbackToggleButton(runFeedbackToggle);
+          });
+        }
+      }
+      </script>
       <slot />
       <footer class="footer">
         <p>

@@ -21,6 +21,8 @@ import {
   progressProgramRunSummaryItems,
 } from "./program-run-summary.ts";
 import { requireElement } from "./require-element.ts";
+import { startRunProgramRunFeedback, stopRunProgramRunFeedback } from "./run-fx.ts";
+import { getMergedRouteSearchParams } from "./location-search.ts";
 import { scrollElementToBottom } from "./scroll-element.ts";
 import { renderSummaryBar } from "./summary-bar.ts";
 import { waitForPaint } from "./wait-for-paint.ts";
@@ -139,7 +141,7 @@ export function mountPlayground(root: HTMLElement) {
   const detailTabs = Array.from(root.querySelectorAll<HTMLButtonElement>(".subtab"));
   const detailPanels = Array.from(root.querySelectorAll<HTMLElement>(".detail-panel"));
 
-  const searchParams = new URLSearchParams(window.location.search);
+  const searchParams = getMergedRouteSearchParams(window.location);
   const sourceFromUrl = decodeCodeFromUrlParam(searchParams.get("code"));
   const exampleFromUrl = searchParams.get("example");
 
@@ -170,8 +172,7 @@ export function mountPlayground(root: HTMLElement) {
   const irViewer = mountReadonlySourceViewer(ir, "");
 
   function syncUrlToRouteState() {
-    const nextParams = new URLSearchParams(window.location.search);
-    nextParams.delete("worker");
+    const nextParams = getMergedRouteSearchParams(window.location);
 
     if (example.value === CUSTOM_EXAMPLE_VALUE) {
       const sourceValue = sourceEditor.getValue();
@@ -331,6 +332,7 @@ export function mountPlayground(root: HTMLElement) {
     } finally {
       unregisterAbort();
       playgroundAbort = null;
+      stopRunProgramRunFeedback();
       setPlaygroundRunningState(false);
     }
   }
@@ -369,6 +371,7 @@ export function mountPlayground(root: HTMLElement) {
       playgroundAbort.abort();
       return;
     }
+    startRunProgramRunFeedback(run);
     syncUrlToRouteState();
     void renderPlayground();
   });

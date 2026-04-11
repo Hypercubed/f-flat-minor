@@ -127,6 +127,14 @@ img {
   gap: 0.5rem;
 }
 
+.site-header-actions {
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+  gap: 0.75rem;
+  flex: 1 1 24rem;
+}
+
 .nav-link {
   display: inline-flex;
   align-items: center;
@@ -896,5 +904,12 @@ code {
 
   .site-nav {
     width: 100%;
+  }
+
+  .site-header-actions {
+    width: 100%;
+    justify-content: space-between;
+    align-items: flex-start;
+    flex-wrap: wrap;
   }
 }

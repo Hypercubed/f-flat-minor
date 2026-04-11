@@ -2,6 +2,7 @@ import { html, render } from "lit-html";
 import type { ValueInspection } from "../../../typescript/core/src/engine.ts";
 import { ReplSession, type StackItem } from "./repl-session.ts";
 import { renderReplShell, replInspectContentTemplate, replStackListTemplate } from "./repl-ui.ts";
+import { triggerReplKeyFeedback } from "./run-fx.ts";
 
 function requireElement<T extends Element>(
   root: ParentNode,
@@ -181,6 +182,8 @@ export function mountRepl(root: HTMLElement) {
   }
 
   replCommand.addEventListener("keydown", (event) => {
+    triggerReplKeyFeedback(replCommand, event);
+
     if (event.key === "Enter") {
       event.preventDefault();
       void runReplLine();

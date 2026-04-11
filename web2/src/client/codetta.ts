@@ -20,6 +20,7 @@ import {
   progressProgramRunSummaryItems,
 } from "./program-run-summary.ts";
 import { requireElement } from "./require-element.ts";
+import { getMergedRouteSearchParams } from "./location-search.ts";
 import { renderSummaryBar } from "./summary-bar.ts";
 
 const ETUDES: CodettaEntry[] = CODETTA_ENTRIES;
@@ -203,8 +204,8 @@ interface HistoryState {
 }
 
 function readEtudeFromUrl(): string | null {
-  const url = new URL(window.location.href);
-  return url.searchParams.get("codetta");
+  const params = getMergedRouteSearchParams(window.location);
+  return params.get("codetta") ?? params.get("etude");
 }
 
 function writeEtudeToUrl(etudeSlug: string | null, mode: "push" | "replace") {
