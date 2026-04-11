@@ -135,25 +135,8 @@ function renderTutorialShell() {
   const problems = [...TUTORIAL_PROBLEMS].sort((left, right) => left.order - right.order);
 
   return html`
-    <section class="tutorial-page">
-      <section class="panel tutorial-intro">
-        <div class="tutorial-intro-body">
-          <p class="eyebrow">Starter Problems</p>
-          <h2>Fifteen runnable lessons, already loaded with working code.</h2>
-          <p>
-            These cards mirror the completed starter set in <code>_docs/ffm-starter-problems.md</code>.
-            Each one starts with the full solution snippet from the doc, so you can run it immediately,
-            edit it safely, and compare the result against the expected output guidance.
-          </p>
-          <p>
-            Cards run independently. They do not share stack state, definitions, stdin, or output.
-          </p>
-        </div>
-      </section>
-
-      <section class="tutorial-list" aria-label="Tutorial problems">
-        ${problems.map((problem) => renderProblemCard(problem))}
-      </section>
+    <section class="tutorial-list" aria-label="Tutorial problems">
+      ${problems.map((problem) => renderProblemCard(problem))}
     </section>
   `;
 }

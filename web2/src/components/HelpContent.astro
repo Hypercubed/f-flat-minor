@@ -1,0 +1,117 @@
+<section class="page-section">
+  <div class="help-grid">
+    <section class="panel help-panel">
+      <div class="panel-header">
+        <div>
+          <p class="panel-label">Overview</p>
+          <h2>What F-flat-minor is</h2>
+        </div>
+      </div>
+      <div class="help-copy">
+        <p>F-flat-minor is a tiny stack-oriented language built around one value type: big integers.</p>
+        <p>Programs manipulate a data stack, a queue used during execution, and a vocabulary of built-in and user-defined words.</p>
+        <p>The shared TypeScript core in this repo preprocesses source, compiles it to IR and bytecode, and executes the result.</p>
+      </div>
+    </section>
+
+    <section class="panel help-panel">
+      <div class="panel-header">
+        <div>
+          <p class="panel-label">Execution</p>
+          <h2>Core model</h2>
+        </div>
+      </div>
+      <div class="help-copy">
+        <ul class="help-list">
+          <li>Numbers are pushed onto the stack.</li>
+          <li>Non-numeric tokens are treated as words and executed.</li>
+          <li>The language compiles to base64 VLQ encoded big integers.</li>
+          <li>Pointers to words are also just integers, so code and data share the same stack.</li>
+        </ul>
+      </div>
+    </section>
+
+    <section class="panel help-panel">
+      <div class="panel-header">
+        <div>
+          <p class="panel-label">Syntax</p>
+          <h2>Language details</h2>
+        </div>
+      </div>
+      <div class="help-copy">
+        <dl class="help-defs">
+          <dt>Numbers</dt>
+          <dd><code>42</code>, <code>-3</code>, and other integers are pushed directly.</dd>
+          <dt>Words</dt>
+          <dd><code>dup</code>, <code>swap</code>, <code>+</code>, <code>putc</code>, and user definitions execute when encountered.</dd>
+          <dt>Definitions</dt>
+          <dd><code>fact: dup 1 - [ dup 1 - fact * ] ? ;</code> defines a new word.</dd>
+          <dt>Quotes</dt>
+          <dd><code>[ dup * ]</code> creates an unnamed word and leaves its pointer on the stack.</dd>
+          <dt>Pointers</dt>
+          <dd><code>[+]</code> pushes a pointer to a word instead of calling it.</dd>
+          <dt>Strings</dt>
+          <dd><code>'Hello\sWorld!\n'</code> expands to character codes on the stack.</dd>
+        </dl>
+      </div>
+    </section>
+
+    <section class="panel help-panel">
+      <div class="panel-header">
+        <div>
+          <p class="panel-label">Preprocessor</p>
+          <h2>Supported directives</h2>
+        </div>
+      </div>
+      <div class="help-copy">
+        <ul class="help-list">
+          <li><code>.load path</code>: inline another file every time it appears.</li>
+          <li><code>.import path</code>: inline a file once per preprocessor session.</li>
+          <li><code>.m ...</code>: evaluate a compile-time macro and splice the resulting stack values into the source.</li>
+          <li><code>.exit</code>: request termination from the host.</li>
+        </ul>
+      </div>
+    </section>
+
+    <section class="panel help-panel">
+      <div class="panel-header">
+        <div>
+          <p class="panel-label">Useful words</p>
+          <h2>Common vocabulary</h2>
+        </div>
+      </div>
+      <div class="help-copy">
+        <div class="word-grid">
+          <code>dup</code><span>duplicate the top stack item</span>
+          <code>swap</code><span>swap the top two items</span>
+          <code>drop</code><span>discard the top item</span>
+          <code>+</code><span>add the top two values</span>
+          <code>*</code><span>multiply the top two values</span>
+          <code>?</code><span>conditional execution</span>
+          <code>:</code><span>begin a definition</span>
+          <code>;</code><span>end a definition</span>
+          <code>putc</code><span>print a character</span>
+          <code>putn</code><span>print a number in the current base</span>
+          <code>.</code><span>print the stack to the console/log channel</span>
+        </div>
+      </div>
+    </section>
+
+    <section class="panel help-panel">
+      <div class="panel-header">
+        <div>
+          <p class="panel-label">Examples</p>
+          <h2>Try these</h2>
+        </div>
+      </div>
+      <div class="help-copy">
+        <pre class="code-block help-code">'Hello\sWorld!\n' prints
+
+fact: dup 1 - [ dup 1 - fact * ] ? ;
+20 fact putn 10 putc
+
+[ dup * ] 12 swap eval putn</pre>
+      </div>
+    </section>
+  </div>
+</section>

@@ -69,19 +69,6 @@ function codettaShellTemplate() {
   return html`
     <section class="codetta">
       <section class="codetta-screen codetta-list-screen" data-screen="list">
-        <article class="panel codetta-intro-panel">
-          <div class="panel-header">
-            <div>
-              <p class="panel-label">How Codettas Work</p>
-              <h2>Small code-golf like challenges</h2>
-            </div>
-          </div>
-          <div class="codetta-panel-body codetta-intro-body">
-            <p>Codettas are small F-flat-minor code-golf like challenges with fixed expected output. Many mirror <code>code.golf</code> holes, with a few repo-defined variants.</p>
-            <p>Leaderboard rank is based on optimized compiled <code>.ffb</code> byte count, not source length. Output has to match the expected result before the byte score matters.</p>
-          </div>
-        </article>
-
         <section class="panel">
           <div class="panel-header">
             <div>

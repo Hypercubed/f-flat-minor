@@ -1,6 +1,7 @@
 ---
 import BaseLayout from "../layouts/BaseLayout.astro";
 import CodettasSurface from "../components/CodettasSurface.astro";
+import HelpContent from "../components/HelpContent.astro";
 import PlaygroundSurface from "../components/PlaygroundSurface.astro";
 import ReplSurface from "../components/ReplSurface.astro";
 import TutorialSurface from "../components/TutorialSurface.astro";
@@ -28,6 +29,8 @@ const InteractiveSurface = (() => {
       return CodettasSurface;
     case "tutorial":
       return TutorialSurface;
+    case "help":
+      return HelpContent;
     default:
       return null;
   }
