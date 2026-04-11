@@ -50,24 +50,4 @@ const InteractiveSurface = (() => {
   </section>
 
   {InteractiveSurface ? <InteractiveSurface /> : null}
-
-  <section class="page-section grid route-grid">
-    <article class="info-card">
-      <p class="eyebrow">On this route</p>
-      <h3>What this page includes</h3>
-      <p>{section.summary}</p>
-      <ul class="bullet-list">
-        {section.highlights.map((item) => <li>{item}</li>)}
-      </ul>
-    </article>
-
-    <article class="info-card">
-      <p class="eyebrow">At a glance</p>
-      <h3>How this section fits together</h3>
-      <ul class="bullet-list">
-        {section.details.map((item) => <li>{item}</li>)}
-      </ul>
-      <p>This route now lives entirely inside the Astro site.</p>
-    </article>
-  </section>
 </BaseLayout>

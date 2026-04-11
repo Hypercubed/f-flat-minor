@@ -15,7 +15,7 @@ export const siteSections: SiteSection[] = [
     eyebrow: "Browser tools",
     summary: "An Astro route for the editor, output views, examples, and compiler inspection panels.",
     description:
-      "This route now mounts the existing browser playground behavior inside the Astro shell while keeping the current lit-html rendering and runtime architecture.",
+      "The playground brings together the editor, examples, diagnostics, and runtime tools in one browser workspace.",
     highlights: [
       "The existing editor, examples, program runner, and detail views now run inside web2",
       "Shareable source URLs still work through query-encoded code loading",
@@ -33,7 +33,7 @@ export const siteSections: SiteSection[] = [
     eyebrow: "Persistent session",
     summary: "A dedicated Astro route for the long-lived browser session, stack monitor, and console guidance.",
     description:
-      "This route now embeds the existing browser REPL behavior inside the Astro shell while still using the current lit-html rendering approach instead of a custom element.",
+      "The REPL offers a persistent browser session with a stack monitor, transcript, and inspector.",
     highlights: [
       "A standalone route instead of a tab inside one large SPA",
       "The existing stack monitor, transcript, and inspector behavior now run inside web2",
@@ -51,7 +51,7 @@ export const siteSections: SiteSection[] = [
     eyebrow: "Practice etudes",
     summary: "An Astro home for challenge discovery, problem detail pages, and the embedded attempt runner.",
     description:
-      "Codettas now run inside the Astro shell with the existing lit-html attempt runner, bytecode details, and leaderboard comparison flow preserved.",
+      "Codettas pair challenge discovery with the attempt runner, bytecode details, and leaderboard comparison on one route.",
     highlights: [
       "The existing challenge list and attempt workflow now live on their own route",
       "Detail navigation and output comparison stay interactive without reviving the old tab shell",
@@ -69,7 +69,7 @@ export const siteSections: SiteSection[] = [
     eyebrow: "Guided learning",
     summary: "An Astro route for structured lessons, walkthrough copy, and runnable tutorial workbenches.",
     description:
-      "The tutorial cards now mount inside Astro with their existing lit-html rendering, editors, and run/reset behavior preserved.",
+      "The tutorial route combines lesson framing with runnable cards, embedded editors, and reset/run behavior.",
     highlights: [
       "The full starter problem set now runs directly inside web2",
       "Lesson framing sits under Astro while the current client-side runner stays intact",
@@ -87,7 +87,7 @@ export const siteSections: SiteSection[] = [
     eyebrow: "Reference",
     summary: "A documentation route for core vocabulary, runtime notes, and guidance currently tucked inside the SPA.",
     description:
-      "Help content is the easiest migration candidate because most of it is already static. This route provides the destination without pulling over the entire legacy shell.",
+      "The reference route collects the execution model, syntax, directives, vocabulary, and examples in one place.",
     highlights: [
       "File-based docs instead of injected HTML inside the app shell",
       "Shared visual language with better page-level navigation",
@@ -95,8 +95,8 @@ export const siteSections: SiteSection[] = [
     ],
     details: [
       "Reference panels cover the execution model, syntax, directives, vocabulary, and examples.",
-      "This page now carries Astro-owned help content rather than SPA-injected markup.",
-      "It serves as the documentation companion to the interactive routes.",
+      "Reference material sits alongside the interactive tools in the same routed site.",
+      "Examples and vocabulary notes are available without leaving the documentation page.",
     ],
   },
 ];
