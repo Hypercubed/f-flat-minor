@@ -9,7 +9,7 @@ Use this skill when the task is to implement or fix f-flat-minor code.
 
 ## Tool bootstrap
 
-- Follow `.agent/rules/repo-runtime-invariants.md` for repo-level runtime and test constraints.
+- Follow `.agents/rules/repo-runtime-invariants.md` for repo-level runtime and test constraints.
 - Use `mise exec -- ...` for commands that depend on repo-managed tools such as `node`, `bun`, `deno`, `npm`, and `chomp`.
 - If a managed tool is missing, run `mise install` once from the repo root, then retry the command with `mise exec -- ...`.
 - Do not switch runtimes just because a bare command is missing from `PATH`.
@@ -132,8 +132,8 @@ mise exec -- node node/bin/ff-run.ts -t --trace-format jsonl <file>.ffp
 
 ## Reference
 
-- Repo workflows: `.agent/playbooks/run-code.md`, `.agent/playbooks/test-and-dev-workflows.md`
-- Repo execution rules: `.agent/rules/repo-runtime-invariants.md`
+- Repo workflows: `.agents/playbooks/run-code.md`, `.agents/playbooks/test-and-dev-workflows.md`
+- Repo execution rules: `.agents/rules/repo-runtime-invariants.md`
 - Language examples: `_docs/supplemental/fbm-by-example.md`
 - Stack notation: `_docs/supplemental/stack-notation.md`
 - Stack rewrites and annotations: `_docs/supplemental/stack-rewrites-and-annotations.md`

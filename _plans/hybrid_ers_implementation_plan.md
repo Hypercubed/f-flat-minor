@@ -306,7 +306,7 @@ tools/ers/
 _docs/
   ers-rewrite-spec.md
   ers-rule-catalog.md
-.agent/skills/
+.agents/skills/
   ff-expand-reduce/SKILL.md
 ```
 

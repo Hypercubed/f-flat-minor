@@ -49,4 +49,4 @@ None — ready to implement.
 - `node/README.md`
 - `deno/chompfile.toml`
 - `chompfile.toml`
-- `.agent/skills/plans/SKILL.md`
+- `.agents/skills/plans/SKILL.md`

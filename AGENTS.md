@@ -11,16 +11,16 @@ f-flat-minor (F♭m) is a minimal stack-oriented programming language. It featur
 ## Agent docs layout
 
 - `AGENTS.md` — repo entry point and navigation
-- `.agent/rules/` — normative repo and authoring constraints
-- `.agent/playbooks/` — concise step-by-step operational workflows
-- `.agent/skills/` — reusable task-specific agent workflows
+- `.agents/rules/` — normative repo and authoring constraints
+- `.agents/playbooks/` — concise step-by-step operational workflows
+- `.agents/skills/` — reusable task-specific agent workflows
 
 Key rule and playbook entry points:
 
-- `.agent/rules/repo-runtime-invariants.md`
-- `.agent/rules/ff-lib-source-docs.md`
-- `.agent/playbooks/run-code.md`
-- `.agent/playbooks/test-and-dev-workflows.md`
+- `.agents/rules/repo-runtime-invariants.md`
+- `.agents/rules/ff-lib-source-docs.md`
+- `.agents/playbooks/run-code.md`
+- `.agents/playbooks/test-and-dev-workflows.md`
 
 ## Critical repo guidance
 
@@ -46,13 +46,13 @@ Key rule and playbook entry points:
 
 ## Rules
 
-- `.agent/rules/repo-runtime-invariants.md` — stable execution, runtime, test, import, and trace constraints
-- `.agent/rules/ff-lib-source-docs.md` — normative source-doc rule for `ff/lib/**/*.ff` and `ff/lib/**/*.ffp`
+- `.agents/rules/repo-runtime-invariants.md` — stable execution, runtime, test, import, and trace constraints
+- `.agents/rules/ff-lib-source-docs.md` — normative source-doc rule for `ff/lib/**/*.ff` and `ff/lib/**/*.ffp`
 
 ## Playbooks
 
-- `.agent/playbooks/run-code.md` — choose a runtime and run `.ff` / `.ffp` code
-- `.agent/playbooks/test-and-dev-workflows.md` — common test, lint, and service commands
+- `.agents/playbooks/run-code.md` — choose a runtime and run `.ff` / `.ffp` code
+- `.agents/playbooks/test-and-dev-workflows.md` — common test, lint, and service commands
 
 ## Documentation
 
@@ -72,14 +72,14 @@ Key rule and playbook entry points:
 
 ## Project Skills
 
-Reusable agent workflows live under `.agent/skills/`:
+Reusable agent workflows live under `.agents/skills/`:
 
-- `.agent/skills/ff-code-authoring/SKILL.md`
-- `.agent/skills/ff-euler-ffp/SKILL.md`
-- `.agent/skills/ff-library-web-refactor/SKILL.md`
-- `.agent/skills/ff-math-internal-naming/SKILL.md` (see `_docs/supplemental/math-naming-internal.md`)
-- `.agent/skills/ff-lib-word-rankings/SKILL.md` (see `_docs/supplemental/ff-lib-word-definition-rankings.md`)
-- `.agent/skills/ff-expand-reduce/SKILL.md` (expand → reduce → resynthesize stack refactors; see `_docs/supplemental/stack-rewrites-and-annotations.md`)
+- `.agents/skills/ff-code-authoring/SKILL.md`
+- `.agents/skills/ff-euler-ffp/SKILL.md`
+- `.agents/skills/ff-library-web-refactor/SKILL.md`
+- `.agents/skills/ff-math-internal-naming/SKILL.md` (see `_docs/supplemental/math-naming-internal.md`)
+- `.agents/skills/ff-lib-word-rankings/SKILL.md` (see `_docs/supplemental/ff-lib-word-definition-rankings.md`)
+- `.agents/skills/ff-expand-reduce/SKILL.md` (expand → reduce → resynthesize stack refactors; see `_docs/supplemental/stack-rewrites-and-annotations.md`)
 
 Use these when the task involves:
 
@@ -94,7 +94,7 @@ Use these when the task involves:
 ## Plans
 
 - `_plans/` contains deferred implementation plans that should be checked before implementation work.
-- Use `.agent/skills/plans/SKILL.md` for the plan workflow.
+- Use `.agents/skills/plans/SKILL.md` for the plan workflow.
 
 ## Environment notes
 

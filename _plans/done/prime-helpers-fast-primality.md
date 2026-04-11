@@ -127,4 +127,4 @@ None — ready to implement.
 - `ff/lib/math/__tests__/primes.ffp`
 - `ff/experimental/primes-test.ffp`
 - `ff/experimental/primes.ffp`
-- `.agent/skills/plans/SKILL.md`
+- `.agents/skills/plans/SKILL.md`

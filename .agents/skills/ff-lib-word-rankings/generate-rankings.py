@@ -103,7 +103,7 @@ def render_markdown(results, today):
         "(text between `name:` and trailing `;`), across `.ff` and `.ffp` "
         "files under `ff/lib`, excluding `__tests__`.",
         "",
-        "> Regenerate with: `python3 .agent/skills/ff-lib-word-rankings/generate-rankings.py`",
+        "> Regenerate with: `python3 .agents/skills/ff-lib-word-rankings/generate-rankings.py`",
         "",
         "| Rank | Word | Tokens in definition | File |",
         "|---:|---|---:|---|",

@@ -9,7 +9,7 @@ Use this skill when the task is to update `_docs/supplemental/ff-lib-word-defini
 
 ## How it works
 
-The script `.agent/skills/ff-lib-word-rankings/generate-rankings.py`:
+The script `.agents/skills/ff-lib-word-rankings/generate-rankings.py`:
 
 1. Walks `ff/lib` (skipping `__tests__/` dirs) for `.ff` and `.ffp` files.
 2. Strips block (`/* ... */`) and line (`// ...`) comments.
@@ -20,11 +20,11 @@ The script `.agent/skills/ff-lib-word-rankings/generate-rankings.py`:
 ## Regenerate
 
 ```bash
-python3 .agent/skills/ff-lib-word-rankings/generate-rankings.py
+python3 .agents/skills/ff-lib-word-rankings/generate-rankings.py
 ```
 
 Optionally specify a different output path:
 
 ```bash
-python3 .agent/skills/ff-lib-word-rankings/generate-rankings.py path/to/output.md
+python3 .agents/skills/ff-lib-word-rankings/generate-rankings.py path/to/output.md
 ```
