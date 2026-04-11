@@ -1,0 +1,97 @@
+<!DOCTYPE html><html lang="en"> <head><meta charset="UTF-8"><meta name="viewport" content="width=device-width, initial-scale=1.0"><meta name="description" content="Compact language overview covering execution model, syntax, directives, common words, and examples."><title>Quick help | F♭m</title><link rel="icon" type="image/svg+xml" href="/f-flat-minor/favicon.svg"><link rel="stylesheet" href="/f-flat-minor/_astro/BaseLayout.C3J-kFkK.css"></head> <body class="theme-reference"> <main class="main-shell"> <header class="site-header"> <a class="brand-link" href="/f-flat-minor/"> <img class="brand-mark" src="/f-flat-minor/logo.svg" alt="Fbm logo" width="44" height="44"> <span class="brand-copy"> <strong>f-flat-minor</strong> </span> </a> <div class="site-header-actions"> <nav class="site-nav" aria-label="Primary"> <a class="nav-link" href="/f-flat-minor/"> Overview </a><a class="nav-link" href="/f-flat-minor/playground/"> Playground </a><a class="nav-link" href="/f-flat-minor/repl/"> REPL </a><a class="nav-link" href="/f-flat-minor/codettas/"> Codettas </a><a class="nav-link" href="/f-flat-minor/tutorial/"> Tutorial </a><a class="nav-link is-active" href="/f-flat-minor/reference/"> Reference </a> </nav> <a class="repo-link" href="https://github.com/Hypercubed/f-flat-minor" target="_blank" rel="noreferrer" aria-label="View the GitHub repository" title="View the GitHub repository"> <svg viewBox="0 0 24 24" aria-hidden="true" focusable="false"> <path fill="currentColor" d="M12 0.5C5.649 0.5 0.5 5.649 0.5 12c0 5.082 3.292 9.395 7.861 10.916c0.575 0.106 0.786-0.249 0.786-0.554c0-0.274-0.01-1-0.016-1.962c-3.198 0.695-3.873-1.541-3.873-1.541c-0.523-1.328-1.277-1.682-1.277-1.682c-1.044-0.714 0.079-0.699 0.079-0.699c1.154 0.081 1.761 1.185 1.761 1.185c1.026 1.758 2.692 1.25 3.348 0.956c0.104-0.743 0.401-1.25 0.729-1.537c-2.553-0.291-5.238-1.276-5.238-5.679c0-1.254 0.448-2.28 1.183-3.084c-0.119-0.29-0.513-1.46 0.112-3.045c0 0 0.965-0.309 3.162 1.178c0.917-0.255 1.9-0.382 2.878-0.387c0.977 0.005 1.961 0.132 2.879 0.387c2.195-1.487 3.158-1.178 3.158-1.178c0.627 1.585 0.233 2.755 0.115 3.045c0.736 0.804 1.181 1.83 1.181 3.084c0 4.414-2.689 5.385-5.252 5.67c0.412 0.355 0.779 1.057 0.779 2.131c0 1.539-0.014 2.78-0.014 3.158c0 0.308 0.207 0.666 0.793 0.553C20.712 21.391 24 17.08 24 12c0-6.351-5.149-11.5-11.5-11.5Z"></path> </svg> </a> <button type="button" id="run-feedback-toggle" class="run-feedback-toggle" aria-label="Run sound and animations on" aria-pressed="true" title="Turn off run sound and animations"> <span class="run-feedback-toggle__glyph" aria-hidden="true">♭</span> </button> </div> </header> <script type="module" src="/f-flat-minor/_astro/BaseLayout.astro_astro_type_script_index_0_lang.CCJmgKsI.js"></script>  <section class="route-hero section-summary"> <p class="eyebrow">Language docs</p> <h1 class="route-title">Quick help</h1> <p class="page-copy"> Compact language overview covering execution model, syntax, directives, common words, and examples. </p> </section> <section class="page-section reference-layout"> <aside class="panel reference-nav-panel" aria-label="Reference navigation"> <div class="panel-header"> <div> <h2>Contents</h2> </div> </div> <div class="help-copy reference-nav-copy"> <nav class="reference-doc-nav"> <a class="reference-doc-link is-active" href="/f-flat-minor/reference/quickhelp/"> <span>Quick help</span> </a><a class="reference-doc-link" href="/f-flat-minor/reference/core-primitives/"> <span>Core primitives</span> </a> </nav> </div> </aside> <article class="panel reference-doc-panel"> <div class="reference-doc-body"><h1>Quick help</h1>
+<p>This page mirrors the current web help content in Markdown form. Use it as a compact reference for the execution model, syntax, preprocessor directives, common words, and example snippets.</p>
+<h2>What F-flat-minor is</h2>
+<p>F-flat-minor is a tiny stack-oriented language built around one value type: big integers.</p>
+<p>Programs manipulate a data stack, a queue used during execution, and a vocabulary of built-in and user-defined words.</p>
+<p>The shared TypeScript core in this repo preprocesses source, compiles it to IR and bytecode, and executes the result.</p>
+<h2>Core model</h2>
+<ul>
+<li>Numbers are pushed onto the stack.</li>
+<li>Non-numeric tokens are treated as words and executed.</li>
+<li>The language compiles to base64 VLQ encoded big integers.</li>
+<li>Pointers to words are also just integers, so code and data share the same stack.</li>
+</ul>
+<h2>Language details</h2>
+<h3>Numbers</h3>
+<p><code>42</code>, <code>-3</code>, and other integers are pushed directly.</p>
+<h3>Words</h3>
+<p><code>dup</code>, <code>swap</code>, <code>+</code>, <code>putc</code>, and user definitions execute when encountered.</p>
+<h3>Definitions</h3>
+<p><code>fact: dup 1 - [ dup 1 - fact * ] ? ;</code> defines a new word.</p>
+<h3>Quotes</h3>
+<p><code>[ dup * ]</code> creates an unnamed word and leaves its pointer on the stack.</p>
+<h3>Pointers</h3>
+<p><code>[+]</code> pushes a pointer to a word instead of calling it.</p>
+<h3>Strings</h3>
+<p><code>'Hello\sWorld!\n'</code> expands to character codes on the stack.</p>
+<h2>Supported directives</h2>
+<ul>
+<li><code>.load path</code>: inline another file every time it appears.</li>
+<li><code>.import path</code>: inline a file once per preprocessor session.</li>
+<li><code>.m ...</code>: evaluate a compile-time macro and splice the resulting stack values into the source.</li>
+<li><code>.exit</code>: request termination from the host.</li>
+</ul>
+<h2>Common vocabulary</h2>
+<p>For the full primitive list, see <a href="/f-flat-minor/reference/core-primitives/">Core primitives reference</a>.</p>
+<table>
+<thead>
+<tr>
+<th>Word</th>
+<th>Meaning</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>dup</code></td>
+<td>duplicate the top stack item</td>
+</tr>
+<tr>
+<td><code>swap</code></td>
+<td>swap the top two items</td>
+</tr>
+<tr>
+<td><code>drop</code></td>
+<td>discard the top item</td>
+</tr>
+<tr>
+<td><code>+</code></td>
+<td>add the top two values</td>
+</tr>
+<tr>
+<td><code>*</code></td>
+<td>multiply the top two values</td>
+</tr>
+<tr>
+<td><code>?</code></td>
+<td>conditional execution</td>
+</tr>
+<tr>
+<td><code>:</code></td>
+<td>begin a definition</td>
+</tr>
+<tr>
+<td><code>;</code></td>
+<td>end a definition</td>
+</tr>
+<tr>
+<td><code>putc</code></td>
+<td>print a character</td>
+</tr>
+<tr>
+<td><code>putn</code></td>
+<td>print a number in the current base</td>
+</tr>
+<tr>
+<td><code>.</code></td>
+<td>print the stack to the console/log channel</td>
+</tr>
+</tbody>
+</table>
+<h2>Examples</h2>
+<pre><code class="language-text">'Hello\sWorld!\n' prints
+
+fact: dup 1 - [ dup 1 - fact * ] ? ;
+20 fact putn 10 putc
+
+[ dup * ] 12 swap eval putn
+</code></pre></div> </article> </section>  </main> </body></html>
