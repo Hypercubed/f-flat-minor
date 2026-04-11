@@ -1,8 +1,8 @@
-import{A as _t,E as Pi,D as vn,s as Li,a as Ri,b as Qe}from"./runtime.B7Xu26Qz.js";import{r as Y,m as Oi,a as Bi,b as Ni,p as Mi,c as $i,d as zt,t as ji,i as qi,e as Hi,f as Vi}from"./require-element.KNWYTPgY.js";import{r as Zn,s as Ui,a as Xi,b as Wi,c as Qi}from"./summary-bar.CcbIsKn5.js";import{a as Yi}from"./location-search.BJUX2Nzi.js";const Gi={CHILD:2},Ki=n=>(...t)=>({_$litDirective$:n,values:t});class Zi{constructor(t){}get _$AU(){return this._$AM._$AU}_$AT(t,e,r){this._$Ct=t,this._$AM=e,this._$Ci=r}_$AS(t,e){return this.update(t,e)}update(t,e){return this.render(...e)}}class Ye extends Zi{constructor(t){if(super(t),this.it=_t,t.type!==Gi.CHILD)throw Error(this.constructor.directiveName+"() can only be used in child bindings")}render(t){if(t===_t||t==null)return this._t=void 0,this.it=t;if(t===Pi)return t;if(typeof t!="string")throw Error(this.constructor.directiveName+"() called with a non-string value");if(t===this.it)return this._t;this.it=t;const e=[t];return e.raw=e,this._t={_$litType$:this.constructor.resultType,strings:e,values:[]}}}Ye.directiveName="unsafeHTML",Ye.resultType=1;const Ji=Ki(Ye),no=`---
+import{A as _t,E as Pi,D as vn,s as Li,a as Ri,b as Qe}from"./runtime.BDDAn4Im.js";import{r as Y,m as Oi,a as Bi,b as Ni,p as Mi,c as $i,d as zt,t as ji,i as qi,e as Hi,f as Vi}from"./require-element.1kDzLoa4.js";import{r as Zn,s as Ui,a as Xi,b as Wi,c as Qi}from"./summary-bar.BJ8F8Qfs.js";import{a as Yi}from"./location-search.BJUX2Nzi.js";const Gi={CHILD:2},Ki=n=>(...t)=>({_$litDirective$:n,values:t});class Zi{constructor(t){}get _$AU(){return this._$AM._$AU}_$AT(t,e,r){this._$Ct=t,this._$AM=e,this._$Ci=r}_$AS(t,e){return this.update(t,e)}update(t,e){return this.render(...e)}}class Ye extends Zi{constructor(t){if(super(t),this.it=_t,t.type!==Gi.CHILD)throw Error(this.constructor.directiveName+"() can only be used in child bindings")}render(t){if(t===_t||t==null)return this._t=void 0,this.it=t;if(t===Pi)return t;if(typeof t!="string")throw Error(this.constructor.directiveName+"() called with a non-string value");if(t===this.it)return this._t;this.it=t;const e=[t];return e.raw=e,this._t={_$litType$:this.constructor.resultType,strings:e,values:[]}}}Ye.directiveName="unsafeHTML",Ye.resultType=1;const Ji=Ki(Ye),no=`---
 etude: 99bottles
 title: "99 Bottles of Beer"
 leader: hypercubed
-bytes: 564
+bytes: 561
 date: 2026-04-07
 ---
 
@@ -13,7 +13,7 @@ This Codetta follows the code.golf [99 Bottles of Beer](https://code.golf/99-bot
 etude: catalan-numbers
 title: "Catalan Numbers"
 leader: hypercubed
-bytes: 222
+bytes: 212
 date: 2026-04-08
 ---
 The nth Catalan number can be expressed as C(n) = binomial(2n,n)/(n+1).
@@ -45,7 +45,7 @@ This Codetta follows the code.golf [Collatz](https://code.golf/collatz) hole.
 etude: e-digits
 title: "Digits of e"
 leader: hypercubed
-bytes: 1083
+bytes: 1013
 date: 2026-04-08
 ---
 
@@ -78,7 +78,7 @@ The current best solution uses the unrolled approach popularized in the Rosetta 
 etude: leap-years
 title: "Leap Years"
 leader: hypercubed
-bytes: 226
+bytes: 216
 date: 2026-04-07
 ---
 
@@ -89,7 +89,7 @@ This Codetta follows the code.golf [Leap Years](https://code.golf/leap-years) ho
 etude: ln-2
 title: "ln 2"
 leader: hypercubed
-bytes: 1043
+bytes: 993
 date: 2026-04-08
 ---
 
@@ -100,7 +100,7 @@ This Codetta follows the code.golf [ln 2](https://code.golf/ln-2) hole.
 etude: pascals-triangle
 title: "Pascal's Triangle"
 leader: hypercubed
-bytes: 265
+bytes: 255
 date: 2026-04-07
 ---
 
@@ -111,7 +111,7 @@ This Codetta follows the code.golf [Pascal's Triangle](https://code.golf/pascals
 etude: pi-digits
 title: "Digits of pi"
 leader: hypercubed
-bytes: 926
+bytes: 888
 date: 2026-04-08
 ---
 
@@ -122,7 +122,7 @@ Including the leading \`3.\`, the output is 1,002 characters total. This Codetta
 etude: prime-numbers
 title: "Prime Numbers"
 leader: hypercubed
-bytes: 1144
+bytes: 1140
 date: 2026-04-08
 ---
 
@@ -144,7 +144,7 @@ The original code.golf hole is argument-driven, so this Codetta version freezes 
 etude: sqrt-2
 title: "Digits of sqrt(2)"
 leader: hypercubed
-bytes: 439
+bytes: 425
 date: 2026-04-08
 ---
 
@@ -155,7 +155,7 @@ This Codetta follows the code.golf [√2](https://code.golf/%E2%88%9A2) hole.
 etude: tower-of-hanoi
 title: "Tower of Hanoi"
 leader: hypercubed
-bytes: 215
+bytes: 237
 date: 2026-04-07
 ---
 

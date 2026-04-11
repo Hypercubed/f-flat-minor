@@ -1,0 +1,497 @@
+<!DOCTYPE html><html lang="en"> <head><meta charset="UTF-8"><meta name="viewport" content="width=device-width, initial-scale=1.0"><meta name="description" content="Current shared TypeScript compiler pipeline, optimizer passes, inlining rules, and peephole optimizations."><title>Optimized compiler | F♭m</title><link rel="icon" type="image/svg+xml" href="/f-flat-minor/favicon.svg"><link rel="stylesheet" href="/f-flat-minor/_astro/BaseLayout.fVERQBqC.css"></head> <body class="theme-reference"> <main class="main-shell"> <header class="site-header"> <a class="brand-link" href="/f-flat-minor/"> <img class="brand-mark" src="/f-flat-minor/logo.svg" alt="Fbm logo" width="44" height="44"> <span class="brand-copy"> <strong>f-flat-minor</strong> </span> </a> <div class="site-header-actions"> <nav class="site-nav" aria-label="Primary"> <a class="nav-link" href="/f-flat-minor/"> Overview </a><a class="nav-link" href="/f-flat-minor/playground/"> Playground </a><a class="nav-link" href="/f-flat-minor/repl/"> REPL </a><a class="nav-link" href="/f-flat-minor/codettas/"> Codettas </a><a class="nav-link" href="/f-flat-minor/tutorial/"> Tutorial </a><a class="nav-link is-active" href="/f-flat-minor/reference/"> Reference </a> </nav> <a class="repo-link" href="https://github.com/Hypercubed/f-flat-minor" target="_blank" rel="noreferrer" aria-label="View the GitHub repository" title="View the GitHub repository"> <svg viewBox="0 0 24 24" aria-hidden="true" focusable="false"> <path fill="currentColor" d="M12 0.5C5.649 0.5 0.5 5.649 0.5 12c0 5.082 3.292 9.395 7.861 10.916c0.575 0.106 0.786-0.249 0.786-0.554c0-0.274-0.01-1-0.016-1.962c-3.198 0.695-3.873-1.541-3.873-1.541c-0.523-1.328-1.277-1.682-1.277-1.682c-1.044-0.714 0.079-0.699 0.079-0.699c1.154 0.081 1.761 1.185 1.761 1.185c1.026 1.758 2.692 1.25 3.348 0.956c0.104-0.743 0.401-1.25 0.729-1.537c-2.553-0.291-5.238-1.276-5.238-5.679c0-1.254 0.448-2.28 1.183-3.084c-0.119-0.29-0.513-1.46 0.112-3.045c0 0 0.965-0.309 3.162 1.178c0.917-0.255 1.9-0.382 2.878-0.387c0.977 0.005 1.961 0.132 2.879 0.387c2.195-1.487 3.158-1.178 3.158-1.178c0.627 1.585 0.233 2.755 0.115 3.045c0.736 0.804 1.181 1.83 1.181 3.084c0 4.414-2.689 5.385-5.252 5.67c0.412 0.355 0.779 1.057 0.779 2.131c0 1.539-0.014 2.78-0.014 3.158c0 0.308 0.207 0.666 0.793 0.553C20.712 21.391 24 17.08 24 12c0-6.351-5.149-11.5-11.5-11.5Z"></path> </svg> </a> <button type="button" id="run-feedback-toggle" class="run-feedback-toggle" aria-label="Run sound and animations on" aria-pressed="true" title="Turn off run sound and animations"> <span class="run-feedback-toggle__glyph" aria-hidden="true">♭</span> </button> </div> </header> <script type="module" src="/f-flat-minor/_astro/BaseLayout.astro_astro_type_script_index_0_lang.CCJmgKsI.js"></script>  <section class="route-hero section-summary"> <p class="eyebrow">Language docs</p> <h1 class="route-title">Optimized compiler</h1> <p class="page-copy"> Current shared TypeScript compiler pipeline, optimizer passes, inlining rules, and peephole optimizations. </p> </section> <section class="page-section reference-layout"> <aside class="panel reference-nav-panel" aria-label="Reference navigation"> <div class="panel-header"> <div> <h2>Contents</h2> </div> </div> <div class="help-copy reference-nav-copy"> <nav class="reference-doc-nav" aria-label="Reference document navigation"> <section class="reference-nav-group"> <p class="reference-nav-group-label">Manual</p> <a class="reference-doc-link" href="/f-flat-minor/reference/manual/introduction/"> <span>Introduction</span> <small>Start here for the language model, execution basics, and where to branch into deeper reference material.</small> </a> </section><section class="reference-nav-group"> <p class="reference-nav-group-label">Reference</p> <a class="reference-doc-link" href="/f-flat-minor/reference/quickhelp/"> <span>Quick help</span> <small>Compact language overview covering execution model, syntax, directives, common words, and examples.</small> </a><a class="reference-doc-link" href="/f-flat-minor/reference/core-primitives/"> <span>Core primitives</span> <small>VM primitive words, opcode table, stack effects, and runtime implementation coverage.</small> </a><a class="reference-doc-link is-active" href="/f-flat-minor/reference/optimized-compiler/"> <span>Optimized compiler</span> <small>Current shared TypeScript compiler pipeline, optimizer passes, inlining rules, and peephole optimizations.</small> </a><a class="reference-doc-link" href="/f-flat-minor/reference/generated/lib/core/"> <span>Core library</span> <small>Reference for the derived stack, logic, and control-flow words exported by `ff/lib/core/core.ff`.</small> </a><a class="reference-doc-link" href="/f-flat-minor/reference/generated/lib/math/"> <span>Math library</span> <small>Reference for the numeric, transcendental, number-theory, and formatting words exported by the top-level `math` module.</small> </a><a class="reference-doc-link" href="/f-flat-minor/reference/generated/lib/string/"> <span>String library</span> <small>Reference for the character and string-printing words exported by the top-level `string` module.</small> </a><a class="reference-doc-link" href="/f-flat-minor/reference/generated/lib/seq/"> <span>Sequence library</span> <small>Reference for quotation-backed sequence construction, traversal, and reduction words exported by the top-level `seq` module.</small> </a><a class="reference-doc-link" href="/f-flat-minor/reference/generated/lib/time/"> <span>Time library</span> <small>Reference for UTC calendar conversion and formatting words exported by the top-level `time` module.</small> </a> </section> </nav> </div> </aside> <article class="panel reference-doc-panel"> <div class="reference-doc-body"> <p>The current optimized compiler is the shared TypeScript compiler plus the
+shared TypeScript optimizer. Deno, Node, Bun, and the web playground all use the
+same core implementation from <code>typescript/core/src/compiler.ts</code> and
+<code>typescript/core/src/optimizer.ts</code>.</p>
+<p>Optimization is optional in the command-line tools. Pass <code>--opt</code> or <code>-O</code> to run
+it:</p>
+<pre class="astro-code github-dark" style="background-color:#24292e;color:#e1e4e8; overflow-x: auto;" tabindex="0" data-language="sh"><code><span class="line"><span style="color:#B392F0">deno</span><span style="color:#9ECBFF"> task</span><span style="color:#9ECBFF"> compile</span><span style="color:#79B8FF"> --opt</span><span style="color:#9ECBFF"> program.ffp</span></span>
+<span class="line"><span style="color:#B392F0">node</span><span style="color:#9ECBFF"> node/bin/ff-compile.ts</span><span style="color:#79B8FF"> --opt</span><span style="color:#9ECBFF"> program.ffp</span></span>
+<span class="line"><span style="color:#B392F0">bun</span><span style="color:#9ECBFF"> bun/bin/ff-compile.ts</span><span style="color:#79B8FF"> --opt</span><span style="color:#9ECBFF"> program.ffp</span></span></code></pre>
+<p>The web playground exposes the same optimizer through its optimize toggle.</p>
+<h2 id="pipeline">Pipeline</h2>
+<p>The optimized compile path is:</p>
+<ol>
+<li>Preprocess <code>.ffp</code> input with <code>.load</code>, <code>.import</code>, <code>.m</code>, and stdlib support.</li>
+<li>Tokenize the preprocessed source on whitespace.</li>
+<li>Compile tokens to IR.</li>
+<li>Validate the unoptimized IR unless validation is disabled.</li>
+<li>Run the optimizer when <code>--opt</code> / <code>-O</code> is enabled.</li>
+<li>Print IR, disassemble, or encode optimized IR to <code>.ffb</code> bytecode.</li>
+</ol>
+<p>The optimizer does not change the language frontend. It receives ordinary IR
+instructions:</p>
+<pre class="astro-code github-dark" style="background-color:#24292e;color:#e1e4e8; overflow-x: auto;" tabindex="0" data-language="ts"><code><span class="line"><span style="color:#E1E4E8">{ </span><span style="color:#B392F0">op</span><span style="color:#E1E4E8">: </span><span style="color:#9ECBFF">"push"</span><span style="color:#F97583"> |</span><span style="color:#9ECBFF"> "call"</span><span style="color:#E1E4E8">, </span><span style="color:#B392F0">value</span><span style="color:#E1E4E8">: bigint, meta</span><span style="color:#F97583">?:</span><span style="color:#E1E4E8"> {</span><span style="color:#F97583">...</span><span style="color:#E1E4E8">} }</span></span></code></pre>
+<p>During bytecode encoding, a <code>push</code> becomes <code>value &#x3C;&#x3C; 1</code> and a <code>call</code> becomes
+<code>(value &#x3C;&#x3C; 1) | 1</code>. Calls to opcode <code>0</code> (<code>nop</code>) are dropped by the encoder.</p>
+<h2 id="ir-metadata">IR Metadata</h2>
+<p>The compiler attaches metadata that the optimizer uses:</p>
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+<table><thead><tr><th>Metadata</th><th>Source</th><th>Optimizer meaning</th></tr></thead><tbody><tr><td><code>name</code></td><td>word names, pointers, strings, special forms</td><td>Preserves readable names in IR and direct-call lowering.</td></tr><tr><td><code>pointer</code></td><td><code>[word]</code>, definition names, <code>.pointer</code></td><td>Marks a pushed integer as a word pointer. Referenced pointer definitions are retained.</td></tr><tr><td><code>inline</code></td><td><code>.inline</code></td><td>Forces inlining for the marked call or definition.</td></tr><tr><td><code>unsafe</code></td><td><code>.unsafe</code></td><td>Prevents optimizer inlining for queue-sensitive calls or definitions.</td></tr><tr><td><code>uid</code></td><td>optimizer-created anonymous definitions</td><td>Gives a stable synthetic word id to a quotation.</td></tr></tbody></table>
+<p>Compiler directives apply to the previous IR instruction. For example,
+<code>.inline</code> marks the previous instruction as safe to inline, and <code>.unsafe</code> marks
+the previous instruction as unsafe for optimizer inlining.</p>
+<h2 id="optimizer-passes">Optimizer Passes</h2>
+<p><code>Optimizer.optimize()</code> resets state, records the pre-optimization IR size, and
+then runs repeated optimization loops.</p>
+<p>Each optimization loop does three things:</p>
+<ol>
+<li>Run all peephole rules until no peephole rule matches.</li>
+<li>Scan definitions and quotations into an internal definition map.</li>
+<li>Inline eligible user-defined words.</li>
+</ol>
+<p>The optimizer runs at least two loops and at most twenty loops. After the loop,
+it pulls user definitions out of the main IR, replaces quotations with pointer
+pushes, and then adds back only definitions still referenced by the optimized
+main program or by other retained definitions.</p>
+<p>The retained definition pass matters because F-flat-minor definitions are
+runtime values: a word can be called directly or pushed as a pointer and later
+evaluated. The optimizer keeps definitions that remain reachable through either
+calls or pointer pushes.</p>
+<h2 id="peephole-optimizations">Peephole Optimizations</h2>
+<p>Peephole rules match short adjacent IR windows. The peephole engine scans from
+left to right, applies the first matching rule, rewinds a little, and repeats
+until a full scan makes no changes.</p>
+<p>The current rules are listed below using source-level notation. These are
+descriptions of the IR transformations, not a separate surface syntax.</p>
+<h3 id="no-op-removal">No-Op Removal</h3>
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+<table><thead><tr><th>Pattern</th><th>Replacement</th><th>Effect</th></tr></thead><tbody><tr><td><code>nop</code></td><td>empty</td><td>Removes explicit no-op calls.</td></tr></tbody></table>
+<h3 id="null-sequences">Null Sequences</h3>
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+<table><thead><tr><th>Pattern</th><th>Replacement</th><th>Effect</th></tr></thead><tbody><tr><td><code>swap swap</code></td><td>empty</td><td>Swapping twice restores the original stack.</td></tr><tr><td><code>dup drop</code></td><td>empty</td><td>Duplicating and immediately discarding restores the original stack.</td></tr><tr><td><code>q&#x3C; q></code></td><td>empty</td><td>Moving the top stack value to the queue and immediately back is a no-op.</td></tr><tr><td><code>clock drop</code></td><td>empty</td><td>Reads the clock and discards the result.</td></tr><tr><td><code>rand drop</code></td><td>empty</td><td>Reads a random value and discards the result.</td></tr><tr><td><code>depth drop</code></td><td>empty</td><td>Reads stack depth and discards the result.</td></tr><tr><td><code>~ ~</code></td><td>empty</td><td>Bitwise NOT twice restores the original integer.</td></tr><tr><td><code>n drop</code></td><td>empty</td><td>Pushes a constant or pointer and immediately discards it.</td></tr><tr><td><code>0 eval</code></td><td>empty</td><td>Evaluating pointer <code>0</code> is treated as a no-op.</td></tr></tbody></table>
+<p>The <code>clock drop</code> and <code>rand drop</code> rules remove observable reads whose result is
+unused. That is consistent with the optimizer’s current treatment of those
+words as removable when their value is immediately discarded.</p>
+<h3 id="direct-call-lowering">Direct-Call Lowering</h3>
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+<table><thead><tr><th>Pattern</th><th>Replacement</th><th>Effect</th></tr></thead><tbody><tr><td><code>[word] eval</code></td><td><code>word</code></td><td>Converts an indirect call through a pushed pointer into a direct IR call.</td></tr></tbody></table>
+<p>This also works for any pushed integer followed by <code>eval</code>; the replacement is a
+direct <code>call</code> to that integer value. If the pushed pointer had a readable name,
+the optimizer strips a leading <code>&#x26;</code> from that name for the resulting call
+metadata.</p>
+<h3 id="constant-folding">Constant Folding</h3>
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+<table><thead><tr><th>Pattern</th><th>Replacement</th><th>Effect</th></tr></thead><tbody><tr><td><code>a b +</code></td><td><code>a+b</code></td><td>Folds addition of two pushed constants.</td></tr><tr><td><code>a b -</code></td><td><code>a-b</code></td><td>Folds subtraction of two pushed constants.</td></tr><tr><td><code>a b *</code></td><td><code>a*b</code></td><td>Folds multiplication of two pushed constants.</td></tr><tr><td><code>a b /</code></td><td><code>a/b</code></td><td>Folds integer division when <code>b</code> is nonzero.</td></tr><tr><td><code>a b %</code></td><td><code>a%b</code></td><td>Folds remainder when <code>b</code> is nonzero.</td></tr><tr><td><code>a b &#x3C;&#x3C;</code></td><td><code>a&#x3C;&#x3C;b</code></td><td>Folds left shifts.</td></tr><tr><td><code>a b >></code></td><td><code>a>>b</code></td><td>Folds right shifts.</td></tr><tr><td><code>a b &#x26;</code></td><td><code>a&#x26;b</code></td><td>Folds bitwise AND.</td></tr><tr><td><code>a b |</code></td><td><code>a|b</code></td><td>Folds bitwise OR.</td></tr><tr><td><code>a ~</code></td><td><code>~a</code></td><td>Folds bitwise NOT.</td></tr><tr><td><code>a b &#x3C;</code></td><td><code>flag</code></td><td>Folds less-than comparisons to <code>1</code> or <code>0</code>.</td></tr><tr><td><code>a b =</code></td><td><code>flag</code></td><td>Folds equality comparisons to <code>1</code> or <code>0</code>.</td></tr><tr><td><code>a b ></code></td><td><code>flag</code></td><td>Folds greater-than comparisons to <code>1</code> or <code>0</code>.</td></tr><tr><td><code>a b ^</code></td><td><code>a^b</code></td><td>Folds exponentiation when <code>b</code> is nonnegative.</td></tr><tr><td><code>a dup</code></td><td><code>a a</code></td><td>Propagates a pushed constant through <code>dup</code>.</td></tr></tbody></table>
+<p>The <code>/</code> and <code>%</code> folds guard zero divisors. The <code>^</code> constant fold guards
+negative exponents because native <code>bigint</code> exponentiation rejects them. The
+<code>1 ^</code> identity is still safe for nonconstant bases because exponent <code>1</code> does
+not trigger that runtime error.</p>
+<h3 id="algebraic-simplification">Algebraic Simplification</h3>
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+<table><thead><tr><th>Pattern</th><th>Replacement</th><th>Effect</th></tr></thead><tbody><tr><td><code>0 +</code></td><td>empty</td><td>Rewrites <code>a 0 +</code> to <code>a</code>.</td></tr><tr><td><code>swap +</code></td><td><code>+</code></td><td>Addition is commutative, so the swap is unnecessary.</td></tr><tr><td><code>0 -</code></td><td>empty</td><td>Rewrites <code>a 0 -</code> to <code>a</code>.</td></tr><tr><td><code>1 *</code></td><td>empty</td><td>Rewrites <code>a 1 *</code> to <code>a</code>.</td></tr><tr><td><code>swap *</code></td><td><code>*</code></td><td>Multiplication is commutative, so the swap is unnecessary.</td></tr><tr><td><code>1 /</code></td><td>empty</td><td>Rewrites <code>a 1 /</code> to <code>a</code>.</td></tr><tr><td><code>0 |</code></td><td>empty</td><td>Rewrites <code>a 0 |</code> to <code>a</code>.</td></tr><tr><td><code>0 &#x3C;&#x3C;</code></td><td>empty</td><td>Rewrites <code>a 0 &#x3C;&#x3C;</code> to <code>a</code>.</td></tr><tr><td><code>0 >></code></td><td>empty</td><td>Rewrites <code>a 0 >></code> to <code>a</code>.</td></tr><tr><td><code>1 ^</code></td><td>empty</td><td>Rewrites <code>a 1 ^</code> to <code>a</code>.</td></tr><tr><td><code>swap &#x26;</code></td><td><code>&#x26;</code></td><td>Bitwise AND is commutative, so the swap is unnecessary.</td></tr><tr><td><code>swap |</code></td><td><code>|</code></td><td>Bitwise OR is commutative, so the swap is unnecessary.</td></tr><tr><td><code>swap =</code></td><td><code>=</code></td><td>Equality is commutative, so the swap is unnecessary.</td></tr></tbody></table>
+<p>These are local stack-shape rewrites. For example, <code>0 +</code> means the adjacent
+instructions <code>push 0</code> then <code>call +</code>; the left operand remains earlier in the IR.</p>
+<h3 id="control-flow">Control Flow</h3>
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+<table><thead><tr><th>Pattern</th><th>Replacement</th><th>Effect</th></tr></thead><tbody><tr><td><code>0 [quote] ?</code></td><td>empty</td><td>Removes a statically false conditional branch.</td></tr><tr><td><code>n [quote] ?</code>, <code>n != 0</code></td><td><code>quote</code></td><td>Converts a statically true conditional branch to a direct call.</td></tr></tbody></table>
+<p>The true-branch rule calls the pushed quotation pointer directly. It relies on
+the same truth convention as the runtime: <code>0</code> is false and any nonzero integer
+is true.</p>
+<h3 id="quotation-compaction">Quotation Compaction</h3>
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+<table><thead><tr><th>Pattern</th><th>Replacement</th><th>Effect</th></tr></thead><tbody><tr><td><code>[ ]</code></td><td><code>[0]</code></td><td>Replaces an empty quotation with pointer <code>0</code>.</td></tr><tr><td><code>[ word ]</code></td><td><code>[word]</code></td><td>Replaces a single-word quotation with that word pointer.</td></tr></tbody></table>
+<p>This works with the <code>0 eval</code> rule: an empty quotation that is immediately
+evaluated can disappear after repeated peephole passes.</p>
+<p>The single-word rule only compacts quotations whose body is one call
+instruction. Numeric quotations such as <code>[ 1 ]</code> remain anonymous definitions.</p>
+<h2 id="inlining">Inlining</h2>
+<p>After each peephole phase, the optimizer records user definitions and inlines
+eligible calls.</p>
+<p>A user word is inlined when:</p>
+<ul>
+<li>the call itself is not marked <code>.unsafe</code>;</li>
+<li>the target definition exists in the optimizer’s definition map;</li>
+<li>the optimizer is not already inlining that same word recursively;</li>
+<li>the definition terminator is not marked <code>.unsafe</code>;</li>
+<li>either the call or definition is marked <code>.inline</code>, or the definition is small.</li>
+</ul>
+<p>Small definitions are currently inlined when the full stored definition length
+is at most <code>7</code> IR instructions. Stored definitions include the pointer, <code>:</code>,
+body, and <code>;</code>, so this corresponds to a body of four IR instructions or fewer.</p>
+<p>When <code>.inline</code> is present on the call or definition, the optimizer inlines the
+definition body with an effectively unlimited length limit. Recursive inlining
+is still blocked by the <code>seen</code> list.</p>
+<p>The body inserted during inlining excludes the definition wrapper:</p>
+<pre class="astro-code github-dark" style="background-color:#24292e;color:#e1e4e8; overflow-x: auto;" tabindex="0" data-language="text"><code><span class="line"><span>[word] : body... ;</span></span></code></pre>
+<p>becomes:</p>
+<pre class="astro-code github-dark" style="background-color:#24292e;color:#e1e4e8; overflow-x: auto;" tabindex="0" data-language="text"><code><span class="line"><span>body...</span></span></code></pre>
+<h2 id="definition-pulling-and-retention">Definition Pulling And Retention</h2>
+<p>The optimizer separates definitions from the main program after its repeated
+passes:</p>
+<ul>
+<li>Named definitions are removed from the main IR and stored by word id.</li>
+<li>Anonymous quotations are assigned synthetic ids above the system opcode range.</li>
+<li>Anonymous quotations are converted into named-definition-shaped IR internally.</li>
+<li>The main program receives a pointer push where the quotation originally was.</li>
+<li>Only definitions referenced by calls or pointer pushes are added back to the
+front of the optimized IR.</li>
+</ul>
+<p>This final layout keeps bytecode compact by dropping dead definitions while
+preserving words that are still callable or evaluable through pointers.</p>
+<h2 id="statistics">Statistics</h2>
+<p>When <code>--stats</code> is used with <code>--opt</code>, the CLI prints optimizer counters:</p>
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+<table><thead><tr><th>Counter</th><th>Meaning</th></tr></thead><tbody><tr><td><code>pre_optimization_ir_size</code></td><td>Input IR instruction count.</td></tr><tr><td><code>post_optimization_ir_size</code></td><td>Final optimized IR instruction count.</td></tr><tr><td><code>user_defined_anon_defs</code></td><td>Anonymous quotations found on the first pass.</td></tr><tr><td><code>user_defined_named_defs</code></td><td>Named definitions found on the first pass.</td></tr><tr><td><code>post_optimization_user_defs</code></td><td>Definitions retained after optimization.</td></tr><tr><td><code>inlined_calls</code></td><td>Calls replaced with definition bodies.</td></tr><tr><td><code>peephole_optimizations</code></td><td>Peephole rule applications.</td></tr><tr><td><code>optimization_passes</code></td><td>Whole optimizer loop count.</td></tr></tbody></table>
+<h2 id="current-limits">Current Limits</h2>
+<p>The optimizer is intentionally local and simple. It is not a dataflow optimizer,
+does not infer stack effects, and does not prove general equivalences.</p>
+<p>Notable current gaps:</p>
+<ul>
+<li>no stack-effect-aware rewrites beyond fixed adjacent instruction windows;</li>
+<li>no general dead-code analysis inside retained definitions;</li>
+<li>no replacement of empty named definitions with a direct no-op strategy.</li>
+</ul>
+<p>See <code>_plans/typescript-optimizer-peephole-candidates.md</code> for planned peephole
+extensions that are not part of the current optimizer yet.</p> </div> </article> </section>  </main> </body></html>
