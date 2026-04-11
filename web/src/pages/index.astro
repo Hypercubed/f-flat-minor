@@ -1,0 +1,41 @@
+---
+import BaseLayout from "../layouts/BaseLayout.astro";
+import { siteSections, withBasePath } from "../data/site";
+---
+
+<BaseLayout
+  title="F-flat-minor"
+  description="The Astro-based home for the F-flat-minor website, with interactive tools mounted on dedicated routes."
+  theme="home"
+  activePath="/"
+>
+  <section class="hero-copy">
+    <p class="eyebrow">f-flat-minor</p>
+    <h1 class="hero-title">Run, explore, and learn F♭m in the browser.</h1>
+    <p class="hero-lede">
+      Use the playground, work in the REPL, tackle code challenges, follow guided lessons, and keep the
+      reference close at hand.
+    </p>
+    <div class="hero-actions">
+      <a class="button-link primary" href={withBasePath("/playground/")}>Open the playground</a>
+      <a class="button-link secondary" href={withBasePath("/help/")}>Read the reference</a>
+    </div>
+  </section>
+
+  <section class="page-section grid feature-grid" aria-label="Site sections">
+    {
+      siteSections.map((section) => (
+        <article class="feature-card">
+          <p class="eyebrow">{section.eyebrow}</p>
+          <h3>{section.title}</h3>
+          <p>{section.summary}</p>
+          <footer>
+            <a class="inline-link" href={withBasePath(`/${section.slug}/`)}>
+              Open the {section.title.toLowerCase()}
+            </a>
+          </footer>
+        </article>
+      ))
+    }
+  </section>
+</BaseLayout>

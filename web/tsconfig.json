@@ -1,13 +1,3 @@
 {
-  "compilerOptions": {
-    "target": "ES2022",
-    "useDefineForClassFields": true,
-    "module": "ESNext",
-    "moduleResolution": "Bundler",
-    "strict": true,
-    "allowImportingTsExtensions": true,
-    "noEmit": true,
-    "lib": ["ES2022", "DOM", "DOM.Iterable"]
-  },
-  "include": ["src"]
+  "extends": "astro/tsconfigs/strict"
 }
