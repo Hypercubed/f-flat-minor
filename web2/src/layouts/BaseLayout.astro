@@ -1,6 +1,6 @@
 ---
 import { navItems } from "../data/site";
-import "../../../web/src/style.css";
+import "../styles/legacy-web.css";
 import "../styles/global.css";
 
 interface Props {
@@ -34,7 +34,7 @@ const {
           <img class="brand-mark" src="/logo.svg" alt="Fbm logo" width="44" height="44" />
           <span class="brand-copy">
             <strong>f-flat-minor</strong>
-            <span>Astro site bootstrap</span>
+            <span>Astro site</span>
           </span>
         </a>
         <div class="site-header-actions">
@@ -96,8 +96,7 @@ const {
       <slot />
       <footer class="footer">
         <p>
-          The new <code>web2</code> Astro shell sits alongside <code>/web</code> until the interactive
-          surfaces are embedded here.
+          f-flat-minor now runs from the Astro site shell with routed tools and Astro-owned content.
         </p>
       </footer>
     </main>

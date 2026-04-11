@@ -1,4 +1,4 @@
-import type { RunResult } from "../../../web/src/program-runner.ts";
+import type { RunResult } from "./program-runner.ts";
 import { formatVmStepCount } from "./format-vm-steps.ts";
 import type { SummaryBarItem, SummaryTone } from "./summary-bar.ts";
 

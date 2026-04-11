@@ -54,8 +54,8 @@ const InteractiveSurface = (() => {
 
   <section class="page-section grid route-grid">
     <article class="info-card">
-      <p class="eyebrow">What belongs here</p>
-      <h3>Future shape of this page</h3>
+      <p class="eyebrow">On this route</p>
+      <h3>What this page includes</h3>
       <p>{section.summary}</p>
       <ul class="bullet-list">
         {section.highlights.map((item) => <li>{item}</li>)}
@@ -63,15 +63,12 @@ const InteractiveSurface = (() => {
     </article>
 
     <article class="info-card">
-      <p class="eyebrow">Migration steps</p>
-      <h3>What comes next</h3>
+      <p class="eyebrow">Route notes</p>
+      <h3>Where this route can grow</h3>
       <ul class="bullet-list">
         {section.nextSteps.map((item) => <li>{item}</li>)}
       </ul>
-      <p>
-        Each interactive route now mounts its existing controller inside Astro while keeping the current
-        `lit-html` rendering model intact.
-      </p>
+      <p>This route now lives entirely inside the Astro site and can evolve independently from the old app.</p>
     </article>
   </section>
 </BaseLayout>

@@ -1,5 +1,5 @@
 import { html, render } from "lit-html";
-import { getCompiledBytecodeDisplay, getCompiledByteScore } from "../../../web/src/program-runner.ts";
+import { getCompiledBytecodeDisplay, getCompiledByteScore } from "./program-runner.ts";
 
 export function formatBytecodeByteCount(value: string): string {
   const byteCount = value ? getCompiledByteScore(value) : 0;
