@@ -1,4 +1,4 @@
-import{A as _t,E as Pi,D as vn,s as Li,a as Ri,b as Qe}from"./runtime.CjaUsFnh.js";import{r as Y,m as Oi,a as Bi,b as Ni,p as Mi,c as $i,d as zt,t as ji,i as qi,e as Hi,f as Vi}from"./require-element.BfR_8N7S.js";import{r as Zn,s as Ui,a as Xi,b as Wi,c as Qi}from"./summary-bar.Dekz040_.js";import{a as Yi}from"./location-search.BJUX2Nzi.js";const Gi={CHILD:2},Ki=n=>(...t)=>({_$litDirective$:n,values:t});class Zi{constructor(t){}get _$AU(){return this._$AM._$AU}_$AT(t,e,r){this._$Ct=t,this._$AM=e,this._$Ci=r}_$AS(t,e){return this.update(t,e)}update(t,e){return this.render(...e)}}class Ye extends Zi{constructor(t){if(super(t),this.it=_t,t.type!==Gi.CHILD)throw Error(this.constructor.directiveName+"() can only be used in child bindings")}render(t){if(t===_t||t==null)return this._t=void 0,this.it=t;if(t===Pi)return t;if(typeof t!="string")throw Error(this.constructor.directiveName+"() called with a non-string value");if(t===this.it)return this._t;this.it=t;const e=[t];return e.raw=e,this._t={_$litType$:this.constructor.resultType,strings:e,values:[]}}}Ye.directiveName="unsafeHTML",Ye.resultType=1;const Ji=Ki(Ye),no=`---
+import{A as _t,E as Pi,D as vn,s as Li,a as Ri,b as Qe}from"./runtime.B7Xu26Qz.js";import{r as Y,m as Oi,a as Bi,b as Ni,p as Mi,c as $i,d as zt,t as ji,i as qi,e as Hi,f as Vi}from"./require-element.KNWYTPgY.js";import{r as Zn,s as Ui,a as Xi,b as Wi,c as Qi}from"./summary-bar.CcbIsKn5.js";import{a as Yi}from"./location-search.BJUX2Nzi.js";const Gi={CHILD:2},Ki=n=>(...t)=>({_$litDirective$:n,values:t});class Zi{constructor(t){}get _$AU(){return this._$AM._$AU}_$AT(t,e,r){this._$Ct=t,this._$AM=e,this._$Ci=r}_$AS(t,e){return this.update(t,e)}update(t,e){return this.render(...e)}}class Ye extends Zi{constructor(t){if(super(t),this.it=_t,t.type!==Gi.CHILD)throw Error(this.constructor.directiveName+"() can only be used in child bindings")}render(t){if(t===_t||t==null)return this._t=void 0,this.it=t;if(t===Pi)return t;if(typeof t!="string")throw Error(this.constructor.directiveName+"() called with a non-string value");if(t===this.it)return this._t;this.it=t;const e=[t];return e.raw=e,this._t={_$litType$:this.constructor.resultType,strings:e,values:[]}}}Ye.directiveName="unsafeHTML",Ye.resultType=1;const Ji=Ki(Ye),no=`---
 etude: 99bottles
 title: "99 Bottles of Beer"
 leader: hypercubed
@@ -162,7 +162,7 @@ date: 2026-04-07
 Print the steps needed to solve the Tower of Hanoi with 9 disks.
 
 Each line identifies the source pole and destination pole for one move. This Codetta follows the code.golf [Tower of Hanoi](https://code.golf/tower-of-hanoi) hole.
-`,go=`.import ../../lib/prelude.ffp
+`,go=`.import <prelude>
 
 _bottles: 'bottle' ;
 _ofBeer: 'of\\sbeer' ;
@@ -190,7 +190,7 @@ verses: verse dup [ verses ] ? ;
 '\\0No\\smore\\s' _bottles 's\\s' _ofBeer _onTheWall prints comma bottlesOfBeer period
 '\\0Go\\sto\\sthe\\sstore\\sand\\sbuy\\ssome\\smore,\\s' prints
 99 bottlesOfBeer onTheWall '.' putc
-`,bo=`.import ../../lib/prelude.ffp
+`,bo=`.import <prelude>
 
 /* Near-solution seed retained from ff/catalan.ffp. */
 /* Catalan number: n cat -> C_n */
@@ -200,20 +200,20 @@ cat: dup dup 2 * swap nck swap 1 + / ;
 0 [ dup cat putn ++ cr ] 100 times
 `,yo=`p: depth [ putc p ] ? ;
 
-'sattedoC\\sfo\\sdlroW\\solleH' p`,ko=`.import ../../lib/prelude.ffp
+'sattedoC\\sfo\\sdlroW\\solleH' p`,ko=`.import <prelude>
 
 next: dup even? [ 2 / ] [ 3 * 1 + ] branch ;
 steps: dup 1 > [ next steps ++ ] [ drop 0 ] branch ;
 line: dup steps putn cr ++ ;
 
 1 [line] 1000 times drop
-`,wo=`.import ../../lib/prelude.ffp
+`,wo=`.import <prelude>
 
 N: 1000 ;
 E: N 1 nexp ;
 
 E N nputn
-`,xo=`.import ../../lib/prelude.ffp
+`,xo=`.import <prelude>
 
 fib:
   dup 0 = not
@@ -222,7 +222,7 @@ fib:
   ] ? ;
 
 31 fib putn
-`,Co=`.import ../../lib/prelude.ffp
+`,Co=`.import <prelude>
 
 n: dup putn cr ++ ;
 f: 0 'Fizz' println ++ ;
@@ -233,26 +233,26 @@ fb15: fb10 n f n n fb ;
 fb100: fb15 fb15 fb15 fb15 fb15 fb15 fb10 ;
 
 1 fb100 drop
-`,So=`.import ../../lib/prelude.ffp
+`,So=`.import <prelude>
 .import ../../lib/time/utc.ffp
 
 line: dup leap-year? [ dup putn cr ] ? ++ ;
 
 1800 [ line ] 601 times drop
-`,To=`.import ../../lib/prelude.ffp
+`,To=`.import <prelude>
 
 N: 1000 ;
 L: N nln2 ;
 
 L N nputn
-`,_o=`.import ../../lib/prelude.ffp
+`,_o=`.import <prelude>
 
 ps: putn sp ;
 
 line: dup 0 swap [ dup2 ++ q< q< nck ps q> q> ] seq nck ps cr ;
 
 0 [ dup line ++ ] 20 times
-`,zo=`.import ../../lib/prelude.ffp
+`,zo=`.import <prelude>
 
 N: 1000 ;
 P: N npi ;
@@ -260,7 +260,7 @@ P: N npi ;
 P N nputn
 `,Eo=`.import ../../lib/math/primes.ffp
 
-1 [ dup prime? [ dup putn '\\n' putc ] ? ++ ] 100 times drop`,Io=`.import ../../lib/prelude.ffp
+1 [ dup prime? [ dup putn '\\n' putc ] ? ++ ] 100 times drop`,Io=`.import <prelude>
 .import ../../lib/seq/seq.ffp
 
 I: 1 'I' putc ;
@@ -309,13 +309,13 @@ M C M X C roman! /* 1990 */
 M D C L X V I roman! /* 1666 */
 M M V I I I roman! /* 2008 */
 M M X X I I roman!  /* 2022 */
-`,Ao=`.import ../../lib/prelude.ffp
+`,Ao=`.import <prelude>
 
 N: 1000 ;
 S: N 2 nsqrt ;
 
 S N nputn
-`,vo=`.import ../../lib/prelude.ffp
+`,vo=`.import <prelude>
 
 over2: [ over ] dip swap ;
 over3: [ over2 ] dip swap ;

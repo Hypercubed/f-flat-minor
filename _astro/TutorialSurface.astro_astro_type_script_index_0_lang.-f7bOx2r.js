@@ -1,4 +1,4 @@
-import{D as _,s as P,a as T,b as c,A as z}from"./runtime.CjaUsFnh.js";import{r as f,m as S,t as B,a as O,b as j,n as C,o as L}from"./require-element.BfR_8N7S.js";import{w as R}from"./wait-for-paint.DX2Jcgjz.js";const V=`---
+import{D as b,s as P,a as T,b as c,A as z}from"./runtime.B7Xu26Qz.js";import{r as f,m as S,t as B,a as O,b as j,n as C,o as L}from"./require-element.KNWYTPgY.js";import{w as R}from"./wait-for-paint.DX2Jcgjz.js";const V=`---
 tutorial: "abs"
 order: 3
 title: "Absolute Value"
@@ -76,18 +76,18 @@ Reverse the decimal digits of a positive integer.
 Concepts: \`divrem\`, \`queue helpers\`, \`accumulators\`, \`recursion\`
 
 The accumulator builds the answer as the input shrinks, and numeric leading zeros disappear naturally.
-`,tt='---\ntutorial: "square"\norder: 1\ntitle: "Square"\ngoal: "Define `square` and print the square of one number."\nconcepts: ["definitions","dup","*","putn","cr"]\nnote: "`dup` keeps the original input around so `*` can use it twice."\n---\nDefine `square` and print the square of one number.\n\nConcepts: `definitions`, `dup`, `*`, `putn`, `cr`\n\n`dup` keeps the original input around so `*` can use it twice.\n',et='---\ntutorial: "sum-to"\norder: 6\ntitle: "Sum 1..n"\ngoal: "Sum every integer from `1` through `n`."\nconcepts: ["recursion","+","implicit base cases"]\nnote: "When `n` reaches `0`, the quote is skipped and that `0` becomes the base value."\n---\nSum every integer from `1` through `n`.\n\nConcepts: `recursion`, `+`, `implicit base cases`\n\nWhen `n` reaches `0`, the quote is skipped and that `0` becomes the base value.\n',nt=`.import ../../lib/prelude.ffp
+`,tt='---\ntutorial: "square"\norder: 1\ntitle: "Square"\ngoal: "Define `square` and print the square of one number."\nconcepts: ["definitions","dup","*","putn","cr"]\nnote: "`dup` keeps the original input around so `*` can use it twice."\n---\nDefine `square` and print the square of one number.\n\nConcepts: `definitions`, `dup`, `*`, `putn`, `cr`\n\n`dup` keeps the original input around so `*` can use it twice.\n',et='---\ntutorial: "sum-to"\norder: 6\ntitle: "Sum 1..n"\ngoal: "Sum every integer from `1` through `n`."\nconcepts: ["recursion","+","implicit base cases"]\nnote: "When `n` reaches `0`, the quote is skipped and that `0` becomes the base value."\n---\nSum every integer from `1` through `n`.\n\nConcepts: `recursion`, `+`, `implicit base cases`\n\nWhen `n` reaches `0`, the quote is skipped and that `0` becomes the base value.\n',nt=`.import <prelude>
 
 my-abs: dup 0 < [ -1 * ] ? ;
 
 -42 my-abs dup putn cr drop
-`,ot=`.import ../../lib/prelude.ffp
+`,ot=`.import <prelude>
 
 next-collatz: dup even? [ 2 / ] [ 3 * 1 + ] branch ;
 collatz-steps: dup 1 > [ next-collatz collatz-steps ++ ] [ drop 0 ] branch ;
 
 12 collatz-steps dup putn cr drop
-`,rt=`.import ../../lib/prelude.ffp
+`,rt=`.import <prelude>
 
 countdown:
   dup putn
@@ -98,22 +98,22 @@ countdown:
 ;
 
 5 countdown
-`,it=`.import ../../lib/prelude.ffp
+`,it=`.import <prelude>
 
 my-even?: 2 % 0 = ;
 
 14 my-even? dup putn cr drop
-`,st=`.import ../../lib/prelude.ffp
+`,st=`.import <prelude>
 
 fact: dup [ dup -- fact * ] [ drop 1 ] branch ;
 
 6 fact dup putn cr drop
-`,at=`.import ../../lib/prelude.ffp
+`,at=`.import <prelude>
 
 fib: dup 2 < [ ] [ -- dup fib swap -- fib + ] branch ;
 
 10 fib dup putn cr drop
-`,lt=`.import ../../lib/prelude.ffp
+`,lt=`.import <prelude>
 
 fizzbuzz-line:
   dup 15 % 0 =
@@ -140,17 +140,17 @@ fizzbuzz:
 ;
 
 15 fizzbuzz
-`,ut=`.import ../../lib/prelude.ffp
+`,ut=`.import <prelude>
 
 greatest-common-divisor: dup [ tuck % greatest-common-divisor ] [ drop ] branch ;
 
-84 30 greatest-common-divisor dup putn cr drop`,ct=`.import ../../lib/prelude.ffp
+84 30 greatest-common-divisor dup putn cr drop`,ct=`.import <prelude>
 
 square: dup * ;
 
 0 'Square\\sof\\s7:\\s' prints
 7 square putn cr
-`,dt=`.import ../../lib/prelude.ffp
+`,dt=`.import <prelude>
 
 rev-step:
   over
@@ -163,7 +163,7 @@ reverse-digits: 0 rev-step ;
 palindrome?: dup reverse-digits = ;
 
 12321 palindrome? dup putn cr drop
-`,pt=`.import ../../lib/prelude.ffp
+`,pt=`.import <prelude>
 
 print-entry:
   dup 0 > [ sp ] ?
@@ -181,10 +181,10 @@ row-step:
 pascal-row: dup row-step cr ;
 
 5 pascal-row
-`,ft=`.load ../../lib/prelude.ffp
+`,ft=`.import <prelude>
 
 29 prime? [ '\\0prime' ] [ '\\0composite' ] branch println
-`,mt=`.import ../../lib/prelude.ffp
+`,mt=`.import <prelude>
 
 rev-step:
   over
@@ -196,12 +196,12 @@ rev-step:
 reverse-digits: 0 rev-step ;
 
 12034 reverse-digits dup putn cr drop
-`,gt=`.import ../../lib/prelude.ffp
+`,gt=`.import <prelude>
 
 square: dup * ;
 
 6 square dup putn cr drop
-`,bt=`.import ../../lib/prelude.ffp
+`,_t=`.import <prelude>
 
 sum-to:
   dup
@@ -210,7 +210,7 @@ sum-to:
 ;
 
 8 sum-to dup putn cr drop
-`,_t=`42
+`,bt=`42
 `,ht=`9
 `,vt=`5 4 3 2 1 0
 `,wt=`1
@@ -245,7 +245,7 @@ FizzBuzz
 `))throw new Error("Tutorial README is missing frontmatter.");const n=e.indexOf(`
 ---
 `,4);if(n<0)throw new Error("Tutorial README frontmatter is unterminated.");const o=new Map;for(const a of e.slice(4,n).split(`
-`)){const b=a.indexOf(":");if(b<0)continue;const v=a.slice(0,b).trim(),g=a.slice(b+1).trim();try{o.set(v,JSON.parse(g))}catch{o.set(v,g)}}const d=o.get("tutorial"),l=o.get("order"),p=o.get("title"),r=o.get("goal"),m=o.get("concepts"),u=o.get("note"),s=o.get("stdin");if(typeof d!="string"||typeof l!="number"||typeof p!="string"||typeof r!="string"||!Array.isArray(m)||m.some(a=>typeof a!="string")||u!==void 0&&typeof u!="string"||s!==void 0&&typeof s!="string")throw new Error("Tutorial README frontmatter is missing required fields.");return{tutorial:d,order:l,title:p,goal:r,concepts:m,note:u,stdin:s}}const Ft=Object.assign({"../../../ff/tutorial/abs/README.md":V,"../../../ff/tutorial/collatz-steps/README.md":W,"../../../ff/tutorial/countdown/README.md":I,"../../../ff/tutorial/even/README.md":N,"../../../ff/tutorial/factorial/README.md":H,"../../../ff/tutorial/fibonacci/README.md":U,"../../../ff/tutorial/fizzbuzz/README.md":G,"../../../ff/tutorial/gcd/README.md":J,"../../../ff/tutorial/message-and-value/README.md":K,"../../../ff/tutorial/numeric-palindrome/README.md":Q,"../../../ff/tutorial/pascal-row/README.md":X,"../../../ff/tutorial/prime/README.md":Y,"../../../ff/tutorial/reverse-digits/README.md":Z,"../../../ff/tutorial/square/README.md":tt,"../../../ff/tutorial/sum-to/README.md":et}),q=Object.assign({"../../../ff/tutorial/abs/solution.ffp":nt,"../../../ff/tutorial/collatz-steps/solution.ffp":ot,"../../../ff/tutorial/countdown/solution.ffp":rt,"../../../ff/tutorial/even/solution.ffp":it,"../../../ff/tutorial/factorial/solution.ffp":st,"../../../ff/tutorial/fibonacci/solution.ffp":at,"../../../ff/tutorial/fizzbuzz/solution.ffp":lt,"../../../ff/tutorial/gcd/solution.ffp":ut,"../../../ff/tutorial/message-and-value/solution.ffp":ct,"../../../ff/tutorial/numeric-palindrome/solution.ffp":dt,"../../../ff/tutorial/pascal-row/solution.ffp":pt,"../../../ff/tutorial/prime/solution.ffp":ft,"../../../ff/tutorial/reverse-digits/solution.ffp":mt,"../../../ff/tutorial/square/solution.ffp":gt,"../../../ff/tutorial/sum-to/solution.ffp":bt}),Pt=Object.assign({"../../../ff/tutorial/abs/solution.out":_t,"../../../ff/tutorial/collatz-steps/solution.out":ht,"../../../ff/tutorial/countdown/solution.out":vt,"../../../ff/tutorial/even/solution.out":wt,"../../../ff/tutorial/factorial/solution.out":zt,"../../../ff/tutorial/fibonacci/solution.out":yt,"../../../ff/tutorial/fizzbuzz/solution.out":Et,"../../../ff/tutorial/gcd/solution.out":xt,"../../../ff/tutorial/message-and-value/solution.out":Ct,"../../../ff/tutorial/numeric-palindrome/solution.out":Rt,"../../../ff/tutorial/pascal-row/solution.out":kt,"../../../ff/tutorial/prime/solution.out":$t,"../../../ff/tutorial/reverse-digits/solution.out":At,"../../../ff/tutorial/square/solution.out":qt,"../../../ff/tutorial/sum-to/solution.out":Mt}),y=new Map;for(const t of Object.keys(q)){const e=A(t,"solution.ffp");if(y.has(e))throw new Error(`Multiple tutorial solutions found for ${e}`);y.set(e,t)}function Tt(t){if(!y.get(t))throw new Error(`Missing tutorial solution for ${t}`);return`/tutorial/${t}/solution.ffp`}const M=Object.entries(Ft).map(([t,e])=>{const n=A(t,"README.md"),o=y.get(n),d=t.replace("/README.md","/solution.out"),l=o?q[o]:void 0,p=Pt[d];if(typeof l!="string")throw new Error(`Missing tutorial solution for ${n}`);if(typeof p!="string")throw new Error(`Missing tutorial expected output for ${n}`);const r=Dt(e);if(r.tutorial!==n)throw new Error(`Tutorial README slug mismatch for ${n}: ${r.tutorial}`);return{id:n,order:r.order,title:r.title,goal:r.goal,concepts:r.concepts,source:l.trimEnd(),expected:p.trimEnd(),note:r.note,stdin:r.stdin}}).sort((t,e)=>t.order-e.order||t.title.localeCompare(e.title));function k(t){return c`${t.split(/(`[^`]+`)/g).map(e=>e.startsWith("`")&&e.endsWith("`")?c`<code>${e.slice(1,-1)}</code>`:e)}`}function h(t){return c`${t.flatMap((e,n)=>{const o=e.tone&&e.tone!=="default"?` ${e.tone}`:"",d=c`
+`)){const _=a.indexOf(":");if(_<0)continue;const v=a.slice(0,_).trim(),g=a.slice(_+1).trim();try{o.set(v,JSON.parse(g))}catch{o.set(v,g)}}const d=o.get("tutorial"),l=o.get("order"),p=o.get("title"),r=o.get("goal"),m=o.get("concepts"),u=o.get("note"),s=o.get("stdin");if(typeof d!="string"||typeof l!="number"||typeof p!="string"||typeof r!="string"||!Array.isArray(m)||m.some(a=>typeof a!="string")||u!==void 0&&typeof u!="string"||s!==void 0&&typeof s!="string")throw new Error("Tutorial README frontmatter is missing required fields.");return{tutorial:d,order:l,title:p,goal:r,concepts:m,note:u,stdin:s}}const Ft=Object.assign({"../../../ff/tutorial/abs/README.md":V,"../../../ff/tutorial/collatz-steps/README.md":W,"../../../ff/tutorial/countdown/README.md":I,"../../../ff/tutorial/even/README.md":N,"../../../ff/tutorial/factorial/README.md":H,"../../../ff/tutorial/fibonacci/README.md":U,"../../../ff/tutorial/fizzbuzz/README.md":G,"../../../ff/tutorial/gcd/README.md":J,"../../../ff/tutorial/message-and-value/README.md":K,"../../../ff/tutorial/numeric-palindrome/README.md":Q,"../../../ff/tutorial/pascal-row/README.md":X,"../../../ff/tutorial/prime/README.md":Y,"../../../ff/tutorial/reverse-digits/README.md":Z,"../../../ff/tutorial/square/README.md":tt,"../../../ff/tutorial/sum-to/README.md":et}),q=Object.assign({"../../../ff/tutorial/abs/solution.ffp":nt,"../../../ff/tutorial/collatz-steps/solution.ffp":ot,"../../../ff/tutorial/countdown/solution.ffp":rt,"../../../ff/tutorial/even/solution.ffp":it,"../../../ff/tutorial/factorial/solution.ffp":st,"../../../ff/tutorial/fibonacci/solution.ffp":at,"../../../ff/tutorial/fizzbuzz/solution.ffp":lt,"../../../ff/tutorial/gcd/solution.ffp":ut,"../../../ff/tutorial/message-and-value/solution.ffp":ct,"../../../ff/tutorial/numeric-palindrome/solution.ffp":dt,"../../../ff/tutorial/pascal-row/solution.ffp":pt,"../../../ff/tutorial/prime/solution.ffp":ft,"../../../ff/tutorial/reverse-digits/solution.ffp":mt,"../../../ff/tutorial/square/solution.ffp":gt,"../../../ff/tutorial/sum-to/solution.ffp":_t}),Pt=Object.assign({"../../../ff/tutorial/abs/solution.out":bt,"../../../ff/tutorial/collatz-steps/solution.out":ht,"../../../ff/tutorial/countdown/solution.out":vt,"../../../ff/tutorial/even/solution.out":wt,"../../../ff/tutorial/factorial/solution.out":zt,"../../../ff/tutorial/fibonacci/solution.out":yt,"../../../ff/tutorial/fizzbuzz/solution.out":Et,"../../../ff/tutorial/gcd/solution.out":xt,"../../../ff/tutorial/message-and-value/solution.out":Ct,"../../../ff/tutorial/numeric-palindrome/solution.out":Rt,"../../../ff/tutorial/pascal-row/solution.out":kt,"../../../ff/tutorial/prime/solution.out":$t,"../../../ff/tutorial/reverse-digits/solution.out":At,"../../../ff/tutorial/square/solution.out":qt,"../../../ff/tutorial/sum-to/solution.out":Mt}),y=new Map;for(const t of Object.keys(q)){const e=A(t,"solution.ffp");if(y.has(e))throw new Error(`Multiple tutorial solutions found for ${e}`);y.set(e,t)}function Tt(t){if(!y.get(t))throw new Error(`Missing tutorial solution for ${t}`);return`/tutorial/${t}/solution.ffp`}const M=Object.entries(Ft).map(([t,e])=>{const n=A(t,"README.md"),o=y.get(n),d=t.replace("/README.md","/solution.out"),l=o?q[o]:void 0,p=Pt[d];if(typeof l!="string")throw new Error(`Missing tutorial solution for ${n}`);if(typeof p!="string")throw new Error(`Missing tutorial expected output for ${n}`);const r=Dt(e);if(r.tutorial!==n)throw new Error(`Tutorial README slug mismatch for ${n}: ${r.tutorial}`);return{id:n,order:r.order,title:r.title,goal:r.goal,concepts:r.concepts,source:l.trimEnd(),expected:p.trimEnd(),note:r.note,stdin:r.stdin}}).sort((t,e)=>t.order-e.order||t.title.localeCompare(e.title));function k(t){return c`${t.split(/(`[^`]+`)/g).map(e=>e.startsWith("`")&&e.endsWith("`")?c`<code>${e.slice(1,-1)}</code>`:e)}`}function h(t){return c`${t.flatMap((e,n)=>{const o=e.tone&&e.tone!=="default"?` ${e.tone}`:"",d=c`
       <span class="tutorial-summary-item">
         <span class="tutorial-summary-label">${e.label}</span>
         <span class="tutorial-summary-value${o}">
@@ -322,7 +322,7 @@ FizzBuzz
     </section>
   `}function Ot(t){const e=[];return t.output&&e.push(t.output.trimEnd()),t.logs.length&&e.push(t.logs.join(`
 `)),e.filter(Boolean).join(`
-`)||"(no output)"}function jt(t){if(t.dataset.mounted==="true")return;t.dataset.mounted="true",_(Bt(),t),[...M].sort((n,o)=>n.order-o.order).forEach(n=>{const o=f(t,`[data-problem-id="${n.id}"]`),d=f(o,"[data-role='editor']"),l=f(o,"[data-role='run']"),p=f(o,"[data-role='reset']"),r=f(o,"[data-role='summary']"),m=f(o,"[data-role='output']"),u=f(o,"[data-role='diagnostics']"),s=f(o,"[data-role='error']"),a=o.querySelector("[data-role='stdin']"),b=S(d,n.source,{extraExtensions:[B]});function v(){b.setValue(n.source),a&&typeof n.stdin=="string"&&(a.value=n.stdin),r.textContent="Ready to run.",m.textContent="Run the snippet to see output.",u.textContent="",u.hidden=!0,s.textContent="",s.hidden=!0}let g=null;l.addEventListener("click",async()=>{if(g!==null){g.abort();return}P(l),l.textContent="Cancel",l.setAttribute("aria-label","Cancel run"),l.classList.add("is-cancel"),p.disabled=!0,a&&(a.disabled=!0),_(h([{label:"compile",value:"Running...",tone:"running",showDot:!0},{label:"execute",value:"pending",tone:"pending"},{label:"exit",value:"pending",tone:"pending"}]),r),s.textContent="",s.hidden=!0;const E=new AbortController;g=E;const D=O(E);try{await R(),_(h([{label:"compile",value:"Running...",tone:"running",showDot:!0},{label:"execute",value:"pending",tone:"pending"},{label:"exit",value:"pending",tone:"pending"}]),r),await R();const i=await j(b.getValue(),a?.value??"",!0,{filename:Tt(n.id),signal:E.signal,onProgress:({vmCyclesExecuted:F,compileMs:x})=>{_(h([{label:"compile",value:x!==void 0?`${x.toFixed(2)} ms`:"…",tone:"running"},{label:"execute",value:`${C(F)} vm steps`,tone:"running",showDot:!0},{label:"exit",value:"pending",tone:"pending"}]),r)}}),w=L(i);_(h([{label:"compile",value:`${i.compileMs.toFixed(2)} ms`},{label:"execute",value:`${i.executeMs.toFixed(2)} ms`},{label:"exit",value:w.value,tone:w.tone},{label:"issues",value:i.issues.length===1?"1 compiler issue":`${i.issues.length} compiler issues`,tone:i.issues.length?"error":"default"},...i.vmCyclesExecuted!==void 0?[{label:"vm steps",value:C(i.vmCyclesExecuted),tone:"default"}]:[]]),r),m.textContent=Ot(i),i.terminal==="error"?(u.textContent="",u.hidden=!0,s.textContent=i.logs.join(`
+`)||"(no output)"}function jt(t){if(t.dataset.mounted==="true")return;t.dataset.mounted="true",b(Bt(),t),[...M].sort((n,o)=>n.order-o.order).forEach(n=>{const o=f(t,`[data-problem-id="${n.id}"]`),d=f(o,"[data-role='editor']"),l=f(o,"[data-role='run']"),p=f(o,"[data-role='reset']"),r=f(o,"[data-role='summary']"),m=f(o,"[data-role='output']"),u=f(o,"[data-role='diagnostics']"),s=f(o,"[data-role='error']"),a=o.querySelector("[data-role='stdin']"),_=S(d,n.source,{extraExtensions:[B]});function v(){_.setValue(n.source),a&&typeof n.stdin=="string"&&(a.value=n.stdin),r.textContent="Ready to run.",m.textContent="Run the snippet to see output.",u.textContent="",u.hidden=!0,s.textContent="",s.hidden=!0}let g=null;l.addEventListener("click",async()=>{if(g!==null){g.abort();return}P(l),l.textContent="Cancel",l.setAttribute("aria-label","Cancel run"),l.classList.add("is-cancel"),p.disabled=!0,a&&(a.disabled=!0),b(h([{label:"compile",value:"Running...",tone:"running",showDot:!0},{label:"execute",value:"pending",tone:"pending"},{label:"exit",value:"pending",tone:"pending"}]),r),s.textContent="",s.hidden=!0;const E=new AbortController;g=E;const D=O(E);try{await R(),b(h([{label:"compile",value:"Running...",tone:"running",showDot:!0},{label:"execute",value:"pending",tone:"pending"},{label:"exit",value:"pending",tone:"pending"}]),r),await R();const i=await j(_.getValue(),a?.value??"",!0,{filename:Tt(n.id),signal:E.signal,onProgress:({vmCyclesExecuted:F,compileMs:x})=>{b(h([{label:"compile",value:x!==void 0?`${x.toFixed(2)} ms`:"…",tone:"running"},{label:"execute",value:`${C(F)} vm steps`,tone:"running",showDot:!0},{label:"exit",value:"pending",tone:"pending"}]),r)}}),w=L(i);b(h([{label:"compile",value:`${i.compileMs.toFixed(2)} ms`},{label:"execute",value:`${i.executeMs.toFixed(2)} ms`},{label:"exit",value:w.value,tone:w.tone},{label:"issues",value:i.issues.length===1?"1 compiler issue":`${i.issues.length} compiler issues`,tone:i.issues.length?"error":"default"},...i.vmCyclesExecuted!==void 0?[{label:"vm steps",value:C(i.vmCyclesExecuted),tone:"default"}]:[]]),r),m.textContent=Ot(i),i.terminal==="error"?(u.textContent="",u.hidden=!0,s.textContent=i.logs.join(`
 `)||"Run failed.",s.hidden=!1):i.issues.length?(u.textContent=`Compiler issues:
 ${i.issues.join(`
-`)}`,u.hidden=!1,s.textContent="",s.hidden=!0):(u.textContent="",u.hidden=!0,s.textContent="",s.hidden=!0)}catch(i){const w=i instanceof Error?i.message:String(i);_(h([{label:"compile",value:"failed",tone:"error"},{label:"execute",value:"pending",tone:"pending"},{label:"exit",value:"pending",tone:"pending"}]),r),m.textContent="",u.textContent="",u.hidden=!0,s.textContent=w,s.hidden=!1}finally{D(),g=null,T(),a&&(a.disabled=!1),l.textContent="Run",l.setAttribute("aria-label","Run"),l.classList.remove("is-cancel"),p.disabled=!1}}),p.addEventListener("click",()=>{v()}),a&&typeof n.stdin!="string"&&(a.value="")})}function Lt(t){jt(t)}const $=document.querySelector("#tutorial-surface-root");$ instanceof HTMLElement&&Lt($);
+`)}`,u.hidden=!1,s.textContent="",s.hidden=!0):(u.textContent="",u.hidden=!0,s.textContent="",s.hidden=!0)}catch(i){const w=i instanceof Error?i.message:String(i);b(h([{label:"compile",value:"failed",tone:"error"},{label:"execute",value:"pending",tone:"pending"},{label:"exit",value:"pending",tone:"pending"}]),r),m.textContent="",u.textContent="",u.hidden=!0,s.textContent=w,s.hidden=!1}finally{D(),g=null,T(),a&&(a.disabled=!1),l.textContent="Run",l.setAttribute("aria-label","Run"),l.classList.remove("is-cancel"),p.disabled=!1}}),p.addEventListener("click",()=>{v()}),a&&typeof n.stdin!="string"&&(a.value="")})}function Lt(t){jt(t)}const $=document.querySelector("#tutorial-surface-root");$ instanceof HTMLElement&&Lt($);

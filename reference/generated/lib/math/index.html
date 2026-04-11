@@ -1,0 +1,451 @@
+<!DOCTYPE html><html lang="en"> <head><meta charset="UTF-8"><meta name="viewport" content="width=device-width, initial-scale=1.0"><meta name="description" content="Reference for the numeric, transcendental, number-theory, and formatting words exported by the top-level `math` module."><title>Math library | F♭m</title><link rel="icon" type="image/svg+xml" href="/f-flat-minor/favicon.svg"><link rel="stylesheet" href="/f-flat-minor/_astro/BaseLayout.fVERQBqC.css"></head> <body class="theme-reference"> <main class="main-shell"> <header class="site-header"> <a class="brand-link" href="/f-flat-minor/"> <img class="brand-mark" src="/f-flat-minor/logo.svg" alt="Fbm logo" width="44" height="44"> <span class="brand-copy"> <strong>f-flat-minor</strong> </span> </a> <div class="site-header-actions"> <nav class="site-nav" aria-label="Primary"> <a class="nav-link" href="/f-flat-minor/"> Overview </a><a class="nav-link" href="/f-flat-minor/playground/"> Playground </a><a class="nav-link" href="/f-flat-minor/repl/"> REPL </a><a class="nav-link" href="/f-flat-minor/codettas/"> Codettas </a><a class="nav-link" href="/f-flat-minor/tutorial/"> Tutorial </a><a class="nav-link is-active" href="/f-flat-minor/reference/"> Reference </a> </nav> <a class="repo-link" href="https://github.com/Hypercubed/f-flat-minor" target="_blank" rel="noreferrer" aria-label="View the GitHub repository" title="View the GitHub repository"> <svg viewBox="0 0 24 24" aria-hidden="true" focusable="false"> <path fill="currentColor" d="M12 0.5C5.649 0.5 0.5 5.649 0.5 12c0 5.082 3.292 9.395 7.861 10.916c0.575 0.106 0.786-0.249 0.786-0.554c0-0.274-0.01-1-0.016-1.962c-3.198 0.695-3.873-1.541-3.873-1.541c-0.523-1.328-1.277-1.682-1.277-1.682c-1.044-0.714 0.079-0.699 0.079-0.699c1.154 0.081 1.761 1.185 1.761 1.185c1.026 1.758 2.692 1.25 3.348 0.956c0.104-0.743 0.401-1.25 0.729-1.537c-2.553-0.291-5.238-1.276-5.238-5.679c0-1.254 0.448-2.28 1.183-3.084c-0.119-0.29-0.513-1.46 0.112-3.045c0 0 0.965-0.309 3.162 1.178c0.917-0.255 1.9-0.382 2.878-0.387c0.977 0.005 1.961 0.132 2.879 0.387c2.195-1.487 3.158-1.178 3.158-1.178c0.627 1.585 0.233 2.755 0.115 3.045c0.736 0.804 1.181 1.83 1.181 3.084c0 4.414-2.689 5.385-5.252 5.67c0.412 0.355 0.779 1.057 0.779 2.131c0 1.539-0.014 2.78-0.014 3.158c0 0.308 0.207 0.666 0.793 0.553C20.712 21.391 24 17.08 24 12c0-6.351-5.149-11.5-11.5-11.5Z"></path> </svg> </a> <button type="button" id="run-feedback-toggle" class="run-feedback-toggle" aria-label="Run sound and animations on" aria-pressed="true" title="Turn off run sound and animations"> <span class="run-feedback-toggle__glyph" aria-hidden="true">♭</span> </button> </div> </header> <script type="module" src="/f-flat-minor/_astro/BaseLayout.astro_astro_type_script_index_0_lang.CCJmgKsI.js"></script>  <section class="route-hero section-summary"> <p class="eyebrow">Language docs</p> <h1 class="route-title">Math library</h1> <p class="page-copy"> Reference for the numeric, transcendental, number-theory, and formatting words exported by the top-level `math` module. </p> </section> <section class="page-section reference-layout"> <aside class="panel reference-nav-panel" aria-label="Reference navigation"> <div class="panel-header"> <div> <h2>Contents</h2> </div> </div> <div class="help-copy reference-nav-copy"> <nav class="reference-doc-nav" aria-label="Reference document navigation"> <section class="reference-nav-group"> <p class="reference-nav-group-label">Manual</p> <a class="reference-doc-link" href="/f-flat-minor/reference/manual/introduction/"> <span>Introduction</span> <small>Start here for the language model, execution basics, and where to branch into deeper reference material.</small> </a> </section><section class="reference-nav-group"> <p class="reference-nav-group-label">Reference</p> <a class="reference-doc-link" href="/f-flat-minor/reference/quickhelp/"> <span>Quick help</span> <small>Compact language overview covering execution model, syntax, directives, common words, and examples.</small> </a><a class="reference-doc-link" href="/f-flat-minor/reference/core-primitives/"> <span>Core primitives</span> <small>VM primitive words, opcode table, stack effects, and runtime implementation coverage.</small> </a><a class="reference-doc-link" href="/f-flat-minor/reference/generated/lib/core/"> <span>Core library</span> <small>Reference for the derived stack, logic, and control-flow words exported by `ff/lib/core/core.ff`.</small> </a><a class="reference-doc-link is-active" href="/f-flat-minor/reference/generated/lib/math/"> <span>Math library</span> <small>Reference for the numeric, transcendental, number-theory, and formatting words exported by the top-level `math` module.</small> </a><a class="reference-doc-link" href="/f-flat-minor/reference/generated/lib/string/"> <span>String library</span> <small>Reference for the character and string-printing words exported by the top-level `string` module.</small> </a><a class="reference-doc-link" href="/f-flat-minor/reference/generated/lib/seq/"> <span>Sequence library</span> <small>Reference for quotation-backed sequence construction, traversal, and reduction words exported by the top-level `seq` module.</small> </a><a class="reference-doc-link" href="/f-flat-minor/reference/generated/lib/time/"> <span>Time library</span> <small>Reference for UTC calendar conversion and formatting words exported by the top-level `time` module.</small> </a> </section> </nav> </div> </aside> <article class="panel reference-doc-panel"> <div class="reference-doc-body"> <p>This page groups the public words from the files imported by <code>ff/lib/math/math.ffp</code>.</p>
+<h2 id="predffp"><code>pred.ffp</code></h2>
+<p>Source: <code>ff/lib/math/pred.ffp</code><br>
+Import: <code>.import &#x3C;math/pred></code></p>
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+<table><thead><tr><th>Word</th><th>Stack effect</th><th>Description</th></tr></thead><tbody><tr><td><code>negitive?</code></td><td><code>n -- flag</code></td><td>Tests whether a number is negative.</td></tr><tr><td><code>positive?</code></td><td><code>n -- flag</code></td><td>Tests whether a number is positive.</td></tr><tr><td><code>divisor?</code></td><td><code>n d -- flag</code></td><td>Tests whether <code>d</code> divides <code>n</code> evenly.</td></tr><tr><td><code>even?</code></td><td><code>n -- flag</code></td><td>Tests whether a number is even.</td></tr><tr><td><code>odd?</code></td><td><code>n -- flag</code></td><td>Tests whether a number is odd.</td></tr></tbody></table>
+<h2 id="arithffp"><code>arith.ffp</code></h2>
+<p>Source: <code>ff/lib/math/arith.ffp</code><br>
+Import: <code>.import &#x3C;math/arith></code></p>
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+<table><thead><tr><th>Word</th><th>Stack effect</th><th>Description</th></tr></thead><tbody><tr><td><code>sgn</code></td><td><code>x -- sgn(x)</code></td><td>Returns the sign of a number.</td></tr><tr><td><code>abs</code></td><td><code>x -- |x|</code></td><td>Returns the absolute value.</td></tr><tr><td><code>sqr</code></td><td><code>x -- x²</code></td><td>Squares a number.</td></tr><tr><td><code>min</code></td><td><code>a b -- min</code></td><td>Returns the smaller of two values.</td></tr><tr><td><code>max</code></td><td><code>a b -- max</code></td><td>Returns the larger of two values.</td></tr><tr><td><code>clamp</code></td><td><code>lo hi x -- x'</code></td><td>Constrains a value to an inclusive range.</td></tr><tr><td><code>divrem</code></td><td><code>a b -- q r</code></td><td>Returns quotient and remainder together.</td></tr></tbody></table>
+<h2 id="numffp"><code>num.ffp</code></h2>
+<p>Source: <code>ff/lib/math/num.ffp</code><br>
+Import: <code>.import &#x3C;math/num></code></p>
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+<table><thead><tr><th>Word</th><th>Stack effect</th><th>Description</th></tr></thead><tbody><tr><td><code>!</code></td><td><code>n -- n!</code></td><td>Computes factorial.</td></tr><tr><td><code>nck</code></td><td><code>n k -- C(n,k)</code></td><td>Computes a binomial coefficient.</td></tr><tr><td><code>^^</code></td><td><code>a b -- a↑↑b</code></td><td>Applies Knuth up-arrow tetration.</td></tr><tr><td><code>^^^</code></td><td><code>a b -- a↑↑↑b</code></td><td>Applies the next higher Knuth hyper-operator.</td></tr></tbody></table>
+<h2 id="atanffp"><code>atan.ffp</code></h2>
+<p>Source: <code>ff/lib/math/atan.ffp</code><br>
+Import: <code>.import &#x3C;math/atan></code></p>
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+<table><thead><tr><th>Word</th><th>Stack effect</th><th>Description</th></tr></thead><tbody><tr><td><code>iatan</code></td><td><code>x -- ⌊atan(x)⌋₀</code></td><td>Integer arctangent with zero decimal places.</td></tr><tr><td><code>natan</code></td><td><code>n x -- ⌊10ⁿ*atan(x)⌋₀</code></td><td>Fixed-point arctangent at decimal precision <code>n</code>.</td></tr><tr><td><code>qatan</code></td><td><code>u v -- ⌊atan(u/v)⌋₀</code></td><td>Integer arctangent of a rational input.</td></tr><tr><td><code>atan-inv</code></td><td><code>n x -- ⌊10ⁿ*atan(1/x)⌋₀</code></td><td>Fixed-point arctangent of the reciprocal input.</td></tr></tbody></table>
+<h2 id="atanhffp"><code>atanh.ffp</code></h2>
+<p>Source: <code>ff/lib/math/atanh.ffp</code><br>
+Import: <code>.import &#x3C;math/atanh></code></p>
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+<table><thead><tr><th>Word</th><th>Stack effect</th><th>Description</th></tr></thead><tbody><tr><td><code>iatanh</code></td><td><code>x -- ⌊atanh(x)⌋₀</code></td><td>Integer inverse hyperbolic tangent with zero decimal places.</td></tr><tr><td><code>natanh</code></td><td><code>n x -- ⌊10ⁿ*atanh(x)⌋₀</code></td><td>Fixed-point inverse hyperbolic tangent at decimal precision <code>n</code>.</td></tr><tr><td><code>qatanh</code></td><td><code>u v -- ⌊atanh(u/v)⌋₀</code></td><td>Integer inverse hyperbolic tangent of a rational input.</td></tr><tr><td><code>atanh-inv</code></td><td><code>n x -- ⌊10ⁿ*atanh(1/x)⌋₀</code></td><td>Fixed-point inverse hyperbolic tangent of the reciprocal input.</td></tr></tbody></table>
+<h2 id="sqrtffp"><code>sqrt.ffp</code></h2>
+<p>Source: <code>ff/lib/math/sqrt.ffp</code><br>
+Import: <code>.import &#x3C;math/sqrt></code></p>
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+<table><thead><tr><th>Word</th><th>Stack effect</th><th>Description</th></tr></thead><tbody><tr><td><code>isqrt</code></td><td><code>x -- ⌊sqrt(x)⌋</code></td><td>Returns the integer square root of a non-negative input.</td></tr><tr><td><code>isqrtrem</code></td><td><code>x -- ⌊sqrt(x)⌋ x-⌊sqrt(x)⌋²</code></td><td>Returns the integer square root and leftover remainder.</td></tr><tr><td><code>nsqrt</code></td><td><code>n x -- ⌊10ⁿ*sqrt(x)⌋</code></td><td>Returns a fixed-point square root with <code>n</code> decimal digits.</td></tr></tbody></table>
+<h2 id="cbrtffp"><code>cbrt.ffp</code></h2>
+<p>Source: <code>ff/lib/math/cbrt.ffp</code><br>
+Import: <code>.import &#x3C;math/cbrt></code></p>
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+<table><thead><tr><th>Word</th><th>Stack effect</th><th>Description</th></tr></thead><tbody><tr><td><code>icbrt</code></td><td><code>x -- ⌊cbrt(x)⌋₀</code></td><td>Returns the integer cube root, truncated toward zero.</td></tr></tbody></table>
+<h2 id="gcdffp"><code>gcd.ffp</code></h2>
+<p>Source: <code>ff/lib/math/gcd.ffp</code><br>
+Import: <code>.import &#x3C;math/gcd></code></p>
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+<table><thead><tr><th>Word</th><th>Stack effect</th><th>Description</th></tr></thead><tbody><tr><td><code>gcd</code></td><td><code>a b -- gcd</code></td><td>Computes the greatest common divisor.</td></tr><tr><td><code>lcm</code></td><td><code>a b -- lcm</code></td><td>Computes the least common multiple.</td></tr></tbody></table>
+<h2 id="ackffp"><code>ack.ffp</code></h2>
+<p>Source: <code>ff/lib/math/ack.ffp</code><br>
+Import: <code>.import &#x3C;math/ack></code></p>
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+<table><thead><tr><th>Word</th><th>Stack effect</th><th>Description</th></tr></thead><tbody><tr><td><code>ack</code></td><td><code>m n -- ack(m,n)</code></td><td>Computes the Ackermann function, with fast paths for small <code>m</code>.</td></tr></tbody></table>
+<h2 id="primesffp"><code>primes.ffp</code></h2>
+<p>Source: <code>ff/lib/math/primes.ffp</code><br>
+Import: <code>.import &#x3C;math/primes></code></p>
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+<table><thead><tr><th>Word</th><th>Stack effect</th><th>Description</th></tr></thead><tbody><tr><td><code>maybe_prime?</code></td><td><code>n -- flag</code></td><td>Probabilistic Miller-Rabin primality screen.</td></tr><tr><td><code>prime?</code></td><td><code>n -- flag</code></td><td>Exact primality test using the screen plus trial division.</td></tr><tr><td><code>next-prime</code></td><td><code>n -- p</code></td><td>Returns the smallest prime greater than or equal to <code>n</code>.</td></tr><tr><td><code>th-prime</code></td><td><code>n -- p</code></td><td>Returns the <code>n</code>th prime by repeated search.</td></tr></tbody></table>
+<h2 id="logffp"><code>log.ffp</code></h2>
+<p>Source: <code>ff/lib/math/log.ffp</code><br>
+Import: <code>.import &#x3C;math/log></code></p>
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+<table><thead><tr><th>Word</th><th>Stack effect</th><th>Description</th></tr></thead><tbody><tr><td><code>nln2</code></td><td><code>n -- ⌊10ⁿ*ln(2)⌋</code></td><td>Computes a fixed-point approximation of <code>ln(2)</code>.</td></tr><tr><td><code>ilb</code></td><td><code>x -- ⌊log2(x)⌋</code></td><td>Returns the integer base-2 logarithm.</td></tr><tr><td><code>ilog</code></td><td><code>x -- ⌊log10(x)⌋</code></td><td>Returns the integer base-10 logarithm.</td></tr><tr><td><code>iln</code></td><td><code>x -- ⌊ln(x)⌋</code></td><td>Returns an integer natural logarithm approximation.</td></tr></tbody></table>
+<h2 id="expffp"><code>exp.ffp</code></h2>
+<p>Source: <code>ff/lib/math/exp.ffp</code><br>
+Import: <code>.import &#x3C;math/exp></code></p>
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+<table><thead><tr><th>Word</th><th>Stack effect</th><th>Description</th></tr></thead><tbody><tr><td><code>iexp</code></td><td><code>x -- ⌊eˣ⌋</code></td><td>Computes a floored integer exponential using a fixed fast path.</td></tr><tr><td><code>nexp</code></td><td><code>n x -- ⌊10ⁿ*eˣ⌋</code></td><td>Computes a fixed-point exponential at decimal precision <code>n</code>.</td></tr><tr><td><code>ncosh</code></td><td><code>n x -- ⌊cosh(x)*10ⁿ⌋</code></td><td>Computes fixed-point hyperbolic cosine.</td></tr><tr><td><code>nsinh</code></td><td><code>n x -- ⌊sinh(x)*10ⁿ⌋</code></td><td>Computes fixed-point hyperbolic sine.</td></tr><tr><td><code>icosh</code></td><td><code>x -- ⌊cosh(x)⌋</code></td><td>Integer hyperbolic cosine wrapper around <code>ncosh</code>.</td></tr><tr><td><code>isinh</code></td><td><code>x -- ⌊sinh(x)⌋</code></td><td>Integer hyperbolic sine wrapper around <code>nsinh</code>.</td></tr></tbody></table>
+<h2 id="piffp"><code>pi.ffp</code></h2>
+<p>Source: <code>ff/lib/math/pi.ffp</code><br>
+Import: <code>.import &#x3C;math/pi></code></p>
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+<table><thead><tr><th>Word</th><th>Stack effect</th><th>Description</th></tr></thead><tbody><tr><td><code>npi</code></td><td><code>n -- ⌊10ⁿ*π⌋</code></td><td>Computes <code>pi</code> to <code>n</code> decimal places in fixed-point form.</td></tr><tr><td><code>tau</code></td><td><code>n -- ⌊10ⁿ*2*π⌋</code></td><td>Computes <code>tau</code> to <code>n</code> decimal places in fixed-point form.</td></tr><tr><td><code>half_pi</code></td><td><code>n -- ⌊10ⁿ*π/2⌋</code></td><td>Computes <code>pi/2</code> to <code>n</code> decimal places in fixed-point form.</td></tr></tbody></table>
+<h2 id="trigffp"><code>trig.ffp</code></h2>
+<p>Source: <code>ff/lib/math/trig.ffp</code><br>
+Import: <code>.import &#x3C;math/trig></code></p>
+<p>This file is currently a placeholder and does not define public words yet.</p>
+<h2 id="prnffp"><code>prn.ffp</code></h2>
+<p>Source: <code>ff/lib/math/prn.ffp</code><br>
+Import: <code>.import &#x3C;math/prn></code></p>
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+<table><thead><tr><th>Word</th><th>Stack effect</th><th>Description</th></tr></thead><tbody><tr><td><code>nputn</code></td><td><code>n x -- {prints x with n fractional digits}</code></td><td>Prints a fixed-point decimal with zero-padded fractional digits.</td></tr><tr><td><code>qputn</code></td><td><code>p q -- {prints reduced p/q}</code></td><td>Prints a reduced rational number as <code>p/q</code>.</td></tr></tbody></table> </div> </article> </section>  </main> </body></html>

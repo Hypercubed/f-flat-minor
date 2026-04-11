@@ -1,415 +1,282 @@
-<!DOCTYPE html><html lang="en"> <head><meta charset="UTF-8"><meta name="viewport" content="width=device-width, initial-scale=1.0"><meta name="description" content="VM primitive words, opcode table, stack effects, and runtime implementation coverage."><title>Core primitives | F♭m</title><link rel="icon" type="image/svg+xml" href="/f-flat-minor/favicon.svg"><link rel="stylesheet" href="/f-flat-minor/_astro/BaseLayout.C3J-kFkK.css"></head> <body class="theme-reference"> <main class="main-shell"> <header class="site-header"> <a class="brand-link" href="/f-flat-minor/"> <img class="brand-mark" src="/f-flat-minor/logo.svg" alt="Fbm logo" width="44" height="44"> <span class="brand-copy"> <strong>f-flat-minor</strong> </span> </a> <div class="site-header-actions"> <nav class="site-nav" aria-label="Primary"> <a class="nav-link" href="/f-flat-minor/"> Overview </a><a class="nav-link" href="/f-flat-minor/playground/"> Playground </a><a class="nav-link" href="/f-flat-minor/repl/"> REPL </a><a class="nav-link" href="/f-flat-minor/codettas/"> Codettas </a><a class="nav-link" href="/f-flat-minor/tutorial/"> Tutorial </a><a class="nav-link is-active" href="/f-flat-minor/reference/"> Reference </a> </nav> <a class="repo-link" href="https://github.com/Hypercubed/f-flat-minor" target="_blank" rel="noreferrer" aria-label="View the GitHub repository" title="View the GitHub repository"> <svg viewBox="0 0 24 24" aria-hidden="true" focusable="false"> <path fill="currentColor" d="M12 0.5C5.649 0.5 0.5 5.649 0.5 12c0 5.082 3.292 9.395 7.861 10.916c0.575 0.106 0.786-0.249 0.786-0.554c0-0.274-0.01-1-0.016-1.962c-3.198 0.695-3.873-1.541-3.873-1.541c-0.523-1.328-1.277-1.682-1.277-1.682c-1.044-0.714 0.079-0.699 0.079-0.699c1.154 0.081 1.761 1.185 1.761 1.185c1.026 1.758 2.692 1.25 3.348 0.956c0.104-0.743 0.401-1.25 0.729-1.537c-2.553-0.291-5.238-1.276-5.238-5.679c0-1.254 0.448-2.28 1.183-3.084c-0.119-0.29-0.513-1.46 0.112-3.045c0 0 0.965-0.309 3.162 1.178c0.917-0.255 1.9-0.382 2.878-0.387c0.977 0.005 1.961 0.132 2.879 0.387c2.195-1.487 3.158-1.178 3.158-1.178c0.627 1.585 0.233 2.755 0.115 3.045c0.736 0.804 1.181 1.83 1.181 3.084c0 4.414-2.689 5.385-5.252 5.67c0.412 0.355 0.779 1.057 0.779 2.131c0 1.539-0.014 2.78-0.014 3.158c0 0.308 0.207 0.666 0.793 0.553C20.712 21.391 24 17.08 24 12c0-6.351-5.149-11.5-11.5-11.5Z"></path> </svg> </a> <button type="button" id="run-feedback-toggle" class="run-feedback-toggle" aria-label="Run sound and animations on" aria-pressed="true" title="Turn off run sound and animations"> <span class="run-feedback-toggle__glyph" aria-hidden="true">♭</span> </button> </div> </header> <script type="module" src="/f-flat-minor/_astro/BaseLayout.astro_astro_type_script_index_0_lang.CCJmgKsI.js"></script>  <section class="route-hero section-summary"> <p class="eyebrow">Language docs</p> <h1 class="route-title">Core primitives</h1> <p class="page-copy"> VM primitive words, opcode table, stack effects, and runtime implementation coverage. </p> </section> <section class="page-section reference-layout"> <aside class="panel reference-nav-panel" aria-label="Reference navigation"> <div class="panel-header"> <div> <h2>Contents</h2> </div> </div> <div class="help-copy reference-nav-copy"> <nav class="reference-doc-nav"> <a class="reference-doc-link" href="/f-flat-minor/reference/quickhelp/"> <span>Quick help</span> </a><a class="reference-doc-link is-active" href="/f-flat-minor/reference/core-primitives/"> <span>Core primitives</span> </a> </nav> </div> </aside> <article class="panel reference-doc-panel"> <div class="reference-doc-body"><h1>Core primitives reference</h1>
-<p>This page lists the <strong>VM primitive words</strong>.</p>
-<h2>Core primitives</h2>
-<table>
-<thead>
-<tr>
-<th>Syntax</th>
-<th>Mnemonic</th>
-<th>Opcode</th>
-<th>Stack effect</th>
-<th>Description</th>
-</tr>
-</thead>
-<tbody>
-<tr>
-<td><code>nop</code></td>
-<td><code>NOP</code></td>
-<td><code>0</code></td>
-<td><code>... nop == ...</code></td>
-<td>No operation; does nothing.</td>
-</tr>
-<tr>
-<td><code>eval</code></td>
-<td><code>EVAL</code></td>
-<td><code>1</code></td>
-<td><code>[A] eval == a*</code></td>
-<td>Evaluates a quotation, executing its contents.</td>
-</tr>
-<tr>
-<td><code>putc</code></td>
-<td><code>PUTC</code></td>
-<td><code>2</code></td>
-<td><code>n putc == {prints char(n)}</code></td>
-<td>Prints a character given by its numeric code.</td>
-</tr>
-<tr>
-<td><code>getc</code></td>
-<td><code>GETC</code></td>
-<td><code>3</code></td>
-<td><code>getc == n {reads char}</code></td>
-<td>Reads a single character from input and pushes its code.</td>
-</tr>
-<tr>
-<td><code>putn</code></td>
-<td><code>PUTN</code></td>
-<td><code>5</code></td>
-<td><code>n putn == {prints n}</code></td>
-<td>Prints a number to output.</td>
-</tr>
-<tr>
-<td><code>clock</code></td>
-<td><code>CLOCK</code></td>
-<td><code>6</code></td>
-<td><code>clock == n {reads clock}</code></td>
-<td>Returns the current time as a Unix timestamp.</td>
-</tr>
-<tr>
-<td><code>drop</code></td>
-<td><code>DROP</code></td>
-<td><code>8</code></td>
-<td><code>a drop ==</code></td>
-<td>Removes the top value from the stack.</td>
-</tr>
-<tr>
-<td><code>q&#x3C;</code></td>
-<td><code>PUSHR</code></td>
-<td><code>14</code></td>
-<td>`a q&#x3C; ==</td>
-<td>...a`</td>
-</tr>
-<tr>
-<td><code>q></code></td>
-<td><code>PULLR</code></td>
-<td><code>15</code></td>
-<td>`q> == a</td>
-<td>a...`</td>
-</tr>
-<tr>
-<td><code>&#x3C;&#x3C;</code></td>
-<td><code>SHIFTL</code></td>
-<td><code>16</code></td>
-<td><code>a b &#x3C;&#x3C; == n</code></td>
-<td>Left-shifts <code>a</code> by <code>b</code> bits.</td>
-</tr>
-<tr>
-<td><code>>></code></td>
-<td><code>SHIFTR</code></td>
-<td><code>17</code></td>
-<td><code>a b >> == n</code></td>
-<td>Right-shifts <code>a</code> by <code>b</code> bits.</td>
-</tr>
-<tr>
-<td><code>clr</code></td>
-<td><code>CLR</code></td>
-<td><code>24</code></td>
-<td><code>... clr ==</code></td>
-<td>Clears the entire stack.</td>
-</tr>
-<tr>
-<td><code>rand</code></td>
-<td><code>RAND</code></td>
-<td><code>26</code></td>
-<td><code>n rand == r {0 &#x3C;= r &#x3C; n}</code></td>
-<td>Generates a random number between <code>0</code> and <code>n-1</code>.</td>
-</tr>
-<tr>
-<td><code>exit</code></td>
-<td><code>EXIT</code></td>
-<td><code>27</code></td>
-<td><code>n exit == {exits with code n}</code></td>
-<td>Exits the program with the given exit code.</td>
-</tr>
-<tr>
-<td><code>dup</code></td>
-<td><code>DUP</code></td>
-<td><code>33</code></td>
-<td><code>a dup == a a</code></td>
-<td>Duplicates the top value on the stack.</td>
-</tr>
-<tr>
-<td><code>depth</code></td>
-<td><code>DEPTH</code></td>
-<td><code>35</code></td>
-<td><code>... depth == ... n</code></td>
-<td>Pushes the current stack depth.</td>
-</tr>
-<tr>
-<td><code>swap</code></td>
-<td><code>SWAP</code></td>
-<td><code>36</code></td>
-<td><code>a b swap == b a</code></td>
-<td>Swaps the top two values on the stack.</td>
-</tr>
-<tr>
-<td><code>%</code></td>
-<td><code>MOD</code></td>
-<td><code>37</code></td>
-<td><code>a b % == n</code></td>
-<td>Computes the remainder of <code>a</code> divided by <code>b</code>.</td>
-</tr>
-<tr>
-<td><code>&#x26;</code></td>
-<td><code>AND</code></td>
-<td><code>38</code></td>
-<td><code>a b &#x26; == n</code></td>
-<td>Bitwise AND of <code>a</code> and <code>b</code>.</td>
-</tr>
-<tr>
-<td><code>(</code></td>
-<td><code>STASH</code></td>
-<td><code>40</code></td>
-<td><code>... ( == {moves stack to queue}</code></td>
-<td>Moves values from the stack to the queue.</td>
-</tr>
-<tr>
-<td><code>)</code></td>
-<td><code>FETCH</code></td>
-<td><code>41</code></td>
-<td><code>) == ... {restores stack from queue}</code></td>
-<td>Moves values from the queue back to the stack.</td>
-</tr>
-<tr>
-<td><code>*</code></td>
-<td><code>MUL</code></td>
-<td><code>42</code></td>
-<td><code>a b * == n</code></td>
-<td>Multiplies <code>a</code> by <code>b</code>.</td>
-</tr>
-<tr>
-<td><code>+</code></td>
-<td><code>ADD</code></td>
-<td><code>43</code></td>
-<td><code>a b + == n</code></td>
-<td>Adds <code>a</code> and <code>b</code> together.</td>
-</tr>
-<tr>
-<td><code>cons</code></td>
-<td><code>CONS</code></td>
-<td><code>44</code></td>
-<td><code>x y cons == q</code></td>
-<td>Builds an anonymous quotation from two stack values.</td>
-</tr>
-<tr>
-<td><code>-</code></td>
-<td><code>SUB</code></td>
-<td><code>45</code></td>
-<td><code>a b - == n</code></td>
-<td>Subtracts <code>b</code> from <code>a</code>.</td>
-</tr>
-<tr>
-<td><code>.</code></td>
-<td><code>DUMP</code></td>
-<td><code>46</code></td>
-<td><code>... . == ... {prints stack}</code></td>
-<td>Prints the entire stack to output.</td>
-</tr>
-<tr>
-<td><code>/</code></td>
-<td><code>DIV</code></td>
-<td><code>47</code></td>
-<td><code>a b / == n</code></td>
-<td>Divides <code>a</code> by <code>b</code> using integer division.</td>
-</tr>
-<tr>
-<td><code>:</code></td>
-<td><code>MARK</code></td>
-<td><code>58</code></td>
-<td><code>n : == {begin definition(n)}</code></td>
-<td>Begins a new word definition with name <code>n</code>.</td>
-</tr>
-<tr>
-<td><code>;</code></td>
-<td><code>DEF</code></td>
-<td><code>59</code></td>
-<td><code>; == {end definition}</code></td>
-<td>Ends the current word definition.</td>
-</tr>
-<tr>
-<td><code>&#x3C;</code></td>
-<td><code>LT</code></td>
-<td><code>60</code></td>
-<td><code>a b &#x3C; == flag</code></td>
-<td>Pushes true if <code>a</code> is less than <code>b</code>.</td>
-</tr>
-<tr>
-<td><code>=</code></td>
-<td><code>EQ</code></td>
-<td><code>61</code></td>
-<td><code>a b = == flag</code></td>
-<td>Pushes true if <code>a</code> equals <code>b</code>.</td>
-</tr>
-<tr>
-<td><code>></code></td>
-<td><code>GT</code></td>
-<td><code>62</code></td>
-<td><code>a b > == flag</code></td>
-<td>Pushes true if <code>a</code> is greater than <code>b</code>.</td>
-</tr>
-<tr>
-<td><code>?</code></td>
-<td><code>WHEN</code></td>
-<td><code>63</code></td>
-<td><code>flag [A] ? == a*</code></td>
-<td>Executes the quotation if <code>flag</code> is true.</td>
-</tr>
-<tr>
-<td><code>[</code></td>
-<td><code>BRA</code></td>
-<td><code>91</code></td>
-<td><code>[ == {begin quotation}</code></td>
-<td>Begins a quotation (anonymous code block).</td>
-</tr>
-<tr>
-<td><code>]</code></td>
-<td><code>KET</code></td>
-<td><code>93</code></td>
-<td><code>] == [A] {end quotation}</code></td>
-<td>Ends a quotation and pushes it to the stack.</td>
-</tr>
-<tr>
-<td><code>^</code></td>
-<td><code>POW</code></td>
-<td><code>94</code></td>
-<td><code>a b ^ == n</code></td>
-<td>Computes <code>a</code> raised to the power of <code>b</code>.</td>
-</tr>
-<tr>
-<td>`</td>
-<td>`</td>
-<td><code>OR</code></td>
-<td><code>124</code></td>
-<td>`a b</td>
-</tr>
-<tr>
-<td><code>~</code></td>
-<td><code>NOT</code></td>
-<td><code>126</code></td>
-<td><code>a ~ == n'</code></td>
-<td>Bitwise NOT of <code>a</code>.</td>
-</tr>
-</tbody>
-</table>
-<hr>
-<h2>Alphabetical entries</h2>
-<h3><code>(</code> (STASH)</h3>
-<p><strong>Stack:</strong> <code>… ( == {moves stack to queue}</code> (see <code>_docs/supplemental/stack-notation.md</code> for queue notation).</p>
-<p><strong>Implements:</strong> TypeScript, Go, Python, Ruby — <strong>Yes</strong>. Racket — <strong>No</strong> (commented out in <code>racket/private/engine.rkt</code>).</p>
-<hr>
-<h3><code>)</code> (FETCH)</h3>
-<p><strong>Stack:</strong> <code>) == … {restores stack from queue}</code>.</p>
-<p><strong>Implements:</strong> TypeScript, Go, Python, Ruby — <strong>Yes</strong>. Racket — <strong>No</strong>.</p>
-<hr>
-<h3><code>+</code> (ADD)</h3>
-<p><strong>Stack:</strong> <code>a b + == n</code>.</p>
-<p><strong>Implements:</strong> All listed runtimes — <strong>Yes</strong>.</p>
-<hr>
-<h3><code>cons</code> (CONS / <code>,</code>)</h3>
-<p><strong>Stack:</strong> <code>x y cons == q</code> — builds an anonymous quotation from two stack values (see <code>_docs/core-vocabulary.md</code>).</p>
-<p><strong>Implements:</strong> TypeScript, Go, Python, Ruby, Racket — <strong>Yes</strong> (Racket: <code>op_cons</code>). In source, use the word <strong><code>cons</code></strong>; the underlying opcode is <strong>44</strong> (comma).</p>
-<hr>
-<h3><code>-</code> (SUB)</h3>
-<p><strong>Stack:</strong> <code>a b - == n</code>.</p>
-<p><strong>Implements:</strong> All listed runtimes — <strong>Yes</strong>.</p>
-<hr>
-<h3><code>.</code> (DUMP / PRN)</h3>
-<p><strong>Stack:</strong> <code>… . == … {prints stack}</code>.</p>
-<p><strong>Implements:</strong> All listed runtimes — <strong>Yes</strong>.</p>
-<hr>
-<h3><code>/</code> (DIV)</h3>
-<p><strong>Stack:</strong> <code>a b / == trunc(a/b)</code> (truncation toward zero in the spec; see division note above).</p>
-<p><strong>Implements:</strong> All listed runtimes — <strong>Yes</strong>.</p>
-<hr>
-<h3><code>:</code> (MARK)</h3>
-<p><strong>Stack:</strong> <code>n : == {begin definition(n)}</code>.</p>
-<p><strong>Implements:</strong> All listed runtimes — <strong>Yes</strong>.</p>
-<hr>
-<h3><code>;</code> (DEF)</h3>
-<p><strong>Stack:</strong> <code>; == {end definition}</code>.</p>
-<p><strong>Implements:</strong> TypeScript, Go, Racket — <strong>Yes</strong>. Python and Ruby — <strong>No</strong> (no <code>defineSystem(';', …)</code> / no <code>systemWords</code> entry; user definitions are not closed the same way as in the full VM).</p>
-<hr>
-<h3><code>&#x3C;</code> <code>=</code> <code>></code> (LT / EQ / GT)</h3>
-<p><strong>Stack:</strong> <code>a b &#x3C; == flag</code>, <code>a b = == flag</code>, <code>a b > == flag</code>.</p>
-<p><strong>Implements:</strong> All listed runtimes — <strong>Yes</strong>.</p>
-<hr>
-<h3><code>?</code> (WHEN / IF)</h3>
-<p><strong>Stack:</strong> <code>flag [A] ? == a*</code>.</p>
-<p><strong>Implements:</strong> All listed runtimes — <strong>Yes</strong>.</p>
-<hr>
-<h3><code>[</code> <code>]</code> (BRA / KET)</h3>
-<p><strong>Stack:</strong> <code>[ == {begin quotation}</code>, <code>] == [A] {end quotation}</code>.</p>
-<p><strong>Implements:</strong> TypeScript, Go, Racket — <strong>Yes</strong> (dedicated opcodes). Python, Ruby — <strong>Lexer</strong> (quotations are collected in <code>run()</code> / <code>run</code> without registering <code>[</code>/<code>]</code> as system ops).</p>
-<hr>
-<h3><code>^</code> (POW)</h3>
-<p><strong>Stack:</strong> <code>a b ^ == n</code>.</p>
-<p><strong>Implements:</strong> All listed runtimes — <strong>Yes</strong>.</p>
-<hr>
-<h3><code>&#x3C;&#x3C;</code> / <code>>></code> (SHIFTL / SHIFTR)</h3>
-<p><strong>Stack:</strong> <code>a b &#x3C;&#x3C; == n</code>, <code>a b >> == n</code>.</p>
-<p><strong>Implements:</strong> All listed runtimes — <strong>Yes</strong>.</p>
-<hr>
-<h3><code>clr</code></h3>
-<p><strong>Stack:</strong> <code>… clr ==</code>.</p>
-<p><strong>Implements:</strong> All listed runtimes — <strong>Yes</strong>.</p>
-<hr>
-<h3><code>clock</code></h3>
-<p><strong>Stack:</strong> <code>clock == n {reads clock}</code>.</p>
-<p><strong>Implements:</strong> TypeScript, Go, Python, Ruby — <strong>Yes</strong>. Racket — <strong>No</strong> (<code>;;; clock</code> in <code>racket/private/engine.rkt</code>).</p>
-<hr>
-<h3><code>depth</code></h3>
-<p><strong>Stack:</strong> <code>… depth == … n</code>.</p>
-<p><strong>Implements:</strong> All listed runtimes — <strong>Yes</strong>.</p>
-<hr>
-<h3><code>drop</code></h3>
-<p><strong>Stack:</strong> <code>a drop ==</code>.</p>
-<p><strong>Implements:</strong> All listed runtimes — <strong>Yes</strong>.</p>
-<hr>
-<h3><code>dup</code></h3>
-<p><strong>Stack:</strong> <code>a dup == a a</code>.</p>
-<p><strong>Implements:</strong> All listed runtimes — <strong>Yes</strong>.</p>
-<hr>
-<h3><code>eval</code></h3>
-<p><strong>Stack:</strong> <code>[A] eval == a*</code>.</p>
-<p><strong>Implements:</strong> All listed runtimes — <strong>Yes</strong>.</p>
-<hr>
-<h3><code>exit</code></h3>
-<p><strong>Stack:</strong> <code>n exit == {exits with code n}</code>.</p>
-<p><strong>Implements:</strong> TypeScript, Go — <strong>Yes</strong>. Python, Ruby, Racket — <strong>No</strong>.</p>
-<hr>
-<h3><code>getc</code></h3>
-<p><strong>Stack:</strong> <code>getc == n {reads char}</code>.</p>
-<p><strong>Implements:</strong> TypeScript, Go — <strong>Yes</strong>. Python, Ruby, Racket — <strong>No</strong> (commented / omitted in <code>python/execute.py</code>, <code>ruby/execute.rb</code>, <code>racket/private/engine.rkt</code>).</p>
-<hr>
-<h3><code>nop</code></h3>
-<p><strong>Stack:</strong> <code>… nop == …</code>.</p>
-<p><strong>Implements:</strong> All listed runtimes — <strong>Yes</strong>.</p>
-<hr>
-<h3><code>putc</code></h3>
-<p><strong>Stack:</strong> <code>n putc == {prints char(n)}</code>.</p>
-<p><strong>Implements:</strong> All listed runtimes — <strong>Yes</strong>.</p>
-<hr>
-<h3><code>putn</code></h3>
-<p><strong>Stack:</strong> <code>n putn == {prints n}</code>.</p>
-<p><strong>Implements:</strong> All listed runtimes — <strong>Yes</strong>.</p>
-<hr>
-<h3><code>q&#x3C;</code> / <code>q></code> (PUSHR / PULLR)</h3>
-<p><strong>Stack:</strong> <code>a q&#x3C; == \| …a</code>, <code>q> == a \| a…</code>.</p>
-<p><strong>Implements:</strong> All listed runtimes — <strong>Yes</strong>.</p>
-<hr>
-<h3><code>rand</code></h3>
-<p><strong>Stack:</strong> <code>n rand == r {0 &#x3C;= r &#x3C; n}</code>.</p>
-<p><strong>Implements:</strong> All listed runtimes — <strong>Yes</strong>.</p>
-<hr>
-<h3><code>swap</code></h3>
-<p><strong>Stack:</strong> <code>a b swap == b a</code>.</p>
-<p><strong>Implements:</strong> All listed runtimes — <strong>Yes</strong>.</p>
-<hr>
-<h3><code>%</code> (MOD)</h3>
-<p><strong>Stack:</strong> <code>a b % == r</code> (see division note).</p>
-<p><strong>Implements:</strong> All listed runtimes — <strong>Yes</strong>.</p>
-<hr>
-<h3><code>&#x26;</code> (AND)</h3>
-<p><strong>Stack:</strong> <code>a b &#x26; == n</code>.</p>
-<p><strong>Implements:</strong> All listed runtimes — <strong>Yes</strong>.</p>
-<hr>
-<h3><code>*</code> (MUL)</h3>
-<p><strong>Stack:</strong> <code>a b * == n</code>.</p>
-<p><strong>Implements:</strong> All listed runtimes — <strong>Yes</strong>.</p>
-<hr>
-<h3><code>|</code> (OR)</h3>
-<p><strong>Stack:</strong> <code>a b | == n</code>.</p>
-<p><strong>Implements:</strong> All listed runtimes — <strong>Yes</strong>.</p>
-<hr>
-<h3><code>~</code> (NOT)</h3>
-<p><strong>Stack:</strong> <code>a ~ == n'</code>.</p>
-<p><strong>Implements:</strong> All listed runtimes — <strong>Yes</strong>.</p></div> </article> </section>  </main> </body></html>
+<!DOCTYPE html><html lang="en"> <head><meta charset="UTF-8"><meta name="viewport" content="width=device-width, initial-scale=1.0"><meta name="description" content="VM primitive words, opcode table, stack effects, and runtime implementation coverage."><title>Core primitives | F♭m</title><link rel="icon" type="image/svg+xml" href="/f-flat-minor/favicon.svg"><link rel="stylesheet" href="/f-flat-minor/_astro/BaseLayout.fVERQBqC.css"></head> <body class="theme-reference"> <main class="main-shell"> <header class="site-header"> <a class="brand-link" href="/f-flat-minor/"> <img class="brand-mark" src="/f-flat-minor/logo.svg" alt="Fbm logo" width="44" height="44"> <span class="brand-copy"> <strong>f-flat-minor</strong> </span> </a> <div class="site-header-actions"> <nav class="site-nav" aria-label="Primary"> <a class="nav-link" href="/f-flat-minor/"> Overview </a><a class="nav-link" href="/f-flat-minor/playground/"> Playground </a><a class="nav-link" href="/f-flat-minor/repl/"> REPL </a><a class="nav-link" href="/f-flat-minor/codettas/"> Codettas </a><a class="nav-link" href="/f-flat-minor/tutorial/"> Tutorial </a><a class="nav-link is-active" href="/f-flat-minor/reference/"> Reference </a> </nav> <a class="repo-link" href="https://github.com/Hypercubed/f-flat-minor" target="_blank" rel="noreferrer" aria-label="View the GitHub repository" title="View the GitHub repository"> <svg viewBox="0 0 24 24" aria-hidden="true" focusable="false"> <path fill="currentColor" d="M12 0.5C5.649 0.5 0.5 5.649 0.5 12c0 5.082 3.292 9.395 7.861 10.916c0.575 0.106 0.786-0.249 0.786-0.554c0-0.274-0.01-1-0.016-1.962c-3.198 0.695-3.873-1.541-3.873-1.541c-0.523-1.328-1.277-1.682-1.277-1.682c-1.044-0.714 0.079-0.699 0.079-0.699c1.154 0.081 1.761 1.185 1.761 1.185c1.026 1.758 2.692 1.25 3.348 0.956c0.104-0.743 0.401-1.25 0.729-1.537c-2.553-0.291-5.238-1.276-5.238-5.679c0-1.254 0.448-2.28 1.183-3.084c-0.119-0.29-0.513-1.46 0.112-3.045c0 0 0.965-0.309 3.162 1.178c0.917-0.255 1.9-0.382 2.878-0.387c0.977 0.005 1.961 0.132 2.879 0.387c2.195-1.487 3.158-1.178 3.158-1.178c0.627 1.585 0.233 2.755 0.115 3.045c0.736 0.804 1.181 1.83 1.181 3.084c0 4.414-2.689 5.385-5.252 5.67c0.412 0.355 0.779 1.057 0.779 2.131c0 1.539-0.014 2.78-0.014 3.158c0 0.308 0.207 0.666 0.793 0.553C20.712 21.391 24 17.08 24 12c0-6.351-5.149-11.5-11.5-11.5Z"></path> </svg> </a> <button type="button" id="run-feedback-toggle" class="run-feedback-toggle" aria-label="Run sound and animations on" aria-pressed="true" title="Turn off run sound and animations"> <span class="run-feedback-toggle__glyph" aria-hidden="true">♭</span> </button> </div> </header> <script type="module" src="/f-flat-minor/_astro/BaseLayout.astro_astro_type_script_index_0_lang.CCJmgKsI.js"></script>  <section class="route-hero section-summary"> <p class="eyebrow">Language docs</p> <h1 class="route-title">Core primitives</h1> <p class="page-copy"> VM primitive words, opcode table, stack effects, and runtime implementation coverage. </p> </section> <section class="page-section reference-layout"> <aside class="panel reference-nav-panel" aria-label="Reference navigation"> <div class="panel-header"> <div> <h2>Contents</h2> </div> </div> <div class="help-copy reference-nav-copy"> <nav class="reference-doc-nav" aria-label="Reference document navigation"> <section class="reference-nav-group"> <p class="reference-nav-group-label">Manual</p> <a class="reference-doc-link" href="/f-flat-minor/reference/manual/introduction/"> <span>Introduction</span> <small>Start here for the language model, execution basics, and where to branch into deeper reference material.</small> </a> </section><section class="reference-nav-group"> <p class="reference-nav-group-label">Reference</p> <a class="reference-doc-link" href="/f-flat-minor/reference/quickhelp/"> <span>Quick help</span> <small>Compact language overview covering execution model, syntax, directives, common words, and examples.</small> </a><a class="reference-doc-link is-active" href="/f-flat-minor/reference/core-primitives/"> <span>Core primitives</span> <small>VM primitive words, opcode table, stack effects, and runtime implementation coverage.</small> </a><a class="reference-doc-link" href="/f-flat-minor/reference/generated/lib/core/"> <span>Core library</span> <small>Reference for the derived stack, logic, and control-flow words exported by `ff/lib/core/core.ff`.</small> </a><a class="reference-doc-link" href="/f-flat-minor/reference/generated/lib/math/"> <span>Math library</span> <small>Reference for the numeric, transcendental, number-theory, and formatting words exported by the top-level `math` module.</small> </a><a class="reference-doc-link" href="/f-flat-minor/reference/generated/lib/string/"> <span>String library</span> <small>Reference for the character and string-printing words exported by the top-level `string` module.</small> </a><a class="reference-doc-link" href="/f-flat-minor/reference/generated/lib/seq/"> <span>Sequence library</span> <small>Reference for quotation-backed sequence construction, traversal, and reduction words exported by the top-level `seq` module.</small> </a><a class="reference-doc-link" href="/f-flat-minor/reference/generated/lib/time/"> <span>Time library</span> <small>Reference for UTC calendar conversion and formatting words exported by the top-level `time` module.</small> </a> </section> </nav> </div> </aside> <article class="panel reference-doc-panel"> <div class="reference-doc-body"> <p>This page lists the <strong>VM primitive words</strong>.</p>
+<h2 id="core-primitives">Core primitives</h2>
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+<table><thead><tr><th>Syntax</th><th>Mnemonic</th><th>Opcode</th><th>Stack effect</th><th>Description</th></tr></thead><tbody><tr><td><code>nop</code></td><td><code>NOP</code></td><td><code>0</code></td><td><code>… nop == …</code></td><td>No operation; does nothing.</td></tr><tr><td><code>eval</code></td><td><code>EVAL</code></td><td><code>1</code></td><td><code>[A] eval == a*</code></td><td>Evaluates a quotation, executing its contents.</td></tr><tr><td><code>putc</code></td><td><code>PUTC</code></td><td><code>2</code></td><td><code>n putc == {prints char(n)}</code></td><td>Prints a character given by its numeric code.</td></tr><tr><td><code>getc</code></td><td><code>GETC</code></td><td><code>3</code></td><td><code>getc == n {reads char}</code></td><td>Reads a single character from input and pushes its code.</td></tr><tr><td><code>putn</code></td><td><code>PUTN</code></td><td><code>5</code></td><td><code>n putn == {prints n}</code></td><td>Prints a number to output.</td></tr><tr><td><code>clock</code></td><td><code>CLOCK</code></td><td><code>6</code></td><td><code>clock == n {reads clock}</code></td><td>Returns the current time as a Unix timestamp.</td></tr><tr><td><code>drop</code></td><td><code>DROP</code></td><td><code>8</code></td><td><code>a drop ==</code></td><td>Removes the top value from the stack.</td></tr><tr><td><code>q&#x3C;</code></td><td><code>PUSHR</code></td><td><code>14</code></td><td><code>a q&#x3C; == | …a</code></td><td>Pushes a value onto the return stack.</td></tr><tr><td><code>q></code></td><td><code>PULLR</code></td><td><code>15</code></td><td><code>q> == a | a…</code></td><td>Pops a value from the return stack onto the main stack.</td></tr><tr><td><code>&#x3C;&#x3C;</code></td><td><code>SHIFTL</code></td><td><code>16</code></td><td><code>a b &#x3C;&#x3C; == n</code></td><td>Left-shifts <code>a</code> by <code>b</code> bits.</td></tr><tr><td><code>>></code></td><td><code>SHIFTR</code></td><td><code>17</code></td><td><code>a b >> == n</code></td><td>Right-shifts <code>a</code> by <code>b</code> bits.</td></tr><tr><td><code>clr</code></td><td><code>CLR</code></td><td><code>24</code></td><td><code>… clr ==</code></td><td>Clears the entire stack.</td></tr><tr><td><code>rand</code></td><td><code>RAND</code></td><td><code>26</code></td><td><code>n rand == r {0 &#x3C;= r &#x3C; n}</code></td><td>Generates a random number between <code>0</code> and <code>n-1</code>.</td></tr><tr><td><code>exit</code></td><td><code>EXIT</code></td><td><code>27</code></td><td><code>n exit == {exits with code n}</code></td><td>Exits the program with the given exit code.</td></tr><tr><td><code>dup</code></td><td><code>DUP</code></td><td><code>33</code></td><td><code>a dup == a a</code></td><td>Duplicates the top value on the stack.</td></tr><tr><td><code>depth</code></td><td><code>DEPTH</code></td><td><code>35</code></td><td><code>… depth == … n</code></td><td>Pushes the current stack depth.</td></tr><tr><td><code>swap</code></td><td><code>SWAP</code></td><td><code>36</code></td><td><code>a b swap == b a</code></td><td>Swaps the top two values on the stack.</td></tr><tr><td><code>%</code></td><td><code>MOD</code></td><td><code>37</code></td><td><code>a b % == a%b</code></td><td>Computes the remainder of <code>a</code> divided by <code>b</code>.*</td></tr><tr><td><code>&#x26;</code></td><td><code>AND</code></td><td><code>38</code></td><td><code>a b &#x26; == a&#x26;b</code></td><td>Bitwise AND of <code>a</code> and <code>b</code>.</td></tr><tr><td><code>(</code></td><td><code>STASH</code></td><td><code>40</code></td><td><code>… ( == {moves stack to queue}</code></td><td>Moves values from the stack to the queue.</td></tr><tr><td><code>)</code></td><td><code>FETCH</code></td><td><code>41</code></td><td><code>) == … {restores stack from queue}</code></td><td>Moves values from the queue back to the stack.</td></tr><tr><td><code>*</code></td><td><code>MUL</code></td><td><code>42</code></td><td><code>a b * == a*b</code></td><td>Multiplies <code>a</code> by <code>b</code>.</td></tr><tr><td><code>+</code></td><td><code>ADD</code></td><td><code>43</code></td><td><code>a b + == a+b</code></td><td>Adds <code>a</code> and <code>b</code> together.</td></tr><tr><td><code>cons</code></td><td><code>CONS</code></td><td><code>44</code></td><td><code>x y cons == q</code></td><td>Builds an anonymous quotation from two stack values.</td></tr><tr><td><code>-</code></td><td><code>SUB</code></td><td><code>45</code></td><td><code>a b - == a-b</code></td><td>Subtracts <code>b</code> from <code>a</code>.</td></tr><tr><td><code>.</code></td><td><code>DUMP</code></td><td><code>46</code></td><td><code>… . == … {prints stack}</code></td><td>Prints the entire stack to output.</td></tr><tr><td><code>/</code></td><td><code>DIV</code></td><td><code>47</code></td><td><code>a b / == ⌊a/b⌋₀</code></td><td>Divides <code>a</code> by <code>b</code> using integer division.*</td></tr><tr><td><code>:</code></td><td><code>MARK</code></td><td><code>58</code></td><td><code>n : == {begin definition(n)}</code></td><td>Begins a new word definition with name <code>n</code>.</td></tr><tr><td><code>;</code></td><td><code>DEF</code></td><td><code>59</code></td><td><code>; == {end definition}</code></td><td>Ends the current word definition.</td></tr><tr><td><code>&#x3C;</code></td><td><code>LT</code></td><td><code>60</code></td><td><code>a b &#x3C; == flag</code></td><td>Pushes true if <code>a</code> is less than <code>b</code>.</td></tr><tr><td><code>=</code></td><td><code>EQ</code></td><td><code>61</code></td><td><code>a b = == flag</code></td><td>Pushes true if <code>a</code> equals <code>b</code>.</td></tr><tr><td><code>></code></td><td><code>GT</code></td><td><code>62</code></td><td><code>a b > == flag</code></td><td>Pushes true if <code>a</code> is greater than <code>b</code>.</td></tr><tr><td><code>?</code></td><td><code>WHEN</code></td><td><code>63</code></td><td><code>flag [A] ? == a*</code></td><td>Executes the quotation if <code>flag</code> is true.</td></tr><tr><td><code>[</code></td><td><code>BRA</code></td><td><code>91</code></td><td><code>[ == {begin quotation}</code></td><td>Begins a quotation (anonymous code block).</td></tr><tr><td><code>]</code></td><td><code>KET</code></td><td><code>93</code></td><td><code>] == [A] {end quotation}</code></td><td>Ends a quotation and pushes it to the stack.</td></tr><tr><td><code>^</code></td><td><code>POW</code></td><td><code>94</code></td><td><code>a b ^ == a^b</code></td><td>Computes <code>a</code> raised to the power of <code>b</code>.</td></tr><tr><td><code>|</code></td><td><code>OR</code></td><td><code>124</code></td><td><code>a b | == a|b</code></td><td>Bitwise OR of <code>a</code> and <code>b</code>.</td></tr><tr><td><code>~</code></td><td><code>NOT</code></td><td><code>126</code></td><td><code>a ~ == ~a</code></td><td>Bitwise NOT of <code>a</code>.</td></tr></tbody></table>
+<p>* Division note: the language docs define <code>/</code> as integer division truncated toward zero, with <code>%</code> as the matching remainder. That means <code>-3 2 /</code> is <code>-1</code>, not <code>-2</code>, and <code>-3 2 %</code> is <code>-1</code>.</p> </div> </article> </section>  </main> </body></html>
