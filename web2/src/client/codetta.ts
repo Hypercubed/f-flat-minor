@@ -190,6 +190,14 @@ interface HistoryState {
   etude: string | null;
 }
 
+interface CodettaMountOptions {
+  detailNavigation?: {
+    prevButton: HTMLButtonElement;
+    nextButton: HTMLButtonElement;
+    onVisibilityChange?: (visible: boolean) => void;
+  };
+}
+
 function readEtudeFromUrl(): string | null {
   const params = getMergedRouteSearchParams(window.location);
   return params.get("codetta") ?? params.get("etude");
@@ -210,7 +218,7 @@ function writeEtudeToUrl(etudeSlug: string | null, mode: "push" | "replace") {
   }
 }
 
-export function mountCodetta(root: HTMLElement) {
+export function mountCodetta(root: HTMLElement, options: CodettaMountOptions = {}) {
   if (ETUDES.length === 0) {
     throw new Error("No Codetta entries found.");
   }
@@ -367,6 +375,24 @@ export function mountCodetta(root: HTMLElement) {
     ui.submitHelp.hidden = !isRecord;
   }
 
+  function getEtudeIndex(etude: CodettaEntry): number {
+    return ETUDES.findIndex((item) => item.id === etude.id);
+  }
+
+  function syncDetailNavigation() {
+    if (!options.detailNavigation) {
+      return;
+    }
+
+    const index = getEtudeIndex(activeEtude);
+    options.detailNavigation.prevButton.disabled = index <= 0;
+    options.detailNavigation.nextButton.disabled = index === -1 || index >= ETUDES.length - 1;
+  }
+
+  function setDetailNavigationVisible(visible: boolean) {
+    options.detailNavigation?.onVisibilityChange?.(visible);
+  }
+
   function renderEtudeList() {
     render(
       html`${ETUDES.map(
@@ -401,8 +427,10 @@ export function mountCodetta(root: HTMLElement) {
     setDetailTab("output");
     invalidateLatestRun();
     syncSubmitState();
+    syncDetailNavigation();
     ui.listScreen.hidden = true;
     ui.detailScreen.hidden = false;
+    setDetailNavigationVisible(true);
     if (historyMode !== "none") {
       writeEtudeToUrl(etude.id, historyMode);
     }
@@ -413,6 +441,7 @@ export function mountCodetta(root: HTMLElement) {
     abortActiveRuns();
     ui.detailScreen.hidden = true;
     ui.listScreen.hidden = false;
+    setDetailNavigationVisible(false);
     if (historyMode !== "none") {
       writeEtudeToUrl(null, historyMode);
     }
@@ -452,6 +481,22 @@ export function mountCodetta(root: HTMLElement) {
 
   ui.backButton.addEventListener("click", () => {
     openList("push");
+  });
+
+  options.detailNavigation?.prevButton.addEventListener("click", () => {
+    const index = getEtudeIndex(activeEtude);
+    if (index <= 0) {
+      return;
+    }
+    openDetail(ETUDES[index - 1], "push");
+  });
+
+  options.detailNavigation?.nextButton.addEventListener("click", () => {
+    const index = getEtudeIndex(activeEtude);
+    if (index === -1 || index >= ETUDES.length - 1) {
+      return;
+    }
+    openDetail(ETUDES[index + 1], "push");
   });
 
   window.addEventListener("popstate", () => {
