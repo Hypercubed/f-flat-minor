@@ -33,7 +33,9 @@ export function decodeCodeFromUrlParam(value: string | null): string | null {
   }
 
   if (value.startsWith("txt.")) {
-    return decodeURIComponent(value.slice(4));
+    // URLSearchParams serializes spaces as "+" when legacy hash URLs are
+    // normalized into route query params, so accept both forms here.
+    return decodeURIComponent(value.slice(4).replace(/\+/g, "%20"));
   }
 
   if (value.startsWith("b64.")) {
