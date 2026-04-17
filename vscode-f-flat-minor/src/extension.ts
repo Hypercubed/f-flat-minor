@@ -11,6 +11,11 @@ import {
   shouldOfferCoreVocabHover,
   whitespaceTokenRangeAt,
 } from "./core-vocabulary-hover";
+import {
+  getTraceViewerHtml,
+  type TraceRun,
+  type TraceStep,
+} from "./trace-viewer";
 
 /**
  * Match Preprocessor.findFile in typescript/core/src/preprocess.ts.
@@ -151,6 +156,10 @@ function uriForResolvedPath(documentUri: vscode.Uri, resolvedFsPath: string): vs
 const IMPORT_LINE = /^\.(import|load)\s+/;
 const ERS_OUTPUT_CHANNEL_NAME = "F-flat-minor ERS";
 const execFileAsync = promisify(execFile);
+const FF_RUN_CLI_SEGMENTS = ["node", "bin", "ff-run.ts"] as const;
+const TRACE_QUEUE_MAX = "64";
+const TRACE_STACK_MAX = "256";
+let traceViewerPanel: vscode.WebviewPanel | undefined;
 
 function pathRangeInLine(line: vscode.TextLine): {
   range: vscode.Range;
@@ -195,11 +204,31 @@ function ersTsCandidateAt(root: string): string {
   return path.join(root, ...ERS_CLI_SEGMENTS);
 }
 
+function ffRunTsCandidateAt(root: string): string {
+  return path.join(root, ...FF_RUN_CLI_SEGMENTS);
+}
+
 /** Walk parents of `startDir` looking for `node/bin/ers.ts` (full f-flat-minor checkout). */
 function findErsTsWalkingUp(startDir: string): string | null {
   let dir = path.resolve(startDir);
   for (;;) {
     const candidate = ersTsCandidateAt(dir);
+    if (fs.existsSync(candidate)) {
+      return candidate;
+    }
+    const parent = path.dirname(dir);
+    if (parent === dir) {
+      break;
+    }
+    dir = parent;
+  }
+  return null;
+}
+
+function findFfRunTsWalkingUp(startDir: string): string | null {
+  let dir = path.resolve(startDir);
+  for (;;) {
+    const candidate = ffRunTsCandidateAt(dir);
     if (fs.existsSync(candidate)) {
       return candidate;
     }
@@ -268,8 +297,276 @@ function nodeArgsForErsScript(scriptPath: string, auditArgs: string[]): string[]
   ];
 }
 
+function nodeArgsForTypeScriptScript(scriptPath: string, args: string[]): string[] {
+  if (scriptPath.endsWith(".mjs")) {
+    return [scriptPath, ...args];
+  }
+  return [
+    "--experimental-transform-types",
+    "--disable-warning=ExperimentalWarning",
+    scriptPath,
+    ...args,
+  ];
+}
+
 function ersAuditCwd(document: vscode.TextDocument): string {
   return vscode.workspace.workspaceFolders?.[0]?.uri.fsPath ?? path.dirname(document.uri.fsPath);
+}
+
+function ffRunCwd(document: vscode.TextDocument): string {
+  return vscode.workspace.workspaceFolders?.[0]?.uri.fsPath ?? path.dirname(document.uri.fsPath);
+}
+
+function resolveFfRunScriptPath(document: vscode.TextDocument): string | null {
+  const sourcePath = sourcePathOrNull(document);
+  if (sourcePath) {
+    const fromFile = findFfRunTsWalkingUp(path.dirname(sourcePath));
+    if (fromFile) {
+      return fromFile;
+    }
+  }
+
+  for (const folder of vscode.workspace.workspaceFolders ?? []) {
+    const candidate = ffRunTsCandidateAt(folder.uri.fsPath);
+    if (fs.existsSync(candidate)) {
+      return candidate;
+    }
+  }
+
+  return null;
+}
+
+interface CommandResult {
+  stdout: string;
+  stderr: string;
+  exitCode: number;
+  signal: NodeJS.Signals | null;
+}
+
+interface RawTraceQueueToken {
+  tag: "literal" | "call";
+  value: string;
+  action: string;
+}
+
+interface RawTraceEvent {
+  step: number;
+  immediate: boolean;
+  tag: "literal" | "call";
+  value: string;
+  action: string;
+  stack_before?: string[];
+  stack_after?: string[];
+  queue_preview?: RawTraceQueueToken[];
+  queue_depth?: number;
+}
+
+function isStringArray(value: unknown): value is string[] {
+  return Array.isArray(value) && value.every((entry) => typeof entry === "string");
+}
+
+function isRawTraceQueueToken(value: unknown): value is RawTraceQueueToken {
+  return typeof value === "object"
+    && value !== null
+    && (value as RawTraceQueueToken).tag !== undefined
+    && ((value as RawTraceQueueToken).tag === "literal" || (value as RawTraceQueueToken).tag === "call")
+    && typeof (value as RawTraceQueueToken).value === "string"
+    && typeof (value as RawTraceQueueToken).action === "string";
+}
+
+function isRawTraceEvent(value: unknown): value is RawTraceEvent {
+  if (typeof value !== "object" || value === null) {
+    return false;
+  }
+
+  const event = value as RawTraceEvent;
+  const queuePreview = event.queue_preview;
+
+  return typeof event.step === "number"
+    && typeof event.immediate === "boolean"
+    && (event.tag === "literal" || event.tag === "call")
+    && typeof event.value === "string"
+    && typeof event.action === "string"
+    && (event.stack_before === undefined || isStringArray(event.stack_before))
+    && (event.stack_after === undefined || isStringArray(event.stack_after))
+    && (queuePreview === undefined || (Array.isArray(queuePreview) && queuePreview.every(isRawTraceQueueToken)))
+    && (event.queue_depth === undefined || typeof event.queue_depth === "number");
+}
+
+async function execNodeCommand(args: string[], cwd: string): Promise<CommandResult> {
+  try {
+    const { stdout, stderr } = await execFileAsync("node", args, {
+      cwd,
+      maxBuffer: 16 * 1024 * 1024,
+    });
+    return { stdout, stderr, exitCode: 0, signal: null };
+  } catch (error) {
+    const execError = error as {
+      code?: number | string;
+      stdout?: string;
+      stderr?: string;
+      signal?: NodeJS.Signals;
+      message?: string;
+    };
+    if (typeof execError.code === "number") {
+      return {
+        stdout: execError.stdout ?? "",
+        stderr: execError.stderr ?? "",
+        exitCode: execError.code,
+        signal: execError.signal ?? null,
+      };
+    }
+    throw error;
+  }
+}
+
+async function runFfRun(
+  document: vscode.TextDocument,
+  args: string[],
+): Promise<CommandResult> {
+  const scriptPath = resolveFfRunScriptPath(document);
+  if (!scriptPath) {
+    throw new Error(
+      "Could not find `node/bin/ff-run.ts`. Open the file inside an f-flat-minor checkout so the trace viewer can run the TypeScript runtime.",
+    );
+  }
+  return await execNodeCommand(
+    nodeArgsForTypeScriptScript(scriptPath, args),
+    ffRunCwd(document),
+  );
+}
+
+function summarizeFailure(label: string, result: CommandResult): string {
+  const parts = [`${label} failed with exit code ${result.exitCode}.`];
+  if (result.signal) {
+    parts.push(`Signal: ${result.signal}`);
+  }
+  if (result.stderr.trim()) {
+    parts.push("", result.stderr.trim());
+  } else if (result.stdout.trim()) {
+    parts.push("", result.stdout.trim());
+  }
+  return parts.join("\n");
+}
+
+function parseTrace(stderr: string): { steps: TraceStep[]; notes: string[] } {
+  const steps: TraceStep[] = [];
+  const notes: string[] = [];
+  for (const rawLine of stderr.split(/\r?\n/)) {
+    const line = rawLine.trim();
+    if (!line) {
+      continue;
+    }
+    try {
+      const parsed = JSON.parse(line);
+      if (isRawTraceEvent(parsed)) {
+        steps.push({
+          step: parsed.step,
+          immediate: parsed.immediate,
+          tag: parsed.tag,
+          value: parsed.value,
+          action: parsed.action,
+          stackBefore: parsed.stack_before ?? [],
+          stackAfter: parsed.stack_after ?? [],
+          queuePreview: parsed.queue_preview ?? [],
+          queueDepth: parsed.queue_depth ?? 0,
+        });
+        continue;
+      }
+    } catch {
+      // Fall through and preserve non-JSONL stderr.
+    }
+    notes.push(rawLine);
+  }
+  return { steps, notes };
+}
+
+async function chooseTraceViewerMode(): Promise<boolean | undefined> {
+  const picked = await vscode.window.showQuickPick([
+    {
+      label: "Unoptimized IR",
+      description: "Use the normal compiled IR for the trace viewer",
+      optimized: false,
+    },
+    {
+      label: "Optimized IR",
+      description: "Run the optimizer before generating IR and trace output",
+      optimized: true,
+    },
+  ], {
+    placeHolder: "Select how to prepare the program for the trace viewer",
+    ignoreFocusOut: true,
+  });
+  return picked?.optimized;
+}
+
+async function captureTraceRun(
+  document: vscode.TextDocument,
+  optimized: boolean,
+): Promise<TraceRun> {
+  const filePath = document.uri.fsPath;
+  const optimizationArgs = optimized ? ["-O"] : [];
+  const [irResult, traceResult] = await Promise.all([
+    runFfRun(document, ["-f", filePath, ...optimizationArgs, "-i"]),
+    runFfRun(document, [
+      "-f",
+      filePath,
+      ...optimizationArgs,
+      "--trace",
+      "--trace-format",
+      "jsonl",
+      "--trace-queue-max",
+      TRACE_QUEUE_MAX,
+      "--trace-stack-max",
+      TRACE_STACK_MAX,
+    ]),
+  ]);
+
+  if (irResult.exitCode !== 0) {
+    throw new Error(summarizeFailure("IR capture", irResult));
+  }
+
+  const parsedTrace = parseTrace(traceResult.stderr);
+  if (traceResult.exitCode !== 0 && parsedTrace.steps.length === 0) {
+    throw new Error(summarizeFailure("Trace capture", traceResult));
+  }
+
+  const stderrNotes = [...parsedTrace.notes];
+  if (traceResult.exitCode !== 0) {
+    stderrNotes.unshift(`ff-run exited with code ${traceResult.exitCode}.`);
+  }
+
+  return {
+    fileName: filePath,
+    optimized,
+    ir: irResult.stdout.replace(/\s+$/, ""),
+    programOutput: traceResult.stdout.replace(/\s+$/, ""),
+    stderr: stderrNotes.join("\n").trim(),
+    exitCode: traceResult.exitCode,
+    steps: parsedTrace.steps,
+  };
+}
+
+function showTraceViewer(run: TraceRun) {
+  if (!traceViewerPanel) {
+    traceViewerPanel = vscode.window.createWebviewPanel(
+      "fFlatMinorTraceViewer",
+      "F-flat-minor Trace Viewer",
+      vscode.ViewColumn.Beside,
+      {
+        enableScripts: true,
+        retainContextWhenHidden: true,
+      },
+    );
+    traceViewerPanel.onDidDispose(() => {
+      traceViewerPanel = undefined;
+    });
+  } else {
+    traceViewerPanel.reveal(vscode.ViewColumn.Beside);
+  }
+
+  traceViewerPanel.title = `Trace Viewer: ${path.basename(run.fileName)}${run.optimized ? " (optimized)" : ""}`;
+  traceViewerPanel.webview.html = getTraceViewerHtml(traceViewerPanel.webview, run);
 }
 
 async function execErsAudit(
@@ -597,10 +894,48 @@ export function activate(context: vscode.ExtensionContext): void {
     },
   );
 
+  const openTraceViewer = vscode.commands.registerCommand(
+    "f-flat-minor.openTraceViewer",
+    async () => {
+      const editor = vscode.window.activeTextEditor;
+      if (!editor || editor.document.languageId !== "f-flat-minor") {
+        void vscode.window.showErrorMessage("Open an f-flat-minor file to launch the trace viewer.");
+        return;
+      }
+
+      const sourcePath = sourcePathOrNull(editor.document);
+      if (!sourcePath) {
+        void vscode.window.showInformationMessage(
+          "Save the current f-flat-minor file before opening the trace viewer.",
+        );
+        return;
+      }
+
+      const optimized = await chooseTraceViewerMode();
+      if (optimized === undefined) {
+        return;
+      }
+
+      try {
+        const run = await vscode.window.withProgress({
+          location: vscode.ProgressLocation.Notification,
+          title: "Capturing F-flat-minor trace",
+        }, async () => {
+          return await captureTraceRun(editor.document, optimized);
+        });
+        showTraceViewer(run);
+      } catch (error) {
+        const message = error instanceof Error ? error.message : String(error);
+        void vscode.window.showErrorMessage(`Trace viewer failed: ${message}`);
+      }
+    },
+  );
+
   context.subscriptions.push(
     ersOutput,
     auditDefinitionByWord,
     auditCurrentDefinition,
+    openTraceViewer,
     vscode.languages.registerDocumentLinkProvider(docSelector, linkProvider),
     vscode.languages.registerDefinitionProvider(docSelector, definitionProvider),
     vscode.languages.registerHoverProvider(docSelector, hoverProvider),

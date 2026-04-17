@@ -8,7 +8,8 @@
   "activationEvents": [
     "onLanguage:f-flat-minor",
     "onCommand:f-flat-minor.auditCurrentDefinition",
-    "onCommand:f-flat-minor.auditDefinitionByWord"
+    "onCommand:f-flat-minor.auditDefinitionByWord",
+    "onCommand:f-flat-minor.openTraceViewer"
   ],
   "repository": {
     "type": "git",
@@ -74,6 +75,10 @@
       {
         "command": "f-flat-minor.auditDefinitionByWord",
         "title": "F-flat-minor: Audit Definition by Word"
+      },
+      {
+        "command": "f-flat-minor.openTraceViewer",
+        "title": "F-flat-minor: Open Trace Viewer"
       }
     ],
     "languages": [
