@@ -14,8 +14,12 @@ export interface TraceStep {
   action: string;
   stackBefore: string[];
   stackAfter: string[];
+  queueBeforePreview: TraceQueueToken[];
+  queueBeforeDepth: number;
   queuePreview: TraceQueueToken[];
   queueDepth: number;
+  outputBefore: string;
+  outputAfter: string;
 }
 
 export interface TraceRun {
@@ -73,16 +77,21 @@ export function getTraceViewerHtml(webview: vscode.Webview, run: TraceRun): stri
       box-sizing: border-box;
     }
 
+    html,
+    body {
+      height: 100%;
+    }
+
     body {
       margin: 0;
       font-family: var(--vscode-font-family);
       color: var(--vscode-foreground);
       background: var(--vscode-editor-background);
+      overflow: hidden;
     }
 
     button,
-    input,
-    select {
+    input {
       font: inherit;
     }
 
@@ -117,14 +126,17 @@ export function getTraceViewerHtml(webview: vscode.Webview, run: TraceRun): stri
       background: var(--vscode-input-background);
     }
 
-    details summary {
-      cursor: pointer;
-    }
-
     .layout {
       display: grid;
-      grid-template-rows: auto auto 1fr;
-      min-height: 100vh;
+      grid-template-rows: auto auto minmax(0, 1fr);
+      height: 100vh;
+    }
+
+    .sticky-top {
+      position: sticky;
+      top: 0;
+      z-index: 10;
+      background: var(--vscode-editor-background);
     }
 
     .toolbar {
@@ -147,6 +159,19 @@ export function getTraceViewerHtml(webview: vscode.Webview, run: TraceRun): stri
       gap: 10px;
       padding: 12px 16px;
       border-bottom: 1px solid var(--border);
+      background: var(--vscode-editor-background);
+    }
+
+    .main-scroll {
+      overflow: auto;
+      padding: 12px 16px 16px;
+    }
+
+    .main {
+      display: grid;
+      grid-template-columns: minmax(380px, 1.35fr) minmax(380px, 1fr);
+      gap: 12px;
+      align-items: start;
     }
 
     .meta-card,
@@ -173,13 +198,6 @@ export function getTraceViewerHtml(webview: vscode.Webview, run: TraceRun): stri
       font-family: var(--font-mono);
     }
 
-    .main {
-      display: grid;
-      grid-template-columns: minmax(360px, 1.4fr) minmax(360px, 1fr);
-      gap: 12px;
-      padding: 12px 16px 16px;
-    }
-
     .panel-header {
       display: flex;
       justify-content: space-between;
@@ -204,7 +222,7 @@ export function getTraceViewerHtml(webview: vscode.Webview, run: TraceRun): stri
     }
 
     .ir-pane {
-      max-height: 60vh;
+      max-height: 70vh;
       overflow: auto;
       border-radius: 4px;
       border: 1px solid var(--border);
@@ -261,7 +279,7 @@ export function getTraceViewerHtml(webview: vscode.Webview, run: TraceRun): stri
     }
 
     .step-list {
-      max-height: 240px;
+      max-height: 300px;
       overflow: auto;
     }
 
@@ -311,102 +329,112 @@ export function getTraceViewerHtml(webview: vscode.Webview, run: TraceRun): stri
 </head>
 <body>
   <div class="layout">
-    <div class="toolbar">
-      <button id="first-button" type="button">|&lt;</button>
-      <button id="prev-button" type="button">&lt;</button>
-      <button id="next-button" type="button">&gt;</button>
-      <button id="last-button" type="button">&gt;|</button>
-      <div class="toolbar-spacer"></div>
-      <label class="mono" for="step-input">Step</label>
-      <input id="step-input" type="number" min="0" step="1" />
+    <div class="sticky-top">
+      <div class="toolbar">
+        <button id="first-button" type="button">|&lt;</button>
+        <button id="prev-button" type="button">&lt;</button>
+        <button id="next-button" type="button">&gt;</button>
+        <button id="last-button" type="button">&gt;|</button>
+        <div class="toolbar-spacer"></div>
+        <label class="mono" for="step-input">State</label>
+        <input id="step-input" type="number" min="0" step="1" />
+      </div>
+      <div class="meta">
+        <div class="meta-card">
+          <div class="meta-label">File</div>
+          <div class="meta-value" id="meta-file"></div>
+        </div>
+        <div class="meta-card">
+          <div class="meta-label">Mode</div>
+          <div class="meta-value" id="meta-mode"></div>
+        </div>
+        <div class="meta-card">
+          <div class="meta-label">States</div>
+          <div class="meta-value" id="meta-steps"></div>
+        </div>
+        <div class="meta-card">
+          <div class="meta-label">Exit code</div>
+          <div class="meta-value" id="meta-exit"></div>
+        </div>
+      </div>
     </div>
-    <div class="meta">
-      <div class="meta-card">
-        <div class="meta-label">File</div>
-        <div class="meta-value" id="meta-file"></div>
-      </div>
-      <div class="meta-card">
-        <div class="meta-label">Mode</div>
-        <div class="meta-value" id="meta-mode"></div>
-      </div>
-      <div class="meta-card">
-        <div class="meta-label">Steps</div>
-        <div class="meta-value" id="meta-steps"></div>
-      </div>
-      <div class="meta-card">
-        <div class="meta-label">Exit code</div>
-        <div class="meta-value" id="meta-exit"></div>
-      </div>
-    </div>
-    <div class="main">
-      <section class="panel">
-        <div class="panel-header">
-          <span>Executed IR</span>
-          <span class="muted mono" id="ir-note"></span>
-        </div>
-        <div class="panel-content">
-          <div class="ir-pane" id="ir-pane"></div>
-        </div>
-      </section>
-      <section class="panel">
-        <div class="panel-header">
-          <span>Recorded trace state</span>
-          <span class="muted mono" id="step-summary"></span>
-        </div>
-        <div class="panel-content">
-          <div class="meta" style="padding: 0; border-bottom: 0; margin-bottom: 12px;">
-            <div class="meta-card">
-              <div class="meta-label">Action</div>
-              <div class="meta-value" id="current-action"></div>
-            </div>
-            <div class="meta-card">
-              <div class="meta-label">Tag / immediate</div>
-              <div class="meta-value" id="current-tag"></div>
-            </div>
-            <div class="meta-card">
-              <div class="meta-label">Queue depth</div>
-              <div class="meta-value" id="current-queue-depth"></div>
-            </div>
-            <div class="meta-card">
-              <div class="meta-label">Value</div>
-              <div class="meta-value" id="current-value"></div>
-            </div>
+    <div class="main-scroll">
+      <div class="main">
+        <section class="panel">
+          <div class="panel-header">
+            <span>Executed IR</span>
+            <span class="muted mono" id="ir-note"></span>
           </div>
-          <div class="state-columns">
-            <div class="panel">
-              <div class="panel-header">Stack after selected step</div>
-              <div class="panel-content">
-                <div id="stack-list" class="token-list"></div>
+          <div class="panel-content">
+            <div class="ir-pane" id="ir-pane"></div>
+          </div>
+        </section>
+        <section class="panel">
+          <div class="panel-header">
+            <span>Recorded trace state</span>
+            <span class="muted mono" id="step-summary"></span>
+          </div>
+          <div class="panel-content">
+            <div class="meta" style="padding: 0; border-bottom: 0; margin-bottom: 12px;">
+              <div class="meta-card">
+                <div class="meta-label">Action</div>
+                <div class="meta-value" id="current-action"></div>
+              </div>
+              <div class="meta-card">
+                <div class="meta-label">Tag / immediate</div>
+                <div class="meta-value" id="current-tag"></div>
+              </div>
+              <div class="meta-card">
+                <div class="meta-label">Queue depth</div>
+                <div class="meta-value" id="current-queue-depth"></div>
+              </div>
+              <div class="meta-card">
+                <div class="meta-label">Value</div>
+                <div class="meta-value" id="current-value"></div>
               </div>
             </div>
-            <div class="panel">
-              <div class="panel-header">Queue preview after selected step</div>
+            <div class="state-columns">
+              <div class="panel">
+                <div class="panel-header">Stack after selected state</div>
+                <div class="panel-content">
+                  <div id="stack-list" class="token-list"></div>
+                </div>
+              </div>
+              <div class="panel">
+                <div class="panel-header">Queue before selected step</div>
+                <div class="panel-content">
+                  <div id="queue-list" class="queue-list"></div>
+                </div>
+              </div>
+            </div>
+            <div class="panel" style="margin-top: 12px;">
+              <div class="panel-header">Trace timeline</div>
               <div class="panel-content">
-                <div id="queue-list" class="queue-list"></div>
+                <input id="step-slider" type="range" min="0" step="1" />
+                <div class="step-list" id="step-list" style="margin-top: 10px;"></div>
+              </div>
+            </div>
+            <div class="panel" style="margin-top: 12px;">
+              <div class="panel-header">Output through selected state</div>
+              <div class="panel-content">
+                <div class="output-block" id="program-output"></div>
+              </div>
+            </div>
+            <div class="panel" style="margin-top: 12px;">
+              <div class="panel-header">Final program output</div>
+              <div class="panel-content">
+                <div class="output-block" id="final-program-output"></div>
+              </div>
+            </div>
+            <div class="panel" style="margin-top: 12px;">
+              <div class="panel-header">Trace stderr / notes</div>
+              <div class="panel-content">
+                <div class="output-block" id="trace-stderr"></div>
               </div>
             </div>
           </div>
-          <div class="panel" style="margin-top: 12px;">
-            <div class="panel-header">Trace timeline</div>
-            <div class="panel-content">
-              <input id="step-slider" type="range" min="0" step="1" />
-              <div class="step-list" id="step-list" style="margin-top: 10px;"></div>
-            </div>
-          </div>
-          <div class="panel" style="margin-top: 12px;">
-            <div class="panel-header">Program output</div>
-            <div class="panel-content">
-              <div class="output-block" id="program-output"></div>
-            </div>
-          </div>
-          <div class="panel" style="margin-top: 12px;">
-            <div class="panel-header">Trace stderr / notes</div>
-            <div class="panel-content">
-              <div class="output-block" id="trace-stderr"></div>
-            </div>
-          </div>
-        </div>
-      </section>
+        </section>
+      </div>
     </div>
   </div>
   <script id="trace-run-data" type="application/json">${escapeScriptJson(run)}</script>
@@ -415,6 +443,18 @@ export function getTraceViewerHtml(webview: vscode.Webview, run: TraceRun): stri
       const run = JSON.parse(document.getElementById("trace-run-data").textContent);
       const steps = Array.isArray(run.steps) ? run.steps : [];
       const irLines = String(run.ir || "").split(/\\r?\\n/);
+      const initialState = {
+        label: "Initial state",
+        stepNumber: -1,
+        action: "(start)",
+        tag: "—",
+        immediate: false,
+        value: "",
+        stackAfter: [],
+        queueBeforePreview: steps.length > 0 ? steps[0].queueBeforePreview || [] : [],
+        queueBeforeDepth: steps.length > 0 ? steps[0].queueBeforeDepth || 0 : 0,
+        outputAfter: "",
+      };
       let selectedIndex = 0;
 
       const metaFile = document.getElementById("meta-file");
@@ -434,6 +474,7 @@ export function getTraceViewerHtml(webview: vscode.Webview, run: TraceRun): stri
       const irPane = document.getElementById("ir-pane");
       const irNote = document.getElementById("ir-note");
       const programOutput = document.getElementById("program-output");
+      const finalProgramOutput = document.getElementById("final-program-output");
       const traceStderr = document.getElementById("trace-stderr");
       const firstButton = document.getElementById("first-button");
       const prevButton = document.getElementById("prev-button");
@@ -449,6 +490,29 @@ export function getTraceViewerHtml(webview: vscode.Webview, run: TraceRun): stri
         node.className = "empty";
         node.textContent = message;
         return node;
+      }
+
+      function getStateCount() {
+        return steps.length + 1;
+      }
+
+      function getSelectedState() {
+        if (selectedIndex === 0) {
+          return initialState;
+        }
+        const step = steps[selectedIndex - 1];
+        return {
+          label: "#" + step.step + " " + step.action,
+          stepNumber: step.step,
+          action: step.action,
+          tag: step.tag,
+          immediate: step.immediate,
+          value: step.value,
+          stackAfter: Array.isArray(step.stackAfter) ? step.stackAfter : [],
+          queueBeforePreview: Array.isArray(step.queueBeforePreview) ? step.queueBeforePreview : [],
+          queueBeforeDepth: typeof step.queueBeforeDepth === "number" ? step.queueBeforeDepth : 0,
+          outputAfter: typeof step.outputAfter === "string" ? step.outputAfter : "",
+        };
       }
 
       function renderIr() {
@@ -474,67 +538,64 @@ export function getTraceViewerHtml(webview: vscode.Webview, run: TraceRun): stri
 
       function renderStepList() {
         stepList.replaceChildren();
-        if (steps.length === 0) {
-          stepList.appendChild(createEmpty("No trace steps were recorded."));
-          return;
-        }
-
+        const stateCount = getStateCount();
         const windowSize = 60;
         const start = Math.max(0, selectedIndex - Math.floor(windowSize / 2));
-        const end = Math.min(steps.length, start + windowSize);
+        const end = Math.min(stateCount, start + windowSize);
 
         for (let index = start; index < end; index++) {
-          const step = steps[index];
           const row = document.createElement("div");
           row.className = "step-item" + (index === selectedIndex ? " is-selected" : "");
           const button = document.createElement("button");
           button.type = "button";
           button.addEventListener("click", () => setSelectedIndex(index));
+
           const title = document.createElement("div");
-          title.textContent = "#" + step.step + " " + step.action;
           const meta = document.createElement("small");
-          meta.textContent = step.tag + " | stack " + step.stackAfter.length + " | queue " + step.queueDepth;
+          if (index === 0) {
+            title.textContent = "Initial state";
+            meta.textContent = "empty stack | queue " + initialState.queueBeforeDepth;
+          } else {
+            const step = steps[index - 1];
+            title.textContent = "#" + step.step + " " + step.action;
+            meta.textContent = step.tag + " | stack " + step.stackAfter.length + " | queue " + step.queueBeforeDepth;
+          }
+
           button.append(title, meta);
           row.appendChild(button);
           stepList.appendChild(row);
         }
       }
 
-      function renderSelectedStep() {
-        const step = steps[selectedIndex];
+      function renderSelectedState() {
+        const stateCount = getStateCount();
+        const state = getSelectedState();
 
-        stepSlider.max = String(Math.max(steps.length - 1, 0));
+        stepSlider.max = String(Math.max(stateCount - 1, 0));
         stepSlider.value = String(selectedIndex);
-        stepInput.max = String(Math.max(steps.length - 1, 0));
+        stepInput.max = String(Math.max(stateCount - 1, 0));
         stepInput.value = String(selectedIndex);
 
         firstButton.disabled = selectedIndex <= 0;
         prevButton.disabled = selectedIndex <= 0;
-        nextButton.disabled = steps.length === 0 || selectedIndex >= steps.length - 1;
-        lastButton.disabled = steps.length === 0 || selectedIndex >= steps.length - 1;
+        nextButton.disabled = selectedIndex >= stateCount - 1;
+        lastButton.disabled = selectedIndex >= stateCount - 1;
 
-        if (!step) {
-          stepSummary.textContent = "No steps";
-          setText(currentAction, "");
-          setText(currentTag, "");
-          setText(currentQueueDepth, "");
-          setText(currentValue, "");
-          stackList.replaceChildren(createEmpty("No stack state recorded."));
-          queueList.replaceChildren(createEmpty("No queue state recorded."));
-          return;
-        }
-
-        stepSummary.textContent = "Selected step " + step.step + " of " + (steps.length - 1);
-        setText(currentAction, step.action);
-        setText(currentTag, step.tag + " / immediate=" + String(step.immediate));
-        setText(currentQueueDepth, String(step.queueDepth));
-        setText(currentValue, step.value);
+        stepSummary.textContent = selectedIndex === 0
+          ? "Selected initial state"
+          : "Selected state after step " + state.stepNumber + " (" + selectedIndex + "/" + (stateCount - 1) + ")";
+        setText(currentAction, state.action);
+        setText(currentTag, selectedIndex === 0 ? "initial" : state.tag + " / immediate=" + String(state.immediate));
+        setText(currentQueueDepth, String(state.queueBeforeDepth));
+        setText(currentValue, state.value);
 
         stackList.replaceChildren();
-        if (step.stackAfter.length === 0) {
-          stackList.appendChild(createEmpty("Stack is empty after this step."));
+        if (state.stackAfter.length === 0) {
+          stackList.appendChild(createEmpty(selectedIndex === 0
+            ? "Stack starts empty before execution."
+            : "Stack is empty after this step."));
         } else {
-          step.stackAfter.forEach((value, index) => {
+          state.stackAfter.forEach((value, index) => {
             const item = document.createElement("div");
             item.className = "stack-item";
             item.textContent = "[" + index + "] " + value;
@@ -543,10 +604,10 @@ export function getTraceViewerHtml(webview: vscode.Webview, run: TraceRun): stri
         }
 
         queueList.replaceChildren();
-        if (step.queuePreview.length === 0) {
-          queueList.appendChild(createEmpty("Queue preview is empty after this step."));
+        if (state.queueBeforePreview.length === 0) {
+          queueList.appendChild(createEmpty("Queue preview is empty for this state."));
         } else {
-          step.queuePreview.forEach((token, index) => {
+          state.queueBeforePreview.forEach((token, index) => {
             const item = document.createElement("div");
             item.className = "queue-item";
             item.textContent = "[" + index + "] " + token.action;
@@ -557,38 +618,30 @@ export function getTraceViewerHtml(webview: vscode.Webview, run: TraceRun): stri
           });
         }
 
+        programOutput.textContent = state.outputAfter || "—";
         renderStepList();
       }
 
       function setSelectedIndex(index) {
-        if (!steps.length) {
-          selectedIndex = 0;
-          renderSelectedStep();
-          return;
-        }
-        const bounded = Math.max(0, Math.min(index, steps.length - 1));
-        if (bounded === selectedIndex && stepList.childElementCount > 0) {
-          renderSelectedStep();
-          return;
-        }
+        const bounded = Math.max(0, Math.min(index, getStateCount() - 1));
         selectedIndex = bounded;
-        renderSelectedStep();
+        renderSelectedState();
       }
 
       metaFile.textContent = run.fileName;
       metaMode.textContent = run.optimized ? "Optimized" : "Unoptimized";
-      metaSteps.textContent = String(steps.length);
+      metaSteps.textContent = String(getStateCount());
       metaExit.textContent = String(run.exitCode);
-      programOutput.textContent = run.programOutput || "—";
+      finalProgramOutput.textContent = run.programOutput || "—";
       traceStderr.textContent = run.stderr || "—";
 
       renderIr();
-      renderSelectedStep();
+      renderSelectedState();
 
       firstButton.addEventListener("click", () => setSelectedIndex(0));
       prevButton.addEventListener("click", () => setSelectedIndex(selectedIndex - 1));
       nextButton.addEventListener("click", () => setSelectedIndex(selectedIndex + 1));
-      lastButton.addEventListener("click", () => setSelectedIndex(steps.length - 1));
+      lastButton.addEventListener("click", () => setSelectedIndex(getStateCount() - 1));
       stepSlider.addEventListener("input", (event) => {
         setSelectedIndex(Number(event.target.value));
       });

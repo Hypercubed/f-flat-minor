@@ -31,8 +31,12 @@ interface TraceEvent {
   action: string;
   stack_before: string[];
   stack_after?: string[];
+  queue_before_preview: TraceQueueToken[];
+  queue_before_depth: number;
   queue_preview: TraceQueueToken[];
   queue_depth: number;
+  output_before: string;
+  output_after: string;
 }
 
 export interface EngineRunAsyncOptions {
@@ -130,11 +134,21 @@ export class Engine {
   }
 
   private profile: Record<string | number, [number, number | undefined]> = {};
+  private readonly outputDecoder = new TextDecoder();
+  private capturedOutput = "";
+  private traceWriteInProgress = false;
 
   private readonly platform: CorePlatform;
 
   constructor(platform: CorePlatform) {
     this.platform = platform;
+    const originalWrite = this.platform.io.write.bind(this.platform.io);
+    this.platform.io.write = (data: Uint8Array) => {
+      if (!this.traceWriteInProgress) {
+        this.capturedOutput += this.outputDecoder.decode(data, { stream: true });
+      }
+      originalWrite(data);
+    };
     this.setup();
   }
 
@@ -290,6 +304,9 @@ export class Engine {
     let stepsRun = 0;
 
     while (queue.length > 0 && stepsRun < maxSteps) {
+      const queueBeforePreview = this.getQueuePreviewFrom(queue);
+      const queueBeforeDepth = queue.length / 2;
+      const outputBefore = this.capturedOutput;
       const [tag, value] = this.queueShift();
       const isCall = tag === Q_CALL;
       const stackBefore = this.stack.slice();
@@ -321,6 +338,10 @@ export class Engine {
         value,
         stackBefore,
         stackAfter: this.traceVerbose || this.traceFormat === "jsonl" ? this.stack.slice() : undefined,
+        queueBeforePreview,
+        queueBeforeDepth,
+        outputBefore,
+        outputAfter: this.capturedOutput,
       });
       stepsRun++;
     }
@@ -400,6 +421,10 @@ export class Engine {
     value,
     stackBefore,
     stackAfter,
+    queueBeforePreview,
+    queueBeforeDepth,
+    outputBefore,
+    outputAfter,
   }: {
     step: number;
     immediate: boolean;
@@ -407,8 +432,23 @@ export class Engine {
     value: bigint;
     stackBefore: bigint[];
     stackAfter: bigint[] | undefined;
+    queueBeforePreview: TraceQueueToken[];
+    queueBeforeDepth: number;
+    outputBefore: string;
+    outputAfter: string;
   }) {
-    const event = this.createTraceEvent(step, immediate, tag, value, stackBefore, stackAfter);
+    const event = this.createTraceEvent(
+      step,
+      immediate,
+      tag,
+      value,
+      stackBefore,
+      stackAfter,
+      queueBeforePreview,
+      queueBeforeDepth,
+      outputBefore,
+      outputAfter,
+    );
     if (this.traceFormat === "jsonl") {
       this.writeTraceLine(JSON.stringify(event));
       return;
@@ -423,10 +463,14 @@ export class Engine {
     value: bigint,
     stackBefore: bigint[],
     stackAfter: bigint[] | undefined,
+    queueBeforePreview: TraceQueueToken[],
+    queueBeforeDepth: number,
+    outputBefore: string,
+    outputAfter: string,
   ): TraceEvent {
     const isCall = tag === Q_CALL;
     const action = isCall ? this.getName(value, String(value)) : String(value);
-    const queuePreview = this.getQueuePreview();
+    const queuePreview = this.getQueuePreviewFrom(this.queue);
     return {
       step,
       immediate,
@@ -435,8 +479,12 @@ export class Engine {
       action,
       stack_before: this.limitStack(stackBefore).map(String),
       stack_after: stackAfter ? this.limitStack(stackAfter).map(String) : undefined,
+      queue_before_preview: queueBeforePreview,
+      queue_before_depth: queueBeforeDepth,
       queue_preview: queuePreview,
       queue_depth: this.queue.length / 2,
+      output_before: outputBefore,
+      output_after: outputAfter,
     };
   }
 
@@ -444,12 +492,12 @@ export class Engine {
     return stack.length > this.traceStackMax ? stack.slice(-this.traceStackMax) : stack;
   }
 
-  private getQueuePreview(): TraceQueueToken[] {
+  private getQueuePreviewFrom(queue: bigint[]): TraceQueueToken[] {
     const preview: TraceQueueToken[] = [];
     const max = Math.max(this.traceQueueMax, 0);
-    for (let i = 0; i < this.queue.length && preview.length < max; i += 2) {
-      const tag = this.queue[i] ?? 0n;
-      const value = this.queue[i + 1] ?? 0n;
+    for (let i = 0; i < queue.length && preview.length < max; i += 2) {
+      const tag = queue[i] ?? 0n;
+      const value = queue[i + 1] ?? 0n;
       const isCall = tag === Q_CALL;
       preview.push({
         tag: isCall ? "call" : "literal",
@@ -605,10 +653,20 @@ export class Engine {
   private writeTraceLine(text: string) {
     const data = new TextEncoder().encode(`${text}\n`);
     if (this.platform.io.writeError) {
-      this.platform.io.writeError(data);
+      this.traceWriteInProgress = true;
+      try {
+        this.platform.io.writeError(data);
+      } finally {
+        this.traceWriteInProgress = false;
+      }
       return;
     }
-    this.platform.io.write(data);
+    this.traceWriteInProgress = true;
+    try {
+      this.platform.io.write(data);
+    } finally {
+      this.traceWriteInProgress = false;
+    }
   }
 
   getName(op: bigint, def = String(op)): string {

@@ -357,8 +357,12 @@ interface RawTraceEvent {
   action: string;
   stack_before?: string[];
   stack_after?: string[];
+  queue_before_preview?: RawTraceQueueToken[];
+  queue_before_depth?: number;
   queue_preview?: RawTraceQueueToken[];
   queue_depth?: number;
+  output_before?: string;
+  output_after?: string;
 }
 
 function isStringArray(value: unknown): value is string[] {
@@ -380,6 +384,7 @@ function isRawTraceEvent(value: unknown): value is RawTraceEvent {
   }
 
   const event = value as RawTraceEvent;
+  const queueBeforePreview = event.queue_before_preview;
   const queuePreview = event.queue_preview;
 
   return typeof event.step === "number"
@@ -389,8 +394,13 @@ function isRawTraceEvent(value: unknown): value is RawTraceEvent {
     && typeof event.action === "string"
     && (event.stack_before === undefined || isStringArray(event.stack_before))
     && (event.stack_after === undefined || isStringArray(event.stack_after))
+    && (queueBeforePreview === undefined
+      || (Array.isArray(queueBeforePreview) && queueBeforePreview.every(isRawTraceQueueToken)))
+    && (event.queue_before_depth === undefined || typeof event.queue_before_depth === "number")
     && (queuePreview === undefined || (Array.isArray(queuePreview) && queuePreview.every(isRawTraceQueueToken)))
-    && (event.queue_depth === undefined || typeof event.queue_depth === "number");
+    && (event.queue_depth === undefined || typeof event.queue_depth === "number")
+    && (event.output_before === undefined || typeof event.output_before === "string")
+    && (event.output_after === undefined || typeof event.output_after === "string");
 }
 
 async function execNodeCommand(args: string[], cwd: string): Promise<CommandResult> {
@@ -468,8 +478,12 @@ function parseTrace(stderr: string): { steps: TraceStep[]; notes: string[] } {
           action: parsed.action,
           stackBefore: parsed.stack_before ?? [],
           stackAfter: parsed.stack_after ?? [],
+          queueBeforePreview: parsed.queue_before_preview ?? [],
+          queueBeforeDepth: parsed.queue_before_depth ?? 0,
           queuePreview: parsed.queue_preview ?? [],
           queueDepth: parsed.queue_depth ?? 0,
+          outputBefore: parsed.output_before ?? "",
+          outputAfter: parsed.output_after ?? "",
         });
         continue;
       }
