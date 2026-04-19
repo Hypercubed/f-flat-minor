@@ -2,14 +2,15 @@
   "name": "vscode-f-flat-minor",
   "displayName": "F♭m (f-flat-minor) Language Support",
   "description": "Syntax highlighting and language support for f-flat-minor, a minimal stack-oriented programming language",
-  "version": "0.0.7",
+  "version": "0.0.9",
   "publisher": "hypercubed",
   "main": "./out/extension.js",
   "activationEvents": [
     "onLanguage:f-flat-minor",
     "onCommand:f-flat-minor.auditCurrentDefinition",
     "onCommand:f-flat-minor.auditDefinitionByWord",
-    "onCommand:f-flat-minor.openTraceViewer"
+    "onCommand:f-flat-minor.openTraceViewer",
+    "onCommand:f-flat-minor.traceViewerTogglePlayback"
   ],
   "repository": {
     "type": "git",
@@ -64,6 +65,20 @@
           "type": "boolean",
           "default": true,
           "description": "When true, hovering a core/primitive token shows mnemonic, opcode, stack effect, and description (from embedded `_shared/core-vocabulary.json`, web-inspector style)."
+        },
+        "f-flat-minor.execFileMaxBufferMb": {
+          "type": "number",
+          "default": 256,
+          "minimum": 16,
+          "maximum": 2048,
+          "markdownDescription": "Per-stream cap (MiB) for `stdout` and `stderr` when the extension runs Node subprocesses (`ff-run`, ERS). JSONL trace output is written to stderr, so long traces can exceed small defaults. Applied separately to each stream. Increase for very long traces; lower if memory is a concern."
+        },
+        "f-flat-minor.traceRunTimeoutSeconds": {
+          "type": "number",
+          "default": 120,
+          "minimum": 5,
+          "maximum": 3600,
+          "markdownDescription": "Hard timeout in seconds for each `ff-run` subprocess launched by the trace viewer. When exceeded, the extension terminates the process and reports a timeout error."
         }
       }
     },
@@ -79,6 +94,10 @@
       {
         "command": "f-flat-minor.openTraceViewer",
         "title": "F-flat-minor: Open Trace Viewer"
+      },
+      {
+        "command": "f-flat-minor.traceViewerTogglePlayback",
+        "title": "F-flat-minor: Trace Viewer — Toggle Auto-Step"
       }
     ],
     "languages": [

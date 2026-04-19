@@ -1,7 +1,7 @@
 import * as fs from "node:fs";
-import { homedir } from "node:os";
+import { homedir, tmpdir } from "node:os";
 import * as path from "path";
-import { execFile } from "node:child_process";
+import { execFile, spawn } from "node:child_process";
 import { promisify } from "node:util";
 import * as vscode from "vscode";
 
@@ -159,6 +159,33 @@ const execFileAsync = promisify(execFile);
 const FF_RUN_CLI_SEGMENTS = ["node", "bin", "ff-run.ts"] as const;
 const TRACE_QUEUE_MAX = "64";
 const TRACE_STACK_MAX = "256";
+
+/**
+ * `child_process.execFile` applies `maxBuffer` to stdout and stderr each.
+ * Trace runs emit JSONL on stderr and can be very large, so the default
+ * 16 MiB is often too small; 256 MiB is a more practical default.
+ */
+function execFileMaxBufferBytes(): number {
+  const raw = vscode.workspace.getConfiguration("f-flat-minor").get<number>(
+    "execFileMaxBufferMb",
+    256,
+  );
+  const mb = typeof raw === "number" && Number.isFinite(raw) ? raw : 256;
+  const clamped = Math.min(2048, Math.max(16, Math.round(mb)));
+  return clamped * 1024 * 1024;
+}
+
+/** Kill long-running Node subprocesses to avoid hanging the extension forever. */
+function traceRunTimeoutMs(): number {
+  const raw = vscode.workspace.getConfiguration("f-flat-minor").get<number>(
+    "traceRunTimeoutSeconds",
+    120,
+  );
+  const seconds = typeof raw === "number" && Number.isFinite(raw) ? raw : 120;
+  const clamped = Math.min(3600, Math.max(5, Math.round(seconds)));
+  return clamped * 1000;
+}
+
 let traceViewerPanel: vscode.WebviewPanel | undefined;
 
 function pathRangeInLine(line: vscode.TextLine): {
@@ -341,6 +368,13 @@ interface CommandResult {
   stderr: string;
   exitCode: number;
   signal: NodeJS.Signals | null;
+  timedOut?: boolean;
+  maxBufferExceeded?: "stdout" | "stderr";
+}
+
+interface ExecNodeCommandOptions {
+  timeoutMs?: number;
+  stderrFilePath?: string;
 }
 
 interface RawTraceQueueToken {
@@ -359,6 +393,7 @@ interface RawTraceEvent {
   stack_after?: string[];
   queue_preview?: RawTraceQueueToken[];
   queue_depth?: number;
+  stdout_since_last?: string;
 }
 
 function isStringArray(value: unknown): value is string[] {
@@ -390,39 +425,121 @@ function isRawTraceEvent(value: unknown): value is RawTraceEvent {
     && (event.stack_before === undefined || isStringArray(event.stack_before))
     && (event.stack_after === undefined || isStringArray(event.stack_after))
     && (queuePreview === undefined || (Array.isArray(queuePreview) && queuePreview.every(isRawTraceQueueToken)))
-    && (event.queue_depth === undefined || typeof event.queue_depth === "number");
+    && (event.queue_depth === undefined || typeof event.queue_depth === "number")
+    && (event.stdout_since_last === undefined || typeof event.stdout_since_last === "string");
 }
 
-async function execNodeCommand(args: string[], cwd: string): Promise<CommandResult> {
-  try {
-    const { stdout, stderr } = await execFileAsync("node", args, {
+async function execNodeCommand(
+  args: string[],
+  cwd: string,
+  options: ExecNodeCommandOptions = {},
+): Promise<CommandResult> {
+  return await new Promise<CommandResult>((resolve, reject) => {
+    const maxBufferBytes = execFileMaxBufferBytes();
+    const timeoutMs = options.timeoutMs ?? traceRunTimeoutMs();
+    const child = spawn("node", args, {
       cwd,
-      maxBuffer: 16 * 1024 * 1024,
+      stdio: ["ignore", "pipe", "pipe"],
     });
-    return { stdout, stderr, exitCode: 0, signal: null };
-  } catch (error) {
-    const execError = error as {
-      code?: number | string;
-      stdout?: string;
-      stderr?: string;
-      signal?: NodeJS.Signals;
-      message?: string;
+
+    let stdout = "";
+    let stderr = "";
+    let stdoutBytes = 0;
+    let stderrBytes = 0;
+    let timedOut = false;
+    let maxBufferExceeded: "stdout" | "stderr" | undefined;
+    let settled = false;
+
+    const stderrFile = options.stderrFilePath
+      ? fs.createWriteStream(options.stderrFilePath, { encoding: "utf8" })
+      : null;
+
+    const timer = timeoutMs > 0
+      ? setTimeout(() => {
+        timedOut = true;
+        child.kill("SIGKILL");
+      }, timeoutMs)
+      : undefined;
+
+    const cleanup = () => {
+      if (timer) {
+        clearTimeout(timer);
+      }
+      stderrFile?.end();
     };
-    if (typeof execError.code === "number") {
-      return {
-        stdout: execError.stdout ?? "",
-        stderr: execError.stderr ?? "",
-        exitCode: execError.code,
-        signal: execError.signal ?? null,
-      };
-    }
-    throw error;
-  }
+
+    const failOnce = (error: unknown) => {
+      if (settled) {
+        return;
+      }
+      settled = true;
+      cleanup();
+      reject(error);
+    };
+
+    child.on("error", (error) => failOnce(error));
+    stderrFile?.on("error", (error) => failOnce(error));
+
+    child.stdout?.on("data", (chunk: Buffer) => {
+      if (settled) {
+        return;
+      }
+      stdoutBytes += chunk.length;
+      if (stdoutBytes > maxBufferBytes) {
+        maxBufferExceeded = "stdout";
+        child.kill("SIGKILL");
+        return;
+      }
+      stdout += chunk.toString("utf8");
+    });
+
+    child.stderr?.on("data", (chunk: Buffer) => {
+      if (settled) {
+        return;
+      }
+      if (stderrFile) {
+        stderrFile.write(chunk);
+      } else {
+        stderrBytes += chunk.length;
+        if (stderrBytes > maxBufferBytes) {
+          maxBufferExceeded = "stderr";
+          child.kill("SIGKILL");
+          return;
+        }
+        stderr += chunk.toString("utf8");
+      }
+    });
+
+    child.on("close", (code, signal) => {
+      if (settled) {
+        return;
+      }
+      settled = true;
+      cleanup();
+
+      if (timedOut) {
+        stderr = `${stderr}\nTrace runner timed out after ${Math.round(timeoutMs / 1000)}s and was terminated.`.trim();
+      }
+      if (maxBufferExceeded) {
+        stderr = `${stderr}\n${maxBufferExceeded} exceeded maxBuffer (${Math.round(maxBufferBytes / (1024 * 1024))} MiB) and was terminated.`.trim();
+      }
+
+      resolve({
+        stdout,
+        stderr,
+        exitCode: typeof code === "number" ? code : 1,
+        signal: signal ?? null,
+        timedOut,
+        maxBufferExceeded,
+      });
+    });
+  });
 }
 
 async function runFfRun(
   document: vscode.TextDocument,
   args: string[],
+  options: ExecNodeCommandOptions = {},
 ): Promise<CommandResult> {
   const scriptPath = resolveFfRunScriptPath(document);
   if (!scriptPath) {
@@ -433,6 +550,10 @@ async function runFfRun(
   return await execNodeCommand(
     nodeArgsForTypeScriptScript(scriptPath, args),
     ffRunCwd(document),
+    {
+      timeoutMs: traceRunTimeoutMs(),
+      ...options,
+    },
   );
 }
 
@@ -440,6 +561,12 @@ function summarizeFailure(label: string, result: CommandResult): string {
   const parts = [`${label} failed with exit code ${result.exitCode}.`];
   if (result.signal) {
     parts.push(`Signal: ${result.signal}`);
+  }
+  if (result.timedOut) {
+    parts.push("Reason: timed out.");
+  }
+  if (result.maxBufferExceeded) {
+    parts.push(`Reason: ${result.maxBufferExceeded} exceeded maxBuffer.`);
   }
   if (result.stderr.trim()) {
     parts.push("", result.stderr.trim());
@@ -470,6 +597,7 @@ function parseTrace(stderr: string): { steps: TraceStep[]; notes: string[] } {
           stackAfter: parsed.stack_after ?? [],
           queuePreview: parsed.queue_preview ?? [],
           queueDepth: parsed.queue_depth ?? 0,
+          stdoutSinceLast: parsed.stdout_since_last,
         });
         continue;
       }
@@ -506,6 +634,10 @@ async function captureTraceRun(
 ): Promise<TraceRun> {
   const filePath = document.uri.fsPath;
   const optimizationArgs = optimized ? ["-O"] : [];
+  const traceTempDir = fs.mkdtempSync(path.join(tmpdir(), "f-flat-minor-trace-"));
+  const traceStderrPath = path.join(traceTempDir, "trace.stderr.log");
+
+  try {
   const [irResult, traceResult] = await Promise.all([
     runFfRun(document, ["-f", filePath, ...optimizationArgs, "-i"]),
     runFfRun(document, [
@@ -519,14 +651,19 @@ async function captureTraceRun(
       TRACE_QUEUE_MAX,
       "--trace-stack-max",
       TRACE_STACK_MAX,
-    ]),
+    ], {
+      stderrFilePath: traceStderrPath,
+    }),
   ]);
 
   if (irResult.exitCode !== 0) {
     throw new Error(summarizeFailure("IR capture", irResult));
   }
 
-  const parsedTrace = parseTrace(traceResult.stderr);
+  const traceStderrFromFile = fs.existsSync(traceStderrPath)
+    ? fs.readFileSync(traceStderrPath, "utf8")
+    : "";
+  const parsedTrace = parseTrace(`${traceStderrFromFile}\n${traceResult.stderr}`.trim());
   if (traceResult.exitCode !== 0 && parsedTrace.steps.length === 0) {
     throw new Error(summarizeFailure("Trace capture", traceResult));
   }
@@ -545,6 +682,24 @@ async function captureTraceRun(
     exitCode: traceResult.exitCode,
     steps: parsedTrace.steps,
   };
+  } finally {
+    try {
+      if (fs.existsSync(traceStderrPath)) {
+        fs.unlinkSync(traceStderrPath);
+      }
+      fs.rmdirSync(traceTempDir);
+    } catch {
+      // Best-effort cleanup of temporary trace capture files.
+    }
+  }
+}
+
+function postToTraceViewerWebview(message: unknown): boolean {
+  if (!traceViewerPanel) {
+    return false;
+  }
+  void traceViewerPanel.webview.postMessage(message);
+  return true;
 }
 
 function showTraceViewer(run: TraceRun) {
@@ -583,6 +738,7 @@ async function execErsAudit(
   const nodeArgs = nodeArgsForErsScript(scriptPath, auditArgs);
   const { stdout } = await execFileAsync("node", nodeArgs, {
     cwd: ersAuditCwd(document),
+    maxBuffer: execFileMaxBufferBytes(),
   });
   return stdout.trim();
 }
@@ -894,6 +1050,17 @@ export function activate(context: vscode.ExtensionContext): void {
     },
   );
 
+  const traceViewerTogglePlayback = vscode.commands.registerCommand(
+    "f-flat-minor.traceViewerTogglePlayback",
+    () => {
+      if (!postToTraceViewerWebview({ type: "tracePlayback", action: "toggle" })) {
+        void vscode.window.showInformationMessage(
+          "Open the trace viewer first (F-flat-minor: Open Trace Viewer).",
+        );
+      }
+    },
+  );
+
   const openTraceViewer = vscode.commands.registerCommand(
     "f-flat-minor.openTraceViewer",
     async () => {
@@ -936,6 +1103,7 @@ export function activate(context: vscode.ExtensionContext): void {
     auditDefinitionByWord,
     auditCurrentDefinition,
     openTraceViewer,
+    traceViewerTogglePlayback,
     vscode.languages.registerDocumentLinkProvider(docSelector, linkProvider),
     vscode.languages.registerDefinitionProvider(docSelector, definitionProvider),
     vscode.languages.registerHoverProvider(docSelector, hoverProvider),

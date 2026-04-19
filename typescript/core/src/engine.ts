@@ -33,6 +33,8 @@ interface TraceEvent {
   stack_after?: string[];
   queue_preview: TraceQueueToken[];
   queue_depth: number;
+  /** Bytes written to program stdout since the previous trace line (PRN, PUTC, PUTN), JSONL only. */
+  stdout_since_last?: string;
 }
 
 export interface EngineRunAsyncOptions {
@@ -118,6 +120,8 @@ export class Engine {
   traceVerbose = false;
   traceQueueMax = 8;
   traceStackMax = 32;
+  /** Max UTF-16 units of stdout captured per trace event (JSONL `stdout_since_last`). */
+  traceStdoutMax = 4096;
   base = 10;
   statsOn = false;
   profileOn = false;
@@ -132,6 +136,9 @@ export class Engine {
   private profile: Record<string | number, [number, number | undefined]> = {};
 
   private readonly platform: CorePlatform;
+
+  /** Program stdout (not trace lines) accumulated between trace events when tracing JSONL. */
+  private stdoutSinceLastTrace = "";
 
   constructor(platform: CorePlatform) {
     this.platform = platform;
@@ -408,7 +415,16 @@ export class Engine {
     stackBefore: bigint[];
     stackAfter: bigint[] | undefined;
   }) {
-    const event = this.createTraceEvent(step, immediate, tag, value, stackBefore, stackAfter);
+    const stdoutSince = this.takeStdoutSinceLastTraceForTraceEvent();
+    const event = this.createTraceEvent(
+      step,
+      immediate,
+      tag,
+      value,
+      stackBefore,
+      stackAfter,
+      stdoutSince,
+    );
     if (this.traceFormat === "jsonl") {
       this.writeTraceLine(JSON.stringify(event));
       return;
@@ -423,11 +439,12 @@ export class Engine {
     value: bigint,
     stackBefore: bigint[],
     stackAfter: bigint[] | undefined,
+    stdoutSinceLast: string | undefined,
   ): TraceEvent {
     const isCall = tag === Q_CALL;
     const action = isCall ? this.getName(value, String(value)) : String(value);
     const queuePreview = this.getQueuePreview();
-    return {
+    const event: TraceEvent = {
       step,
       immediate,
       tag: isCall ? "call" : "literal",
@@ -438,6 +455,10 @@ export class Engine {
       queue_preview: queuePreview,
       queue_depth: this.queue.length / 2,
     };
+    if (stdoutSinceLast !== undefined && stdoutSinceLast.length > 0) {
+      event.stdout_since_last = stdoutSinceLast;
+    }
+    return event;
   }
 
   private limitStack(stack: bigint[]) {
@@ -611,6 +632,30 @@ export class Engine {
     this.platform.io.write(data);
   }
 
+  /** Program output (PRN, PUTC, PUTN); traced only in JSONL mode. */
+  private ioWriteStdout(data: Uint8Array): void {
+    if (this.traceOn && this.traceFormat === "jsonl") {
+      this.stdoutSinceLastTrace += new TextDecoder().decode(data);
+    }
+    this.platform.io.write(data);
+  }
+
+  private takeStdoutSinceLastTraceForTraceEvent(): string | undefined {
+    if (this.traceFormat !== "jsonl") {
+      return undefined;
+    }
+    let chunk = this.stdoutSinceLastTrace;
+    this.stdoutSinceLastTrace = "";
+    if (!chunk) {
+      return undefined;
+    }
+    const max = Math.max(0, this.traceStdoutMax);
+    if (max > 0 && chunk.length > max) {
+      chunk = chunk.slice(0, max) + "\n…[truncated]";
+    }
+    return chunk;
+  }
+
   getName(op: bigint, def = String(op)): string {
     return this.symbols.has(op) ? this.symbols.get(op)! : String(def);
   }
@@ -671,7 +716,7 @@ export class Engine {
 
   print() {
     const s = this.stack.map(x => x.toString(this.base)).join(" ");
-    this.platform.io.write(new TextEncoder().encode(`[ ${s} ]\n`));
+    this.ioWriteStdout(new TextEncoder().encode(`[ ${s} ]\n`));
   }
 
 /**
@@ -760,7 +805,7 @@ export class Engine {
 
     this.defineSystem(() => {
       const data = encoder.encode(String.fromCharCode(Number(this.pop())));
-      this.platform.io.write(data);
+      this.ioWriteStdout(data);
     }, OpCodes.PUTC);
 
     this.defineSystem(() => {
@@ -776,7 +821,7 @@ export class Engine {
 
     this.defineSystem(() => {
       const data = encoder.encode(this.pop().toString(this.base));
-      this.platform.io.write(data);
+      this.ioWriteStdout(data);
     }, OpCodes.PUTN);
 
     this.defineSystem(() => {

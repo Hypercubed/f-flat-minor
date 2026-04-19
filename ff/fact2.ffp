@@ -1,0 +1,9 @@
+.import <prelude>
+
+/* factorial */
+
+'\0Factorial\s100:\n' prints
+
+_fact: dup 1 > [ -- dup [*] dip _fact ] ? ;
+fact: 1 swap _fact drop ;
+100 fact putn

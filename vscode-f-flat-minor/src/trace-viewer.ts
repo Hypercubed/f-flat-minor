@@ -16,6 +16,8 @@ export interface TraceStep {
   stackAfter: string[];
   queuePreview: TraceQueueToken[];
   queueDepth: number;
+  /** Program stdout written during this VM step (PRN, PUTC, PUTN), when the runtime records it. */
+  stdoutSinceLast?: string;
 }
 
 export interface TraceRun {
@@ -62,235 +64,736 @@ export function getTraceViewerHtml(webview: vscode.Webview, run: TraceRun): stri
       color-scheme: light dark;
       --border: var(--vscode-panel-border, rgba(128, 128, 128, 0.35));
       --muted: var(--vscode-descriptionForeground, #888);
-      --accent: var(--vscode-textLink-foreground, #3794ff);
-      --bg-subtle: var(--vscode-editorWidget-background, rgba(127, 127, 127, 0.08));
-      --bg-selected: var(--vscode-list-activeSelectionBackground, rgba(55, 148, 255, 0.18));
-      --fg-selected: var(--vscode-list-activeSelectionForeground, inherit);
       --font-mono: var(--vscode-editor-font-family, monospace);
+      --code-bg: var(--vscode-textCodeBlock-background, rgba(127, 127, 127, 0.12));
     }
 
     * {
       box-sizing: border-box;
     }
 
+    html,
     body {
+      height: 100%;
       margin: 0;
+    }
+
+    body {
       font-family: var(--vscode-font-family);
+      font-size: 13px;
       color: var(--vscode-foreground);
       background: var(--vscode-editor-background);
+      overflow: hidden;
     }
 
     button,
-    input,
-    select {
+    input {
       font: inherit;
     }
 
     button {
-      border: 1px solid var(--border);
-      color: var(--vscode-button-foreground);
-      background: var(--vscode-button-background);
-      padding: 4px 10px;
-      border-radius: 4px;
+      border: 1px solid var(--vscode-button-border, var(--vscode-contrastBorder, var(--border)));
+      color: var(--vscode-button-secondaryForeground, var(--vscode-foreground));
+      background: var(--vscode-button-secondaryBackground, var(--vscode-editor-background));
+      padding: 3px 8px;
+      border-radius: 2px;
       cursor: pointer;
+      min-width: 2rem;
     }
 
-    button:hover {
-      background: var(--vscode-button-hoverBackground);
+    button:hover:not(:disabled) {
+      color: var(--vscode-button-secondaryForeground, var(--vscode-foreground));
+      background: var(
+        --vscode-button-secondaryHoverBackground,
+        var(--vscode-toolbar-hoverBackground, var(--vscode-list-hoverBackground))
+      );
+    }
+
+    button:active:not(:disabled) {
+      background: var(
+        --vscode-toolbar-activeBackground,
+        var(--vscode-button-secondaryHoverBackground, var(--vscode-list-activeBackground))
+      );
+    }
+
+    button:focus-visible {
+      outline: 1px solid var(--vscode-focusBorder, var(--border));
+      outline-offset: 1px;
     }
 
     button:disabled {
       cursor: default;
-      opacity: 0.6;
+      opacity: 0.45;
     }
 
     input[type="range"] {
-      width: 100%;
+      flex: 1 1 120px;
+      min-width: 80px;
     }
 
     input[type="number"] {
-      width: 90px;
-      padding: 4px 6px;
+      width: 4.5rem;
+      padding: 3px 6px;
       border: 1px solid var(--border);
-      border-radius: 4px;
+      border-radius: 3px;
       color: inherit;
       background: var(--vscode-input-background);
     }
 
-    details summary {
-      cursor: pointer;
-    }
-
-    .layout {
-      display: grid;
-      grid-template-rows: auto auto 1fr;
-      min-height: 100vh;
-    }
-
-    .toolbar {
+    .app {
       display: flex;
-      flex-wrap: wrap;
-      gap: 8px;
+      flex-direction: column;
+      height: 100%;
+      min-height: 100vh;
+      overflow: hidden;
+    }
+
+    .app-top-bar {
+      display: flex;
       align-items: center;
-      padding: 12px 16px;
+      gap: 6px;
+      flex-shrink: 0;
       border-bottom: 1px solid var(--border);
-      background: var(--bg-subtle);
+      background: var(--vscode-editor-background);
     }
 
-    .toolbar-spacer {
-      flex: 1 1 auto;
+    .run-context {
+      padding: 8px 14px;
+      font-family: var(--font-mono);
+      font-size: 12px;
+      color: var(--muted);
+      overflow: hidden;
+      text-overflow: ellipsis;
+      white-space: nowrap;
+      flex: 1;
+      min-width: 0;
     }
 
-    .meta {
-      display: grid;
-      grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
-      gap: 10px;
-      padding: 12px 16px;
-      border-bottom: 1px solid var(--border);
+    .app-top-bar-actions {
+      flex-shrink: 0;
+      padding-inline-end: 8px;
     }
 
-    .meta-card,
-    .panel {
+    .icon-btn {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      min-width: 2rem;
+      height: 2rem;
+      padding: 0 6px;
+      font-size: 14px;
+      line-height: 1;
+    }
+
+    .options-backdrop {
+      position: fixed;
+      inset: 0;
+      z-index: 99;
+      background: rgba(0, 0, 0, 0.28);
+    }
+
+    .options-panel {
+      position: fixed;
+      top: 44px;
+      right: 10px;
+      z-index: 100;
+      width: min(340px, calc(100vw - 20px));
+      max-height: min(72vh, 440px);
+      overflow: auto;
+      padding: 12px 14px 14px;
       border: 1px solid var(--border);
       border-radius: 6px;
-      background: var(--bg-subtle);
+      background: var(--vscode-editor-background);
+      box-shadow: 0 6px 28px rgba(0, 0, 0, 0.22);
     }
 
-    .meta-card {
-      padding: 10px 12px;
-    }
-
-    .meta-label {
-      color: var(--muted);
-      font-size: 12px;
-      margin-bottom: 4px;
-      text-transform: uppercase;
-      letter-spacing: 0.04em;
-    }
-
-    .meta-value {
-      word-break: break-word;
-      font-family: var(--font-mono);
-    }
-
-    .main {
-      display: grid;
-      grid-template-columns: minmax(360px, 1.4fr) minmax(360px, 1fr);
-      gap: 12px;
-      padding: 12px 16px 16px;
-    }
-
-    .panel-header {
+    .options-panel-header {
       display: flex;
+      align-items: center;
       justify-content: space-between;
       gap: 10px;
-      align-items: center;
-      padding: 10px 12px;
-      border-bottom: 1px solid var(--border);
+      margin-bottom: 12px;
+    }
+
+    .options-panel-title {
+      margin: 0;
+      font-size: 13px;
       font-weight: 600;
     }
 
-    .panel-content {
-      padding: 10px 12px 12px;
-    }
-
-    .mono {
-      font-family: var(--font-mono);
+    .options-panel .options-close {
+      min-width: 1.75rem;
+      height: 1.75rem;
+      padding: 0;
       font-size: 12px;
     }
 
-    .muted {
+    .options-field {
+      margin-bottom: 14px;
+    }
+
+    .options-field label {
+      display: block;
+      margin-bottom: 6px;
+      color: var(--vscode-foreground);
+    }
+
+    .options-field input[type="number"] {
+      width: 100%;
+      max-width: 8rem;
+    }
+
+    .options-field .options-hint {
+      display: block;
+      margin-top: 6px;
+      font-size: 11px;
       color: var(--muted);
     }
 
-    .ir-pane {
-      max-height: 60vh;
+    .options-field--inline label {
+      display: flex;
+      align-items: flex-start;
+      gap: 8px;
+      margin-bottom: 0;
+      cursor: pointer;
+    }
+
+    .options-field--inline input[type="checkbox"] {
+      margin-top: 2px;
+      flex-shrink: 0;
+    }
+
+    .options-actions {
+      display: flex;
+      justify-content: flex-end;
+      gap: 8px;
+      margin-top: 4px;
+      padding-top: 10px;
+      border-top: 1px solid var(--border);
+    }
+
+    .hidden {
+      display: none !important;
+    }
+
+    .scrubber {
+      display: flex;
+      flex-wrap: wrap;
+      align-items: center;
+      gap: 8px 12px;
+      padding: 8px 14px 10px;
+      border-bottom: 1px solid var(--border);
+      flex-shrink: 0;
+      background: var(--vscode-editor-background);
+    }
+
+    .scrubber-btns {
+      display: flex;
+      flex-wrap: wrap;
+      align-items: center;
+      gap: 4px;
+    }
+
+    #play-button {
+      margin-inline-start: 10px;
+    }
+
+    .scrubber-slider {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      flex: 1 1 200px;
+      min-width: min(100%, 200px);
+    }
+
+    .scrubber-idx {
+      display: flex;
+      align-items: center;
+      gap: 6px;
+      font-family: var(--font-mono);
+      font-size: 12px;
+      color: var(--muted);
+      white-space: nowrap;
+    }
+
+    .main-scroll {
+      flex: 1;
+      min-height: 0;
+      overflow: hidden;
+      display: flex;
+      flex-direction: column;
+    }
+
+    .main {
+      display: flex;
+      flex-direction: column;
+      min-height: 0;
+      flex: 1;
+      overflow: hidden;
+      align-items: stretch;
+    }
+
+    .col {
+      display: flex;
+      flex-direction: column;
+      min-width: 0;
+      min-height: 0;
+      flex: 1;
+    }
+
+    .trace-col {
+      min-height: 0;
+    }
+
+    .trace-panels-with-ir {
+      display: flex;
+      flex-direction: row;
+      flex: 1;
+      min-height: 0;
+      min-width: 0;
+      align-items: stretch;
+    }
+
+    .trace-panels-scroll {
+      flex: 1;
+      min-width: 0;
+      min-height: 0;
       overflow: auto;
-      border-radius: 4px;
-      border: 1px solid var(--border);
-      background: var(--vscode-textCodeBlock-background, var(--bg-subtle));
+      overflow-x: hidden;
+    }
+
+    .trace-panels-with-ir.main--ir-collapsed .ir-sidebar {
+      flex: 0 0 1.375rem;
+      width: 1.375rem;
+      min-width: 1.375rem;
+      max-width: 1.375rem;
+    }
+
+    .trace-panels-with-ir.main--ir-expanded .ir-sidebar {
+      flex: 0 0 clamp(12rem, 30vw, 28rem);
+      min-width: 12rem;
+      max-width: 28rem;
+    }
+
+    .ir-sidebar {
+      display: flex;
+      flex-direction: column;
+      min-width: 0;
+      min-height: 0;
+      border-left: 1px solid var(--border);
+      background: var(--vscode-sideBar-background, var(--vscode-editor-background));
+    }
+
+    .ir-rail {
+      display: none;
+      flex-direction: column;
+      align-items: center;
+      justify-content: flex-start;
+      gap: 4px;
+      flex: 1;
+      align-self: stretch;
+      min-height: 4rem;
+      width: 100%;
+      margin: 0;
+      padding-block: 6px 4px;
+      padding-inline: 0;
+      text-align: center;
+      appearance: none;
+      -webkit-appearance: none;
+      border: none;
+      font: inherit;
+      font-size: 8px;
+      font-weight: 600;
+      letter-spacing: 0.05em;
+      text-transform: uppercase;
+      line-height: 1.15;
+      color: var(--muted);
+      background: var(--vscode-sideBar-background, var(--vscode-editor-background));
+      cursor: pointer;
+    }
+
+    .ir-rail:hover {
+      color: var(--vscode-foreground);
+      background: var(--vscode-list-hoverBackground, rgba(127, 127, 127, 0.12));
+    }
+
+    .ir-rail-icon {
+      font-size: 12px;
+      line-height: 1;
+      opacity: 0.85;
+      flex-shrink: 0;
+    }
+
+    .ir-rail-word {
+      display: block;
+      max-width: 100%;
+      overflow: hidden;
+      text-overflow: clip;
+    }
+
+    .trace-panels-with-ir.main--ir-collapsed .ir-rail {
+      display: flex;
+    }
+
+    .ir-sidebar-inner {
+      display: none;
+      flex-direction: column;
+      flex: 1;
+      min-width: 0;
+      min-height: 0;
+      overflow: hidden;
+    }
+
+    .trace-panels-with-ir.main--ir-expanded .ir-sidebar-inner {
+      display: flex;
+    }
+
+    .ir-sidebar-header {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      flex-wrap: wrap;
+      padding: 6px 10px;
+      font-size: 10px;
+      font-weight: 600;
+      letter-spacing: 0.04em;
+      text-transform: uppercase;
+      color: var(--muted);
+      border-bottom: 1px solid var(--border);
+      flex-shrink: 0;
+      background: var(--vscode-sideBar-background, var(--vscode-editor-background));
+    }
+
+    .ir-sidebar-title {
+      flex-shrink: 0;
+    }
+
+    #ir-note {
+      font-weight: 400;
+      text-transform: none;
+      letter-spacing: 0;
+      color: var(--muted);
+      font-size: 10px;
+    }
+
+    .ir-collapse-btn {
+      flex-shrink: 0;
+      padding: 2px 8px;
+      font-size: 11px;
+      min-width: unset;
+      color: var(--muted);
+      background: transparent;
+      border-color: transparent;
+    }
+
+    .ir-collapse-btn:hover:not(:disabled) {
+      color: var(--vscode-foreground);
+      background: var(--vscode-toolbar-hoverBackground, var(--vscode-list-hoverBackground));
+      border-color: var(--vscode-button-border, transparent);
+    }
+
+    .ir-header-note {
+      flex: 1;
+      min-width: 0;
+      text-align: end;
+    }
+
+    .col-h {
+      padding: 8px 12px;
+      font-size: 11px;
+      font-weight: 600;
+      letter-spacing: 0.03em;
+      text-transform: uppercase;
+      color: var(--muted);
+      border-bottom: 1px solid var(--border);
+    }
+
+    .scroll-fill {
+      min-height: 4rem;
+    }
+
+    .ir-pane {
+      flex: 1;
+      min-height: 0;
+      overflow: auto;
+      background: var(--vscode-sideBar-background, var(--code-bg));
+      color: var(--vscode-descriptionForeground, var(--vscode-foreground));
     }
 
     .ir-line {
       display: grid;
-      grid-template-columns: 48px 1fr;
-      gap: 12px;
-      padding: 2px 10px;
+      grid-template-columns: 2rem 1fr;
+      gap: 6px;
+      padding: 1px 8px;
       white-space: pre-wrap;
       font-family: var(--font-mono);
-      font-size: 12px;
-      line-height: 1.5;
+      font-size: 10px;
+      line-height: 1.4;
+      opacity: 0.95;
     }
 
     .ir-line-number {
       color: var(--muted);
       text-align: right;
       user-select: none;
+      opacity: 0.75;
     }
 
-    .state-columns {
-      display: grid;
-      grid-template-columns: 1fr 1fr;
-      gap: 12px;
-    }
-
-    .token-list,
-    .queue-list,
-    .step-list {
+    .trace-body {
       display: flex;
       flex-direction: column;
-      gap: 6px;
+      flex: 1;
+      min-height: 0;
     }
 
-    .stack-item,
-    .queue-item,
-    .step-item {
+    .trace-step-meta {
+      flex-shrink: 0;
+      display: flex;
+      flex-wrap: wrap;
+      align-items: center;
+      gap: 8px;
+      padding: 8px 10px;
+      min-height: 2.25rem;
+      border-bottom: 1px solid var(--border);
+      background: var(--vscode-editor-background);
+    }
+
+    .trace-step-meta:empty {
+      display: none;
+      padding: 0;
+      min-height: 0;
+      border-bottom: none;
+    }
+
+    .meta-chip {
+      display: inline-flex;
+      align-items: center;
+      padding: 2px 10px;
+      border-radius: 999px;
+      font-size: 11px;
+      font-weight: 600;
+      letter-spacing: 0.02em;
       border: 1px solid var(--border);
-      border-radius: 4px;
-      padding: 6px 8px;
-      background: var(--vscode-input-background);
-      font-family: var(--font-mono);
-      font-size: 12px;
-      overflow-wrap: anywhere;
+      user-select: none;
     }
 
-    .step-item.is-selected {
-      background: var(--bg-selected);
-      color: var(--fg-selected);
-      border-color: var(--accent);
+    .meta-chip--immediate {
+      color: var(--vscode-gitDecoration-addedResourceForeground, var(--vscode-foreground));
+      background: var(--vscode-diffEditor-insertedTextBackground, rgba(80, 200, 120, 0.18));
+      border-color: transparent;
     }
 
-    .step-list {
-      max-height: 240px;
-      overflow: auto;
+    .meta-chip--queued {
+      color: var(--vscode-descriptionForeground);
+      background: var(--vscode-textCodeBlock-background, rgba(127, 127, 127, 0.12));
     }
 
-    .step-item button {
-      all: unset;
-      display: block;
+    .meta-chip--empty {
+      font-weight: 500;
+      font-style: italic;
+      color: var(--muted);
+      border-style: dashed;
+      background: transparent;
+    }
+
+    .next-section {
+      display: flex;
+      flex-direction: column;
+      flex-shrink: 0;
       width: 100%;
+      border-bottom: 1px solid var(--border);
+    }
+
+    .next-section .mono-pre {
+      min-height: 2.25rem;
+    }
+
+    .queue-section {
+      display: flex;
+      flex-direction: column;
+      min-width: 0;
+      min-height: 0;
+    }
+
+    .queue-section .mono-pre {
+      min-height: 2.5rem;
+    }
+
+    .trace-panels-scroll .dual .stack-section .mono-pre {
+      min-height: 2.5rem;
+    }
+
+    .dual {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      align-items: start;
+      width: 100%;
+    }
+
+    .dual > div {
+      display: flex;
+      flex-direction: column;
+      min-width: 0;
+    }
+
+    .dual > .stack-section {
+      border-right: 1px solid var(--border);
+    }
+
+    .subhead {
+      margin: 0;
+      padding: 6px 10px;
+      font-size: 11px;
+      font-weight: 600;
+      color: var(--muted);
+      border-bottom: 1px solid var(--border);
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 10px;
+    }
+
+    .subhead-count {
+      font-weight: 600;
+      font-size: 10px;
+      font-variant-numeric: tabular-nums;
+      color: var(--vscode-foreground);
+      background: var(--vscode-badge-background, rgba(127, 127, 127, 0.25));
+      padding: 1px 7px;
+      border-radius: 10px;
+      line-height: 1.35;
+    }
+
+    .subhead-count:empty {
+      display: none;
+    }
+
+    .mono-pre {
+      margin: 0;
+      padding: 8px 10px;
+      font-family: var(--font-mono);
+      font-size: 11px;
+      line-height: 1.4;
+      white-space: pre-wrap;
+      word-break: break-word;
+      background: var(--code-bg);
+    }
+
+    .bottom-io-panel {
+      flex-shrink: 0;
+      display: flex;
+      flex-direction: column;
+      border-top: 2px solid var(--border);
+      background: var(--vscode-panel-background, var(--vscode-sideBar-background, var(--vscode-editor-background)));
+      height: clamp(160px, 32vh, 420px);
+      min-height: 0;
+    }
+
+    /* Both I/O sections collapsed: dock only the tab strip so trace/stack area can grow */
+    .bottom-io-panel:has(.bottom-io-stdout.collapsed):has(.bottom-io-stderr.collapsed) {
+      height: auto;
+      max-height: none;
+    }
+
+    .bottom-io-panel:has(.bottom-io-stdout.collapsed):has(.bottom-io-stderr.collapsed) .bottom-io-split {
+      flex: 0 0 auto;
+    }
+
+    .bottom-io-split {
+      flex: 1;
+      display: flex;
+      flex-direction: column;
+      min-height: 0;
+    }
+
+    .bottom-io-pane {
+      display: flex;
+      flex-direction: column;
+      min-height: 0;
+    }
+
+    .bottom-io-pane.bottom-io-stdout:not(.collapsed) {
+      flex: 3 1 0;
+      min-height: 0;
+      border-bottom: 1px solid var(--border);
+    }
+
+    .bottom-io-pane.bottom-io-stderr:not(.collapsed) {
+      flex: 2 1 0;
+      min-height: 0;
+    }
+
+    .bottom-io-pane.collapsed {
+      flex: 0 0 auto;
+    }
+
+    .bottom-io-pane.bottom-io-stdout.collapsed {
+      border-bottom: 1px solid var(--border);
+    }
+
+    .bottom-io-body {
+      display: flex;
+      flex-direction: column;
+      flex: 1;
+      min-height: 0;
+    }
+
+    .bottom-io-pane.collapsed .bottom-io-body {
+      display: none;
+    }
+
+    button.bottom-io-tab-toggle {
+      flex-shrink: 0;
+      width: 100%;
+      margin: 0;
+      min-width: 0;
+      padding: 5px 10px;
+      border-radius: 0;
+      border: none;
+      border-bottom: 1px solid var(--border);
+      font-size: 11px;
+      font-weight: 600;
+      letter-spacing: 0.03em;
+      text-transform: uppercase;
+      color: var(--muted);
+      background: var(--vscode-sideBarSectionHeader-background, var(--vscode-editorWidget-background, rgba(127, 127, 127, 0.08)));
+      display: flex;
+      align-items: center;
+      gap: 6px;
+      text-align: left;
       cursor: pointer;
     }
 
-    .queue-item small,
-    .step-item small {
-      display: block;
-      margin-top: 4px;
-      color: var(--muted);
-      font-family: var(--vscode-font-family);
+    button.bottom-io-tab-toggle:hover:not(:disabled) {
+      color: var(--vscode-sideBarSectionHeader-foreground, var(--vscode-foreground));
+      background: var(--vscode-toolbar-hoverBackground, var(--vscode-list-hoverBackground, rgba(127, 127, 127, 0.12)));
     }
 
-    .output-block {
+    .bottom-io-chevron {
+      display: inline-block;
+      flex-shrink: 0;
+      font-size: 8px;
+      line-height: 1;
+      opacity: 0.8;
+      transition: transform 0.12s ease;
+    }
+
+    .bottom-io-pane.collapsed .bottom-io-chevron {
+      transform: rotate(-90deg);
+    }
+
+    .bottom-io-pre {
+      margin: 0;
+      flex: 1;
+      min-height: 0;
+      overflow: auto;
+      padding: 6px 10px;
+      font-family: var(--font-mono);
+      font-size: 11px;
+      line-height: 1.4;
       white-space: pre-wrap;
       word-break: break-word;
-      border: 1px solid var(--border);
-      border-radius: 4px;
-      padding: 8px 10px;
-      background: var(--vscode-textCodeBlock-background, var(--bg-subtle));
-      max-height: 180px;
-      overflow: auto;
-      font-family: var(--font-mono);
-      font-size: 12px;
+      background: var(--code-bg);
     }
 
     .empty {
@@ -298,150 +801,311 @@ export function getTraceViewerHtml(webview: vscode.Webview, run: TraceRun): stri
       font-style: italic;
     }
 
-    @media (max-width: 1100px) {
-      .main {
+    @media (max-width: 900px) {
+      .trace-panels-with-ir {
+        flex-direction: column;
+      }
+
+      .trace-panels-with-ir.main--ir-collapsed .ir-sidebar,
+      .trace-panels-with-ir.main--ir-expanded .ir-sidebar {
+        flex: 0 0 auto;
+        width: 100%;
+        min-width: 0;
+        max-width: none;
+        border-left: none;
+        border-top: 1px solid var(--border);
+      }
+
+      .trace-panels-with-ir.main--ir-collapsed .ir-sidebar {
+        min-height: 2.75rem;
+      }
+
+      .trace-panels-with-ir.main--ir-expanded .ir-sidebar {
+        min-height: min(40vh, 16rem);
+        max-height: 50vh;
+      }
+
+      .ir-sidebar {
+        flex-direction: row;
+      }
+
+      .ir-rail {
+        flex-direction: row;
+        align-items: center;
+        justify-content: center;
+        padding-block: 4px;
+        padding-inline: 0;
+        min-height: unset;
+        flex: 1;
+      }
+
+      .ir-sidebar-inner {
+        flex: 1;
+        min-width: 0;
+        min-height: 0;
+      }
+
+      .dual {
         grid-template-columns: 1fr;
       }
 
-      .state-columns {
-        grid-template-columns: 1fr;
+      .dual > .stack-section {
+        border-right: none;
+        border-bottom: 1px solid var(--border);
       }
     }
   </style>
 </head>
 <body>
-  <div class="layout">
-    <div class="toolbar">
-      <button id="first-button" type="button">|&lt;</button>
-      <button id="prev-button" type="button">&lt;</button>
-      <button id="next-button" type="button">&gt;</button>
-      <button id="last-button" type="button">&gt;|</button>
-      <div class="toolbar-spacer"></div>
-      <label class="mono" for="step-input">Step</label>
-      <input id="step-input" type="number" min="0" step="1" />
-    </div>
-    <div class="meta">
-      <div class="meta-card">
-        <div class="meta-label">File</div>
-        <div class="meta-value" id="meta-file"></div>
-      </div>
-      <div class="meta-card">
-        <div class="meta-label">Mode</div>
-        <div class="meta-value" id="meta-mode"></div>
-      </div>
-      <div class="meta-card">
-        <div class="meta-label">Steps</div>
-        <div class="meta-value" id="meta-steps"></div>
-      </div>
-      <div class="meta-card">
-        <div class="meta-label">Exit code</div>
-        <div class="meta-value" id="meta-exit"></div>
+  <div class="app">
+    <div class="app-top-bar">
+      <div class="run-context" id="run-context" title=""></div>
+      <div class="app-top-bar-actions">
+        <button type="button" id="options-toggle" class="icon-btn" aria-expanded="false" aria-controls="options-panel" title="Viewer options">⚙</button>
       </div>
     </div>
+    <div id="options-backdrop" class="options-backdrop hidden" aria-hidden="true"></div>
+    <div id="options-panel" class="options-panel hidden" role="dialog" aria-labelledby="options-panel-title" aria-modal="true">
+      <div class="options-panel-header">
+        <h2 id="options-panel-title" class="options-panel-title">Trace viewer options</h2>
+        <button type="button" id="options-close" class="options-close" aria-label="Close options">✕</button>
+      </div>
+      <div class="options-field">
+        <label for="playback-delay-ms">Playback step delay (ms)</label>
+        <input id="playback-delay-ms" type="number" min="10" max="5000" step="10" value="50" />
+        <span class="options-hint">Time between automatic steps while playing. Range 10–5000.</span>
+      </div>
+      <div class="options-field options-field--inline">
+        <label for="ir-expanded-default">
+          <input id="ir-expanded-default" type="checkbox" />
+          <span>Open IR panel when this viewer loads</span>
+        </label>
+      </div>
+      <div class="options-actions">
+        <button type="button" id="options-reset-defaults">Reset to defaults</button>
+      </div>
+    </div>
+    <div class="scrubber">
+      <div class="scrubber-btns">
+        <button id="first-button" type="button" title="First step">|◀</button>
+        <button id="prev-button" type="button" title="Previous step">◀</button>
+        <button id="next-button" type="button" title="Next step">▶</button>
+        <button id="last-button" type="button" title="Last step">▶|</button>
+        <button id="play-button" type="button" title="Auto-step while playing">Play</button>
+        <button id="pause-button" type="button" title="Stop auto-step" disabled>Pause</button>
+      </div>
+      <div class="scrubber-slider">
+        <input id="step-slider" type="range" min="0" step="1" />
+      </div>
+      <div class="scrubber-idx">
+        <input id="step-input" type="number" min="0" step="1" aria-label="Step index" />
+        <span id="step-of"></span>
+      </div>
+    </div>
+    <div class="main-scroll">
     <div class="main">
-      <section class="panel">
-        <div class="panel-header">
-          <span>Executed IR</span>
-          <span class="muted mono" id="ir-note"></span>
-        </div>
-        <div class="panel-content">
-          <div class="ir-pane" id="ir-pane"></div>
-        </div>
-      </section>
-      <section class="panel">
-        <div class="panel-header">
-          <span>Recorded trace state</span>
-          <span class="muted mono" id="step-summary"></span>
-        </div>
-        <div class="panel-content">
-          <div class="meta" style="padding: 0; border-bottom: 0; margin-bottom: 12px;">
-            <div class="meta-card">
-              <div class="meta-label">Action</div>
-              <div class="meta-value" id="current-action"></div>
-            </div>
-            <div class="meta-card">
-              <div class="meta-label">Tag / immediate</div>
-              <div class="meta-value" id="current-tag"></div>
-            </div>
-            <div class="meta-card">
-              <div class="meta-label">Queue depth</div>
-              <div class="meta-value" id="current-queue-depth"></div>
-            </div>
-            <div class="meta-card">
-              <div class="meta-label">Value</div>
-              <div class="meta-value" id="current-value"></div>
-            </div>
-          </div>
-          <div class="state-columns">
-            <div class="panel">
-              <div class="panel-header">Stack after selected step</div>
-              <div class="panel-content">
-                <div id="stack-list" class="token-list"></div>
+      <div class="col trace-col">
+        <div class="col-h">Trace</div>
+        <div class="trace-body">
+          <div class="trace-step-meta" id="trace-step-meta" aria-live="polite"></div>
+          <div class="trace-panels-with-ir main--ir-collapsed" id="main-grid">
+            <div class="trace-panels-scroll">
+              <div class="next-section">
+                <h3 class="subhead"><span>Next token</span></h3>
+                <pre class="mono-pre" id="next-pre"></pre>
+              </div>
+              <div class="dual">
+                <div class="stack-section">
+                  <h3 class="subhead">
+                    <span>Stack</span>
+                    <span class="subhead-count" id="stack-depth-count" title="Values on stack before this step"></span>
+                  </h3>
+                  <pre class="mono-pre" id="stack-pre"></pre>
+                </div>
+                <div class="queue-section">
+                  <h3 class="subhead">
+                    <span>Queue</span>
+                    <span class="subhead-count" id="queue-depth-count" title="Queue depth before this step"></span>
+                  </h3>
+                  <pre class="mono-pre" id="queue-pre"></pre>
+                </div>
               </div>
             </div>
-            <div class="panel">
-              <div class="panel-header">Queue preview after selected step</div>
-              <div class="panel-content">
-                <div id="queue-list" class="queue-list"></div>
-              </div>
-            </div>
+            <aside class="ir-sidebar" id="ir-sidebar" aria-label="Compiled IR (reference)">
+        <div class="ir-sidebar-inner" id="ir-sidebar-inner" role="region" aria-label="IR listing">
+          <div class="ir-sidebar-header">
+            <button type="button" class="ir-collapse-btn" id="ir-collapse-btn" title="Hide IR panel" aria-expanded="false">▶</button>
+            <span class="ir-sidebar-title">IR</span>
+            <span id="ir-note" class="ir-header-note"></span>
           </div>
-          <div class="panel" style="margin-top: 12px;">
-            <div class="panel-header">Trace timeline</div>
-            <div class="panel-content">
-              <input id="step-slider" type="range" min="0" step="1" />
-              <div class="step-list" id="step-list" style="margin-top: 10px;"></div>
-            </div>
-          </div>
-          <div class="panel" style="margin-top: 12px;">
-            <div class="panel-header">Program output</div>
-            <div class="panel-content">
-              <div class="output-block" id="program-output"></div>
-            </div>
-          </div>
-          <div class="panel" style="margin-top: 12px;">
-            <div class="panel-header">Trace stderr / notes</div>
-            <div class="panel-content">
-              <div class="output-block" id="trace-stderr"></div>
-            </div>
+          <div class="scroll-fill ir-pane" id="ir-pane"></div>
+        </div>
+        <button type="button" class="ir-rail" id="ir-expand-btn" aria-expanded="false" aria-controls="ir-sidebar-inner" title="Show IR">
+          <span class="ir-rail-icon" aria-hidden="true">◀</span>
+          <span class="ir-rail-word">IR</span>
+        </button>
+      </aside>
           </div>
         </div>
-      </section>
+      </div>
+    </div>
+    </div>
+    <div class="bottom-io-panel" role="region" aria-label="Trace program output">
+      <div class="bottom-io-split">
+        <section class="bottom-io-pane bottom-io-stdout" id="bottom-io-stdout-pane">
+          <button type="button" class="bottom-io-tab-toggle" id="bottom-io-stdout-toggle" aria-expanded="true" aria-controls="bottom-io-stdout-body" title="Show or hide stdout">
+            <span class="bottom-io-chevron" aria-hidden="true">▼</span>
+            <span>Stdout</span>
+          </button>
+          <div class="bottom-io-body" id="bottom-io-stdout-body">
+            <pre class="bottom-io-pre" id="step-stdout-pre"></pre>
+          </div>
+        </section>
+        <section class="bottom-io-pane bottom-io-stderr" id="bottom-io-stderr-pane">
+          <button type="button" class="bottom-io-tab-toggle" id="bottom-io-stderr-toggle" aria-expanded="true" aria-controls="bottom-io-stderr-body" title="Show or hide stderr and trace notes">
+            <span class="bottom-io-chevron" aria-hidden="true">▼</span>
+            <span>Stderr</span>
+          </button>
+          <div class="bottom-io-body" id="bottom-io-stderr-body">
+            <pre class="bottom-io-pre" id="trace-stderr"></pre>
+          </div>
+        </section>
+      </div>
     </div>
   </div>
   <script id="trace-run-data" type="application/json">${escapeScriptJson(run)}</script>
   <script nonce="${nonce}">
     (() => {
       const run = JSON.parse(document.getElementById("trace-run-data").textContent);
-      const steps = Array.isArray(run.steps) ? run.steps : [];
+      const rawSteps = Array.isArray(run.steps) ? run.steps : [];
+
+      function buildViewSteps(raw) {
+        if (!raw.length) {
+          return [];
+        }
+        const last = raw[raw.length - 1];
+        const after = Array.isArray(last.stackAfter) ? last.stackAfter.slice() : [];
+        const qPrev = Array.isArray(last.queuePreview) ? last.queuePreview.slice() : [];
+        const synthetic = {
+          step: last.step + 1,
+          immediate: false,
+          tag: "literal",
+          value: "",
+          action: "(end: final stack)",
+          stackBefore: after,
+          stackAfter: after,
+          queuePreview: qPrev,
+          queueDepth: typeof last.queueDepth === "number" ? last.queueDepth : 0,
+          stdoutSinceLast: undefined,
+          isSyntheticEnd: true,
+        };
+        return raw.map((s) => Object.assign({}, s, { isSyntheticEnd: false })).concat([synthetic]);
+      }
+
+      const viewSteps = buildViewSteps(rawSteps);
       const irLines = String(run.ir || "").split(/\\r?\\n/);
       let selectedIndex = 0;
+      let playbackTimer = null;
 
-      const metaFile = document.getElementById("meta-file");
-      const metaMode = document.getElementById("meta-mode");
-      const metaSteps = document.getElementById("meta-steps");
-      const metaExit = document.getElementById("meta-exit");
-      const stepSummary = document.getElementById("step-summary");
-      const currentAction = document.getElementById("current-action");
-      const currentTag = document.getElementById("current-tag");
-      const currentQueueDepth = document.getElementById("current-queue-depth");
-      const currentValue = document.getElementById("current-value");
-      const stackList = document.getElementById("stack-list");
-      const queueList = document.getElementById("queue-list");
-      const stepList = document.getElementById("step-list");
+      const runContext = document.getElementById("run-context");
+      const stepOf = document.getElementById("step-of");
+      const traceStepMeta = document.getElementById("trace-step-meta");
+      const stackDepthCount = document.getElementById("stack-depth-count");
+      const queueDepthCount = document.getElementById("queue-depth-count");
+      const nextPre = document.getElementById("next-pre");
+      const stackPre = document.getElementById("stack-pre");
+      const queuePre = document.getElementById("queue-pre");
+      const stepStdoutPre = document.getElementById("step-stdout-pre");
       const stepSlider = document.getElementById("step-slider");
       const stepInput = document.getElementById("step-input");
+      const mainGrid = document.getElementById("main-grid");
+      const irExpandBtn = document.getElementById("ir-expand-btn");
+      const irCollapseBtn = document.getElementById("ir-collapse-btn");
       const irPane = document.getElementById("ir-pane");
       const irNote = document.getElementById("ir-note");
-      const programOutput = document.getElementById("program-output");
       const traceStderr = document.getElementById("trace-stderr");
+      const bottomIoStdoutPane = document.getElementById("bottom-io-stdout-pane");
+      const bottomIoStderrPane = document.getElementById("bottom-io-stderr-pane");
+      const bottomIoStdoutToggle = document.getElementById("bottom-io-stdout-toggle");
+      const bottomIoStderrToggle = document.getElementById("bottom-io-stderr-toggle");
       const firstButton = document.getElementById("first-button");
       const prevButton = document.getElementById("prev-button");
       const nextButton = document.getElementById("next-button");
       const lastButton = document.getElementById("last-button");
+      const playButton = document.getElementById("play-button");
+      const pauseButton = document.getElementById("pause-button");
+      const optionsToggle = document.getElementById("options-toggle");
+      const optionsPanel = document.getElementById("options-panel");
+      const optionsBackdrop = document.getElementById("options-backdrop");
+      const optionsClose = document.getElementById("options-close");
+      const optionsResetDefaults = document.getElementById("options-reset-defaults");
+      const playbackDelayInput = document.getElementById("playback-delay-ms");
+      const irExpandedDefaultInput = document.getElementById("ir-expanded-default");
 
-      function setText(element, value, emptyText = "—") {
-        element.textContent = value && value.length ? value : emptyText;
+      const STORAGE_PLAYBACK_MS = "ffm.traceViewer.playbackStepMs";
+      const STORAGE_IR_EXPANDED_DEFAULT = "ffm.traceViewer.irExpandedDefault";
+
+      function clampPlaybackMs(value) {
+        const n = Math.round(Number(value));
+        if (!Number.isFinite(n)) {
+          return 50;
+        }
+        return Math.min(5000, Math.max(10, n));
+      }
+
+      function readStoredPlaybackMs() {
+        const raw = localStorage.getItem(STORAGE_PLAYBACK_MS);
+        if (raw === null || raw === "") {
+          return 50;
+        }
+        return clampPlaybackMs(raw);
+      }
+
+      function readIrExpandedDefault() {
+        return localStorage.getItem(STORAGE_IR_EXPANDED_DEFAULT) === "1";
+      }
+
+      let playbackStepMs = readStoredPlaybackMs();
+
+      function updatePlayButtonTitle() {
+        playButton.title = "Auto-step every " + String(playbackStepMs) + " ms while playing";
+      }
+
+      function applyPlaybackDelayFromInput() {
+        playbackStepMs = clampPlaybackMs(playbackDelayInput.value);
+        playbackDelayInput.value = String(playbackStepMs);
+        localStorage.setItem(STORAGE_PLAYBACK_MS, String(playbackStepMs));
+        updatePlayButtonTitle();
+        if (playbackTimer !== null) {
+          clearInterval(playbackTimer);
+          playbackTimer = setInterval(playbackTick, playbackStepMs);
+        }
+      }
+
+      function syncOptionsFormFromState() {
+        playbackDelayInput.value = String(playbackStepMs);
+        irExpandedDefaultInput.checked = readIrExpandedDefault();
+      }
+
+      function setOptionsOpen(open) {
+        const on = Boolean(open);
+        optionsPanel.classList.toggle("hidden", !on);
+        optionsBackdrop.classList.toggle("hidden", !on);
+        optionsToggle.setAttribute("aria-expanded", on ? "true" : "false");
+        if (on) {
+          syncOptionsFormFromState();
+          playbackDelayInput.focus();
+        }
+      }
+
+      function optionsOpen() {
+        return !optionsPanel.classList.contains("hidden");
+      }
+
+      function fileBasename(filePath) {
+        const normalized = String(filePath).replace(/\\\\/g, "/");
+        const parts = normalized.split("/");
+        return parts[parts.length - 1] || filePath;
       }
 
       function createEmpty(message) {
@@ -454,11 +1118,11 @@ export function getTraceViewerHtml(webview: vscode.Webview, run: TraceRun): stri
       function renderIr() {
         irPane.replaceChildren();
         if (irLines.length === 0 || (irLines.length === 1 && irLines[0] === "")) {
-          irPane.appendChild(createEmpty("IR output unavailable."));
+          irPane.appendChild(createEmpty("No IR text was captured for this run."));
           irNote.textContent = "";
           return;
         }
-        irNote.textContent = "Read-only POC view";
+        irNote.textContent = " · read-only";
         irLines.forEach((line, index) => {
           const row = document.createElement("div");
           row.className = "ir-line";
@@ -472,136 +1136,267 @@ export function getTraceViewerHtml(webview: vscode.Webview, run: TraceRun): stri
         });
       }
 
-      function renderStepList() {
-        stepList.replaceChildren();
-        if (steps.length === 0) {
-          stepList.appendChild(createEmpty("No trace steps were recorded."));
+      function formatStackCells(values) {
+        if (!values.length) {
+          return "(empty)";
+        }
+        return values.map((v, i) => "[" + i + "] " + v).join("\\n");
+      }
+
+      function formatQueue(step) {
+        if (!step.queuePreview.length) {
+          return "(empty)";
+        }
+        return step.queuePreview.map((t, i) => {
+          return "[" + i + "] " + t.action + "  (" + t.tag + " · " + t.value + ")";
+        }).join("\\n");
+      }
+
+      function renderTraceStepMeta(container, step) {
+        container.replaceChildren();
+        if (!step) {
+          const chip = document.createElement("span");
+          chip.className = "meta-chip meta-chip--empty";
+          chip.textContent = "No trace";
+          container.appendChild(chip);
           return;
         }
+        if (step.isSyntheticEnd) {
+          return;
+        }
+        const chip = document.createElement("span");
+        chip.className = step.immediate
+          ? "meta-chip meta-chip--immediate"
+          : "meta-chip meta-chip--queued";
+        chip.textContent = step.immediate ? "Immediate" : "Deferred";
+        chip.title = step.immediate
+          ? "This token runs in the same turn (immediate)"
+          : "This token is queued for a later turn";
+        container.appendChild(chip);
+      }
 
-        const windowSize = 60;
-        const start = Math.max(0, selectedIndex - Math.floor(windowSize / 2));
-        const end = Math.min(steps.length, start + windowSize);
+      function formatNextLikeQueueRow(step) {
+        if (step.isSyntheticEnd) {
+          return "[next] " + step.action;
+        }
+        return "[next] " + step.action + "  (" + step.tag + " · " + step.value + ")";
+      }
 
-        for (let index = start; index < end; index++) {
-          const step = steps[index];
-          const row = document.createElement("div");
-          row.className = "step-item" + (index === selectedIndex ? " is-selected" : "");
-          const button = document.createElement("button");
-          button.type = "button";
-          button.addEventListener("click", () => setSelectedIndex(index));
-          const title = document.createElement("div");
-          title.textContent = "#" + step.step + " " + step.action;
-          const meta = document.createElement("small");
-          meta.textContent = step.tag + " | stack " + step.stackAfter.length + " | queue " + step.queueDepth;
-          button.append(title, meta);
-          row.appendChild(button);
-          stepList.appendChild(row);
+      function accumulatedStdoutThroughIndex(steps, endInclusive) {
+        let acc = "";
+        const end = Math.min(endInclusive, steps.length - 1);
+        for (let i = 0; i <= end; i++) {
+          const chunk = steps[i].stdoutSinceLast;
+          if (typeof chunk === "string" && chunk.length) {
+            acc += chunk;
+          }
+        }
+        return acc.length ? acc : "(nothing printed yet)";
+      }
+
+      function playbackTick() {
+        if (selectedIndex >= viewSteps.length - 1) {
+          stopPlayback();
+          return;
+        }
+        setSelectedIndex(selectedIndex + 1);
+      }
+
+      function stopPlayback() {
+        if (playbackTimer !== null) {
+          clearInterval(playbackTimer);
+          playbackTimer = null;
+        }
+        playButton.disabled = viewSteps.length === 0;
+        pauseButton.disabled = true;
+      }
+
+      function startPlayback() {
+        if (playbackTimer !== null || viewSteps.length === 0) {
+          return;
+        }
+        if (selectedIndex >= viewSteps.length - 1) {
+          selectedIndex = 0;
+          renderSelectedStep();
+        }
+        playButton.disabled = true;
+        pauseButton.disabled = false;
+        playbackTimer = setInterval(playbackTick, playbackStepMs);
+      }
+
+      function togglePlayback() {
+        if (playbackTimer !== null) {
+          stopPlayback();
+        } else {
+          startPlayback();
         }
       }
 
       function renderSelectedStep() {
-        const step = steps[selectedIndex];
+        const step = viewSteps[selectedIndex];
+        const lastIdx = Math.max(viewSteps.length - 1, 0);
 
-        stepSlider.max = String(Math.max(steps.length - 1, 0));
+        stepSlider.max = String(lastIdx);
         stepSlider.value = String(selectedIndex);
-        stepInput.max = String(Math.max(steps.length - 1, 0));
+        stepInput.min = "0";
+        stepInput.max = String(lastIdx);
         stepInput.value = String(selectedIndex);
+        stepOf.textContent = viewSteps.length ? " * " + String(viewSteps.length) + " positions" : "";
 
-        firstButton.disabled = selectedIndex <= 0;
-        prevButton.disabled = selectedIndex <= 0;
-        nextButton.disabled = steps.length === 0 || selectedIndex >= steps.length - 1;
-        lastButton.disabled = steps.length === 0 || selectedIndex >= steps.length - 1;
+        firstButton.disabled = selectedIndex <= 0 || viewSteps.length === 0;
+        prevButton.disabled = selectedIndex <= 0 || viewSteps.length === 0;
+        nextButton.disabled = viewSteps.length === 0 || selectedIndex >= lastIdx;
+        lastButton.disabled = viewSteps.length === 0 || selectedIndex >= lastIdx;
 
         if (!step) {
-          stepSummary.textContent = "No steps";
-          setText(currentAction, "");
-          setText(currentTag, "");
-          setText(currentQueueDepth, "");
-          setText(currentValue, "");
-          stackList.replaceChildren(createEmpty("No stack state recorded."));
-          queueList.replaceChildren(createEmpty("No queue state recorded."));
+          renderTraceStepMeta(traceStepMeta, null);
+          stackDepthCount.textContent = "";
+          queueDepthCount.textContent = "";
+          nextPre.textContent = "(no trace)";
+          stackPre.textContent = "—";
+          queuePre.textContent = "—";
+          stepStdoutPre.textContent = "—";
+          playButton.disabled = true;
+          pauseButton.disabled = true;
           return;
         }
 
-        stepSummary.textContent = "Selected step " + step.step + " of " + (steps.length - 1);
-        setText(currentAction, step.action);
-        setText(currentTag, step.tag + " / immediate=" + String(step.immediate));
-        setText(currentQueueDepth, String(step.queueDepth));
-        setText(currentValue, step.value);
+        renderTraceStepMeta(traceStepMeta, step);
+        const stackDepth = Array.isArray(step.stackBefore) ? step.stackBefore.length : 0;
+        const qDepth = typeof step.queueDepth === "number" ? step.queueDepth : 0;
+        stackDepthCount.textContent = String(stackDepth);
+        queueDepthCount.textContent = String(qDepth);
 
-        stackList.replaceChildren();
-        if (step.stackAfter.length === 0) {
-          stackList.appendChild(createEmpty("Stack is empty after this step."));
-        } else {
-          step.stackAfter.forEach((value, index) => {
-            const item = document.createElement("div");
-            item.className = "stack-item";
-            item.textContent = "[" + index + "] " + value;
-            stackList.appendChild(item);
-          });
-        }
+        nextPre.textContent = formatNextLikeQueueRow(step);
 
-        queueList.replaceChildren();
-        if (step.queuePreview.length === 0) {
-          queueList.appendChild(createEmpty("Queue preview is empty after this step."));
-        } else {
-          step.queuePreview.forEach((token, index) => {
-            const item = document.createElement("div");
-            item.className = "queue-item";
-            item.textContent = "[" + index + "] " + token.action;
-            const meta = document.createElement("small");
-            meta.textContent = token.tag + " | value=" + token.value;
-            item.appendChild(meta);
-            queueList.appendChild(item);
-          });
-        }
+        stackPre.textContent = formatStackCells(step.stackBefore || []);
+        queuePre.textContent = formatQueue(step);
+        stepStdoutPre.textContent = accumulatedStdoutThroughIndex(viewSteps, selectedIndex);
 
-        renderStepList();
+        playButton.disabled = viewSteps.length === 0 || playbackTimer !== null;
+        pauseButton.disabled = playbackTimer === null;
       }
 
-      function setSelectedIndex(index) {
-        if (!steps.length) {
+      function setSelectedIndex(index, opts) {
+        const manual = opts && opts.manual;
+        if (manual) {
+          stopPlayback();
+        }
+        if (!viewSteps.length) {
           selectedIndex = 0;
           renderSelectedStep();
           return;
         }
-        const bounded = Math.max(0, Math.min(index, steps.length - 1));
-        if (bounded === selectedIndex && stepList.childElementCount > 0) {
-          renderSelectedStep();
-          return;
-        }
-        selectedIndex = bounded;
+        selectedIndex = Math.max(0, Math.min(index, viewSteps.length - 1));
         renderSelectedStep();
       }
 
-      metaFile.textContent = run.fileName;
-      metaMode.textContent = run.optimized ? "Optimized" : "Unoptimized";
-      metaSteps.textContent = String(steps.length);
-      metaExit.textContent = String(run.exitCode);
-      programOutput.textContent = run.programOutput || "—";
-      traceStderr.textContent = run.stderr || "—";
+      const modeLabel = run.optimized ? "optimized" : "unoptimized";
+      runContext.textContent =
+        fileBasename(run.fileName)
+        + " · "
+        + modeLabel
+        + " · "
+        + String(rawSteps.length)
+        + " VM steps · exit "
+        + String(run.exitCode);
+      runContext.title = run.fileName;
+
+      const errRaw = (run.stderr || "").trim();
+      traceStderr.textContent = errRaw.length ? errRaw : "—";
+
+      function setIrPanelExpanded(expanded) {
+        const on = Boolean(expanded);
+        mainGrid.classList.toggle("main--ir-expanded", on);
+        mainGrid.classList.toggle("main--ir-collapsed", !on);
+        irExpandBtn.setAttribute("aria-expanded", on ? "true" : "false");
+        irCollapseBtn.setAttribute("aria-expanded", on ? "true" : "false");
+      }
+
+      irExpandBtn.addEventListener("click", () => setIrPanelExpanded(true));
+      irCollapseBtn.addEventListener("click", () => setIrPanelExpanded(false));
+
+      playbackDelayInput.addEventListener("change", () => {
+        applyPlaybackDelayFromInput();
+      });
+
+      irExpandedDefaultInput.addEventListener("change", () => {
+        localStorage.setItem(STORAGE_IR_EXPANDED_DEFAULT, irExpandedDefaultInput.checked ? "1" : "0");
+      });
+
+      optionsToggle.addEventListener("click", () => {
+        setOptionsOpen(!optionsOpen());
+      });
+      optionsClose.addEventListener("click", () => setOptionsOpen(false));
+      optionsBackdrop.addEventListener("click", () => setOptionsOpen(false));
+
+      optionsResetDefaults.addEventListener("click", () => {
+        localStorage.removeItem(STORAGE_PLAYBACK_MS);
+        localStorage.removeItem(STORAGE_IR_EXPANDED_DEFAULT);
+        playbackStepMs = 50;
+        playbackDelayInput.value = "50";
+        irExpandedDefaultInput.checked = false;
+        updatePlayButtonTitle();
+        if (playbackTimer !== null) {
+          clearInterval(playbackTimer);
+          playbackTimer = setInterval(playbackTick, playbackStepMs);
+        }
+        setIrPanelExpanded(false);
+      });
 
       renderIr();
+      if (readIrExpandedDefault()) {
+        setIrPanelExpanded(true);
+      }
+      updatePlayButtonTitle();
+      syncOptionsFormFromState();
+      stopPlayback();
       renderSelectedStep();
 
-      firstButton.addEventListener("click", () => setSelectedIndex(0));
-      prevButton.addEventListener("click", () => setSelectedIndex(selectedIndex - 1));
-      nextButton.addEventListener("click", () => setSelectedIndex(selectedIndex + 1));
-      lastButton.addEventListener("click", () => setSelectedIndex(steps.length - 1));
+      firstButton.addEventListener("click", () => setSelectedIndex(0, { manual: true }));
+      prevButton.addEventListener("click", () => setSelectedIndex(selectedIndex - 1, { manual: true }));
+      nextButton.addEventListener("click", () => setSelectedIndex(selectedIndex + 1, { manual: true }));
+      lastButton.addEventListener("click", () => setSelectedIndex(viewSteps.length - 1, { manual: true }));
       stepSlider.addEventListener("input", (event) => {
-        setSelectedIndex(Number(event.target.value));
+        setSelectedIndex(Number(event.target.value), { manual: true });
       });
       stepInput.addEventListener("change", (event) => {
-        setSelectedIndex(Number(event.target.value));
+        setSelectedIndex(Number(event.target.value), { manual: true });
       });
+      playButton.addEventListener("click", () => startPlayback());
+      pauseButton.addEventListener("click", () => stopPlayback());
+
+      function wireBottomIoToggle(toggle, pane) {
+        toggle.addEventListener("click", () => {
+          const collapsed = pane.classList.toggle("collapsed");
+          toggle.setAttribute("aria-expanded", collapsed ? "false" : "true");
+        });
+      }
+      wireBottomIoToggle(bottomIoStdoutToggle, bottomIoStdoutPane);
+      wireBottomIoToggle(bottomIoStderrToggle, bottomIoStderrPane);
+
       window.addEventListener("keydown", (event) => {
+        if (event.key === "Escape" && optionsOpen()) {
+          event.preventDefault();
+          setOptionsOpen(false);
+          return;
+        }
+        if (optionsOpen()) {
+          return;
+        }
         if (event.key === "ArrowLeft") {
           event.preventDefault();
-          setSelectedIndex(selectedIndex - 1);
+          setSelectedIndex(selectedIndex - 1, { manual: true });
         } else if (event.key === "ArrowRight") {
           event.preventDefault();
-          setSelectedIndex(selectedIndex + 1);
+          setSelectedIndex(selectedIndex + 1, { manual: true });
+        }
+      });
+
+      window.addEventListener("message", (event) => {
+        const data = event.data;
+        if (data && data.type === "tracePlayback" && data.action === "toggle") {
+          togglePlayback();
         }
       });
     })();

@@ -1,5 +1,5 @@
 ---
-status: ready
+status: in-progress
 status_date: 2026-04-17
 creator: GPT-5.4
 ---
@@ -9,6 +9,23 @@ creator: GPT-5.4
 ## Summary
 
 Build a VS Code trace viewer for the TypeScript F-flat-minor runtime that runs existing `.ff` / `.ffp` programs, captures a recorded execution trace, and lets the user move forward and backward through the trace while viewing IR, stack state, and queue state.
+
+## Implementation status (as of 2026-04-17)
+
+**Shipped in the extension today**
+
+- **Capture (Phase 1):** Command `f-flat-minor.openTraceViewer` runs `node/bin/ff-run.ts` on the active saved file, parallel IR + JSONL trace invocations, parses JSONL from trace stderr, merges program stdout / exit code / stderr notes into a `TraceRun` model (`vscode-f-flat-minor/src/extension.ts`).
+- **Model (Phase 2):** Typed `TraceRun` / `TraceStep` in `vscode-f-flat-minor/src/trace-viewer.ts` (and parsing in `extension.ts`) including `stdoutSinceLast` mapped from JSONL `stdout_since_last`.
+- **Runtime I/O on trace:** `typescript/core/src/engine.ts` (same sources consumed by the extension build) emits `stdout_since_last` on JSONL trace events when program output is written during a step.
+- **Webview UI (Phase 3 — partial):** `getTraceViewerHtml` in `vscode-f-flat-minor/src/trace-viewer.ts` — IR column (read-only line list), trace column with stack / next token / queue, sticky run context + scrubber (first / prev / next / last, numeric step, slider), fixed-height **bottom panel** for cumulative stdout and stderr (terminal-like), **Play / Pause** auto-step at **50 ms** plus command `f-flat-minor.traceViewerTogglePlayback` for keyboard / command-palette control.
+- **Trace positions:** Raw engine steps plus one **synthetic end** row so the final stack is shown without a confusing before/after pair; stack column uses **stack before** the step; queue preview and depths match the selected position.
+- **Optimized runs:** Quick pick when opening the viewer chooses unoptimized vs optimized IR/trace (not yet an in-panel toggle — still listed under Phase 5).
+- **Polish:** Cumulative stdout = sum of `stdoutSinceLast` from step 0 through the scrubber index; stack / queue **depth badges** in panel headers; step meta is **UI chips** (Immediate vs Deferred) only — no duplicate of next-token line or scrubber position.
+
+**Not yet implemented (still this plan)**
+
+- **IR correlation (Phase 3 checklist + Phase 4):** No highlight of the “current” IR line for the selected trace step; IR is display-only. Needs trace-to-IR mapping and/or small runtime fields (instruction index, phase markers) as described in Phase 4.
+- **Phase 5 items:** In-viewer optimized toggle, optional source pane, fuller queue than preview, dictionary pane, trace search/filter.
 
 ## Context
 
@@ -56,7 +73,7 @@ V1 viewer panes:
 
 ### Phase 1: Add a trace-capture backend in the extension
 
-Implement the backend in `vscode-f-flat-minor/` first, reusing the existing runtime instead of inventing a new execution stack.
+**Status: implemented** — see `vscode-f-flat-minor/src/extension.ts` and `package.json` (`f-flat-minor.openTraceViewer`).
 
 Recommended implementation order:
 
@@ -75,6 +92,8 @@ Recommended implementation order:
 The extension may initially shell out to the existing runtime rather than introducing a new core debug API. That is acceptable for this plan because the goal is fast product feedback.
 
 ### Phase 2: Normalize trace data into a viewer session model
+
+**Status: implemented** — JSONL → steps + `TraceRun` fields in `extension.ts`; types exported from `trace-viewer.ts`.
 
 Convert CLI trace output into a UI-friendly structure.
 
@@ -98,10 +117,13 @@ Suggested model:
   - stack after
   - queue preview
   - queue depth
+  - optional per-step stdout chunk (`stdoutSinceLast` / `stdout_since_last`)
 
 If the trace omits `stack_after`, derive it from the next event's `stack_before` where possible. Preserve the raw event as well so the UI can explain when a value is inferred rather than directly recorded.
 
 ### Phase 3: Build the VS Code webview UI
+
+**Status: partially implemented** — navigation, panes, stdout/stderr, playback, and layout are in `trace-viewer.ts`; **IR step highlight is not**.
 
 Implement the first UI as a webview, not a debug adapter.
 
@@ -115,11 +137,11 @@ Required controls:
 
 Required displays:
 
-- highlighted current IR line or instruction
-- stack at the selected step
-- queue preview and queue depth at the selected step
-- current action metadata
-- program output / exit status summary
+- highlighted current IR line or instruction — **pending**
+- stack at the selected step — **done** (before-step + synthetic final row)
+- queue preview and queue depth at the selected step — **done** (depth in header; preview in pane)
+- current action metadata — **done** (Next token line + Immediate/Deferred chip)
+- program output / exit status summary — **done** (cumulative stdout + stderr panel; run context line)
 
 UI guidance:
 
@@ -129,12 +151,14 @@ UI guidance:
 
 ### Phase 4: Improve trace/code correlation enough for a good prototype
 
+**Status: not started** — next major slice for this plan.
+
 The first version does not need full source-level debugging, but it does need understandable code correlation.
 
 Minimum viable correlation:
 
-- show the formatted IR that was actually executed
-- highlight the current trace step by best-effort mapping to an IR instruction index
+- show the formatted IR that was actually executed — **done**
+- highlight the current trace step by best-effort mapping to an IR instruction index — **pending**
 
 If the current trace data is not sufficient to map cleanly to an IR line, add only the smallest runtime extensions needed, such as:
 
@@ -148,7 +172,7 @@ Do not block v1 on the broader source-map plan unless source view becomes a hard
 
 Once the basic viewer works, consider these follow-ups in order:
 
-1. toggle between unoptimized and optimized IR
+1. toggle between unoptimized and optimized IR — **partial** (re-open via command with mode pick; not a live toggle)
 2. optional raw/preprocessed source pane
 3. fuller queue inspection beyond preview-only data
 4. dictionary pane backed by compile-time definitions or explicit runtime dictionary events
@@ -165,12 +189,16 @@ These are enhancements, not blockers for the first prototype.
 - **Initial code pane:** IR first; raw source is optional later.
 - **Backward stepping:** playback over recorded trace, not VM reverse execution.
 - **DAP is out of scope for this plan.**
+- **Optimized vs unoptimized:** user selects mode once when opening the trace viewer (quick pick); same command re-run for the other mode.
+- **Stack display:** show `stack_before` per step; append synthetic “end” step for final stack only.
+- **Stdout in viewer:** engine records per-step `stdout_since_last`; viewer shows **cumulative** stdout through the selected step; stderr / notes in a dedicated bottom pane.
+- **Step meta strip:** do not duplicate scrubber index or next-token fields; show Immediate vs Deferred as UI chips; stack / queue depths in column headers.
 
 ## Open questions
 
-- Should optimized IR be a run option in v1 or a later enhancement?
-- Is queue preview plus depth sufficient for the first user test, or should the runtime be extended for fuller queue inspection immediately?
-- Should the first viewer show preprocessed source at all, or only IR?
+- Should the trace viewer gain an **in-panel** optimized toggle (vs re-running the command) before other Phase 5 work?
+- Is queue preview plus depth sufficient long-term, or should the runtime be extended for fuller queue inspection next?
+- Should the first source-level addition be **preprocessed source** beside IR, or wait for IR highlight + `_plans/typescript-debug-source-maps.md`?
 
 ## Out of scope
 
@@ -197,4 +225,5 @@ These are enhancements, not blockers for the first prototype.
 - `web/src/client/program-runner.ts`
 - `vscode-f-flat-minor/package.json`
 - `vscode-f-flat-minor/src/extension.ts`
+- `vscode-f-flat-minor/src/trace-viewer.ts`
 - `_plans/done/trace-output-human-llm-format.md`
