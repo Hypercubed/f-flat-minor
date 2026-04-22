@@ -1,0 +1,41 @@
+{
+  "version": 1,
+  "skills": {
+    "docs-compile": {
+      "source": "Hypercubed/Agent-Knowledge-Starter-Kit",
+      "ref": "docs-search",
+      "sourceType": "github",
+      "computedHash": "3730d380ebea7f226ba11e7d3b94eb1a8c92d62d0eafef6b4788b2b26018aee8"
+    },
+    "docs-search": {
+      "source": "Hypercubed/Agent-Knowledge-Starter-Kit",
+      "ref": "docs-search",
+      "sourceType": "github",
+      "computedHash": "9f0b48a20f684b2ac1f1f97079261191fe35ffc628f75d49b759afcacedaec11"
+    },
+    "knowledge-lint": {
+      "source": "Hypercubed/Agent-Knowledge-Starter-Kit",
+      "ref": "docs-search",
+      "sourceType": "github",
+      "computedHash": "753b53d9dc16f7b11a7ed71e2a09e0991722daf9274e3b98b819b6d2b44f5f62"
+    },
+    "learning-distill": {
+      "source": "Hypercubed/Agent-Knowledge-Starter-Kit",
+      "ref": "docs-search",
+      "sourceType": "github",
+      "computedHash": "7c617d9d982111e21328880d9d3adc907fdf176de11e8aa76f7eab7b11c719c7"
+    },
+    "task-closeout": {
+      "source": "Hypercubed/Agent-Knowledge-Starter-Kit",
+      "ref": "docs-search",
+      "sourceType": "github",
+      "computedHash": "375d100091858f0005c72dc46d5a6bb8dd070e7d59f67307be6bebbee6626429"
+    },
+    "write-plan": {
+      "source": "Hypercubed/Agent-Knowledge-Starter-Kit",
+      "ref": "docs-search",
+      "sourceType": "github",
+      "computedHash": "30aa570450bbd9ee67ec1d46a9d7b3d6ceaf4d558c7073a1c536434160837c75"
+    }
+  }
+}

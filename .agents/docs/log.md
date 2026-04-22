@@ -1,5 +1,19 @@
 # Knowledge Maintenance Log
 
+### 2026-04-22 distill-20260422-173841-agents-knowledge-layer
+Outcome: updated
+Files: `.agents/docs/troubleshooting/git-restore-agents-role-files.md`; `.agents/docs/troubleshooting/index.md` (via docs-compile); `.agents/skills/docs-search/docs-search-index.json`
+Accepted: durable troubleshooting entry for losing uncommitted `.agents/agents/` edits after `git checkout` restore; session bundle marked distilled
+Rejected: optional knowledge-lint helper script (stay one-off until maintainer asks); duplicate bullets in `MAINTENANCE.md` when troubleshooting entry suffices
+Notes: task_id `20260422-173841-agents-knowledge-layer` from session closeout; evidence in `learning-candidate.md` / `active-task.md`.
+
+### 2026-04-22 agents-docs-per-entry-migration
+Outcome: updated
+Files: `.agents/docs/MAINTENANCE.md`; `.agents/docs/index.md`; `.agents/AGENTS.md`; `.agents/docs/decisions/*`; `.agents/docs/troubleshooting/*`; removed `.agents/docs/repo-decisions.md` and `.agents/docs/troubleshooting.md`
+Accepted: durable decisions and troubleshooting moved to per-entry markdown with YAML frontmatter under `docs/decisions/` and `docs/troubleshooting/` per updated knowledge-lint and learning-distill skills
+Rejected: none
+Notes: structural migration only; substantive text preserved from the prior monolithic files.
+
 ### 2026-04-11 session-batch-distillation
 Outcome: updated
 Files: `.agents/docs/repo-decisions.md`; `.agents/docs/troubleshooting.md`; `.agents/playbooks/test-and-dev-workflows.md`

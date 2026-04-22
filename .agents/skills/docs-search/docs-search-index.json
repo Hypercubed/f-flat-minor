@@ -1,0 +1,466 @@
+{
+  "version": 2,
+  "docs_root": ".agents/docs",
+  "generated_at": "2026-04-22T23:43:20Z",
+  "sections": [
+    {
+      "id": "MAINTENANCE",
+      "title": "Agent Knowledge Maintenance",
+      "description": "This file defines the schema and maintenance policy for the compiled knowledge layer under `.agents/`.",
+      "path": ".agents/docs/MAINTENANCE.md",
+      "docs_path": "MAINTENANCE.md",
+      "folder": "",
+      "kind": "docs"
+    },
+    {
+      "id": "agent-knowledge-starter-kit-merge",
+      "title": "Agent knowledge starter kit merge",
+      "description": "Adopt the Agent-Knowledge-Starter-Kit layout by merging its scaffold into the existing .agents tree instead of replacing F-flat-minor-specific guidance.",
+      "path": ".agents/docs/decisions/agent-knowledge-starter-kit-merge.md",
+      "docs_path": "decisions/agent-knowledge-starter-kit-merge.md",
+      "folder": "decisions",
+      "kind": "decision"
+    },
+    {
+      "id": "decisions-index",
+      "title": "Decisions index",
+      "description": "One file per durable architectural or policy decision. New entries: follow [Entry shape](../MAINTENANCE.md#entry-shape) in `MAINTENANCE.md`, then add a row below.",
+      "path": ".agents/docs/decisions/index.md",
+      "docs_path": "decisions/index.md",
+      "folder": "decisions",
+      "kind": "decision"
+    },
+    {
+      "id": "typescript-runtime-stdlib-root-discovery",
+      "title": "TypeScript runtime stdlib root discovery",
+      "description": "Node, Bun, and Deno should discover the built-in stdlib root by searching upward for ff/lib from stable anchors so compiled executables and varied CWDs work.",
+      "path": ".agents/docs/decisions/typescript-runtime-stdlib-root-discovery.md",
+      "docs_path": "decisions/typescript-runtime-stdlib-root-discovery.md",
+      "folder": "decisions",
+      "kind": "decision"
+    },
+    {
+      "id": "index",
+      "title": "Knowledge Index",
+      "description": "- `AGENTS.md`: repo-wide operational guidance and navigation. - `.agents/AGENTS.md`: concise knowledge-layer purpose and maintenance rules. - `.agents/docs/MAINTENANCE.md`: schema and policy for maintaining `.agents/` (durable entry contracts, logging, lint hygiene).",
+      "path": ".agents/docs/index.md",
+      "docs_path": "index.md",
+      "folder": "",
+      "kind": "docs"
+    },
+    {
+      "id": "log",
+      "title": "Knowledge Maintenance Log",
+      "description": "Outcome: updated Files: `.agents/docs/troubleshooting/git-restore-agents-role-files.md`; `.agents/docs/troubleshooting/index.md` (via docs-compile); `.agents/skills/docs-search/docs-search-index.json` Accepted: durable troubleshooting entry for losing uncommitted `.agents/agents/` edits after `git checkout` restore; session bundle marked distilled Rejected: optional knowledge-lint helper script (stay one-off until maintainer asks); duplicate bullets in `MAINTENANCE.md` when troubleshooting entry",
+      "path": ".agents/docs/log.md",
+      "docs_path": "log.md",
+      "folder": "",
+      "kind": "docs"
+    },
+    {
+      "id": "atan-precision-refactor",
+      "title": "Precision-Helper `atan` Refactor",
+      "description": "Refactor ff/lib/math/atan.ffp away from its current ad hoc scale-driven public API and toward the library’s newer precision-helper pattern. This change introduces public iatan, natan, and qatan, keeps an internal sca led helper for pi.ffp, retains atan-inv as a helper alias, an...",
+      "path": ".agents/docs/plans/archive/atan-precision-refactor.md",
+      "docs_path": "plans/archive/atan-precision-refactor.md",
+      "folder": "plans",
+      "kind": "initiative"
+    },
+    {
+      "id": "ff-run-cli-standardization",
+      "title": "Standardize `ff-run` CLI Across Deno, Node, and Bun",
+      "description": "Standardize the three ff-run entrypoints so Deno, Node, and Bun expose t he same CLI contract and observable behavior. Use the current Deno imple mentation as the canonical reference, while preserving only unavoidable runtime-specific differences and updating the runtime READMEs...",
+      "path": ".agents/docs/plans/archive/ff-run-cli-standardization.md",
+      "docs_path": "plans/archive/ff-run-cli-standardization.md",
+      "folder": "plans",
+      "kind": "initiative"
+    },
+    {
+      "id": "go-racket-cons",
+      "title": "Add `cons` parity to Racket",
+      "description": "Implement the cons system primitive in the Racket runtime so it matches the existing TypeScript behavior and can run ff/lib/seq/*.ffp programs t hat depend on cons.",
+      "path": ".agents/docs/plans/archive/go-racket-cons.md",
+      "docs_path": "plans/archive/go-racket-cons.md",
+      "folder": "plans",
+      "kind": "initiative"
+    },
+    {
+      "id": "archive-index",
+      "title": "Archive index",
+      "description": "Retired maintainer plans (terminal `status` values per [write-plan CONTRACT](../../skills/write-plan/CONTRACT.md)). Active plans: [../index.md](../index.md).",
+      "path": ".agents/docs/plans/archive/index.md",
+      "docs_path": "plans/archive/index.md",
+      "folder": "plans",
+      "kind": "plan"
+    },
+    {
+      "id": "lib-standard-library-cleanup",
+      "title": "Standard Library Cleanup",
+      "description": "Address redundancy, dead code, private re-implementations, and naming in consistencies found in ff/lib during a full library audit. All changes a re non-breaking except for the tail! rename, which has one external call site in ff/euler/euler3.ffp that must be updated in the same...",
+      "path": ".agents/docs/plans/archive/lib-standard-library-cleanup.md",
+      "docs_path": "plans/archive/lib-standard-library-cleanup.md",
+      "folder": "plans",
+      "kind": "initiative"
+    },
+    {
+      "id": "nexp-implementation",
+      "title": "Precision-Driven `nexp` Without Fixed `e`",
+      "description": "Replace the current nexp implementation in ff/lib/math/exp.ffp with a pr ecision-driven algorithm that computes floor(10^n * e^x) directly from a n integer-only exponential series. The new design removes the fixed __ex p__e precision ceiling and makes correctness depend on the ca...",
+      "path": ".agents/docs/plans/archive/nexp-implementation.md",
+      "docs_path": "plans/archive/nexp-implementation.md",
+      "folder": "plans",
+      "kind": "initiative"
+    },
+    {
+      "id": "node-chomp-build-test-bench",
+      "title": "Node Chomp Build, Test, and Benchmark Support",
+      "description": "Add first-class chomp support for the existing Node implementation so th e repo can run build, test, and bench workflows for Node in the same sty le as other runtimes. This plan intentionally scopes Node support to the current ff-run source runner and does not expand Node's CLI ...",
+      "path": ".agents/docs/plans/archive/node-chomp-build-test-bench.md",
+      "docs_path": "plans/archive/node-chomp-build-test-bench.md",
+      "folder": "plans",
+      "kind": "initiative"
+    },
+    {
+      "id": "nsqrt-isqrt-plan",
+      "title": "`nsqrt` and `isqrt` follow-up plan",
+      "description": "Current integer square root behavior lives in [ff/lib/math/sqrt.ffp](ff/ lib/math/sqrt.ffp), where [isqrt](ff/lib/math/sqrt.ffp:52) uses the recu rsive digit-by-digit helper [__sqrt__next](ff/lib/math/sqrt.ffp:40). Old er alternatives [isqrt_newton](ff/lib/math/sqrt.ffp:16) and [...",
+      "path": ".agents/docs/plans/archive/nsqrt-isqrt-plan.md",
+      "docs_path": "plans/archive/nsqrt-isqrt-plan.md",
+      "folder": "plans",
+      "kind": "initiative"
+    },
+    {
+      "id": "prime-helpers-fast-primality",
+      "title": "Add Public `maybe_prime?` and Accelerate Prime Helpers",
+      "description": "Add a public Miller–Rabin-based maybe_prime? to ff/lib/math/primes.ffp, and use it internally to speed up prime? and next-prime without changing their exact result contracts. Outcome: implemented in ff/lib/math/prime s.ffp and covered by the updated primes test file. The shared...",
+      "path": ".agents/docs/plans/archive/prime-helpers-fast-primality.md",
+      "docs_path": "plans/archive/prime-helpers-fast-primality.md",
+      "folder": "plans",
+      "kind": "initiative"
+    },
+    {
+      "id": "tap-depth-aware-assertion-indentation",
+      "title": "Depth-Aware TAP Indentation for Assertion and Plan Words",
+      "description": "Implement depth-derived indentation inside OK, PLAN, #SKIP, and #TODO in ff/lib/tap.ffp, and remove the @OK, @PLAN, @#SKIP, and @#TODO variants. Limit this change to assertion/plan emission only; do not change TEST y et because its call-site stack shape is not depth-stable whil...",
+      "path": ".agents/docs/plans/archive/tap-depth-aware-assertion-indentation.md",
+      "docs_path": "plans/archive/tap-depth-aware-assertion-indentation.md",
+      "folder": "plans",
+      "kind": "initiative"
+    },
+    {
+      "id": "trace-output-human-llm-format",
+      "title": "Improve trace output for humans and LLM agents",
+      "description": "Redesign tracing output to provide a concise default human-readable form at and an optional machine-readable JSONL mode for LLM/agent tooling. Ke ep backwards compatibility via opt-in flags and preserve existing tracin g semantics.",
+      "path": ".agents/docs/plans/archive/trace-output-human-llm-format.md",
+      "docs_path": "plans/archive/trace-output-human-llm-format.md",
+      "folder": "plans",
+      "kind": "initiative"
+    },
+    {
+      "id": "utc-epoch-to-string",
+      "title": "Add a UTC epoch-to-string utility to F♭m",
+      "description": "Add a small utility that converts a Unix timestamp in seconds into a UTC ISO-8601 string, for example 1712088000 -> 2024-04-02T12:00:00Z, by spl itting calendar arithmetic from output formatting.",
+      "path": ".agents/docs/plans/archive/utc-epoch-to-string.md",
+      "docs_path": "plans/archive/utc-epoch-to-string.md",
+      "folder": "plans",
+      "kind": "initiative"
+    },
+    {
+      "id": "web-playground-async-runner-worker-cancellation",
+      "title": "Web Playground Async Runner and Worker Cancellation",
+      "description": "Prevent browser freezes from non-halting programs by adding cooperative async execution in the shared engine, then moving playground execution t o a Web Worker with explicit cancellation and hard-stop termination.",
+      "path": ".agents/docs/plans/archive/web-playground-async-runner-worker-cancellation.md",
+      "docs_path": "plans/archive/web-playground-async-runner-worker-cancellation.md",
+      "folder": "plans",
+      "kind": "initiative"
+    },
+    {
+      "id": "atan-core-readability-refactor",
+      "title": "Atan Core Readability Refactor",
+      "description": "Improve readability and safety of ff/lib/math/atan-core.ffp and ff/lib/m ath/atan.ffp by eliminating .unsafe usage, improving helper naming, and adding per-line stack-effect annotations.",
+      "path": ".agents/docs/plans/atan-core-readability-refactor.md",
+      "docs_path": "plans/atan-core-readability-refactor.md",
+      "folder": "plans",
+      "kind": "initiative"
+    },
+    {
+      "id": "codetta",
+      "title": "F-flat-minor Codetta",
+      "description": "Codetta is now a shipped mode inside the existing web playground, not a separate app. It presents a curated set of Coda Etudes backed directly b y files in ff/codetta, lets players load the current best solution, run edits in the browser, inspect output and compiled bytecode, a...",
+      "path": ".agents/docs/plans/codetta.md",
+      "docs_path": "plans/codetta.md",
+      "folder": "plans",
+      "kind": "initiative"
+    },
+    {
+      "id": "directory-loading",
+      "title": "Directory Loading for `.import`",
+      "description": "Directory index resolution when `.import` names a folder; implemented alongside `fbm-preprocessor-import-path-overhaul.md` in the shared import resolver.",
+      "path": ".agents/docs/plans/directory-loading.md",
+      "docs_path": "plans/directory-loading.md",
+      "folder": "plans",
+      "kind": "initiative"
+    },
+    {
+      "id": "division-semantics-alignment",
+      "title": "Align Division Semantics Across Runtimes",
+      "description": "Make all maintained F♭m runtimes implement the same negative-integer sem antics for / and %. The canonical rule is truncate-toward-zero division with the matching remainder: q = trunc(a / b), r = a - b*q. This is an e xplicit project decision, not just a temporary reading of cur...",
+      "path": ".agents/docs/plans/division-semantics-alignment.md",
+      "docs_path": "plans/division-semantics-alignment.md",
+      "folder": "plans",
+      "kind": "initiative"
+    },
+    {
+      "id": "fbm-preprocessor-import-path-overhaul",
+      "title": "FBM Preprocessor Import Path Overhaul",
+      "description": "Implemented a two-tier import resolver for the FBM preprocessor: explici t file-relative imports keep current behavior, while angle-bracket impor ts resolve through a configurable standard-library search path. The ship ped shared resolver also includes same-name directory-index r...",
+      "path": ".agents/docs/plans/fbm-preprocessor-import-path-overhaul.md",
+      "docs_path": "plans/fbm-preprocessor-import-path-overhaul.md",
+      "folder": "plans",
+      "kind": "initiative"
+    },
+    {
+      "id": "fbm-website-migration-plan",
+      "title": "Fbm Website Migration Plan",
+      "description": "## Goal Document the current state of the Fbm website migration, capture what has already landed, and keep the remaining work focused on future embeddable playground and REPL web components. ## Implementation Status - **Stage 1 — `lit-html`...",
+      "path": ".agents/docs/plans/fbm-website-migration-plan.md",
+      "docs_path": "plans/fbm-website-migration-plan.md",
+      "folder": "plans",
+      "kind": "initiative"
+    },
+    {
+      "id": "ff-lib-test-coverage-checklist",
+      "title": "`ff/lib` TAP test coverage checklist",
+      "description": "Track **public** words in [ff/lib/](../ff/lib/) (excluding _ / __ prefix es) that **do not appear as literal tokens** in any [ff/lib/**/__tests__ /](../ff/lib/) source (.ffp / .ff). Checking off items means a test file names the word in executable code (not only in comments).",
+      "path": ".agents/docs/plans/ff-lib-test-coverage-checklist.md",
+      "docs_path": "plans/ff-lib-test-coverage-checklist.md",
+      "folder": "plans",
+      "kind": "initiative"
+    },
+    {
+      "id": "ffm-better-strings",
+      "title": "F♭m String Design: `cons` and `concat`",
+      "description": "## Overview Double-quoted strings (e.g. `\"hello\"`) are compiler sugar fo r a **quote that pushes character codes**. They are first-class values — a single pointer on the stack, like any other quote. ``` \"hi\" ≡ [ 'h' ' i' ] ≡ [ 104 105 ] ``` T...",
+      "path": ".agents/docs/plans/ffm-better-strings.md",
+      "docs_path": "plans/ffm-better-strings.md",
+      "folder": "plans",
+      "kind": "initiative"
+    },
+    {
+      "id": "ffm-math-library",
+      "title": "F♭m Arbitrary Precision Math Library",
+      "description": "The complete math library rests on: 1. **Two series loop words** — exp-p arts (Shape 1) and atanh-parts/atan-parts (Shape 2, sign flag distinguis hes them) 2. **Two layers** — internal -parts words return p q; user-fac ing words apply p/q*S once at the boundary 3. **Single precis...",
+      "path": ".agents/docs/plans/ffm-math-library.md",
+      "docs_path": "plans/ffm-math-library.md",
+      "folder": "plans",
+      "kind": "initiative"
+    },
+    {
+      "id": "go-preprocessor-macro-parity",
+      "title": "Go Preprocessor Macro Parity Plan",
+      "description": "## Overview This plan documents the comparison between the TypeScript an d Go preprocessor implementations, identifies missing macro-related func tionality in the Go implementation, and provides a step-by-step remediat ion plan. ## Files Analy...",
+      "path": ".agents/docs/plans/go-preprocessor-macro-parity.md",
+      "docs_path": "plans/go-preprocessor-macro-parity.md",
+      "folder": "plans",
+      "kind": "initiative"
+    },
+    {
+      "id": "hybrid_ers_implementation_plan",
+      "title": "Hybrid ERS Implementation Plan",
+      "description": "Below is a concrete implementation plan for a **hybrid ERS system**: a s mall static tool handles the deterministic expand/reduce/resynthesize st eps, while the skill remains responsible for ambiguous choices, reportin g, and higher-level revi...",
+      "path": ".agents/docs/plans/hybrid_ers_implementation_plan.md",
+      "docs_path": "plans/hybrid_ers_implementation_plan.md",
+      "folder": "plans",
+      "kind": "initiative"
+    },
+    {
+      "id": "plans-index",
+      "title": "Plans index",
+      "description": "One file per maintainer initiative or roadmap. New entries: follow the plan contract in [write-plan CONTRACT](../skills/write-plan/CONTRACT.md), then add a row below. Retired plans: [archive/](archive/index.md).",
+      "path": ".agents/docs/plans/index.md",
+      "docs_path": "plans/index.md",
+      "folder": "plans",
+      "kind": "plan"
+    },
+    {
+      "id": "language-server",
+      "title": "F♭m Language Server (VSCode Extension)",
+      "description": "Build a future typescript/language-server/ package on top of the already -landed shared typescript/compile-service/ foundation, then optionally m igrate the existing vscode-f-flat-minor/ extension from direct VS Code p roviders and commands to an LSP client for .ff and .ffp files.",
+      "path": ".agents/docs/plans/language-server.md",
+      "docs_path": "plans/language-server.md",
+      "folder": "plans",
+      "kind": "initiative"
+    },
+    {
+      "id": "source-driven-reference-manual",
+      "title": "Source-Driven Reference Manual for F♭m",
+      "description": "Add a maintainable F♭m reference manual that defines a documentation mod el, prototypes extraction with cdoc, combines generated and hand-written documentation, and integrates into the web project as a new section.",
+      "path": ".agents/docs/plans/source-driven-reference-manual.md",
+      "docs_path": "plans/source-driven-reference-manual.md",
+      "folder": "plans",
+      "kind": "initiative"
+    },
+    {
+      "id": "static-code-analysis",
+      "title": "Static Code Analysis for f-flat-minor",
+      "description": "Static code analysis has partially landed via the TypeScript compile-ser vice pipeline, where an IR-based analyzer uses pointer metadata to detec t invalid calls such as 10 eval. The remaining work is to integrate equi valent analysis into the compiler-level typescript/core flow ...",
+      "path": ".agents/docs/plans/static-code-analysis.md",
+      "docs_path": "plans/static-code-analysis.md",
+      "folder": "plans",
+      "kind": "initiative"
+    },
+    {
+      "id": "trace-output-efficiency",
+      "title": "More efficient F-flat-minor trace output",
+      "description": "Reduce the size, parse cost, and memory pressure of recorded VM traces ( today: verbose JSONL on stderr) while keeping a clear path for tools, th e VS Code trace viewer, and optional human/LLM-friendly output.",
+      "path": ".agents/docs/plans/trace-output-efficiency.md",
+      "docs_path": "plans/trace-output-efficiency.md",
+      "folder": "plans",
+      "kind": "initiative"
+    },
+    {
+      "id": "typescript-debug-source-maps",
+      "title": "TypeScript Debug Traceability (Compile + Runtime)",
+      "description": "Add source-level debugging metadata to the TypeScript implementations so compile-time diagnostics and runtime faults can be traced back to sourc e file and line/column, without changing emitted .ffb bytecode payloads.",
+      "path": ".agents/docs/plans/typescript-debug-source-maps.md",
+      "docs_path": "plans/typescript-debug-source-maps.md",
+      "folder": "plans",
+      "kind": "initiative"
+    },
+    {
+      "id": "typescript-optimizer-peephole-candidates",
+      "title": "Expand TypeScript Optimizer Peephole Rules",
+      "description": "Document a practical shortlist of additional peephole optimizations for [typescript/core/src/optimizer.ts](typescript/core/src/optimizer.ts), pr ioritizing rules that are semantics-preserving, cheap to match, and cons istent with the current IR rule style.",
+      "path": ".agents/docs/plans/typescript-optimizer-peephole-candidates.md",
+      "docs_path": "plans/typescript-optimizer-peephole-candidates.md",
+      "folder": "plans",
+      "kind": "initiative"
+    },
+    {
+      "id": "vscode-ers-definition-commands",
+      "title": "VSCode ERS Definition Commands",
+      "description": "Add three VSCode commands — Expand Current Definition, Collapse Current Definition, and Audit Current Definition — that operate on the definitio n under the cursor by delegating analysis and rewrites to the ERS toolch ain rather than requiring a full language server.",
+      "path": ".agents/docs/plans/vscode-ers-definition-commands.md",
+      "docs_path": "plans/vscode-ers-definition-commands.md",
+      "folder": "plans",
+      "kind": "initiative"
+    },
+    {
+      "id": "vscode-full-dap-debugger",
+      "title": "VSCode Full DAP Debugger for F-flat-minor",
+      "description": "Build a real VS Code debugger for the TypeScript F-flat-minor runtime us ing the Debug Adapter Protocol, after the trace-viewer prototype has val idated the core UX and runtime metadata needs.",
+      "path": ".agents/docs/plans/vscode-full-dap-debugger.md",
+      "docs_path": "plans/vscode-full-dap-debugger.md",
+      "folder": "plans",
+      "kind": "initiative"
+    },
+    {
+      "id": "vscode-time-travel-debugger",
+      "title": "VSCode Time-Travel Debugger for F-flat-minor",
+      "description": "Superseded by two narrower plans: vscode-trace-viewer.md for the fast tr ace-viewer prototype and vscode-full-dap-debugger.md for the later full VS Code debugger / DAP work.",
+      "path": ".agents/docs/plans/vscode-time-travel-debugger.md",
+      "docs_path": "plans/vscode-time-travel-debugger.md",
+      "folder": "plans",
+      "kind": "initiative"
+    },
+    {
+      "id": "vscode-trace-viewer",
+      "title": "VSCode Trace Viewer for F-flat-minor",
+      "description": "Build a VS Code trace viewer for the TypeScript F-flat-minor runtime tha t runs existing .ff / .ffp programs, captures a recorded execution trace , and lets the user move forward and backward through the trace while vi ewing IR, stack state, and queue state.",
+      "path": ".agents/docs/plans/vscode-trace-viewer.md",
+      "docs_path": "plans/vscode-trace-viewer.md",
+      "folder": "plans",
+      "kind": "initiative"
+    },
+    {
+      "id": "web-editor-word-inspector",
+      "title": "Editor Word Inspector Panel",
+      "description": "Add a word definition inspector panel to the Playground and Tutorial cod e editors, similar to the existing REPL inspector. Phase A enables inspe ction after program execution. Phase B adds live compile-on-change for i mmediate definition updates without execution.",
+      "path": ".agents/docs/plans/web-editor-word-inspector.md",
+      "docs_path": "plans/web-editor-word-inspector.md",
+      "folder": "plans",
+      "kind": "initiative"
+    },
+    {
+      "id": "web-playground-optimize-timing-diagnosis",
+      "title": "Web Playground Optimize Timing Diagnosis",
+      "description": "Add targeted diagnostics for the web playground so the repo can determin e whether optimized runs are being timed incorrectly in the browser or w hether optimized IR is genuinely slower for some workloads such as ff/eu ler/euler7.ffp.",
+      "path": ".agents/docs/plans/web-playground-optimize-timing-diagnosis.md",
+      "docs_path": "plans/web-playground-optimize-timing-diagnosis.md",
+      "folder": "plans",
+      "kind": "initiative"
+    },
+    {
+      "id": "compiled-bun-stdlib-imports",
+      "title": "Compiled Bun stdlib imports",
+      "description": "Prelude import failures from Bun-built binaries when stdlib roots include /ff/lib; points to resolver and workaround steps.",
+      "path": ".agents/docs/troubleshooting/compiled-bun-stdlib-imports.md",
+      "docs_path": "troubleshooting/compiled-bun-stdlib-imports.md",
+      "folder": "troubleshooting",
+      "kind": "troubleshooting"
+    },
+    {
+      "id": "git-restore-loses-uncommitted-knowledge-edits",
+      "title": "Git restore drops uncommitted edits under `.agents/`",
+      "description": "Running git checkout or git restore from HEAD on paths under `.agents/` replaces working-tree files and discards uncommitted markdown edits done earlier in the session.",
+      "path": ".agents/docs/troubleshooting/git-restore-loses-uncommitted-knowledge-edits.md",
+      "docs_path": "troubleshooting/git-restore-loses-uncommitted-knowledge-edits.md",
+      "folder": "troubleshooting",
+      "kind": "troubleshooting"
+    },
+    {
+      "id": "troubleshooting-index",
+      "title": "Troubleshooting index",
+      "description": "One file per recurring issue pattern. New entries: follow [Entry shape](../MAINTENANCE.md#entry-shape) in `MAINTENANCE.md`, then add a row below.",
+      "path": ".agents/docs/troubleshooting/index.md",
+      "docs_path": "troubleshooting/index.md",
+      "folder": "troubleshooting",
+      "kind": "troubleshooting"
+    },
+    {
+      "id": "repo-tool-resolution",
+      "title": "Repo tool resolution",
+      "description": "Wrong or missing repo-managed tools (chomp, deno, node, bun, npm, go); prefer mise exec and correct working directories.",
+      "path": ".agents/docs/troubleshooting/repo-tool-resolution.md",
+      "docs_path": "troubleshooting/repo-tool-resolution.md",
+      "folder": "troubleshooting",
+      "kind": "troubleshooting"
+    },
+    {
+      "id": "README",
+      "title": "Playbooks",
+      "description": "Use this directory for durable, multi-step procedures that agents may need to follow repeatedly.",
+      "path": ".agents/playbooks/README.md",
+      "docs_path": "",
+      "folder": "",
+      "kind": "playbook"
+    },
+    {
+      "id": "run-code",
+      "title": "Running code playbook",
+      "description": "Use this playbook when you need to choose a runtime and execute F-flat-minor source.",
+      "path": ".agents/playbooks/run-code.md",
+      "docs_path": "",
+      "folder": "",
+      "kind": "playbook"
+    },
+    {
+      "id": "test-and-dev-workflows",
+      "title": "Test and dev workflows playbook",
+      "description": "Use this playbook for common repo execution workflows after code changes.",
+      "path": ".agents/playbooks/test-and-dev-workflows.md",
+      "docs_path": "",
+      "folder": "",
+      "kind": "playbook"
+    },
+    {
+      "id": "AGENTS",
+      "title": "Agent Knowledge Layer",
+      "description": "Consult the root `AGENTS.md` first for repo-wide operational guidance. This file describes the compiled knowledge layer under `.agents/`.",
+      "path": ".agents/AGENTS.md",
+      "docs_path": "",
+      "folder": "",
+      "kind": "agents"
+    }
+  ]
+}

@@ -4,7 +4,7 @@
 
 - `AGENTS.md`: repo-wide operational guidance and navigation.
 - `.agents/AGENTS.md`: concise knowledge-layer purpose and maintenance rules.
-- `.agents/docs/MAINTENANCE.md`: schema and policy for maintaining `.agents/`.
+- `.agents/docs/MAINTENANCE.md`: schema and policy for maintaining `.agents/` (durable entry contracts, logging, lint hygiene).
 
 ## Rules
 
@@ -25,22 +25,19 @@
 - `.agents/skills/ff-math-internal-naming/SKILL.md`: math internal helper naming.
 - `.agents/skills/ff-lib-word-rankings/SKILL.md`: regenerate library word definition rankings.
 - `.agents/skills/ff-expand-reduce/SKILL.md`: expand, reduce, and resynthesize stack-heavy words.
-- `.agents/skills/plans/SKILL.md`: `_plans/` lifecycle workflow.
+- `.agents/skills/plans/SKILL.md`: maintainer plan lifecycle under `.agents/docs/plans/`.
+- `.agents/skills/write-plan/SKILL.md`: scaffold new plans with valid CONTRACT frontmatter.
+- `.agents/docs/plans/index.md`: active and archived initiative plans (write-plan contract).
 - `.agents/skills/task-closeout/SKILL.md`: create local task-closeout bundles.
 - `.agents/skills/learning-distill/SKILL.md`: distill session bundles into durable knowledge.
 - `.agents/skills/knowledge-lint/SKILL.md`: check `.agents/` for duplication, contradictions, and stale guidance.
 
 ## Durable Docs
 
-- `.agents/docs/repo-decisions.md`: accepted rationale and architectural choices.
-- `.agents/docs/troubleshooting.md`: recurring failure symptoms and validated recoveries.
-- `.agents/docs/log.md`: append-only knowledge maintenance log.
-
-## Roles
-
-- `.agents/agents/coding-agent.md`: implementation responsibilities and closeout policy.
-- `.agents/agents/learning-agent.md`: distillation responsibilities.
-- `.agents/agents/lint-agent.md`: knowledge-layer lint responsibilities.
+- `.agents/docs/decisions/`: one markdown file per accepted architectural or policy decision; [index](decisions/index.md).
+- `.agents/docs/troubleshooting/`: one markdown file per recurring failure pattern; [index](troubleshooting/index.md).
+- `.agents/docs/plans/`: maintainer initiatives; [active index](plans/index.md), [archive](plans/archive/index.md).
+- `.agents/docs/log.md`: append-only knowledge maintenance log (see Logging policy in `MAINTENANCE.md`).
 
 ## Temporary Evidence
 

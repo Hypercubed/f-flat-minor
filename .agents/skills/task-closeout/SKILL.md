@@ -9,29 +9,53 @@ description: Capture the current task into a structured temporary session bundle
 
 Create a temporary handoff packet for later learning extraction.
 
-## Output Location
+## Skill initialization (before first closeout)
+
+Run this once per target repo after the skill files are present under `.agents/skills/task-closeout/` (for example after copying only that skill folder or after an `npx`/package install drops it there). Idempotent: safe to repeat.
+
+1. Resolve the repo root (the directory that contains `.git/` in normal layouts).
+
+2. Ensure `.agents/sessions/` exists.
+
+3. If `.agents/sessions/README.md` is missing, create it from `bootstrap/sessions/README.md` in this skill folder.
+
+4. Ensure `.agents/.gitignore` exists. If it is missing, create it with exactly:
+
+   ```gitignore
+   sessions/*
+   !sessions/README.md
+   ```
+
+   If `.agents/.gitignore` already exists, merge these two lines if they are absent; do not remove unrelated ignore rules.
+
+5. If the repo does not track `.agents/.gitignore` and the user relies on the repo root `.gitignore`, ensure equivalent patterns exist there: `.agents/sessions/*` and `!.agents/sessions/README.md`.
+
+Do not create durable knowledge files (`AGENTS.md`, `docs/`, `playbooks/`) as part of this skill; those are owned by `learning-distill` initialization or a full kit merge.
+
+## Output location
 
 Write inside the repo to `.agents/sessions/<session-folder>/`.
 
-## Required Outputs
+The session folder name is a sortable storage label. The canonical task/session identifier is the `task_id` field inside the bundle's `summary.json`.
 
-- `summary.json`
-- `active-task.md`
-- `learning-candidate.md`
-- `changed-files.txt`
-- `validation.txt`
+## Required outputs
 
-## Example Bundle
+- summary.json
+- active-task.md
+- learning-candidate.md
+- changed-files.txt
+- validation.txt
 
-Filled-in reference files live under
-`.agents/skills/task-closeout/example/task-bundle/`.
+## Example bundle
+
+Filled-in reference files live under `.agents/skills/task-closeout/example/task-bundle/` when this skill is installed under `.agents/skills/task-closeout/`.
 
 ## Rules
 
-- Record only observable facts in `active-task.md`.
-- Record only candidate lessons in `learning-candidate.md`.
+- Record only observable facts in active-task.md.
+- Record only candidate lessons in learning-candidate.md.
 - Distinguish clearly between what failed, what worked, and what is only a hypothesis.
-- Do not update root `AGENTS.md`, `.agents/AGENTS.md`, or other durable repo knowledge files.
+- Do not update `.agents/AGENTS.md` or any other durable repo knowledge file.
 - Do not write narrative summaries longer than necessary.
 - Prefer concise bullet lists.
 
@@ -43,20 +67,34 @@ Filled-in reference files live under
 4. Keep one task-closeout bundle per session folder.
 5. Collect changed files.
 6. Collect commands run and validation results.
-7. Write `active-task.md`.
-8. Write `learning-candidate.md`.
-9. Write `summary.json` with status and metadata.
+7. Write active-task.md.
+8. Write learning-candidate.md.
+9. Write summary.json with status, metadata, `repo_id`, `task_id`, and optional agent identifiers when available.
 10. Mark the session bundle ready for distillation.
 
-## Session Folder Naming
+## Optional agent metadata
+
+Record agent provenance whenever the active tool can supply it. Record session provenance whenever the active tool can supply a stable session identifier.
+
+- In `summary.json`, add `agent` when the active agent/tool identity is known.
+- In `summary.json`, add `agent_session_id` when the active agent/tool exposes a stable session ID.
+- In `active-task.md`, add an Agent section when the agent/tool identity is known.
+- In `active-task.md`, add an Agent Session ID section when the active agent/tool exposes a stable session ID.
+- Treat `agent` and `agent_session_id` independently: record either one when available; omit only the specific field/section that is unavailable.
+- Do not invent session IDs or require manual lookup outside the agent/tool's supported session history.
+
+## Session folder naming
 
 - Use a deterministic, sortable folder name such as `YYYYMMDD-HHMMSS-short-topic`.
 - Keep the slug short, lowercase, and tied to the task goal.
 - Reuse the same session folder only for the single task-closeout bundle it was created for.
+- Do not treat the folder name as the canonical task identity; use the `task_id` field in `summary.json`.
 
-## `active-task.md` Sections
+## active-task.md sections
 
 - Task ID
+- Agent (optional)
+- Agent Session ID (optional)
 - Goal
 - Outcome
 - Files Changed
@@ -65,15 +103,14 @@ Filled-in reference files live under
 - Remaining Work
 - Notes
 
-## `learning-candidate.md` Sections
+## learning-candidate.md sections
 
 - Task
 - What failed
 - What worked
 - Reusable pattern
-- Candidate `AGENTS.md` or `.agents/AGENTS.md` update
+- Candidate `.agents/AGENTS.md` update
 - Candidate troubleshooting note
 - Candidate repo decision
 - Candidate playbook
-- Candidate rule or skill update
 - Confidence

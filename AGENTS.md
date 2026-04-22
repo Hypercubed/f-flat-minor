@@ -16,7 +16,6 @@ f-flat-minor (F♭m) is a minimal stack-oriented programming language. It featur
 - `.agents/rules/` — normative repo and authoring constraints
 - `.agents/playbooks/` — concise step-by-step operational workflows
 - `.agents/skills/` — reusable task-specific agent workflows
-- `.agents/agents/` — role notes for coding, learning, and knowledge-lint agents
 - `.agents/sessions/` — local, gitignored task-closeout bundles
 
 Key rule and playbook entry points:
@@ -112,7 +111,7 @@ Use these when the task involves:
 
 ## Plans
 
-- `_plans/` contains deferred implementation plans that should be checked before implementation work.
+- `.agents/docs/plans/` contains deferred implementation plans (write-plan contract); read [plans index](.agents/docs/plans/index.md) before implementation work.
 - Use `.agents/skills/plans/SKILL.md` for the plan workflow.
 
 ## Environment notes

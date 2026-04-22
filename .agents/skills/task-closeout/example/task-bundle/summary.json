@@ -1,6 +1,8 @@
 {
   "repo_id": "example-repo",
   "task_id": "t-20260407-143210-monaco",
+  "agent": "example-agent",
+  "agent_session_id": "example-session-id",
   "status": "completed",
   "distilled": false,
   "created_at": "2026-04-07T14:32:10Z",

@@ -11,8 +11,7 @@ f-flat-minor. It should stay concise and organized by role:
 - `rules/` contains normative repo and authoring constraints.
 - `playbooks/` contains durable multi-step workflows.
 - `skills/` contains reusable task workflows.
-- `docs/` contains maintenance policy, decisions, troubleshooting, index, and log.
-- `agents/` contains role notes for coding, learning, and lint agents.
+- `docs/` contains maintenance policy, durable indexes, decisions, troubleshooting, maintainer plans (`docs/plans/`), and the knowledge log.
 - `sessions/` contains local task-closeout bundles and is gitignored except for its README.
 
 ## What Belongs Here
@@ -34,8 +33,8 @@ f-flat-minor. It should stay concise and organized by role:
 ## Maintenance Rules
 
 - Keep the root `AGENTS.md` and this file concise.
-- Put rationale in `docs/repo-decisions.md`.
-- Put recurring failures and recoveries in `docs/troubleshooting.md`.
+- Put rationale in `docs/decisions/` (one file per decision; see `docs/decisions/index.md`).
+- Put recurring failures and recoveries in `docs/troubleshooting/` (one file per pattern; see `docs/troubleshooting/index.md`).
 - Put multi-step procedures in `playbooks/`.
 - Put temporary task evidence in `sessions/`.
 - Append durable knowledge maintenance entries to `docs/log.md`.

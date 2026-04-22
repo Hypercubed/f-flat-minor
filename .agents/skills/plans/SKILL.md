@@ -1,142 +1,103 @@
 ---
 name: plans
-description: "Use this skill whenever working with files in _plans/. Covers reading an existing plan before starting implementation, creating a new plan file, and updating a plan's status or content during or after implementation. Trigger when a user asks to plan something for later, scope deferred work, check what's planned, or record a plan. Also trigger at the start of any implementation task to check whether a plan already exists."
+description: "Use whenever working with maintainer plans under .agents/docs/plans/. Covers reading a plan before implementation, creating or scaffolding a plan, and updating status or body during or after work. Trigger when the user asks to plan, scope deferred work, check what is planned, or record a plan. Also trigger at the start of implementation to see whether a plan already exists."
 ---
 
 # Plans
 
-Deferred implementation plans — work that has been scoped and decided but not yet
-implemented. Each file is self-contained and provides enough context to implement
-without needing to reconstruct intent from scratch.
+Deferred implementation plans — scoped work not yet (fully) implemented. Each
+file is self-contained so an agent can implement without reconstructing intent.
 
-## Quick Reference
+Plans live under **`.agents/docs/plans/`** (active) and **`plans/archive/`**
+(completed or otherwise terminal). YAML frontmatter follows the
+[write-plan CONTRACT](../write-plan/CONTRACT.md) (`id`, `title`, `last_updated`,
+`description`, `tags`, `status`, optional graph keys).
 
-| Action             | When                                              |
-|--------------------|---------------------------------------------------|
-| Read a plan        | Before starting any implementation task          |
-| Create a plan      | When scoping work to be implemented later        |
-| Update a plan      | When status changes or open questions are resolved|
+## Quick reference
+
+| Action        | When                                      |
+|---------------|-------------------------------------------|
+| Read a plan   | Before starting implementation            |
+| Create a plan | When scoping work for later               |
+| Update a plan | When status or blocking questions change  |
 
 ---
 
 ## Reading a plan
 
-Before starting implementation on any feature or subsystem:
+1. Scan [`.agents/docs/plans/index.md`](../../docs/plans/index.md) (or search under `plans/`).
+2. Read YAML frontmatter first: `status`, `title`, `last_updated`, `tags`, optional `superseded_by` / `related_plans` (qualified `plans/<slug>` form per CONTRACT).
+3. Treat the body as authoritative for approach and decisions already recorded.
+4. Do **not** relitigate items under **Decisions already made** (or equivalent).
+5. Resolve **Open questions** before driving implementation if they are blocking.
+6. Check **Dependencies** / cross-links to other plans (`../other-plan.md`, `archive/other.md`).
 
-1. Check whether a relevant plan exists in `_plans/`.
-2. Read the YAML frontmatter first, especially `status`, `status_date`, and `creator`.
-3. If found, treat it as the authoritative starting point.
-4. Do **not** relitigate anything listed in **Decisions already made**.
-5. Check **Open questions** — if any are unresolved and blocking, surface them
-   to the user before proceeding.
-6. Check **Dependencies** — confirm prerequisite plans or work are complete.
+**Legacy prose:** older plan bodies may still mention historical status words
+(`ready`, `in-progress`, `done`). Prefer the frontmatter `status` field; map
+roughly: `ready` / `in-progress` → treat as in-flight initiative; `done` →
+completed work (often the file is under `archive/`).
 
 ---
 
 ## Creating a plan
 
-Use the template below. Save the file under `_plans/` using kebab-case, scoped
-to the relevant subsystem:
+Prefer scaffolding with valid CONTRACT metadata:
 
-```
-_plans/
-  f-flat-minor/
-    fold-foldR-reverse.md
-  kroz/
-    level-gen-api.md
-  angular/
-    block-editor-migration.md
+```bash
+python3 .agents/skills/write-plan/scripts/write-plan.py --help
 ```
 
-### Template
+Otherwise create **`.agents/docs/plans/<id>.md`** where **`id`** matches the
+filename stem (lowercase `[a-z0-9_-]` only). Then run
+`bash .agents/skills/docs-compile/scripts/docs-compile.sh` so `plans/index.md`
+and docs-search stay aligned.
+
+### Template (body after CONTRACT frontmatter)
+
+Use [write-plan CONTRACT](../write-plan/CONTRACT.md) for the YAML header. After
+the closing `---`, start with `#` title, then sections such as:
 
 ```markdown
----
-# draft | ready | in-progress | done | abandoned
-status: draft
-status_date: YYYY-MM-DD
-# Use a human name or agent identifier. If backfilling an older plan and the
-# original author is unclear, use `unknown`.
-creator: codex
----
-
-# Plan: [Short descriptive title]
-
 ## Summary
-<!-- One or two sentences. What will this plan accomplish when implemented? -->
 
 ## Context
-<!-- Why does this plan exist? What decisions or discussions led here?
-     Link to relevant _docs/ entries if applicable. -->
 
 ## Approach
-<!-- The actual plan. Be specific enough that an agent or human can implement
-     this without needing to ask clarifying questions. -->
 
 ## Decisions already made
-<!-- List things that are settled and should NOT be relitigated during implementation. -->
--
 
 ## Open questions
-<!-- What still needs resolution before or during implementation?
-     If none, write "None — ready to implement." -->
--
 
 ## Out of scope
-<!-- Explicitly state what this plan does NOT cover to prevent scope creep. -->
--
 
 ## Dependencies
-<!-- Other plans, docs, or external work that must be completed first. -->
-- None
 
 ## References
-<!-- Links to relevant _docs/, external resources, or prior discussion. -->
--
 ```
 
-### Tips for writing a good plan
-
-- **Approach** should be specific enough that an agent can implement it without
-  asking clarifying questions. Vague plans produce vague implementations.
-- **Decisions already made** is the most important section for agents. Explicitly
-  settled decisions prevent scope re-exploration.
-- **Out of scope** prevents agents (and humans) from expanding scope when a plan
-  is underspecified.
+Link to durable decisions or troubleshooting from the **body** using a
+`## Related decisions` section and relative links (for example
+`../decisions/<slug>.md`); do **not** use a `related_decisions` YAML list.
 
 ---
 
 ## Updating a plan
 
-| Situation                              | Action                                                        |
-|----------------------------------------|---------------------------------------------------------------|
-| Status changes                         | Update `status` and `status_date` in frontmatter              |
-| Open question resolved                 | Move resolution to **Decisions already made**, remove from **Open questions** |
-| Plan fully implemented                 | Set `status: done`, update `status_date`, add a brief note on outcome |
-| Plan will not be implemented           | Set `status: abandoned`, update `status_date`, record why     |
+| Situation                    | Action                                                                 |
+|-----------------------------|-------------------------------------------------------------------------|
+| Status / scope change       | Bump `last_updated`; set `status` per CONTRACT vocabulary                 |
+| Open question resolved      | Move answer into **Decisions already made**; trim **Open questions**   |
+| Work finished               | Set `status: completed` (or `cancelled` / `superseded` as appropriate); `git mv` to `plans/archive/` when retiring from the active set; bump `last_updated` |
+| Superseded by another plan  | Set `status: superseded` and `superseded_by: [plans/<other-id>, ...]`    |
 
-Do **not** delete done or abandoned plans. They serve as a lightweight decision
-log — future agents and collaborators can understand why something was done a
-certain way by reading what was planned and what changed.
-
----
-
-## Frontmatter fields
-
-| Field         | Meaning                                                         |
-|---------------|-----------------------------------------------------------------|
-| `status`      | Current lifecycle state of the plan                             |
-| `status_date` | Date the current status was set                                 |
-| `creator`     | Human name or agent identifier that originally authored the plan |
+Do **not** delete archived plans; they keep history. See CONTRACT **Archive**
+section for the `git mv` convention.
 
 ---
 
-## Status values
+## Status values (write-plan)
 
-| Status        | Meaning                                               |
-|---------------|-------------------------------------------------------|
-| `draft`       | Still being written, not ready for implementation     |
-| `ready`       | Fully scoped, implementation can begin                |
-| `in-progress` | Actively being implemented                            |
-| `done`        | Implemented                                           |
-| `abandoned`   | Will not be implemented; reason recorded in file      |
+Use only CONTRACT `status` values in frontmatter: `draft`, `active`, `paused`,
+`completed`, `cancelled`, `superseded`, `archived` (all lowercase). These
+replace older informal labels such as `ready` / `in-progress` / `done` /
+`abandoned` over time as plans are edited.

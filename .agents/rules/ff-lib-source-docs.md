@@ -133,4 +133,4 @@ When an agent edits documented `ff/lib` code, it should:
 
 - `_docs/supplemental/stack-notation.md`
 - `_docs/core-vocabulary.md`
-- `_plans/source-driven-reference-manual.md`
+- `.agents/docs/plans/source-driven-reference-manual.md`

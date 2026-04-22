@@ -268,5 +268,5 @@ Notable current gaps:
 - no general dead-code analysis inside retained definitions;
 - no replacement of empty named definitions with a direct no-op strategy.
 
-See `_plans/typescript-optimizer-peephole-candidates.md` for planned peephole
+See [`.agents/docs/plans/typescript-optimizer-peephole-candidates.md`](../../.agents/docs/plans/typescript-optimizer-peephole-candidates.md) for planned peephole
 extensions that are not part of the current optimizer yet.

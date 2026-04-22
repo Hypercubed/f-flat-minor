@@ -1,7 +1,7 @@
 # Draft documentation tree (manual + generated)
 
 Normative rules: [../../.agents/rules/ff-lib-source-docs.md](../../.agents/rules/ff-lib-source-docs.md).  
-Plan: [`_plans/source-driven-reference-manual.md`](../../_plans/source-driven-reference-manual.md).
+Plan: [`.agents/docs/plans/source-driven-reference-manual.md`](../../.agents/docs/plans/source-driven-reference-manual.md).
 
 ```text
 docs/

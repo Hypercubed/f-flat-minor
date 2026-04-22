@@ -4,6 +4,14 @@
 
 `t-20260407-143210-monaco`
 
+## Agent
+
+`example-agent`
+
+## Agent Session ID
+
+`example-session-id`
+
 ## Goal
 
 Fix Monaco JSON worker setup in the ESM build.
@@ -14,13 +22,13 @@ completed
 
 ## Files Changed
 
-- `src/editor/monaco.ts`
-- `vite.config.ts`
+- src/editor/monaco.ts
+- vite.config.ts
 
 ## Commands Run
 
-- `npm test`
-- `npm run build`
+- npm test
+- npm run build
 
 ## Validation
 
