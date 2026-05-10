@@ -90,14 +90,14 @@ validation = 'none'
 serial = true
 run = '''
   hyperfine --warmup 3\
-    --export-markdown benchmarks.md\
+    --export-markdown _benchmarks/benchmarks.md\
     --sort mean-time\
     './cpp/build/fact' -n watermark\
     './go/build/execute --in ./ff/example.ffb' -n go\
     './cpp/build/run ./ff/example.ff' -n cpp\
     './rust/build/example0' -n rust\
     './bun/build/ff-run ./ff/example.ff' -n bun\
-    './node/build/ff-run ./ff/example.ff' -n node\
+    './node/bin/ff-run.ts ./ff/example.ff' -n node\
     'cat ./ff/example_v0.ff | ./dart/bin/dart.exe' -n dart\
     'cat ./ff/example.ff | ./python/execute.py' -n python\
     './deno/build/ff-execute ./ff/example.ffb' -n deno\
@@ -115,8 +115,12 @@ validation = 'none'
 serial = true
 run = '''
   hyperfine --warmup 3 -N\
+    --export-markdown _benchmarks/execute.md\
+    --sort mean-time\
     './cpp/build/fact'\
-    './deno/build/execute ./ff/example.ffb'\
+    './deno/build/ff-execute ./ff/example.ffb'\
+    './bun/build/ff-execute ./ff/example.ffb'\
+    './node/bin/ff-execute.ts ./ff/example.ffb'\
     './go/build/execute --in ./ff/example.ffb'\
     './racket/main.rkt ./ff/example.ffb'
 '''
@@ -130,7 +134,7 @@ run = '''
   hyperfine --warmup 3 -N \
     './deno/build/ff-run ./ff/example.ff'\
     './bun/build/ff-run ./ff/example.ff'\
-    './node/build/ff-run ./ff/example.ff'
+    './node/bin/ff-run ./ff/example.ff'
 '''
 
 [[task]]

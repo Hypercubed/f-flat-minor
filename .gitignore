@@ -22,6 +22,8 @@ rust/target/*
 __pycache__/
 .kilo
 
+openspec
+
 # Local agent session bundles; keep only the README tracked.
 .agents/sessions/*
 !.agents/sessions/README.md

@@ -5,13 +5,12 @@ import type { SourceMap } from "./source-maps.ts";
 import { decode } from "./vlq.ts";
 import type { CorePlatform } from "./platform.ts";
 import { getCoreVocabularyEntry } from "./core-vocabulary.ts";
+import { FastQueue } from "./fast-queue.ts";
 
-const IMMEDIATE_WORDS = [
-  BigInt(OpCodes.DEF),
-  BigInt(OpCodes.KET),
-  BigInt(OpCodes.MARK),
-  BigInt(OpCodes.BRA)
-];
+const OP_DEF = BigInt(OpCodes.DEF);
+const OP_KET = BigInt(OpCodes.KET);
+const OP_MARK = BigInt(OpCodes.MARK);
+const OP_BRA = BigInt(OpCodes.BRA);
 
 const Q_LITERAL = 0n;
 const Q_CALL = 1n;
@@ -107,8 +106,9 @@ export class Engine {
   }
 
   private readonly stack: bigint[] = [];
-  private readonly queue: bigint[] = [];
+  private readonly queue = new FastQueue();
   private readonly defs = new Map<bigint, (() => void) | bigint[]>();
+  private readonly sysDefs: (((() => void)) | undefined)[] = new Array(MAX_SYSTEM_OP_CODE + 1);
 
   private symbols = new Map<bigint, string>();
 
@@ -188,10 +188,6 @@ export class Engine {
     this.queue.unshift(tag, value);
   }
 
-  private queueShift(): [bigint, bigint] {
-    return [this.queue.shift() ?? 0n, this.queue.shift() ?? 0n];
-  }
-
   private queuePop(): [bigint, bigint] {
     const value = this.queue.pop() ?? 0n;
     const tag = this.queue.pop() ?? 0n;
@@ -201,10 +197,10 @@ export class Engine {
   private defineSystem(fn: () => void, code: number) {
     const n = BigInt(code);
     const name = this.getName(n);
-    if (this.defs.has(n)) {
+    if (this.sysDefs[code] !== undefined) {
       throw new Error(`Define: cannot redefine system word "${name}"`);
     }
-    this.defs.set(n, fn);
+    this.sysDefs[code] = fn;
   }
 
   private defineUser(s: bigint[], n: bigint) {
@@ -222,7 +218,7 @@ export class Engine {
   }
 
   private callSystem(code: bigint) {
-    const r = this.defs.get(code);
+    const r = this.sysDefs[Number(code)];
     if (typeof r === "function") {
       this.statsOn && this.stats.system_instructions_called++;
       if (this.profileOn) {
@@ -230,7 +226,7 @@ export class Engine {
         r();
         const end = performance.now();
         const name = this.getName(code) || Number(code);
-        this.profile[name] ||= [ 0, 0 ]
+        this.profile[name] ||= [0, 0]
         this.profile[name][0]++;
         this.profile[name][1] != 0;
         this.profile[name][1]! += (end - start);
@@ -249,7 +245,7 @@ export class Engine {
       this.queue.unshift(...r);
       if (this.profileOn) {
         const name = this.getName(code, `&${code}`);
-        this.profile[name] ||= [ 0, undefined ]
+        this.profile[name] ||= [0, undefined]
         this.profile[name][0]++;
       }
       return;
@@ -297,11 +293,12 @@ export class Engine {
     let stepsRun = 0;
 
     while (queue.length > 0 && stepsRun < maxSteps) {
-      const [tag, value] = this.queueShift();
+      const tag = queue.shift() ?? 0n;
+      const value = queue.shift() ?? 0n;
       const isCall = tag === Q_CALL;
-      const stackBefore = this.stack.slice();
+      const stackBefore = this.traceOn ? this.stack.slice() : undefined;
 
-      immediate = !this.depth || (isCall && IMMEDIATE_WORDS.includes(value));
+      immediate = !this.depth || (isCall && (value === OP_DEF || value === OP_KET || value === OP_MARK || value === OP_BRA));
 
       if (isCall) {
         if (!immediate) {
@@ -326,7 +323,7 @@ export class Engine {
         immediate,
         tag,
         value,
-        stackBefore,
+        stackBefore: stackBefore ?? [],
         stackAfter: this.traceVerbose || this.traceFormat === "jsonl" ? this.stack.slice() : undefined,
       });
       stepsRun++;
@@ -469,8 +466,8 @@ export class Engine {
     const preview: TraceQueueToken[] = [];
     const max = Math.max(this.traceQueueMax, 0);
     for (let i = 0; i < this.queue.length && preview.length < max; i += 2) {
-      const tag = this.queue[i] ?? 0n;
-      const value = this.queue[i + 1] ?? 0n;
+      const tag = this.queue.get(i) ?? 0n;
+      const value = this.queue.get(i + 1) ?? 0n;
       const isCall = tag === Q_CALL;
       preview.push({
         tag: isCall ? "call" : "literal",
@@ -667,15 +664,15 @@ export class Engine {
   inspectValue(value: bigint): ValueInspection {
     const name = this.symbols.get(value);
     const isSystem = value >= 0n && value <= BigInt(MAX_SYSTEM_OP_CODE);
-    const def = this.defs.get(value);
+    const def = isSystem ? this.sysDefs[Number(value)] : this.defs.get(value);
     const isDefined = def !== undefined;
-    
+
     // Parse definition into inspectable tokens if it's a user-defined word
     let definition: InspectableToken[] | undefined;
     if (Array.isArray(def)) {
       definition = this.parseDefinitionTokens(def);
     }
-    
+
     // Look up core vocabulary for system words
     let stackEffect: string | undefined;
     let description: string | undefined;
@@ -686,10 +683,10 @@ export class Engine {
         description = vocabEntry.description;
       }
     }
-    
+
     return { value, name, isSystem, isDefined, definition, stackEffect, description };
   }
-  
+
   /**
    * Parse a definition array into inspectable tokens.
    * Definition arrays are in queue format: [tag, value, tag, value, ...]
@@ -701,8 +698,9 @@ export class Engine {
       const value = def[i + 1] ?? 0n;
       const isCall = tag === Q_CALL;
       const tokenName = isCall ? this.symbols.get(value) : undefined;
-      const isDefined = this.defs.has(value);
-      
+      const isSystem = value >= 0n && value <= BigInt(MAX_SYSTEM_OP_CODE);
+      const isDefined = isSystem ? this.sysDefs[Number(value)] !== undefined : this.defs.has(value);
+
       tokens.push({
         value,
         tag,
@@ -719,10 +717,10 @@ export class Engine {
     this.ioWriteStdout(new TextEncoder().encode(`[ ${s} ]\n`));
   }
 
-/**
- * It takes a source map and adds all of its symbols to the current source map
- * @param {SourceMap} sourceMap - SourceMap - The source map object that was generated by the compiler.
- */
+  /**
+   * It takes a source map and adds all of its symbols to the current source map
+   * @param {SourceMap} sourceMap - SourceMap - The source map object that was generated by the compiler.
+   */
   loadSourceMap(sourceMap: SourceMap) {
     Object.keys(sourceMap.symbols).forEach((value) => {
       this.symbols.set(BigInt(value), sourceMap.symbols[value]);
@@ -745,7 +743,7 @@ export class Engine {
       this.symbols.set(BigInt(systemWords[name]), name);
     }
 
-    this.defineSystem(() => {}, OpCodes.NOP);
+    this.defineSystem(() => { }, OpCodes.NOP);
 
     this.defineSystem(() => {
       const x = this.pop();
@@ -966,7 +964,7 @@ export class Engine {
   printProfile() {
     console.log();
     console.log('Profile:');
-  
+
     const profileTable = Object.keys(this.profile).map((name) => {
       const calls = this.profile[name][0];
       const time = this.profile[name][1];
@@ -978,10 +976,10 @@ export class Engine {
         'ops/ms': time ? Math.round(calls / time) : ''
       }
     }).sort((a, b) => b.calls - a.calls);
-  
+
     const system = profileTable.filter((p) => p.system);
     const user = profileTable.filter((p) => !p.system);
-  
+
     console.table(system, ['name', 'calls', 'ops/ms']);
     console.table(user, ['name', 'calls']);
     console.log();
