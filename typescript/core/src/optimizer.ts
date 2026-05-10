@@ -22,6 +22,10 @@ const PushNz = (inst: IrInstruction) =>
   inst.op === IROp.push && inst.value !== 0n;
 const PushNonNegative = (inst: IrInstruction) =>
   inst.op === IROp.push && inst.value >= 0n;
+const isPowerOf2 = (n: bigint) => n > 0n && (n & (n - 1n)) === 0n;
+const getLog2 = (n: bigint) => BigInt(n.toString(2).length - 1);
+const PushPowerOf2 = (inst: IrInstruction) =>
+  inst.op === IROp.push && isPowerOf2(inst.value);
 const SingleWordQuoteCall = (inst: IrInstruction) =>
   inst.op === IROp.call &&
   ![BRA, KET, MARK, DEF].includes(inst.value);
@@ -278,14 +282,25 @@ const rules: Rule[] = [
       },
     ],
   },
-  // Strength reduction
-  // 2 * -> 1 <<
-  // 2 / -> 1 >>
-  // 2^n * -> n << ??
-  // 2^n / -> n >> ??
-  // a b <
-  // a b >
-  // a b =
+  {
+    name: "Strength Reduction - Power of 2 MUL -> SHIFTL",
+    pattern: [PushPowerOf2, Call(OpCodes.MUL)],
+    replacement: (a) => [
+      { op: IROp.push, value: getLog2(a.value) },
+      { op: IROp.call, value: BigInt(OpCodes.SHIFTL) },
+    ],
+  },
+  /* 
+   * NOTE: Strength Reduction for DIV and MOD by power-of-2 are UNSOUND for negative numbers.
+   * Ffm (following JS BigInt) uses truncating division for / and %, while bitwise shifts 
+   * and ANDs follow floor division/bitwise representation.
+   * 
+   * Example: -1 / 2 == 0, but -1 >> 1 == -1.
+   * Example: -1 % 2 == -1, but -1 & 1 == 1.
+   * 
+   * Unless sign analysis can prove the dividend is non-negative, these must not be optimized 
+   * to bitwise operations. MUL -> SHIFTL remains sound for all integers.
+   */
 ];
 
 // TODO: replace empty defs with &NOP
@@ -328,7 +343,7 @@ export class Optimizer {
     do {
       len = this.optimized.length;
       this.optLoop();
-    } while((this.optimized.length < len || this.stats.optimization_passes < this.minOptPasses) && this.stats.optimization_passes < this.maxOptPasses);
+    } while ((this.optimized.length < len || this.stats.optimization_passes < this.minOptPasses) && this.stats.optimization_passes < this.maxOptPasses);
 
     this.optimized = this.pullDefs(this.optimized);
     this.optimized = this.addReferencedWords(this.optimized);
@@ -446,7 +461,7 @@ export class Optimizer {
         if (i.value === KET) {
 
           i.meta ??= {};
-          i.meta.uid ??= this.nextAnonOp++;      
+          i.meta.uid ??= this.nextAnonOp++;
 
           // anon defs
           const end = ip;
@@ -514,7 +529,7 @@ export class Optimizer {
       let ip = 0;
       while (ip < _ir.length) {
         for (const rule of rules) {
-          const {pattern, replacement} = rule;
+          const { pattern, replacement } = rule;
           if (ip + pattern.length > _ir.length) {
             continue;
           }
@@ -550,7 +565,7 @@ export class Optimizer {
 
       if (i.op === IROp.call && this.defs.has(i.value)) {
         if (seen.includes(i.value)) return i;
-        
+
         const def = this.defs.get(i.value);
         if (!def) return i;
 

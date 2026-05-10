@@ -41,6 +41,10 @@ export class FastQueue {
   }
 
   push(...items: bigint[]): void {
+    this.pushArray(items);
+  }
+
+  pushArray(items: bigint[]): void {
     for (let i = 0; i < items.length; i++) {
       if (this._length === this.buffer.length) {
         this.expand();
@@ -52,6 +56,10 @@ export class FastQueue {
   }
 
   unshift(...items: bigint[]): void {
+    this.unshiftArray(items);
+  }
+
+  unshiftArray(items: bigint[]): void {
     while (this._length + items.length > this.buffer.length) {
       this.expand();
     }

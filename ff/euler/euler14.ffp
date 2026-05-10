@@ -2,10 +2,10 @@
 
 /* http://projecteuler.net/index.php?section=problems&id=14 */
 
-_odd?: 1 & ;
-2/: 1 >> ;
+_odd?: 1 & ; .inline
+2/: 1 >> ; .inline
 
-next-collatz: dup _odd? [ 3 * 1 + 2/ [ 2 + ] dip ] [ 2/ [++] dip ] branch ;
+next-collatz: dup _odd? [ 3 * 1 + 2/ [ 2 + ] dip ] [ 2/ q< ++ q> ] branch ; .inline
 collatz: dup 1 > [ next-collatz collatz ] ? ;
 collatz-count: 0 swap collatz drop ;
 
@@ -24,20 +24,24 @@ skip?: dup [ 3 % 2 = ] [ 6 % 4 = ] or_else ;
 runn:
   skip? [++] ?  /* optional, skip some values */
   dup collatz-count
-  [over] dip
-  dup [<] dip swap
+  q< over q>
+  dup q< < q> swap
   [ q< q< drop2 q> q> over ]
   [drop]
   branch
 ;
 
-step: dup 1_000_000 < [ . runn ++ step ] ? ;
+step: dup 1_000_000 < [ runn ++ step ] ? ;
 
 /* Generates [ A006877 ] */
 
-/* n count */
-1 1 /* (use 1 1 to get full sequence) */
-/* 77031 350 /* (head start) */
+/* 
+   Optimization: Halve the search space. 
+   For any n <= 500,000, the number 2n is <= 1,000,000 and has a chain length 
+   exactly 1 step longer than n. Thus, the maximum chain length cannot be 
+   found in the range [1, 500,000].
+*/
+500000 0 
 over ++
 step
 drop drop . /* 837799 */

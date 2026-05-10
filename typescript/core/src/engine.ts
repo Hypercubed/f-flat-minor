@@ -242,7 +242,7 @@ export class Engine {
     const r = this.defs.get(code);
     if (Array.isArray(r)) {
       this.statsOn && this.stats.user_instructions_called++;
-      this.queue.unshift(...r);
+      this.queue.unshiftArray(r);
       if (this.profileOn) {
         const name = this.getName(code, `&${code}`);
         this.profile[name] ||= [0, undefined]
@@ -262,7 +262,7 @@ export class Engine {
   }
 
   loadBigIntCode(bigCode: bigint[]) {
-    this.queue.push(...bigCode);
+    this.queue.pushArray(bigCode);
   }
 
   loadIR(ir: IrInstruction[]) {
@@ -291,6 +291,8 @@ export class Engine {
     let immediate = false;
     let step = initialStep;
     let stepsRun = 0;
+    
+    const MAX_SYS_OP = BigInt(MAX_SYSTEM_OP_CODE);
 
     while (queue.length > 0 && stepsRun < maxSteps) {
       const tag = queue.shift() ?? 0n;
@@ -304,8 +306,40 @@ export class Engine {
         if (!immediate) {
           this.push(tag);
           this.push(value);
+        } else if (value > -1n && value <= MAX_SYS_OP) {
+          const sysFn = this.sysDefs[Number(value)];
+          if (typeof sysFn === "function") {
+            this.statsOn && this.stats.system_instructions_called++;
+            if (this.profileOn) {
+              const start = globalThis.performance?.now?.() ?? Date.now();
+              sysFn();
+              const end = globalThis.performance?.now?.() ?? Date.now();
+              const name = this.getName(value) || Number(value);
+              this.profile[name] ||= [0, 0];
+              this.profile[name][0]++;
+              this.profile[name][1] != 0;
+              this.profile[name][1]! += (end - start);
+            } else {
+              sysFn();
+            }
+          } else {
+            const name = this.getName(value) || value;
+            throw new Error(`Call: undefined system op "${name}"`);
+          }
         } else {
-          this.callOp(value);
+          const r = this.defs.get(value);
+          if (Array.isArray(r)) {
+            this.statsOn && this.stats.user_instructions_called++;
+            this.queue.unshiftArray(r);
+            if (this.profileOn) {
+              const name = this.getName(value, `&${value}`);
+              this.profile[name] ||= [0, undefined];
+              this.profile[name][0]++;
+            }
+          } else {
+            const name = this.getName(value) || value;
+            throw new Error(`Call: undefined user op "${name}"`);
+          }
         }
       } else {
         if (!immediate) this.push(tag);
