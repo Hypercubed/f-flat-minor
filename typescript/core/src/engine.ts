@@ -1,4 +1,4 @@
-import { MAX_SYSTEM_OP_CODE, OpCodes, systemWords } from "./opcodes.ts";
+import { MAX_SYSTEM_OP_CODE, USER_OP_CODE_OFFSET, OpCodes, systemWords } from "./opcodes.ts";
 import { IROp } from "./ir.ts";
 import type { IrInstruction } from "./ir.ts";
 import type { SourceMap } from "./source-maps.ts";
@@ -107,13 +107,13 @@ export class Engine {
 
   private readonly stack: bigint[] = [];
   private readonly queue = new FastQueue();
-  private readonly defs = new Map<bigint, (() => void) | bigint[]>();
+  private readonly userDefs: (bigint[] | undefined)[] = [];
   private readonly sysDefs: (((() => void)) | undefined)[] = new Array(MAX_SYSTEM_OP_CODE + 1);
 
   private symbols = new Map<bigint, string>();
 
   private depth = 0;
-  private nextAnonOp = MAX_SYSTEM_OP_CODE + 1;
+  private nextAnonOp = USER_OP_CODE_OFFSET;
 
   traceOn = false;
   traceFormat: TraceFormat = "human";
@@ -208,13 +208,14 @@ export class Engine {
     if (n > -1 && n < MAX_SYSTEM_OP_CODE) {
       throw new Error(`Define: cannot define system op "${name}"`);
     }
-    if (this.defs.has(n)) {
+    const idx = Number(n) - USER_OP_CODE_OFFSET;
+    if (this.userDefs[idx] !== undefined) {
       if (n > MAX_SYSTEM_OP_CODE) {
         throw new Error(`Define: cannot redefine anon op "${name}"`);
       }
       throw new Error(`Define: cannot redefine user op "${name}"`);
     }
-    this.defs.set(n, s);
+    this.userDefs[idx] = s;
   }
 
   private callSystem(code: bigint) {
@@ -239,8 +240,8 @@ export class Engine {
   }
 
   private callUser(code: bigint) {
-    const r = this.defs.get(code);
-    if (Array.isArray(r)) {
+    const r = this.userDefs[Number(code) - USER_OP_CODE_OFFSET];
+    if (r) {
       this.statsOn && this.stats.user_instructions_called++;
       this.queue.unshiftArray(r);
       if (this.profileOn) {
@@ -327,8 +328,8 @@ export class Engine {
             throw new Error(`Call: undefined system op "${name}"`);
           }
         } else {
-          const r = this.defs.get(value);
-          if (Array.isArray(r)) {
+          const r = this.userDefs[Number(value) - USER_OP_CODE_OFFSET];
+          if (r) {
             this.statsOn && this.stats.user_instructions_called++;
             this.queue.unshiftArray(r);
             if (this.profileOn) {
@@ -698,7 +699,7 @@ export class Engine {
   inspectValue(value: bigint): ValueInspection {
     const name = this.symbols.get(value);
     const isSystem = value >= 0n && value <= BigInt(MAX_SYSTEM_OP_CODE);
-    const def = isSystem ? this.sysDefs[Number(value)] : this.defs.get(value);
+    const def = isSystem ? this.sysDefs[Number(value)] : this.userDefs[Number(value) - USER_OP_CODE_OFFSET];
     const isDefined = def !== undefined;
 
     // Parse definition into inspectable tokens if it's a user-defined word
@@ -733,7 +734,7 @@ export class Engine {
       const isCall = tag === Q_CALL;
       const tokenName = isCall ? this.symbols.get(value) : undefined;
       const isSystem = value >= 0n && value <= BigInt(MAX_SYSTEM_OP_CODE);
-      const isDefined = isSystem ? this.sysDefs[Number(value)] !== undefined : this.defs.has(value);
+      const isDefined = isSystem ? this.sysDefs[Number(value)] !== undefined : this.userDefs[Number(value) - USER_OP_CODE_OFFSET] !== undefined;
 
       tokens.push({
         value,
@@ -763,7 +764,7 @@ export class Engine {
 
   private getNextAnonOp() {
     let op = this.nextAnonOp++;
-    while (this.defs.has(BigInt(op))) {
+    while (this.userDefs[op - USER_OP_CODE_OFFSET] !== undefined) {
       op = this.nextAnonOp++;
     }
     return BigInt(op);
