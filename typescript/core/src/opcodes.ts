@@ -83,3 +83,4 @@ export const systemWords: Record<string, number> = {
 };
 
 export const MAX_SYSTEM_OP_CODE = 0xFF;
+export const USER_OP_CODE_OFFSET = MAX_SYSTEM_OP_CODE + 1;
