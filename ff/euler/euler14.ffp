@@ -9,39 +9,22 @@ next-collatz: dup _odd? [ 3 * 1 + 2/ [ 2 + ] dip ] [ 2/ q< ++ q> ] branch ; .inl
 collatz: dup 1 > [ next-collatz collatz ] ? ;
 collatz-count: 0 swap collatz drop ;
 
-collatz-count-recur:
-  1 - dup
-  [
-    dup _odd?
-    [ ++ 2/ collatz-count-recur ++ ]
-    [ 3 * 4 + 2/ collatz-count-recur 2 + ]
-    branch
-  ]
-  ? ;
-
-skip?: dup [ 3 % 2 = ] [ 6 % 4 = ] or_else ;
-
 runn:
-  skip? [++] ?  /* optional, skip some values */
-  dup collatz-count
-  q< over q>
-  dup q< < q> swap
-  [ q< q< drop2 q> q> over ]
-  [drop]
-  branch
+  /* Skip n = 4k+1 if 1.5n+0.5 is in range (< 1M) */
+  dup 4 % 1 = [ dup 666666 swap < ] [ true ] branch
+  [
+    dup collatz-count
+    q< over q>
+    dup q< < q> swap
+    [ q< q< drop2 q> q> over ]
+    [drop]
+    branch
+  ] ?
 ;
 
-step: dup 1_000_000 < [ runn ++ step ] ? ;
+step: dup 1_000_000 < [ runn 2 + step ] ? ;
 
-/* Generates [ A006877 ] */
-
-/* 
-   Optimization: Halve the search space. 
-   For any n <= 500,000, the number 2n is <= 1,000,000 and has a chain length 
-   exactly 1 step longer than n. Thus, the maximum chain length cannot be 
-   found in the range [1, 500,000].
-*/
 500000 0 
 over ++
 step
-drop drop . /* 837799 */
+drop drop .
