@@ -263,6 +263,27 @@ or to test only one project run:
 mise exec -- chomp test:{name}
 ```
 
+### Starting the Web Instance
+
+The web project (documentation, playground, etc.) is located in the `web/` directory and is built using Astro. It requires **Node.js version 22 or higher**.
+
+To run the web project locally:
+
+```sh
+cd web
+npm install
+npm run dev
+```
+
+Alternatively, to build and preview the production version:
+
+```sh
+cd web
+npm install
+npm run build
+npm run preview
+```
+
 For benchmarking run you will need to install [hyperfine](https://github.com/sharkdp/hyperfine) then run:
 
 ```sh
