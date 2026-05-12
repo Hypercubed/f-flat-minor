@@ -10,6 +10,9 @@
     "preview": "astro preview",
     "astro": "astro"
   },
+  "engines": {
+    "node": ">=22.0.0"
+  },
   "dependencies": {
     "@codemirror/commands": "^6.10.3",
     "@codemirror/language": "^6.12.3",
