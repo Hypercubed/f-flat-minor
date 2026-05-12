@@ -1,5 +1,12 @@
 # Knowledge Maintenance Log
 
+### 2026-05-11 runchunk-fast-path
+Outcome: updated
+Files: `.agents/AGENTS.md`; `.agents/docs/decisions/runchunk-fast-path.md`; `.agents/docs/troubleshooting/benchmark-profiling-stuck-processes.md`
+Accepted: reminder added to avoid `browser_subagent` for local filesystem workflows; decision documented to maintain separate fast/instrumented runChunk paths; troubleshooting note added for stray benchmark processes skewing performance results.
+Rejected: none
+Notes: task_id `runchunk-fast-path` from session closeout.
+
 ### 2026-04-22 distill-20260422-173841-agents-knowledge-layer
 Outcome: updated
 Files: `.agents/docs/troubleshooting/git-restore-agents-role-files.md`; `.agents/docs/troubleshooting/index.md` (via docs-compile); `.agents/skills/docs-search/docs-search-index.json`

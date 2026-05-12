@@ -343,7 +343,7 @@ export class Engine {
     const queue = this.queue;
     let step = initialStep;
     let stepsRun = 0;
-    
+
     const MAX_SYS_OP = BigInt(MAX_SYSTEM_OP_CODE);
 
     let immediate = false;

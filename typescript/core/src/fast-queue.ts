@@ -20,7 +20,7 @@ export class FastQueue {
   private expand() {
     const newCapacity = this.buffer.length * 2;
     const newBuffer = new Array(newCapacity);
-    
+
     if (this._length > 0) {
       if (this.head < this.tail) {
         for (let i = 0; i < this._length; i++) {
@@ -66,7 +66,7 @@ export class FastQueue {
     while (this._length + items.length > this.buffer.length) {
       this.expand();
     }
-    
+
     this.head = (this.head - items.length) & this._mask;
     for (let i = 0; i < items.length; i++) {
       this.buffer[(this.head + i) & this._mask] = items[i];

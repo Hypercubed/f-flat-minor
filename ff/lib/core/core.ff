@@ -71,8 +71,8 @@ and_also: [ sip swap ] dip swap [eval] [ drop2 false ] branch ; .inline /* a [B]
 
 /* branching */
 
-choose: rot [swap] ? drop ; /* a b flag choose == a or b */
-branch: choose eval ; /* a flag [B] [C] branch == b* or c* */
+choose: rot [ swap ] ? drop ; .inline  /* a b flag choose == a or b */
+branch: choose eval ; .inline /* flag [B] [C] branch == b* or c* */
 
 /* stack */
 

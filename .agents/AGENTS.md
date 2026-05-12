@@ -39,3 +39,7 @@ f-flat-minor. It should stay concise and organized by role:
 - Put temporary task evidence in `sessions/`.
 - Append durable knowledge maintenance entries to `docs/log.md`.
 - Prefer updating existing rules, playbooks, or skills over adding duplicate guidance.
+
+## Tool Warnings
+
+- Do not use the `browser_subagent` for local filesystem manipulations (like running `openspec` syncs or file editing). The subagent lacks native workspace access and will fail or stall.

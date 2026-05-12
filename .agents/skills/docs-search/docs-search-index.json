@@ -1,7 +1,7 @@
 {
   "version": 2,
   "docs_root": ".agents/docs",
-  "generated_at": "2026-04-22T23:43:20Z",
+  "generated_at": "2026-05-12T01:40:00Z",
   "sections": [
     {
       "id": "MAINTENANCE",
@@ -27,6 +27,15 @@
       "description": "One file per durable architectural or policy decision. New entries: follow [Entry shape](../MAINTENANCE.md#entry-shape) in `MAINTENANCE.md`, then add a row below.",
       "path": ".agents/docs/decisions/index.md",
       "docs_path": "decisions/index.md",
+      "folder": "decisions",
+      "kind": "decision"
+    },
+    {
+      "id": "runchunk-fast-path",
+      "title": "Maintain separate fast and instrumented runChunk paths",
+      "description": "The F♭m execution engine hot loop (`runChunk`) was heavily burdened with diagnostic boolean checks (`this.traceOn`, `this.statsOn`, `this.profileOn`) and the associated data preparation (e.g., copying the stack for tracing). This prevented the JIT compiler from optimally compiling the hot path and incurred per-instruction overhead.",
+      "path": ".agents/docs/decisions/runchunk-fast-path.md",
+      "docs_path": "decisions/runchunk-fast-path.md",
       "folder": "decisions",
       "kind": "decision"
     },
@@ -389,6 +398,15 @@
       "docs_path": "plans/web-playground-optimize-timing-diagnosis.md",
       "folder": "plans",
       "kind": "initiative"
+    },
+    {
+      "id": "benchmark-profiling-stuck-processes",
+      "title": "Benchmarks obstructed by lingering runtimes",
+      "description": "When measuring performance changes or running engine benchmarks, results appear surprisingly slow, inconsistent, or unchanged between different code iterations. CPU usage might be unexpectedly high before the benchmark even starts.",
+      "path": ".agents/docs/troubleshooting/benchmark-profiling-stuck-processes.md",
+      "docs_path": "troubleshooting/benchmark-profiling-stuck-processes.md",
+      "folder": "troubleshooting",
+      "kind": "troubleshooting"
     },
     {
       "id": "compiled-bun-stdlib-imports",
