@@ -218,6 +218,16 @@ export class Engine {
     this.userDefs[idx] = s;
   }
 
+  private throwUndefinedSysOp(code: bigint): never {
+    const name = this.getName(code) || code;
+    throw new Error(`Call: undefined system op "${name}"`);
+  }
+
+  private throwUndefinedUserOp(code: bigint): never {
+    const name = this.getName(code) || code;
+    throw new Error(`Call: undefined user op "${name}"`);
+  }
+
   private callSystem(code: bigint) {
     const r = this.sysDefs[Number(code)];
     if (typeof r === "function") {
@@ -235,8 +245,7 @@ export class Engine {
       }
       return r();
     }
-    const name = this.getName(code) || code;
-    throw new Error(`Call: undefined system op "${name}"`);
+    this.throwUndefinedSysOp(code);
   }
 
   private callUser(code: bigint) {
@@ -251,8 +260,7 @@ export class Engine {
       }
       return;
     }
-    const name = this.getName(code) || code;
-    throw new Error(`Call: undefined user op "${name}"`);
+    this.throwUndefinedUserOp(code);
   }
 
   private callOp(code: bigint): void {
@@ -287,14 +295,58 @@ export class Engine {
     return this.stack;
   }
 
-  private runChunk(maxSteps: number, initialStep: number) {
+  private runChunkFast(maxSteps: number, initialStep: number): number {
     const queue = this.queue;
     let immediate = false;
+    let stepsRun = 0;
+
+    const MAX_SYS_OP = BigInt(MAX_SYSTEM_OP_CODE);
+
+    while (queue.length > 0 && stepsRun < maxSteps) {
+      const tag = queue.shift() ?? 0n;
+      const value = queue.shift() ?? 0n;
+      const isCall = tag === Q_CALL;
+
+      immediate = !this.depth || (isCall && (value === OP_DEF || value === OP_KET || value === OP_MARK || value === OP_BRA));
+
+      if (isCall) {
+        if (!immediate) {
+          this.push(tag);
+          this.push(value);
+        } else if (value > -1n && value <= MAX_SYS_OP) {
+          const sysFn = this.sysDefs[Number(value)];
+          if (typeof sysFn === "function") {
+            sysFn();
+          } else {
+            this.throwUndefinedSysOp(value);
+          }
+        } else {
+          const r = this.userDefs[Number(value) - USER_OP_CODE_OFFSET];
+          if (r) {
+            this.queue.unshiftArray(r);
+          } else {
+            this.throwUndefinedUserOp(value);
+          }
+        }
+      } else {
+        if (!immediate) this.push(tag);
+        this.push(value);
+      }
+
+      stepsRun++;
+    }
+
+    return initialStep + stepsRun;
+  }
+
+  private runChunkInstrumented(maxSteps: number, initialStep: number): number {
+    const queue = this.queue;
     let step = initialStep;
     let stepsRun = 0;
     
     const MAX_SYS_OP = BigInt(MAX_SYSTEM_OP_CODE);
 
+    let immediate = false;
     while (queue.length > 0 && stepsRun < maxSteps) {
       const tag = queue.shift() ?? 0n;
       const value = queue.shift() ?? 0n;
@@ -324,8 +376,7 @@ export class Engine {
               sysFn();
             }
           } else {
-            const name = this.getName(value) || value;
-            throw new Error(`Call: undefined system op "${name}"`);
+            this.throwUndefinedSysOp(value);
           }
         } else {
           const r = this.userDefs[Number(value) - USER_OP_CODE_OFFSET];
@@ -338,8 +389,7 @@ export class Engine {
               this.profile[name][0]++;
             }
           } else {
-            const name = this.getName(value) || value;
-            throw new Error(`Call: undefined user op "${name}"`);
+            this.throwUndefinedUserOp(value);
           }
         }
       } else {
@@ -365,6 +415,14 @@ export class Engine {
     }
 
     return step;
+  }
+
+  private runChunk(maxSteps: number, initialStep: number): number {
+    const isInstrumented = this.traceOn || this.statsOn || this.profileOn;
+    if (isInstrumented) {
+      return this.runChunkInstrumented(maxSteps, initialStep);
+    }
+    return this.runChunkFast(maxSteps, initialStep);
   }
 
   run() {

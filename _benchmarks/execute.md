@@ -1,8 +1,8 @@
-| Command                                     |         Mean [µs] | Min [µs] | Max [µs] |       Relative |
-| :------------------------------------------ | ----------------: | -------: | -------: | -------------: |
-| `./cpp/build/fact`                          |      783.9 ± 59.0 |    665.5 |   1629.0 |           1.00 |
-| `./go/build/execute --in ./ff/example.ffb`  |    1347.9 ± 100.7 |   1094.0 |   2029.8 |    1.72 ± 0.18 |
-| `./bun/build/ff-execute ./ff/example.ffb`   |  22851.2 ± 1611.4 |  20870.2 |  31213.2 |   29.15 ± 3.01 |
-| `./deno/build/ff-execute ./ff/example.ffb`  |  28854.8 ± 1171.0 |  26913.8 |  32623.8 |   36.81 ± 3.15 |
-| `./node/bin/ff-execute.ts ./ff/example.ffb` |  86520.1 ± 4130.7 |  82093.2 | 101346.3 |  110.37 ± 9.84 |
-| `./racket/main.rkt ./ff/example.ffb`        | 220266.5 ± 8221.0 | 210252.9 | 229532.6 | 280.98 ± 23.62 |
+| Command | Mean [µs] | Min [µs] | Max [µs] | Relative |
+|:---|---:|---:|---:|---:|
+| `./cpp/build/fact` | 759.4 ± 47.3 | 659.8 | 1555.2 | 1.00 |
+| `./go/build/execute --in ./ff/example.ffb` | 1245.0 ± 75.8 | 1035.2 | 1697.6 | 1.64 ± 0.14 |
+| `./bun/build/ff-execute ./ff/example.ffb` | 21536.7 ± 733.6 | 19965.7 | 23459.2 | 28.36 ± 2.01 |
+| `./deno/build/ff-execute ./ff/example.ffb` | 28636.7 ± 1887.0 | 26393.8 | 36643.5 | 37.71 ± 3.42 |
+| `./node/bin/ff-execute.ts ./ff/example.ffb` | 82682.7 ± 2357.6 | 77782.2 | 88177.7 | 108.88 ± 7.47 |
+| `./racket/main.rkt ./ff/example.ffb` | 202982.5 ± 8105.4 | 191259.6 | 224673.0 | 267.30 ± 19.79 |
