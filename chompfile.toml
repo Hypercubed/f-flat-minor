@@ -10,11 +10,7 @@ run = 'chomp -c $DEP build'
 
 [[task]]
 name = 'build'
-deps = [
-    ':build:deno',
-    ':build:bun',
-    ':build:dart'
-]
+deps = [':build:deno', ':build:bun', ':build:dart']
 serial = true
 display = 'none'
 
@@ -33,18 +29,18 @@ run = '''
 [[task]]
 name = 'test'
 deps = [
-    ':test:deno',
-    # ':test:go',
-    # ':test:cpp',
-    # ':test:racket',
-    # ':test:rust',
-    ':test:bun',
-    ':test:dart',
-    ':test:node',
-    ':test:python',
-    ':test:ruby',
-    # ':test:ghc',
-    # ':test:assemblyscript',
+  ':test:deno',
+  # ':test:go',
+  # ':test:cpp',
+  # ':test:racket',
+  # ':test:rust',
+  ':test:bun',
+  ':test:dart',
+  ':test:node',
+  ':test:python',
+  ':test:ruby',
+  # ':test:ghc',
+  # ':test:assemblyscript',
 ]
 serial = true
 display = 'none'
@@ -85,12 +81,34 @@ run = '''
 
 [[task]]
 name = 'bench'
-deps = ['build:ghc', 'build:deno', 'build:go', 'build:cpp', 'build:dart', 'build:racket', 'build:rust', 'build:bun', 'build:node']
+deps = [
+  ':bench:native',
+  ':bench:execute',
+  ':bench:run',
+  ':bench:compile',
+  ':bench:preprocess',
+]
+validation = 'none'
+serial = true
+
+[[task]]
+name = 'bench:native'
+deps = [
+  'build:ghc',
+  'build:deno',
+  'build:go',
+  'build:cpp',
+  'build:dart',
+  'build:racket',
+  'build:rust',
+  'build:bun',
+  'build:node',
+]
 validation = 'none'
 serial = true
 run = '''
   hyperfine --warmup 3\
-    --export-markdown _benchmarks/benchmarks.md\
+    --export-markdown _benchmarks/native.md\
     --sort mean-time\
     './cpp/build/fact' -n watermark\
     './go/build/execute --in ./ff/example.ffb' -n go\
@@ -110,79 +128,114 @@ run = '''
 
 [[task]]
 name = 'bench:execute'
-deps = ['build:deno', 'build:go', 'build:cpp', 'build:racket']
 validation = 'none'
 serial = true
-run = '''
-  hyperfine --warmup 3 -N\
-    --export-markdown _benchmarks/execute.md\
-    --sort mean-time\
-    './cpp/build/fact'\
-    './deno/build/ff-execute ./ff/example.ffb'\
-    './bun/build/ff-execute ./ff/example.ffb'\
-    './node/bin/ff-execute.ts ./ff/example.ffb'\
-    './go/build/execute --in ./ff/example.ffb'\
-    './racket/main.rkt ./ff/example.ffb'
-'''
-
-[[task]]
-name = 'bench:interp'
-deps = ['build:node', 'build:bun', 'build:deno']
-validation = 'none'
-serial = true
-run = '''
-  hyperfine --warmup 3 -N \
-    './deno/build/ff-run ./ff/example.ff'\
-    './bun/build/ff-run ./ff/example.ff'\
-    './node/bin/ff-run ./ff/example.ff'
-'''
+run = 'BENCH_OUT=_benchmarks/execute.md chomp :bench:execute:./ff/example.ffb'
 
 [[task]]
 name = 'bench:run'
-deps = [':bench:run:compiled', ':bench:run:source']
 validation = 'none'
 serial = true
-display = 'none'
-
-[[task]]
-name = 'bench:run:compiled'
-deps = ['build:deno', 'build:go', 'build:cpp', 'build:rust', 'build:bun', 'build:dart']
-validation = 'none'
-serial = true
-run = '''
-  hyperfine --warmup 3 \
-    './deno/build/ff-run ./ff/example.ff' -n deno\
-    './go/build/run --in ./ff/example.ff' -n go\
-    './cpp/build/run ./ff/example.ff' -n cpp\
-    './bun/build/ff-run ./ff/example.ff' -n bun\
-    './rust/build/example0' -n rust\
-    'cat ./ff/example_v0.ff | ./dart/bin/dart.exe' -n dart
-'''
-
-[[task]]
-name = 'bench:run:source'
-validation = 'none'
-serial = true
-run = '''
-  hyperfine --warmup 3 \
-    'deno run --no-check --allow-read --allow-env ./deno/bin/ff-run.ts ./ff/example.ff'\
-    'bun run ./bun/bin/ff-run.ts ./ff/example.ff'\
-    'node ./node/bin/ff-run.ts ./ff/example.ff'\
-    'cat ./ff/example.ff | ./python/execute.py'\
-    'cat ./ff/example.ff | ./ruby/execute.rb'\
-    'racket ./racket/main.rkt ./ff/example.ff'
-'''
+run = 'BENCH_OUT=_benchmarks/run.md chomp :bench:run:./ff/example.ff'
 
 [[task]]
 name = 'bench:compile'
-deps = ['build:deno', 'build:go', 'build:racket']
+validation = 'none'
+serial = true
+run = 'BENCH_OUT=_benchmarks/compile.md chomp :bench:compile:./ff/example.ff'
+
+[[task]]
+name = 'bench:preprocess'
+validation = 'none'
+serial = true
+run = 'BENCH_OUT=_benchmarks/preprocess.md chomp :bench:preprocess:./ff/example.ff'
+
+[[task]]
+name = 'bench:run:#'
+deps = [
+  '#',
+  'build:ghc',
+  'build:deno',
+  'build:go',
+  'build:cpp',
+  'build:dart',
+  'build:racket',
+  'build:rust',
+  'build:bun',
+  'build:node',
+]
 validation = 'none'
 serial = true
 run = '''
-  hyperfine --warmup 3 -N\
-    './deno/build/compile ./ff/example.ff'\
-    './go/build/compile --in ./ff/example.ff'\
-    './racket/main.rkt -c ./ff/example.ff'
+  hyperfine ${BENCH_OUT:+--export-markdown "$BENCH_OUT"} --warmup 3\
+    --sort mean-time\
+    "./shell/ff run --run bun $MATCH" -n bun\
+    "./shell/ff run --run node $MATCH" -n node\
+    "./shell/ff run --run deno $MATCH" -n deno\
+    "./shell/ff run --run go $MATCH" -n go\
+    "./shell/ff run --run dart $MATCH" -n dart\
+    "./shell/ff run --run python $MATCH" -n python\
+    "./shell/ff run --run ruby $MATCH" -n ruby\
+    "./shell/ff run --run racket $MATCH" -n racket\
+    "./shell/ff run --run cpp $MATCH" -n cpp
+'''
+
+[[task]]
+name = 'bench:compile:#'
+deps = [
+  '#',
+  'build:deno',
+  'build:go',
+  'build:racket',
+  'build:bun',
+  'build:node',
+]
+validation = 'none'
+serial = true
+run = '''
+  hyperfine ${BENCH_OUT:+--export-markdown "$BENCH_OUT"} --warmup 3\
+    --sort mean-time\
+    "./shell/ff compile --compiler bun $MATCH" -n bun\
+    "./shell/ff compile --compiler node $MATCH" -n node\
+    "./shell/ff compile --compiler deno $MATCH" -n deno\
+    "./shell/ff compile --compiler go $MATCH" -n go\
+    "./shell/ff compile --compiler racket $MATCH" -n racket
+'''
+
+[[task]]
+name = 'bench:execute:#'
+deps = [
+  '#',
+  'build:deno',
+  'build:go',
+  'build:racket',
+  'build:bun',
+  'build:node',
+]
+validation = 'none'
+serial = true
+run = '''
+  hyperfine ${BENCH_OUT:+--export-markdown "$BENCH_OUT"} --warmup 3\
+    --sort mean-time\
+    "./shell/ff execute --run bun $MATCH" -n bun\
+    "./shell/ff execute --run node $MATCH" -n node\
+    "./shell/ff execute --run deno $MATCH" -n deno\
+    "./shell/ff execute --run go $MATCH" -n go\
+    "./shell/ff execute --run racket $MATCH" -n racket
+'''
+
+[[task]]
+name = 'bench:preprocess:#'
+deps = ['#', 'build:deno', 'build:go', 'build:bun', 'build:node']
+validation = 'none'
+serial = true
+run = '''
+  hyperfine ${BENCH_OUT:+--export-markdown "$BENCH_OUT"} --warmup 3\
+    --sort mean-time\
+    "./shell/ff preprocess --pp bun $MATCH" -n bun\
+    "./shell/ff preprocess --pp node $MATCH" -n node\
+    "./shell/ff preprocess --pp deno $MATCH" -n deno\
+    "./shell/ff preprocess --pp go $MATCH" -n go
 '''
 
 [[task]]
@@ -193,7 +246,16 @@ run = 'cloc --force-lang-def=.cloc . --quiet --md --hide-rate > loc.md'
 
 [[task]]
 name = 'uroboros'
-deps = ['build:deno', 'build:racket', 'build:bun', 'build:node', 'build:python', 'build:ruby', 'build:go', 'build:dart']
+deps = [
+  'build:deno',
+  'build:racket',
+  'build:bun',
+  'build:node',
+  'build:python',
+  'build:ruby',
+  'build:go',
+  'build:dart',
+]
 validation = 'none'
 serial = true
 run = '''

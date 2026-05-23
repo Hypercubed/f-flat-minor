@@ -13,6 +13,8 @@ Apply this rule when choosing runtimes, running tests, or invoking repo-managed 
 - Use Python only for `.ff` source files.
 - Do not use `python/execute.py` for `.ffp` files; `.ffp` requires a preprocessor-capable runtime.
 - For `.ffp`, use Deno, Node, Bun, or Go according to the task and the relevant runtime README.
+- **Strict Format Partition**: Never pass compiled `.ffb` bytecode to `./shell/ff-interpret.sh` (or `ff interpret`), and never pass raw `.ff` or preprocessed `.ffp` source to `./shell/ff-execute.sh` (or `ff execute`).
+- **Compilation Routing**: Route all compiler calls through `./shell/ff-compile.sh` (or `ff compile`), which supports compiling via Deno, Node, Bun, Go, and Racket, including standard input `-` source routing with temporary file traps for Racket.
 
 ## Test runner defaults
 

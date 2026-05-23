@@ -119,6 +119,7 @@ Implement candidates in priority order, starting with rules that mirror existing
 - Commutativity cleanup should be limited to ops that are truly symmetric in the engine (`ADD`, `MUL`, `AND`, `OR`, `EQ`).
 - Comparison folding is worthwhile because it composes with the existing `IF` rewrites without needing a more advanced optimizer.
 - Stack-shape-sensitive simplifications such as `a 0 * -> 0` need wider patterns than the current 2-instruction identities.
+- Automated `DIV -> SHIFTR` and `MOD -> AND` optimizations are unsafe for negative integers because F♭m utilizes truncating division while right-shifts follow floor-division semantics. They must not be automated unless non-negativity is statically proven. Left-shifts for multiplication (`MUL -> SHIFTL`) are sign-preserving and safe.
 
 ## Open questions
 

@@ -1,7 +1,7 @@
 ---
 id: plans-index
 title: "Plans index"
-last_updated: 2026-05-11
+last_updated: 2026-05-23
 ---
 
 # Plans

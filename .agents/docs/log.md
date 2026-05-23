@@ -1,5 +1,12 @@
 # Knowledge Maintenance Log
 
+### 2026-05-23 session-batch-distillation
+Outcome: updated
+Files: `AGENTS.md`; `.agents/rules/repo-runtime-invariants.md`; `.agents/docs/plans/typescript-optimizer-peephole-candidates.md`; `.agents/docs/decisions/cli-compilation-execution-routing.md`; `.agents/docs/troubleshooting/strength-reduction-sign-sensitivity.md`; `.agents/docs/troubleshooting/racket-compiler-stdin-unsupported.md`; `.agents/docs/troubleshooting/cli-runner-format-mismatch.md`
+Accepted: unified CLI routing of compiler and executor commands in the shell directory; decision documented to unify low-level compiler routing under shell wrappers; troubleshooting note for Racket compiler's lack of native stdin support with tempfile fallback; separate interpret vs execute CLI format constraints documented; sign-safety constraints on division/modulo optimizations documented.
+Rejected: none
+Notes: distilled three ready session bundles (`multi-compiler-compile`, `unify-runners`, and `euler14-optimization-fix`) from `.agents/sessions/`.
+
 ### 2026-05-11 runchunk-fast-path
 Outcome: updated
 Files: `.agents/AGENTS.md`; `.agents/docs/decisions/runchunk-fast-path.md`; `.agents/docs/troubleshooting/benchmark-profiling-stuck-processes.md`

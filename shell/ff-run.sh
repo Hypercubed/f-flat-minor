@@ -26,6 +26,8 @@ Runners:
   node
   bun (default)
   go
+  racket
+  cpp
 
 Preprocessors:
   go
@@ -115,8 +117,8 @@ if ! is_preprocessor "$preprocessor"; then
 fi
 
 if [ "$file_type" = "ff" ] && ! $preprocessor_explicit; then
-  print_command "$REPO_ROOT/shell/ff-execute.sh" --run "$runner" "$file"
-  exec "$REPO_ROOT/shell/ff-execute.sh" --run "$runner" "$file"
+  print_command "$REPO_ROOT/shell/ff-interpret.sh" --run "$runner" "$file"
+  exec "$REPO_ROOT/shell/ff-interpret.sh" --run "$runner" "$file"
 fi
 
 print_command \
@@ -125,9 +127,9 @@ print_command \
   "$preprocessor" \
   "$file" \
   "|" \
-  "$REPO_ROOT/shell/ff-execute.sh" \
+  "$REPO_ROOT/shell/ff-interpret.sh" \
   --run \
   "$runner" \
   -
 "$REPO_ROOT/shell/ff-preprocess.sh" --pp "$preprocessor" "$file" | \
-  "$REPO_ROOT/shell/ff-execute.sh" --run "$runner" -
+  "$REPO_ROOT/shell/ff-interpret.sh" --run "$runner" -

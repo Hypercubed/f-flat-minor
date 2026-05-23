@@ -1,7 +1,7 @@
 {
   "version": 2,
   "docs_root": ".agents/docs",
-  "generated_at": "2026-05-12T01:40:00Z",
+  "generated_at": "2026-05-23T17:41:27Z",
   "sections": [
     {
       "id": "MAINTENANCE",
@@ -18,6 +18,15 @@
       "description": "Adopt the Agent-Knowledge-Starter-Kit layout by merging its scaffold into the existing .agents tree instead of replacing F-flat-minor-specific guidance.",
       "path": ".agents/docs/decisions/agent-knowledge-starter-kit-merge.md",
       "docs_path": "decisions/agent-knowledge-starter-kit-merge.md",
+      "folder": "decisions",
+      "kind": "decision"
+    },
+    {
+      "id": "cli-compilation-execution-routing",
+      "title": "Unify compilation and execution routing under shell helper scripts",
+      "description": "Unify low-level compiler routing and bytecode execution wrappers under common shell scripts to ensure robust runtime routing and maintain conceptual parity with engine VMs.",
+      "path": ".agents/docs/decisions/cli-compilation-execution-routing.md",
+      "docs_path": "decisions/cli-compilation-execution-routing.md",
       "folder": "decisions",
       "kind": "decision"
     },
@@ -60,7 +69,7 @@
     {
       "id": "log",
       "title": "Knowledge Maintenance Log",
-      "description": "Outcome: updated Files: `.agents/docs/troubleshooting/git-restore-agents-role-files.md`; `.agents/docs/troubleshooting/index.md` (via docs-compile); `.agents/skills/docs-search/docs-search-index.json` Accepted: durable troubleshooting entry for losing uncommitted `.agents/agents/` edits after `git checkout` restore; session bundle marked distilled Rejected: optional knowledge-lint helper script (stay one-off until maintainer asks); duplicate bullets in `MAINTENANCE.md` when troubleshooting entry",
+      "description": "Outcome: updated Files: `.agents/AGENTS.md`; `.agents/docs/decisions/runchunk-fast-path.md`; `.agents/docs/troubleshooting/benchmark-profiling-stuck-processes.md` Accepted: reminder added to avoid `browser_subagent` for local filesystem workflows; decision documented to maintain separate fast/instrumented runChunk paths; troubleshooting note added for stray benchmark processes skewing performance results. Rejected: none Notes: task_id `runchunk-fast-path` from session closeout.",
       "path": ".agents/docs/log.md",
       "docs_path": "log.md",
       "folder": "",
@@ -409,6 +418,15 @@
       "kind": "troubleshooting"
     },
     {
+      "id": "cli-runner-format-mismatch",
+      "title": "CLI runner format mismatch",
+      "description": "Passing wrong file formats to interpret vs execute shell wrappers causes syntax or VM errors.",
+      "path": ".agents/docs/troubleshooting/cli-runner-format-mismatch.md",
+      "docs_path": "troubleshooting/cli-runner-format-mismatch.md",
+      "folder": "troubleshooting",
+      "kind": "troubleshooting"
+    },
+    {
       "id": "compiled-bun-stdlib-imports",
       "title": "Compiled Bun stdlib imports",
       "description": "Prelude import failures from Bun-built binaries when stdlib roots include /ff/lib; points to resolver and workaround steps.",
@@ -436,11 +454,29 @@
       "kind": "troubleshooting"
     },
     {
+      "id": "racket-compiler-stdin-unsupported",
+      "title": "Racket compiler stdin unsupported",
+      "description": "Racket's compiler does not natively support compiling from standard input.",
+      "path": ".agents/docs/troubleshooting/racket-compiler-stdin-unsupported.md",
+      "docs_path": "troubleshooting/racket-compiler-stdin-unsupported.md",
+      "folder": "troubleshooting",
+      "kind": "troubleshooting"
+    },
+    {
       "id": "repo-tool-resolution",
       "title": "Repo tool resolution",
       "description": "Wrong or missing repo-managed tools (chomp, deno, node, bun, npm, go); prefer mise exec and correct working directories.",
       "path": ".agents/docs/troubleshooting/repo-tool-resolution.md",
       "docs_path": "troubleshooting/repo-tool-resolution.md",
+      "folder": "troubleshooting",
+      "kind": "troubleshooting"
+    },
+    {
+      "id": "strength-reduction-sign-sensitivity",
+      "title": "Strength reduction sign-sensitivity",
+      "description": "Automated DIV to SHIFTR and MOD to AND optimizations fail for negative numbers due to truncating vs floor division semantics.",
+      "path": ".agents/docs/troubleshooting/strength-reduction-sign-sensitivity.md",
+      "docs_path": "troubleshooting/strength-reduction-sign-sensitivity.md",
       "folder": "troubleshooting",
       "kind": "troubleshooting"
     },

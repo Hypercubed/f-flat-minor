@@ -21,6 +21,7 @@ rust/target/*
 *.vsix
 __pycache__/
 .kilo
+.kiro
 
 openspec
 

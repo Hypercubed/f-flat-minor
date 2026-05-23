@@ -3,35 +3,38 @@ set -euo pipefail
 
 source "$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)/_ff-common.sh"
 
-DEFAULT_EXECUTOR="bun"
+DEFAULT_RUNNER="bun"
 
 usage() {
   cat <<'EOF' >&2
 Usage:
-  ./shell/ff-execute.sh [--quiet] [--run <executor>] <file.ffb|->
+  ./shell/ff-interpret.sh [--quiet] [--run <runner>] <file.ff|->
 
-Execute compiled f-flat-minor bytecode (.ffb) directly in the VM.
+Run raw (un-preprocessed) source code directly.
 
 Examples:
-  ./shell/ff-execute.sh ff/example.ffb
-  ./shell/ff-execute.sh --quiet ff/example.ffb
-  ./shell/ff-execute.sh --run go ff/example.ffb
-  ./shell/ff-execute.sh --run racket -
+  ./shell/ff-interpret.sh ff/example.ff
+  ./shell/ff-interpret.sh --quiet ff/example.ff
+  ./shell/ff-interpret.sh --run ruby ff/example.ff
+  ./shell/ff-interpret.sh --run node -
 
-Executors:
+Runners:
+  python
+  ruby
+  dart
   deno
   node
   bun (default)
   go
   racket
+  cpp
 
 Input:
-  Use a .ffb file for bytecode execution, or '-' to read compiled bytecode
-  from stdin.
+  Use a .ff file for direct interpretation, or '-' to read from stdin.
 EOF
 }
 
-executor="$DEFAULT_EXECUTOR"
+runner="$DEFAULT_RUNNER"
 file=""
 
 if [ "$#" -lt 1 ]; then
@@ -45,9 +48,9 @@ while [ "$#" -gt 0 ]; do
       export FF_SHELL_TRACE=0
       shift
       ;;
-    --run|--executor)
-      [ "$#" -ge 2 ] || die "Missing value for $1"
-      executor="$2"
+    --run)
+      [ "$#" -ge 2 ] || die "Missing value for --run"
+      runner="$2"
       shift 2
       ;;
     --help|-h)
@@ -86,23 +89,23 @@ done
 
 [ -n "$file" ] || die "Missing input file"
 
-if ! is_executor "$executor"; then
+if ! is_runner "$runner"; then
   usage
-  die "Unknown executor preset: $executor"
+  die "Unknown runner preset: $runner"
 fi
 
 if [ "$file" = "-" ]; then
-  ff_execute "$executor" "$file"
+  ff_interpret "$runner" "$file"
 fi
 
 [ -f "$file" ] || die "Input file not found: $file"
 
 case "$file" in
-  *.ffb) ;;
+  *.ff) ;;
   *)
     usage
-    die "Expected a .ffb input file or '-', got: $file"
+    die "Expected a .ff input file or '-', got: $file"
     ;;
 esac
 
-ff_execute "$executor" "$file"
+ff_interpret "$runner" "$file"

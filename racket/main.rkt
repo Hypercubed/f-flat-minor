@@ -72,12 +72,14 @@
     #:args ([filename #f])
 
     (when (and filename (null? (*pp*)) (not (pp-only)))
-      (if (bytes=? (path-get-extension filename) #".ffp")
+      (define ext (and (not (equal? filename "-")) (path-get-extension filename)))
+      (if (and ext (bytes=? ext #".ffp"))
         (*pp* #t)
         (*pp* #f)))
 
     (when (and filename (null? (binary)))
-      (if (bytes=? (path-get-extension filename) #".ffb")
+      (define ext (and (not (equal? filename "-")) (path-get-extension filename)))
+      (if (and ext (bytes=? ext #".ffb"))
         (binary #t)
         (binary #f)))
 

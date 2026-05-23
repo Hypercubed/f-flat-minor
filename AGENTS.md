@@ -34,6 +34,9 @@ Key rule and playbook entry points:
 - Treat `cd bun && mise exec -- chomp test:tap` as the default TAP runner for `ff/lib/**/__tests__/*.test.ffp`.
 - Run Go commands from `go/` or through `mise exec -- ...`; the repo root has no `go.mod`.
 - TypeScript runtimes write trace output to `stderr`; use `--trace --trace-format jsonl` when machine-readable traces are useful.
+- Use `./shell/ff-interpret.sh` (or `ff interpret`) to interpret raw, unpreprocessed `.ff` source code directly.
+- Use `./shell/ff-execute.sh` (or `ff execute`) to execute compiled bytecode `.ffb` directly on the Deno, Node, Bun, Go, or Racket VM engines.
+- Use `./shell/ff-compile.sh` (or `ff compile`) to compile `.ff` or preprocessed `.ffp` code to `.ffb` bytecode (supports `deno`, `node`, `bun`, `go`, and `racket` compilers).
 
 ### File Types
 - `.ff` - Basic f-flat-minor source files (works with Python, Deno, Node, or Bun)
