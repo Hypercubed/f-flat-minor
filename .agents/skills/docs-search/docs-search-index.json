@@ -1,7 +1,7 @@
 {
   "version": 2,
   "docs_root": ".agents/docs",
-  "generated_at": "2026-05-24T01:10:34Z",
+  "generated_at": "2026-05-24T05:04:29Z",
   "sections": [
     {
       "id": "MAINTENANCE",
@@ -78,7 +78,7 @@
     {
       "id": "log",
       "title": "Knowledge Maintenance Log",
-      "description": "Outcome: updated Files: `.agents/docs/decisions/go-vm-instruction-queue-optimization.md`; `.agents/docs/decisions/index.md` Accepted: documented decision to optimize the Go VM instruction queue using a custom circular ring buffer deque (`FastQueue`) and related zero-allocation VM loop micro-optimizations. Rejected: none Notes: task_id `t-20260524-010100-optimize-go-queue` distilled from `.agents/sessions/20260524-010100-optimize-go-queue/`.",
+      "description": "Outcome: updated Files: `.agents/docs/troubleshooting/repo-tool-resolution.md`; `.agents/playbooks/test-and-dev-workflows.md` Accepted: troubleshooting guide for `mise exec` hanging in offline/sandboxed/network-restricted environments with `MISE_OFFLINE=1` resolution; updated test-and-dev playbook environment notes. Rejected: none Notes: task_id `t-20260523-230300-cpp-bytecode-final` distilled from `.agents/sessions/20260523-230300-cpp-bytecode-final/`.",
       "path": ".agents/docs/log.md",
       "docs_path": "log.md",
       "folder": "",

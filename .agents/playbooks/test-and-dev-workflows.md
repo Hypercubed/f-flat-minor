@@ -68,3 +68,4 @@ mise exec -- chomp test:{deno,node,bun,python,ruby}
 
 - Some `vitest` web tests fail due to a pre-existing missing `path.relative` in the browser preprocessor host.
 - Deno lint may report expected `no-import-prefix` warnings on inline URL imports.
+- If `mise exec` hangs indefinitely in offline or sandboxed environments, prefix commands with `MISE_OFFLINE=1` (e.g. `MISE_OFFLINE=1 mise exec -- chomp ...`) to bypass network checks.

@@ -1,5 +1,12 @@
 # Knowledge Maintenance Log
 
+### 2026-05-23 cpp-bytecode-final
+Outcome: updated
+Files: `.agents/docs/troubleshooting/repo-tool-resolution.md`; `.agents/playbooks/test-and-dev-workflows.md`
+Accepted: troubleshooting guide for `mise exec` hanging in offline/sandboxed/network-restricted environments with `MISE_OFFLINE=1` resolution; updated test-and-dev playbook environment notes.
+Rejected: none
+Notes: task_id `t-20260523-230300-cpp-bytecode-final` distilled from `.agents/sessions/20260523-230300-cpp-bytecode-final/`.
+
 ### 2026-05-24 optimize-go-queue
 Outcome: updated
 Files: `.agents/docs/decisions/go-vm-instruction-queue-optimization.md`; `.agents/docs/decisions/index.md`
