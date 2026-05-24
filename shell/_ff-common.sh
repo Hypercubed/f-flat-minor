@@ -47,7 +47,7 @@ is_compiler() {
 
 is_executor() {
   case "${1-}" in
-    deno|node|bun|go|racket) return 0 ;;
+    deno|node|bun|go|racket|cpp) return 0 ;;
     *) return 1 ;;
   esac
 }
@@ -216,6 +216,10 @@ ff_execute() {
         print_command racket "$REPO_ROOT/racket/main.rkt" "$input"
         exec racket "$REPO_ROOT/racket/main.rkt" "$input"
       fi
+      ;;
+    cpp)
+      print_command "$REPO_ROOT/cpp/build/execute" "$input"
+      exec "$REPO_ROOT/cpp/build/execute" "$input"
       ;;
   esac
 }

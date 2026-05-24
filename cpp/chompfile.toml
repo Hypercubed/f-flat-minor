@@ -27,8 +27,14 @@ run = '''
 '''
 
 [[task]]
+name = 'build:execute'
+target = './build/execute'
+deps = ['./ff.cpp', './ff.h', './execute.cpp']
+run = 'g++ ./ff.cpp ./execute.cpp -std=c++11 -o $TARGET -O2 -lgmp'
+
+[[task]]
 name = 'build'
-deps = ['build:run', 'build:fact']
+deps = ['build:run', 'build:execute', 'build:fact']
 
 [[task]]
 name = 'interpret'
@@ -39,12 +45,21 @@ template = 'cmp'
 cmp = '../ff/example.out'
 
 [[task]]
+name = 'ffb'
+dep = 'build:execute'
+run = './build/execute ../ff/example.ffb'
+template = 'cmp'
+[task.template-options]
+cmp = '../ff/example.out'
+
+[[task]]
 name = 'test'
 deps = [
     ':build',
     ':interpret',
     ':test:out',
-    ':test:tap'
+    ':test:tap',
+    ':ffb'
 ]
 serial = true
 display = 'none'

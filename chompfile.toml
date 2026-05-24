@@ -113,6 +113,7 @@ run = '''
     './cpp/build/fact' -n watermark\
     './go/build/execute --in ./ff/example.ffb' -n go\
     './cpp/build/run ./ff/example.ff' -n cpp\
+    './cpp/build/execute ./ff/example.ffb' -n 'cpp-execute'\
     './rust/build/example0' -n rust\
     './bun/build/ff-run ./ff/example.ff' -n bun\
     './node/bin/ff-run.ts ./ff/example.ff' -n node\
@@ -211,6 +212,7 @@ deps = [
   'build:racket',
   'build:bun',
   'build:node',
+  'build:cpp',
 ]
 validation = 'none'
 serial = true
@@ -234,6 +236,7 @@ run = '''
   hyperfine ${BENCH_OUT:+--export-markdown "$BENCH_OUT"} --warmup 3\
     --sort mean-time\
     "./shell/ff execute --run go $TARGET" -n go\
+    "./shell/ff execute --run cpp $TARGET" -n cpp\
     "./shell/ff execute --run bun $TARGET" -n bun\
     "./shell/ff execute --run node $TARGET" -n node\
     "./shell/ff execute --run deno $TARGET" -n deno\

@@ -24,6 +24,7 @@ Executors:
   bun (default)
   go
   racket
+  cpp
 
 Input:
   Use a .ffb file for bytecode execution, or '-' to read compiled bytecode

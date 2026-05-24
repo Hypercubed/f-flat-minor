@@ -617,6 +617,158 @@ std::string unescape(const std::string &s)
   return res;
 }
 
+// VLQ decode implementation
+// Port of typescript/core/src/vlq.ts
+static const std::string BASE64_ALPHABET =
+    "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789+/";
+
+static std::map<char, int> buildBase64Lookup()
+{
+    std::map<char, int> m;
+    for (int i = 0; i < (int)BASE64_ALPHABET.size(); ++i)
+        m[BASE64_ALPHABET[i]] = i;
+    return m;
+}
+
+static mpz_int fromVLQSigned(const mpz_int& x)
+{
+    if ((x & 1) != 0)
+        return -(x >> 1);
+    return x >> 1;
+}
+
+std::vector<mpz_int> vlqDecode(const std::string& encoded)
+{
+    static const std::map<char, int> lookup = buildBase64Lookup();
+
+    // Decode each character to a 6-bit sextet
+    std::vector<int> sextets;
+    sextets.reserve(encoded.size());
+    for (char c : encoded)
+    {
+        auto it = lookup.find(c);
+        if (it == lookup.end())
+        {
+            std::cerr << "error: invalid base64 character '" << c << "' in VLQ string\n";
+            std::exit(1);
+        }
+        sextets.push_back(it->second);
+    }
+
+    // Group sextets into VLQ sequences; each group ends when continuation bit (bit 5) is 0
+    const int VLQ_CONTINUATION_BIT = 32; // bit 5
+    const int VLQ_BASE_MASK = 31;        // bits 0-4
+
+    std::vector<mpz_int> result;
+    std::vector<int> group;
+
+    for (int sextet : sextets)
+    {
+        group.push_back(sextet);
+        if ((sextet & VLQ_CONTINUATION_BIT) == 0)
+        {
+            // End of group: accumulate MSB-first (reverse the group)
+            mpz_int x = 0;
+            for (auto it = group.rbegin(); it != group.rend(); ++it)
+            {
+                x <<= 5;
+                x |= mpz_int(*it & VLQ_BASE_MASK);
+            }
+            result.push_back(fromVLQSigned(x));
+            group.clear();
+        }
+    }
+
+    if (!group.empty())
+    {
+        std::cerr << "error: malformed VLQ sequence: truncated input (continuation bit set on last character)\n";
+        std::exit(1);
+    }
+
+    return result;
+}
+
+std::string readBytecodeFile(const std::string& path)
+{
+    std::ifstream file(path, std::ios::binary);
+    if (!file.is_open())
+    {
+        std::cerr << "error: cannot open bytecode file '" << path << "'\n";
+        std::exit(1);
+    }
+
+    std::string contents((std::istreambuf_iterator<char>(file)),
+                          std::istreambuf_iterator<char>());
+
+    const std::string MAGIC = "FbAbbCb";
+    if (contents.size() < MAGIC.size() || contents.substr(0, MAGIC.size()) != MAGIC)
+    {
+        std::cerr << "error: invalid bytecode file '" << path << "': missing or incorrect magic header\n";
+        std::exit(1);
+    }
+
+    return contents.substr(MAGIC.size());
+}
+
+// Translate a bytecode opcode value to the C++ VM's internal opcode space.
+// The TypeScript compiler assigns user-defined word opcodes as negative integers
+// (-1, -2, -3, ...).  The C++ VM uses integers >= 256 for user-defined words.
+// Mapping: cpp_op = 255 - bytecode_op  =>  -1→256, -2→257, -3→258, ...
+static mpz_int translateBytecodeOp(const mpz_int& val)
+{
+    if (val < 0)
+        return mpz_int(255) - val;
+    return val;
+}
+
+void executeBytecode(const std::string& encoded)
+{
+    auto values = vlqDecode(encoded);
+
+    // Find the minimum (most negative) user-word opcode in the bytecode.
+    // The TypeScript compiler assigns user-defined words as -1, -2, -3, ...
+    // We translate them to 256, 257, 258, ... in the C++ VM.
+    // We must set nextOp above the highest translated opcode so that
+    // anonymous quotations created by op_bra don't collide with named words.
+    mpz_int minUserOp = 0;
+    for (auto& v : values)
+    {
+        mpz_int val = v >> 1;
+        if (val < minUserOp)
+            minUserOp = val;
+    }
+    // minUserOp is e.g. -3; translated to 258; nextOp must be >= 259
+    if (minUserOp < 0)
+    {
+        int highestTranslated = (mpz_int(255) - minUserOp).convert_to<int>();
+        if (nextOp <= highestTranslated)
+            nextOp = highestTranslated + 1;
+    }
+
+    Queue q;
+    for (auto& v : values)
+    {
+        int tag = (v & 1).convert_to<int>();
+        mpz_int val = v >> 1;
+        if (tag == 0)
+        {
+            // Literal push: use 0 sentinel followed by the (translated) value.
+            // Negative values in push position are user-word opcode references
+            // (e.g. pushed before ':' to name a definition), so they must also
+            // be translated to the C++ opcode space.
+            q.push_back(mpz_int(0));
+            q.push_back(translateBytecodeOp(val));
+        }
+        else
+        {
+            // Call opcode: translate negative user-word opcodes to C++ space.
+            q.push_back(translateBytecodeOp(val));
+        }
+    }
+    enqueue_back(q);
+    run();
+}
+
 void run()
 {
   while (!queue.empty())
