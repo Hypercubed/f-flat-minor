@@ -27,6 +27,7 @@ extern Queue queue;
 extern Stack rstack;
 extern std::deque<mpz_int> stash_queue;
 extern std::map<std::string, int> symbols;
+extern std::map<int, std::string> symbol_names;
 extern std::map<int, Definition> defs;
 extern int nextOp;
 
@@ -91,7 +92,8 @@ int getSymbol(const std::string& str);
 int getSymbol();
 void defineUser(const int& op, const Definition def);
 void enqueue_front(Definition q);
-void enqueue_back(std::queue<std::string> q);
+void enqueue_back(std::deque<std::string> q);
+void enqueueOp(mpz_int op);
 
 // Numeric parsing
 bool tryParseNumber(const std::string& s, mpz_int& result);

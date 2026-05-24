@@ -29,7 +29,7 @@ For each target language first implement a proof-of-concept interpreter either i
 | Ruby                         | F♭m                                                                    | ✓           |
 | Dart                         | F♭m                                                                    | ✓           |
 | AssemblyScript               | F♭m                                                                    | ✓           |            | ✓    |
-| C++                          | F♭m<sup>o</sup>                                                        | ✓           |
+| C++                          | F♭m                                                                    | ✓           |
 | Rust                         | F♭m<sup>o</sup>                                                        | ✓           |
 | Swift                        | [ F♭m<sup>-</sup> ](https://replit.com/@Hypercubed/f-flat-minor-Swift) | ✓           |
 | Wolfram Language             | F♭m<sup>-</sup>                                                        |

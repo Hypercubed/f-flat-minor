@@ -74,9 +74,22 @@ cmp = '../ff/example.out'
 
 [[task]]
 name = 'test'
-deps = ['test:compile', 'test:execute', 'test:interpret', 'test:ff']
+deps = ['test:compile', 'test:execute', 'test:interpret', 'test:ff', 'test:tap']
 serial = true
 display = 'none'
+
+[[task]]
+name = 'test:tap'
+dep = 'make:main'
+serial = true
+invalidation = 'always'
+validation = 'none'
+run = '''
+  shopt -s nullglob
+  shopt -s extglob
+  shopt -s globstar
+  prove --exec "../shell/ff-run.sh --quiet --run racket" ../ff/**/*.test.ffp
+'''
 
 [[task]]
 name = 'test:ff'

@@ -19,6 +19,14 @@ run = '''
 '''
 
 [[task]]
+name = 'build:run'
+target = './build/run'
+deps = ['./ff.cpp', './ff.h', './run.cpp']
+run = '''
+  g++ ./ff.cpp ./run.cpp -std=c++11 -o $TARGET -O2 -lgmp
+'''
+
+[[task]]
 name = 'build'
 deps = ['build:run', 'build:fact']
 
@@ -35,7 +43,8 @@ name = 'test'
 deps = [
     ':build',
     ':interpret',
-    ':ff',
+    ':test:out',
+    ':test:tap'
 ]
 serial = true
 display = 'none'
@@ -48,7 +57,7 @@ run = 'chomp -c ../deno/ :preprocess'
 [[task]]
 name = 'ff'
 deps = [
-  '../build/preprocess/##.ff',
+  '../build/ff-preprocess/##.ff',
   'build-deno-compiler',
   'build:run'
 ]
@@ -63,6 +72,48 @@ run = '''
 template = 'cmp'
 [task.template-options]
 cmp = '$TARGET'
+
+[[task]]
+name = 'test:out'
+deps = [
+  '../ff/##.out',
+  'build-deno-compiler',
+  'build:run'
+]
+serial = true
+invalidation = 'always'
+validation = 'none'
+display = 'status-only'
+run = '''
+  shopt -s nullglob
+  shopt -s extglob
+  for i in "${DEP%.*}.ff?(p)"; do
+    rel_path_no_ext="${i#../ff/}"
+    rel_path_no_ext="${rel_path_no_ext%.*}"
+    preprocessed_file="../build/ff-preprocess/${rel_path_no_ext}.ff"
+    
+    if [ -f "$preprocessed_file" ]; then
+      ./build/run "$preprocessed_file" | diff --ignore-trailing-space -q - > /dev/null 2>&1 "$DEP" && ${{CHECK}};
+    else
+      echo "Preprocessed file not found: $preprocessed_file" && false;
+    fi
+  done
+'''
+
+[[task]]
+name = 'test:tap'
+deps = [
+  'build:run'
+]
+serial = true
+invalidation = 'always'
+validation = 'none'
+run = '''
+  shopt -s nullglob
+  shopt -s extglob
+  shopt -s globstar
+  prove --exec "../shell/ff-run.sh --run cpp --quiet" ../ff/**/*.test.ffp
+'''
 
 [[task]]
 name = 'clean'

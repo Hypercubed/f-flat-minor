@@ -35,10 +35,30 @@ name = 'test'
 deps = [
     ':build',
     ':interpret',
+    ':test:out',
     ':test:tap'
 ]
 serial = true
 display = 'none'
+
+[[task]]
+name = 'test:out'
+deps = [
+    '../ff/##.out',
+    './bin/dart.exe'
+]
+serial = true
+invalidation = 'always'
+validation = 'none'
+display = 'status-only'
+run = '''
+  if [ -f ${DEP%.*}.ffp ]; then
+    ../shell/ff-run.sh --quiet --run dart ${DEP%.*}.ffp | diff --ignore-trailing-space -q - > /dev/null 2>&1 $DEP && ${{CHECK}};
+  fi
+  if [ -f ${DEP%.*}.ff ]; then
+    cat ${DEP%.*}.ff | ./bin/dart.exe | diff --ignore-trailing-space -q - > /dev/null 2>&1 $DEP && ${{CHECK}};
+  fi
+'''
 
 [[task]]
 name = 'test:tap'
