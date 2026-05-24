@@ -1,7 +1,8 @@
 # FastQueue (Ring Buffer Deque)
 
-## ADDED Requirements
-
+## Purpose
+The FastQueue provides an efficient double-ended queue (deque) implementation optimized for f-flat-minor stack-based execution engines.
+## Requirements
 ### Requirement: O(1) Deque API
 The queue MUST implement O(1) operations for both ends of the buffer (`shift`, `unshift`, `push`, `pop`). All index arithmetic SHALL use bitwise AND with a precomputed mask (`& this._mask`) instead of modulo, requiring that the buffer capacity always be a power of 2.
 
@@ -20,3 +21,11 @@ The queue MUST implement O(1) operations for both ends of the buffer (`shift`, `
 #### Scenario: Index arithmetic uses bitmask
 - **WHEN** the head or tail pointer is updated during any queue operation
 - **THEN** the index wrapping SHALL be computed as `index & this._mask` where `_mask = buffer.length - 1`, avoiding modulo division.
+
+### Requirement: Go FastQueue implementation
+The Go engine VM SHALL implement a fast deque structure using a circular ring buffer that matches the language specifications of the TypeScript implementation.
+
+#### Scenario: Prepending bytecode array
+- **WHEN** the Go engine VM executes a user word or quotation call
+- **THEN** it SHALL unshift the definition array into the front of the FastQueue in $O(1)$ amortized time.
+

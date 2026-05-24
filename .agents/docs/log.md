@@ -1,5 +1,12 @@
 # Knowledge Maintenance Log
 
+### 2026-05-24 optimize-go-queue
+Outcome: updated
+Files: `.agents/docs/decisions/go-vm-instruction-queue-optimization.md`; `.agents/docs/decisions/index.md`
+Accepted: documented decision to optimize the Go VM instruction queue using a custom circular ring buffer deque (`FastQueue`) and related zero-allocation VM loop micro-optimizations.
+Rejected: none
+Notes: task_id `t-20260524-010100-optimize-go-queue` distilled from `.agents/sessions/20260524-010100-optimize-go-queue/`.
+
 ### 2026-05-23 session-batch-distillation
 Outcome: updated
 Files: `AGENTS.md`; `.agents/rules/repo-runtime-invariants.md`; `.agents/docs/plans/typescript-optimizer-peephole-candidates.md`; `.agents/docs/decisions/cli-compilation-execution-routing.md`; `.agents/docs/troubleshooting/strength-reduction-sign-sensitivity.md`; `.agents/docs/troubleshooting/racket-compiler-stdin-unsupported.md`; `.agents/docs/troubleshooting/cli-runner-format-mismatch.md`

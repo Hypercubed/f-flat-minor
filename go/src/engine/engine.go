@@ -12,7 +12,7 @@ import (
 var nextAnonOp = MAX_SYSTEM_OP_CODE + 1
 
 var stack = []*Int(nil)
-var queue = []*Int(nil)
+var queue *FastQueue
 
 var systemDict = make(map[byte]func())
 var userDict = make(map[int64][]*Int)
@@ -71,10 +71,8 @@ func push(a *Int) {
 
 // If the queue is not empty, remove the last element from the queue and return it.
 func queuePop() *Int {
-	l := len(queue)
-	if l > 0 {
-		r := queue[l-1]
-		queue = queue[:l-1]
+	r := queue.Pop()
+	if r != nil {
 		return r
 	}
 	panic("Queue is empty")
@@ -82,7 +80,7 @@ func queuePop() *Int {
 
 // Append the value of the pointer to the queue.
 func queuePush(a *Int) {
-	queue = append(queue, a)
+	queue.Push(a)
 }
 
 // It takes a function and an integer, and adds the function to a map of functions, indexed by the
@@ -112,10 +110,12 @@ func defAnon(def []*Int) *Int {
 	return op
 }
 
+var maxSystemOp = NewInt(int64(MAX_SYSTEM_OP_CODE))
+
 func call(c *Int) {
-	if c.Sign() == -1 || c.Cmp(NewInt(int64(MAX_SYSTEM_OP_CODE))) == 1 {
+	if c.Sign() == -1 || c.Cmp(maxSystemOp) == 1 {
 		if d, ok := userDict[c.Int64()]; ok {
-			queue = append(d, queue...)
+			queue.UnshiftArray(d)
 			return
 		} else {
 			panic(fmt.Sprintf("Unknown user opcode %d", c))
@@ -368,11 +368,11 @@ var KET = NewInt(OP_KET)
 var depth = 0
 
 func Run(bc []*Int) {
-	queue = bc
+	queue = NewFastQueue(len(bc))
+	queue.UnshiftArray(bc)
 
-	for len(queue) > 0 {
-		op := queue[0]
-		queue = queue[1:]
+	for queue.Len() > 0 {
+		op := queue.Shift()
 
 		if op.Cmp(DEF) == 0 || op.Cmp(KET) == 0 {
 			depth--
@@ -382,9 +382,8 @@ func Run(bc []*Int) {
 			push(clone(op))
 		}
 
-		if op.Cmp(NewInt(0)) == 0 {
-			push(clone(queue[0]))
-			queue = queue[1:]
+		if op.Sign() == 0 {
+			push(clone(queue.Shift()))
 		} else if depth < 1 {
 			call(op)
 		}
@@ -409,3 +408,5 @@ func FromBase64(s string) []*Int {
 
 	return bigints
 }
+
+

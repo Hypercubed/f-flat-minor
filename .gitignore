@@ -22,6 +22,7 @@ rust/target/*
 __pycache__/
 .kilo
 .kiro
+.agent
 
 openspec
 

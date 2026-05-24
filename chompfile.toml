@@ -169,15 +169,15 @@ serial = true
 run = '''
   hyperfine ${BENCH_OUT:+--export-markdown "$BENCH_OUT"} --warmup 3\
     --sort mean-time\
+    "./shell/ff run --run go $MATCH" -n go\
+    "./shell/ff run --run cpp $MATCH" -n cpp\
     "./shell/ff run --run bun $MATCH" -n bun\
     "./shell/ff run --run node $MATCH" -n node\
     "./shell/ff run --run deno $MATCH" -n deno\
-    "./shell/ff run --run go $MATCH" -n go\
     "./shell/ff run --run dart $MATCH" -n dart\
     "./shell/ff run --run python $MATCH" -n python\
     "./shell/ff run --run ruby $MATCH" -n ruby\
-    "./shell/ff run --run racket $MATCH" -n racket\
-    "./shell/ff run --run cpp $MATCH" -n cpp
+    "./shell/ff run --run racket $MATCH" -n racket
 '''
 
 [[task]]
@@ -195,10 +195,10 @@ serial = true
 run = '''
   hyperfine ${BENCH_OUT:+--export-markdown "$BENCH_OUT"} --warmup 3\
     --sort mean-time\
+    "./shell/ff compile --compiler go $MATCH" -n go\
     "./shell/ff compile --compiler bun $MATCH" -n bun\
     "./shell/ff compile --compiler node $MATCH" -n node\
     "./shell/ff compile --compiler deno $MATCH" -n deno\
-    "./shell/ff compile --compiler go $MATCH" -n go\
     "./shell/ff compile --compiler racket $MATCH" -n racket
 '''
 
@@ -215,13 +215,29 @@ deps = [
 validation = 'none'
 serial = true
 run = '''
+  TARGET="$MATCH"
+  case "$TARGET" in
+    *.ffb) ;;
+    *)
+      mkdir -p build/tmp
+      TEMP_DIR=$(mktemp -d build/tmp/bench-XXXXXX)
+      trap 'rm -rf "$TEMP_DIR"' EXIT
+      BASE=$(basename "$TARGET")
+      STEM="${BASE%.*}"
+      TEMP_FFB="$TEMP_DIR/$STEM.ffb"
+      echo "Compiling $TARGET to $TEMP_FFB..."
+      ./shell/ff compile "$TARGET" > "$TEMP_FFB"
+      TARGET="$TEMP_FFB"
+      ;;
+  esac
+
   hyperfine ${BENCH_OUT:+--export-markdown "$BENCH_OUT"} --warmup 3\
     --sort mean-time\
-    "./shell/ff execute --run bun $MATCH" -n bun\
-    "./shell/ff execute --run node $MATCH" -n node\
-    "./shell/ff execute --run deno $MATCH" -n deno\
-    "./shell/ff execute --run go $MATCH" -n go\
-    "./shell/ff execute --run racket $MATCH" -n racket
+    "./shell/ff execute --run go $TARGET" -n go\
+    "./shell/ff execute --run bun $TARGET" -n bun\
+    "./shell/ff execute --run node $TARGET" -n node\
+    "./shell/ff execute --run deno $TARGET" -n deno\
+    "./shell/ff execute --run racket $TARGET" -n racket
 '''
 
 [[task]]
@@ -232,10 +248,10 @@ serial = true
 run = '''
   hyperfine ${BENCH_OUT:+--export-markdown "$BENCH_OUT"} --warmup 3\
     --sort mean-time\
+    "./shell/ff preprocess --pp go $MATCH" -n go\
     "./shell/ff preprocess --pp bun $MATCH" -n bun\
     "./shell/ff preprocess --pp node $MATCH" -n node\
-    "./shell/ff preprocess --pp deno $MATCH" -n deno\
-    "./shell/ff preprocess --pp go $MATCH" -n go
+    "./shell/ff preprocess --pp deno $MATCH" -n deno
 '''
 
 [[task]]

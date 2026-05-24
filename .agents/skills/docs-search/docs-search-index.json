@@ -1,7 +1,7 @@
 {
   "version": 2,
   "docs_root": ".agents/docs",
-  "generated_at": "2026-05-23T17:41:27Z",
+  "generated_at": "2026-05-24T01:10:34Z",
   "sections": [
     {
       "id": "MAINTENANCE",
@@ -27,6 +27,15 @@
       "description": "Unify low-level compiler routing and bytecode execution wrappers under common shell scripts to ensure robust runtime routing and maintain conceptual parity with engine VMs.",
       "path": ".agents/docs/decisions/cli-compilation-execution-routing.md",
       "docs_path": "decisions/cli-compilation-execution-routing.md",
+      "folder": "decisions",
+      "kind": "decision"
+    },
+    {
+      "id": "go-vm-instruction-queue-optimization",
+      "title": "Optimize Go VM instruction queue with circular ring buffer",
+      "description": "Replacing the slide-copying slice implementation with a custom ring buffer deque (FastQueue) in the Go VM instruction queue to improve performance from O(N^2) to amortized O(N), along with micro-optimizations to eliminate heap allocations in the VM hot loop.",
+      "path": ".agents/docs/decisions/go-vm-instruction-queue-optimization.md",
+      "docs_path": "decisions/go-vm-instruction-queue-optimization.md",
       "folder": "decisions",
       "kind": "decision"
     },
@@ -69,7 +78,7 @@
     {
       "id": "log",
       "title": "Knowledge Maintenance Log",
-      "description": "Outcome: updated Files: `.agents/AGENTS.md`; `.agents/docs/decisions/runchunk-fast-path.md`; `.agents/docs/troubleshooting/benchmark-profiling-stuck-processes.md` Accepted: reminder added to avoid `browser_subagent` for local filesystem workflows; decision documented to maintain separate fast/instrumented runChunk paths; troubleshooting note added for stray benchmark processes skewing performance results. Rejected: none Notes: task_id `runchunk-fast-path` from session closeout.",
+      "description": "Outcome: updated Files: `.agents/docs/decisions/go-vm-instruction-queue-optimization.md`; `.agents/docs/decisions/index.md` Accepted: documented decision to optimize the Go VM instruction queue using a custom circular ring buffer deque (`FastQueue`) and related zero-allocation VM loop micro-optimizations. Rejected: none Notes: task_id `t-20260524-010100-optimize-go-queue` distilled from `.agents/sessions/20260524-010100-optimize-go-queue/`.",
       "path": ".agents/docs/log.md",
       "docs_path": "log.md",
       "folder": "",
