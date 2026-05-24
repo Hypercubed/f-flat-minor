@@ -118,7 +118,7 @@ mpz_int ipow(const mpz_int &base, const mpz_int &exp)
   return ipow_internal(base, exp);
 }
 
-void defineUser(const int &op, const Definition def)
+void defineUser(const int &op, const Definition& def)
 {
   if (defs.count(op))
   {
@@ -132,13 +132,13 @@ void enqueueOp(mpz_int op)
   int op_int = op.convert_to<int>();
   if (op_int < 256)
   {
-    if (symbol_names.find(op_int) != symbol_names.end())
+    if (op_int >= 0)
     {
-      queue.push_front(symbol_names[op_int]);
+      callSystem(op_int);
     }
     else
     {
-      throw std::logic_error("Unknown system opcode: " + std::to_string(op_int));
+      throw std::logic_error("Unknown opcode: " + std::to_string(op_int));
     }
   }
   else
@@ -228,12 +228,29 @@ void callSystem(int op)
   case op_mark:
   {
     Definition def;
-    while (!queue.empty() && queue.front() != ";")
+    while (!queue.empty())
     {
-      def.push(queue.front());
+      mpz_int v = queue.front();
       queue.pop_front();
+      if (v == mpz_int(0))
+      {
+        // literal-push pair: consume both values without checking for op_def
+        def.push_back(v);
+        if (!queue.empty())
+        {
+          def.push_back(queue.front());
+          queue.pop_front();
+        }
+      }
+      else if (v == mpz_int(static_cast<int>(op_def)))
+      {
+        break; // found the terminating ;
+      }
+      else
+      {
+        def.push_back(v);
+      }
     }
-    queue.pop_front();
     auto n = POP();
     defineUser(n.convert_to<int>(), def);
     break;
@@ -242,17 +259,26 @@ void callSystem(int op)
   {
     int depth = 1;
     Definition def;
-    while (!queue.empty() && depth > 0) /* TODO: Handle nested brackets */
+    while (!queue.empty() && depth > 0)
     {
-      std::string str = queue.front();
+      mpz_int v = queue.front();
       queue.pop_front();
-
-      if (str == "[")
-        depth++;
-      else if (str == "]")
-        depth--;
-      if (depth > 0)
-        def.push(str);
+      if (v == mpz_int(0))
+      {
+        // literal-push pair: consume both values without checking for op_bra/op_ket
+        def.push_back(v);
+        if (!queue.empty())
+        {
+          def.push_back(queue.front());
+          queue.pop_front();
+        }
+      }
+      else
+      {
+        if (v == mpz_int(static_cast<int>(op_bra))) depth++;
+        else if (v == mpz_int(static_cast<int>(op_ket))) depth--;
+        if (depth > 0) def.push_back(v);
+      }
     }
     auto n = getSymbol();
     defineUser(n, def);
@@ -416,9 +442,10 @@ void callSystem(int op)
     auto y = POP();  // top
     auto x = POP();  // below top
     Definition def;
-    def.push(x.convert_to<std::string>());   // pushed first (bottom)
-    def.push(y.convert_to<std::string>());   // pushed second (middle)
-    def.push(std::string("eval"));           // pushed third (top)
+    def.push_back(mpz_int(0)); def.push_back(x);  // push x
+    if (y != 0) {
+      def.push_back(y);  // append y directly
+    }
     auto n = getSymbol();
     defineUser(n, def);
     stack.push(mpz_int(n));
@@ -427,21 +454,14 @@ void callSystem(int op)
   }
 }
 
-void enqueue_front(Definition q)
+void enqueue_front(const Definition& def)
 {
-  while (!q.empty())
-  {
-    queue.push_front(q.top());
-    q.pop();
-  }
+  queue.insert(queue.begin(), def.begin(), def.end());
 }
 
-void enqueue_back(std::deque<std::string> q)
+void enqueue_back(const Queue& q)
 {
-  for (auto& s : q)
-  {
-    queue.push_back(s);
-  }
+  queue.insert(queue.end(), q.begin(), q.end());
 }
 
 bool tryParseNumber(const std::string& s, mpz_int& result)
@@ -601,66 +621,34 @@ void run()
 {
   while (!queue.empty())
   {
-    auto str = queue.front();
+    mpz_int v = queue.front();
     queue.pop_front();
 
-    mpz_int parsed_num;
-    if (tryParseNumber(str, parsed_num))
+    if (v == 0)
     {
-      stack.push(parsed_num);
+      // literal push: next value is the integer to push
+      stack.push(queue.front());
+      queue.pop_front();
+    }
+    else if (v > 0 && v < 256)
+    {
+      callSystem(v.convert_to<int>());
+    }
+    else if (v >= 256)
+    {
+      auto it = defs.find(v.convert_to<int>());
+      if (it == defs.end())
+      {
+        std::cerr << "error: undefined opcode " << v << "\n";
+        std::exit(1);
+      }
+      // prepend definition to front of queue
+      queue.insert(queue.begin(), it->second.begin(), it->second.end());
     }
     else
     {
-      const std::string lower_str = boost::algorithm::to_lower_copy(str);
-
-      if (str[0] == '.' && str.size() > 1)
-      {
-        // nop
-      }
-      else if (str[0] == '[' && str.back() == ']')
-      {
-        stack.push(getSymbol(str.substr(1, str.size() - 2)));
-      }
-      else if (str[0] == '\'' && str.back() == '\'')
-      {
-        str = unescape(str.substr(1, str.size() - 2));
-        for (char &c : str)
-        {
-          stack.push(c);
-        }
-      }
-      else if (str.back() == ':' && str.size() > 1)
-      {
-        stack.push(getSymbol(str.substr(0, str.size() - 1)));
-        queue.push_front(":");
-      }
-      else if (str == "/*")
-      {
-        bool closed = false;
-        while (!queue.empty())
-        {
-          str = queue.front();
-          queue.pop_front();
-          if (str == "*/")
-          {
-            closed = true;
-            break;
-          }
-        }
-        if (!closed)
-        {
-          std::cerr << "error: unclosed comment\n";
-          std::exit(1);
-        }
-      }
-      else if (symbols.find(lower_str) != symbols.end())
-      {
-        callOp(symbols[lower_str]);
-      }
-      else
-      {
-        throw std::invalid_argument("undefined call: " + str);
-      }
+      // negative: literal integer
+      stack.push(v);
     }
   }
 }

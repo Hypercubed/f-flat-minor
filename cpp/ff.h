@@ -18,16 +18,14 @@
 using namespace boost::multiprecision;
 
 using Stack = std::stack<mpz_int>;
-using Queue = std::deque<std::string>;
-using Definition = std::stack<std::string>;
+using Queue = std::deque<mpz_int>;
+using Definition = std::deque<mpz_int>;
 
 // Global VM state (defined in ff.cpp)
 extern Stack stack;
 extern Queue queue;
 extern Stack rstack;
 extern std::deque<mpz_int> stash_queue;
-extern std::map<std::string, int> symbols;
-extern std::map<int, std::string> symbol_names;
 extern std::map<int, Definition> defs;
 extern int nextOp;
 
@@ -90,9 +88,9 @@ void run();
 // Helper functions
 int getSymbol(const std::string& str);
 int getSymbol();
-void defineUser(const int& op, const Definition def);
-void enqueue_front(Definition q);
-void enqueue_back(std::deque<std::string> q);
+void defineUser(const int& op, const Definition& def);
+void enqueue_front(const Definition& def);
+void enqueue_back(const Queue& q);
 void enqueueOp(mpz_int op);
 
 // Numeric parsing
