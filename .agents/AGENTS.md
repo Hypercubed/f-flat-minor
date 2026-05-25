@@ -11,7 +11,7 @@ f-flat-minor. It should stay concise and organized by role:
 - `rules/` contains normative repo and authoring constraints.
 - `playbooks/` contains durable multi-step workflows.
 - `skills/` contains reusable task workflows.
-- `docs/` contains maintenance policy, durable indexes, decisions, troubleshooting, maintainer plans (`docs/plans/`), and the knowledge log.
+- `docs/` contains maintenance policy, durable indexes, decisions, troubleshooting, steering documents (`docs/steering/`), maintainer plans (`docs/plans/`), and the knowledge log.
 - `sessions/` contains local task-closeout bundles and is gitignored except for its README.
 
 ## What Belongs Here

@@ -12,6 +12,7 @@ This directory contains shell script helpers to simplify running, preprocessing,
   - [`ff execute` / `ff-execute.sh`](#ff-execute--ff-executesh)
   - [`ff interpret` / `ff-interpret.sh`](#ff-interpret--ff-interpretsh)
   - [`ff preprocess` / `ff-preprocess.sh`](#ff-preprocess--ff-preprocesssh)
+  - [`ff pack` / `ff-pack.sh`](#ff-pack--ff-packsh)
   - [Common Utilities (`_ff-common.sh`)](#common-utilities-_ff-commonsh)
 - [Troubleshooting & Environment Variables](#troubleshooting--environment-variables)
 
@@ -60,6 +61,13 @@ Preprocesses (if necessary or requested) and executes an f-flat-minor program.
 
 - `.ff` source files are executed directly by the selected runner unless `--pp` is explicitly set.
 - `.ffp` files (preprocessor sources) are always preprocessed first using the selected/default preprocessor, and the resulting intermediate code is then executed.
+
+> [!NOTE]
+> `ff run` and `ff preprocess` only accept physical files, not standard input (`-`). This is because macro expansion and import resolution (e.g. `%import "./other.ff"`) require a physical file path to determine relative directory locations.
+>
+> If you have already-preprocessed code and want to pipe it via standard input, use the low-level interpreter/executor commands:
+> - `cat source.ff | ff interpret -`
+> - `cat bytecode.ffb | ff execute -`
 
 #### Usage
 ```bash
@@ -200,6 +208,38 @@ Resolves macros, imports, and other preprocessor directives in a `.ff` or `.ffp`
 
 # Preprocess with Deno
 ./shell/ff preprocess --pp deno ff/hello.ffp > expanded.ff
+```
+
+---
+
+### `ff pack` / `ff-pack.sh`
+
+Packs compiled f-flat-minor bytecode (`.ffb`) into a self-executing binary by prepending a configurable execution engine (defaulting to C++).
+
+#### Usage
+```bash
+./shell/ff-pack.sh [--quiet] [--engine <engine>] <file.ffb|-> [output_file]
+# Or via the unified entry point:
+./shell/ff pack [--quiet] [--engine <engine>] <file.ffb|-> [output_file]
+```
+
+#### Flags
+- `--engine <engine>` (or `--run <engine>`): The execution engine to prepend (default: `cpp`). Options: `cpp`, `go`.
+- `<file.ffb|->`: The input `.ffb` bytecode file, or `-` to read bytecode from `stdin`.
+- `[output_file]`: Optional path where the output self-executing binary will be saved and made executable. If not specified, the output is written to `stdout`.
+- `--quiet`: Disables execution tracing output.
+- `--help` / `-h`: Display command usage details.
+
+#### Examples
+```bash
+# Pack a bytecode file into a self-executing binary using C++ (default)
+./shell/ff pack ff/example.ffb myapp
+
+# Pack using the Go execution engine
+./shell/ff pack --engine go ff/example.ffb myapp-go
+
+# Pack from stdin and redirect to output
+cat ff/example.ffb | ./shell/ff pack - > myapp
 ```
 
 ---

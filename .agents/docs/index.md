@@ -37,6 +37,7 @@
 - `.agents/docs/decisions/`: one markdown file per accepted architectural or policy decision; [index](decisions/index.md).
 - `.agents/docs/troubleshooting/`: one markdown file per recurring failure pattern; [index](troubleshooting/index.md).
 - `.agents/docs/plans/`: maintainer initiatives; [active index](plans/index.md), [archive](plans/archive/index.md).
+- `.agents/docs/steering/`: steering documents (product overview, project structure, tech stack); [index](steering/index.md).
 - `.agents/docs/log.md`: append-only knowledge maintenance log (see Logging policy in `MAINTENANCE.md`).
 
 ## Temporary Evidence

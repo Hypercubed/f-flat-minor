@@ -1,7 +1,7 @@
 {
   "version": 2,
   "docs_root": ".agents/docs",
-  "generated_at": "2026-05-24T05:04:29Z",
+  "generated_at": "2026-05-25T02:44:10Z",
   "sections": [
     {
       "id": "MAINTENANCE",
@@ -416,6 +416,42 @@
       "docs_path": "plans/web-playground-optimize-timing-diagnosis.md",
       "folder": "plans",
       "kind": "initiative"
+    },
+    {
+      "id": "steering-index",
+      "title": "Steering index",
+      "description": "Each topic is a sibling markdown file (except this index). New entries: follow [Entry shape](../MAINTENANCE.md#entry-shape) in `MAINTENANCE.md`, then add a row below.",
+      "path": ".agents/docs/steering/index.md",
+      "docs_path": "steering/index.md",
+      "folder": "steering",
+      "kind": "steering"
+    },
+    {
+      "id": "product",
+      "title": "Product Overview",
+      "description": "Foundational concepts, core properties, language tiers, and semantics of the f-flat-minor stack-oriented programming language.",
+      "path": ".agents/docs/steering/product.md",
+      "docs_path": "steering/product.md",
+      "folder": "steering",
+      "kind": "steering"
+    },
+    {
+      "id": "structure",
+      "title": "Project Structure",
+      "description": "A comprehensive guide to the root directory layout, compiler, standard library, and per-runtime workspace layout.",
+      "path": ".agents/docs/steering/structure.md",
+      "docs_path": "steering/structure.md",
+      "folder": "steering",
+      "kind": "steering"
+    },
+    {
+      "id": "tech",
+      "title": "Tech Stack & Build System",
+      "description": "Details on toolchain management with mise, the Chomp build system, language execution runtimes, testing, and formatting.",
+      "path": ".agents/docs/steering/tech.md",
+      "docs_path": "steering/tech.md",
+      "folder": "steering",
+      "kind": "steering"
     },
     {
       "id": "benchmark-profiling-stuck-processes",

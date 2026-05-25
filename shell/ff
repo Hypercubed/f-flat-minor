@@ -36,27 +36,47 @@ if [ "$#" -lt 1 ]; then
   exit 1
 fi
 
-command="$1"
-shift
+first_arg="$1"
 
-case "$command" in
+case "$first_arg" in
   --help|-h|help)
     usage
     exit 0
     ;;
 esac
 
-helper="$SCRIPT_DIR/ff-$command.sh"
+helper="$SCRIPT_DIR/ff-$first_arg.sh"
 
-if [ ! -f "$helper" ]; then
-  printf 'Unknown command: %s\n\n' "$command" >&2
-  usage
-  exit 1
+if [ -f "$helper" ]; then
+  if [ ! -x "$helper" ]; then
+    printf 'Subcommand is not executable: %s\n' "$helper" >&2
+    exit 1
+  fi
+  shift
+  exec "$helper" "$@"
 fi
 
-if [ ! -x "$helper" ]; then
-  printf 'Subcommand is not executable: %s\n' "$helper" >&2
-  exit 1
+# Not a known helper command. Check if we can guess the command based on arguments.
+guessed_command=""
+for arg in "$@"; do
+  case "$arg" in
+    *.ff|*.ffp)
+      guessed_command="run"
+      break
+      ;;
+    *.ffb)
+      guessed_command="execute"
+      break
+      ;;
+  esac
+done
+
+if [ -n "$guessed_command" ]; then
+  exec "$SCRIPT_DIR/ff-$guessed_command.sh" "$@"
 fi
 
-exec "$helper" "$@"
+# Could not guess, print unknown command error
+printf 'Unknown command: %s\n\n' "$first_arg" >&2
+usage
+exit 1
+

@@ -12,7 +12,7 @@ f-flat-minor (F♭m) is a minimal stack-oriented programming language. It featur
 
 - `AGENTS.md` — repo entry point and navigation
 - `.agents/AGENTS.md` — concise agent knowledge-layer entry point
-- `.agents/docs/` — durable decisions, troubleshooting, index, and maintenance log
+- `.agents/docs/` — durable decisions, troubleshooting, steering documents, index, and maintenance log
 - `.agents/rules/` — normative repo and authoring constraints
 - `.agents/playbooks/` — concise step-by-step operational workflows
 - `.agents/skills/` — reusable task-specific agent workflows

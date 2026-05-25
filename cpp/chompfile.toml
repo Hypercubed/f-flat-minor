@@ -53,13 +53,36 @@ template = 'cmp'
 cmp = '../ff/example.out'
 
 [[task]]
+name = 'ffb-stdin'
+dep = 'build:execute'
+run = 'cat ../ff/example.ffb | ./build/execute -'
+template = 'cmp'
+[task.template-options]
+cmp = '../ff/example.out'
+
+[[task]]
+name = 'ffb-self'
+dep = 'build:execute'
+run = '''
+  cp ./build/execute /tmp/ff-self-exec
+  cat ../ff/example.ffb >> /tmp/ff-self-exec
+  /tmp/ff-self-exec
+  rm -f /tmp/ff-self-exec
+'''
+template = 'cmp'
+[task.template-options]
+cmp = '../ff/example.out'
+
+[[task]]
 name = 'test'
 deps = [
     ':build',
     ':interpret',
     ':test:out',
     ':test:tap',
-    ':ffb'
+    ':ffb',
+    ':ffb-stdin',
+    ':ffb-self'
 ]
 serial = true
 display = 'none'
