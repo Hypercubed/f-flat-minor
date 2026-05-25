@@ -224,7 +224,7 @@ Packs compiled f-flat-minor bytecode (`.ffb`) into a self-executing binary by pr
 ```
 
 #### Flags
-- `--engine <engine>` (or `--run <engine>`): The execution engine to prepend (default: `cpp`). Options: `cpp`, `go`.
+- `--engine <engine>` (or `--run <engine>`): The execution engine to prepend (default: `cpp`). Options: `cpp`.
 - `<file.ffb|->`: The input `.ffb` bytecode file, or `-` to read bytecode from `stdin`.
 - `[output_file]`: Optional path where the output self-executing binary will be saved and made executable. If not specified, the output is written to `stdout`.
 - `--quiet`: Disables execution tracing output.
@@ -235,8 +235,8 @@ Packs compiled f-flat-minor bytecode (`.ffb`) into a self-executing binary by pr
 # Pack a bytecode file into a self-executing binary using C++ (default)
 ./shell/ff pack ff/example.ffb myapp
 
-# Pack using the Go execution engine
-./shell/ff pack --engine go ff/example.ffb myapp-go
+# Pack using the C++ execution engine explicitly
+./shell/ff pack --engine cpp ff/example.ffb myapp-cpp
 
 # Pack from stdin and redirect to output
 cat ff/example.ffb | ./shell/ff pack - > myapp

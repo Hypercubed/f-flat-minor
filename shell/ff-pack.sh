@@ -8,29 +8,36 @@ DEFAULT_ENGINE="cpp"
 usage() {
   cat <<'EOF' >&2
 Usage:
-  ./shell/ff-pack.sh [--quiet] [--engine <engine>] <file.ffb|-> [output_file]
+  ./shell/ff-pack.sh [--quiet] [--engine <engine>] [--compiler <compiler>] [--pp <preprocessor>] <file.ff|file.ffp|file.ffb|-> [output_file]
 
-Pack compiled f-flat-minor bytecode (.ffb) into a self-executing binary
-by prepending the specified execution engine.
+Pack f-flat-minor bytecode into a self-executing binary. If a source file (.ff or .ffp)
+is provided, it is first compiled to bytecode (.ffb) using shell/ff-compile.sh.
 
 If output_file is specified, the packed binary is written there and made
 executable. Otherwise, the output is written to stdout.
 
 Examples:
   ./shell/ff-pack.sh ff/example.ffb myapp
-  ./shell/ff-pack.sh --engine go ff/example.ffb myapp
-  ./shell/ff-pack.sh ff/example.ffb > myapp
+  ./shell/ff-pack.sh ff/example.ff myapp
+  ./shell/ff-pack.sh --compiler go ff/example.ffp myapp
+  ./shell/ff-pack.sh --engine cpp ff/example.ffb myapp
   cat ff/example.ffb | ./shell/ff-pack.sh - myapp
 
 Options:
   --engine, --run <engine>   The execution engine to prepend (default: cpp).
-                             Supported: cpp, go
+                             Supported: cpp
+  --compiler <compiler>      The compiler engine to use for .ff or .ffp files (default: deno).
+                             Supported: deno, node, bun, go, racket
+  --pp <preprocessor>        The preprocessor engine to use for .ffp files (default: bun).
+                             Supported: go, deno, bun, node
   --quiet                    Disable command tracing (sets FF_SHELL_TRACE=0).
   --help, -h                 Show this help message.
 EOF
 }
 
 engine="$DEFAULT_ENGINE"
+compiler=""
+preprocessor=""
 file=""
 output_file=""
 
@@ -48,6 +55,16 @@ while [ "$#" -gt 0 ]; do
     --engine|--run)
       [ "$#" -ge 2 ] || die "Missing value for $1"
       engine="$2"
+      shift 2
+      ;;
+    --compiler)
+      [ "$#" -ge 2 ] || die "Missing value for --compiler"
+      compiler="$2"
+      shift 2
+      ;;
+    --pp)
+      [ "$#" -ge 2 ] || die "Missing value for --pp"
+      preprocessor="$2"
       shift 2
       ;;
     --help|-h)
@@ -94,26 +111,56 @@ done
 if [ "$file" != "-" ]; then
   [ -f "$file" ] || die "Input file not found: $file"
   case "$file" in
-    *.ffb) ;;
+    *.ffb|*.ff|*.ffp) ;;
     *)
       usage
-      die "Expected a .ffb input file or '-', got: $file"
+      die "Expected a .ffb, .ff, or .ffp input file, or '-', got: $file"
       ;;
   esac
 fi
+
+if [ -n "$compiler" ]; then
+  is_compiler "$compiler" || die "Unknown compiler preset: $compiler"
+fi
+if [ -n "$preprocessor" ]; then
+  is_preprocessor "$preprocessor" || die "Unknown preprocessor preset: $preprocessor"
+fi
+
+temp_ffb=""
+cleanup() {
+  if [ -n "$temp_ffb" ] && [ -f "$temp_ffb" ]; then
+    rm -f "$temp_ffb"
+  fi
+}
+trap cleanup EXIT
+
+case "$file" in
+  *.ff|*.ffp)
+    temp_ffb="$(mktemp)"
+    compile_args=()
+    if [ "${FF_SHELL_TRACE:-1}" = "0" ]; then
+      compile_args+=("--quiet")
+    fi
+    if [ -n "$compiler" ]; then
+      compile_args+=("--compiler" "$compiler")
+    fi
+    if [ -n "$preprocessor" ]; then
+      compile_args+=("--pp" "$preprocessor")
+    fi
+    print_command "$REPO_ROOT/shell/ff-compile.sh" "${compile_args[@]}" "$file" ">" "$temp_ffb"
+    "$REPO_ROOT/shell/ff-compile.sh" "${compile_args[@]}" "$file" > "$temp_ffb" || exit 1
+    file="$temp_ffb"
+    ;;
+esac
 
 case "$engine" in
   cpp)
     EXECUTOR_BIN="$REPO_ROOT/cpp/build/execute"
     ENGINE_NAME="C++"
     ;;
-  go)
-    EXECUTOR_BIN="$REPO_ROOT/go/build/execute"
-    ENGINE_NAME="Go"
-    ;;
   *)
     usage
-    die "Engine '$engine' is not supported for packing. Currently supported: cpp, go"
+    die "Engine '$engine' is not supported for packing. Currently supported: cpp"
     ;;
 esac
 

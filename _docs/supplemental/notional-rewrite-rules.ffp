@@ -1,0 +1,113 @@
+/* ========================================================================= */
+/* NOTIONAL REWRITE RULES FOR F-FLAT-MINOR (F♭m⁺)                            */
+/* ========================================================================= */
+/* This file serves as a reference of F♭m compiler optimization rules,       */
+/* expressed entirely as standard `.rewrite` compiler directives.            */
+/* ========================================================================= */
+
+/* ------------------------------------------------------------------------- */
+/* 1. NULL SEQUENCES / DEAD INSTRUCTION ELIMINATION                          */
+/* ------------------------------------------------------------------------- */
+
+/* Swap Swap is a no-op */
+.rewrite [ swap swap ] [ ]
+
+/* Dup Drop is a no-op */
+.rewrite [ dup drop ] [ ]
+
+/* Pushing a value and immediately dropping it is a no-op */
+.rewrite [ _a drop ] [ ]
+
+/* Moving a value to return queue and pulling it back is a no-op */
+.rewrite [ q< q> ] [ ]
+
+/* Logical Double Negation is a no-op */
+.rewrite [ ~ ~ ] [ ]
+
+/* Evaluating literal 0 (eval) is a no-op */
+.rewrite [ 0 eval ] [ ]
+
+
+/* ------------------------------------------------------------------------- */
+/* 2. CONSTANT FOLDING                                                       */
+/* ------------------------------------------------------------------------- */
+
+/* Basic arithmetic constant folding */
+.rewrite [ _a _b + ] [ _a _b + ]
+.rewrite [ _a _b - ] [ _a _b - ]
+.rewrite [ _a _b * ] [ _a _b * ]
+.rewrite [ _a _b / ] [ _a _b / ]
+.rewrite [ _a _b % ] [ _a _b % ]
+.rewrite [ _a _b ^ ] [ _a _b ^ ]
+
+/* Bitwise and logical constant folding */
+.rewrite [ _a _b << ] [ _a _b << ]
+.rewrite [ _a _b >> ] [ _a _b >> ]
+.rewrite [ _a _b & ] [ _a _b & ]
+.rewrite [ _a _b | ] [ _a _b | ]
+.rewrite [ _a ~ ] [ _a ~ ]
+
+/* Comparisons constant folding */
+.rewrite [ _a _b < ] [ _a _b < ]
+.rewrite [ _a _b = ] [ _a _b = ]
+.rewrite [ _a _b > ] [ _a _b > ]
+
+
+/* ------------------------------------------------------------------------- */
+/* 3. ALGEBRAIC SIMPLIFICATIONS & IDENTITIES                                */
+/* ------------------------------------------------------------------------- */
+
+/* Identity addition and subtraction */
+.rewrite [ _a 0 + ] [ _a ]
+.rewrite [ _a 0 - ] [ _a ]
+
+/* Identity multiplication and division */
+.rewrite [ _a 1 * ] [ _a ]
+.rewrite [ _a 1 / ] [ _a ]
+
+/* Swap simplification (leveraging commutativity) */
+.rewrite [ swap + ] [ + ]
+.rewrite [ swap * ] [ * ]
+.rewrite [ swap & ] [ & ]
+.rewrite [ swap | ] [ | ]
+.rewrite [ swap = ] [ = ]
+
+
+/* ------------------------------------------------------------------------- */
+/* 4. STRENGTH REDUCTION                                                     */
+/* ------------------------------------------------------------------------- */
+
+/* ========================================================================= */
+/* SOLUTION 1: Compiler-Native Predicate Wildcards (The Robust Matcher)     */
+/* ========================================================================= */
+/* The compiler's pattern matcher natively recognizes '_pow2' as a special   */
+/* wildcard matching only literal powers of 2. The host compiler calculates */
+/* the log2 natively during replacement.                                    */
+/* ========================================================================= */
+.rewrite [ _a _pow2 * ] [ _a _pow2_log2 << ]
+
+/* ========================================================================= */
+/* SOLUTION 2: Pure F♭m Core-Word Evaluation (The Bootstrapped VM Path)      */
+/* ========================================================================= */
+/* Relies on standard F♭m core primitives. Constant folding is performed     */
+/* by executing a recursive 'log2' function inside the compile-time VM.      */
+/*                                                                           */
+/* is-power-of-2 expression: dup dup 1 - & 0 = swap 0 > &                    */
+/* recursive log2 definition: [ dup 1 > [ 1 >> log2 1 + ] [ drop 0 ] ? ]     */
+/* ========================================================================= */
+.rewrite [ _a _b * ] [ _b dup dup 1 - & 0 = swap 0 > & [ _a _b log2 << ] [ _a _b * ] ? eval ]
+
+
+/* ------------------------------------------------------------------------- */
+/* 5. FLOWS-OF-CONTROL & CONDITIONAL COLLAPSE                                */
+/* ------------------------------------------------------------------------- */
+
+/* Indirect evaluations collapsed to direct calls */
+.rewrite [ [ _a ] eval ] [ _a ]
+
+/* Unreachable branch elimination (using core primitive '?') */
+.rewrite [ 0 [ _a ] ? ] [ ]
+
+/* Unconditional branch inlining (using core primitive '?') */
+.rewrite [ 1 [ _a ] ? ] [ _a ]
+
