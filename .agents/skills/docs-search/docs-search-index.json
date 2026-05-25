@@ -1,7 +1,7 @@
 {
   "version": 2,
   "docs_root": ".agents/docs",
-  "generated_at": "2026-05-25T02:44:10Z",
+  "generated_at": "2026-05-25T02:56:12Z",
   "sections": [
     {
       "id": "MAINTENANCE",
@@ -24,7 +24,7 @@
     {
       "id": "cli-compilation-execution-routing",
       "title": "Unify compilation and execution routing under shell helper scripts",
-      "description": "Unify low-level compiler routing and bytecode execution wrappers under common shell scripts to ensure robust runtime routing and maintain conceptual parity with engine VMs.",
+      "description": "Unify low-level compiler routing, bytecode execution, and binary packaging under common shell scripts to ensure robust runtime routing and maintain conceptual parity with engine VMs.",
       "path": ".agents/docs/decisions/cli-compilation-execution-routing.md",
       "docs_path": "decisions/cli-compilation-execution-routing.md",
       "folder": "decisions",
@@ -78,7 +78,7 @@
     {
       "id": "log",
       "title": "Knowledge Maintenance Log",
-      "description": "Outcome: updated Files: `.agents/docs/troubleshooting/repo-tool-resolution.md`; `.agents/playbooks/test-and-dev-workflows.md` Accepted: troubleshooting guide for `mise exec` hanging in offline/sandboxed/network-restricted environments with `MISE_OFFLINE=1` resolution; updated test-and-dev playbook environment notes. Rejected: none Notes: task_id `t-20260523-230300-cpp-bytecode-final` distilled from `.agents/sessions/20260523-230300-cpp-bytecode-final/`.",
+      "description": "Outcome: updated Files: `.agents/docs/decisions/cli-compilation-execution-routing.md`; `.agents/docs/troubleshooting/index.md`; `.agents/docs/troubleshooting/cpp-vm-recursion-stack-overflow.md`; `.agents/docs/troubleshooting/vm-instruction-queue-feedback-corruption.md`; `.agents/docs/troubleshooting/wsl-interop-ape-executable-intercept.md` Accepted: documented dynamic subcommand dispatch of `shell/ff` CLI wrapper and addition of `ff pack` command; troubleshooting entry for C++ VM stack overflow ",
       "path": ".agents/docs/log.md",
       "docs_path": "log.md",
       "folder": "",
@@ -481,6 +481,15 @@
       "kind": "troubleshooting"
     },
     {
+      "id": "cpp-vm-recursion-stack-overflow",
+      "title": "C++ VM recursion stack overflow",
+      "description": "Symptom and fix for C++ stack frame accumulation leading to segmentation faults (stack overflow) under recursive F♭m word calls.",
+      "path": ".agents/docs/troubleshooting/cpp-vm-recursion-stack-overflow.md",
+      "docs_path": "troubleshooting/cpp-vm-recursion-stack-overflow.md",
+      "folder": "troubleshooting",
+      "kind": "troubleshooting"
+    },
+    {
       "id": "git-restore-loses-uncommitted-knowledge-edits",
       "title": "Git restore drops uncommitted edits under `.agents/`",
       "description": "Running git checkout or git restore from HEAD on paths under `.agents/` replaces working-tree files and discards uncommitted markdown edits done earlier in the session.",
@@ -522,6 +531,24 @@
       "description": "Automated DIV to SHIFTR and MOD to AND optimizations fail for negative numbers due to truncating vs floor division semantics.",
       "path": ".agents/docs/troubleshooting/strength-reduction-sign-sensitivity.md",
       "docs_path": "troubleshooting/strength-reduction-sign-sensitivity.md",
+      "folder": "troubleshooting",
+      "kind": "troubleshooting"
+    },
+    {
+      "id": "vm-instruction-queue-feedback-corruption",
+      "title": "VM instruction queue feedback and literal corruption",
+      "description": "Symptom and fix for stack underflows, token swallowing, and incorrect dynamic list evaluation in integer-dispatched VMs.",
+      "path": ".agents/docs/troubleshooting/vm-instruction-queue-feedback-corruption.md",
+      "docs_path": "troubleshooting/vm-instruction-queue-feedback-corruption.md",
+      "folder": "troubleshooting",
+      "kind": "troubleshooting"
+    },
+    {
+      "id": "wsl-interop-ape-executable-intercept",
+      "title": "WSL interop Cosmopolitan APE binary intercepts",
+      "description": "Symptom and fix for Cosmopolitan Actually Portable Executable (APE) binary execution failures inside WSL or sandbox environments.",
+      "path": ".agents/docs/troubleshooting/wsl-interop-ape-executable-intercept.md",
+      "docs_path": "troubleshooting/wsl-interop-ape-executable-intercept.md",
       "folder": "troubleshooting",
       "kind": "troubleshooting"
     },

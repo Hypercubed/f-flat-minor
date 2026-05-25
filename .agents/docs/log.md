@@ -1,5 +1,12 @@
 # Knowledge Maintenance Log
 
+### 2026-05-25 session-batch-distillation
+Outcome: updated
+Files: `.agents/docs/decisions/cli-compilation-execution-routing.md`; `.agents/docs/troubleshooting/index.md`; `.agents/docs/troubleshooting/cpp-vm-recursion-stack-overflow.md`; `.agents/docs/troubleshooting/vm-instruction-queue-feedback-corruption.md`; `.agents/docs/troubleshooting/wsl-interop-ape-executable-intercept.md`
+Accepted: documented dynamic subcommand dispatch of `shell/ff` CLI wrapper and addition of `ff pack` command; troubleshooting entry for C++ VM stack overflow from recursive `callOp` system opcode evaluation; troubleshooting entry for VM instruction queue feedback corruption and standard list construction in integer-dispatched VMs; troubleshooting entry for WSL interop conflicts with Cosmopolitan Compiler APE binaries.
+Rejected: none
+Notes: distilled five ready session bundles (`cpp-ffm-reach`, `t-20260523-220624-cpp-vm-segfault-fix`, `t-20260524-002306-recursion-fix`, `t-20260524-205107-cosmocc`, `t-20260525-025237-configurable-engine-sfx`) from `.agents/sessions/`.
+
 ### 2026-05-23 cpp-bytecode-final
 Outcome: updated
 Files: `.agents/docs/troubleshooting/repo-tool-resolution.md`; `.agents/playbooks/test-and-dev-workflows.md`
