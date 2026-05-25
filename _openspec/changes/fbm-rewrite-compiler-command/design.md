@@ -21,17 +21,25 @@ The `.rewrite` compiler directive enables **library-driven, declarative optimiza
 
 ## Decisions
 
-### Decision 1: Direct VM-Assisted Replacement Execution
+### Decision 0: JSON-Based Declarative Rules - **Phase A**
+To establish the declarative rule engine without modifying parser code or standard specifications in the first increment, the TS compiler's hardcoded optimization patterns and replacements SHALL be extracted into a standalone `rules.json` file:
+*   **How it works:** The `rules.json` file contains a JSON list of objects specifying the rule name, pattern sequence, optional guard sequence, and standard F♭m replacement sequence. At compiler initialization time, the TS `Optimizer` loads and parses this JSON file. When a pattern matches, the compiler delegates all evaluation, constant folding, and guard checks to a lightweight, isolated compile-time F♭m VM instance (`Engine`). The `Engine` executes the replacement code and the resultant stack values are harvested as the optimized IR output.
+*   **Rationale:** Reuses the existing F♭m VM to execute all compile-time constant folding and optimizations, providing a highly robust, correct, and unified evaluation engine from day one without writing custom math expression parsers.
+*   **Alternatives Considered:** Writing a custom JS mathematical evaluator. Rejected because it duplicates VM logic, lacks native arbitrary-precision arithmetic support, and delays VM-based replacement validation.
+
+### Decision 1: Direct VM-Assisted Replacement Execution - **Phase B**
 To evaluate the replacement quotation of a matched rewrite rule, the compiler SHALL spin up a lightweight, isolated instance of its own F♭m Virtual Machine at compile-time:
 *   **How it works:** Wildcard variables matched in the pattern are bound to their runtime literal values. Prior to executing the replacement, the compiler pushes these bound literals to the VM stack, loads the replacement quotation, and runs the VM. The resultant stack values are harvested as the optimized IR output.
 *   **Rationale:** Reuses the existing arbitrary-precision VM (`ff.cpp` / `engine.ts`) to handle all mathematical and logical evaluations. We write **zero** math expression parsers or evaluators inside the compiler.
 *   **Alternatives Considered:** Writing a custom mathematical expression evaluator in the compiler. Rejected because it duplicates the VM's existing math code and fails to support arbitrary precision out-of-the-box.
 
 ### Decision 2: Wildcard Identifiers via Symbol Pattern Prefix
-Wildcards in rewrite patterns are designated by any standard F♭m word identifier that begins with a leading underscore (e.g. `_a`, `_b`, `_c`).
-*   **How it works:** When parsing `.rewrite` pattern quotations, any symbol starting with `_` is registered as a wildcard placeholder rather than a static word call.
-*   **Rationale:** Under F♭m rules, word identifiers are arbitrary strings. An identifier starting with `_` is already parsed perfectly by the existing tokenizer and lexer as a standard symbol. This avoids **any** changes to the lexer or parser grammar.
-*   **Alternatives Considered:** Designing a new wildcard token format (e.g., `?a`, `$a`). Rejected because it requires altering the parser grammar and lexer rules across all implementation runtimes.
+Wildcard identifiers in rewrite patterns utilize a dual-stage roadmap:
+*   **Phase A (JSON Stopgap):** Wildcards are simple positional backreferences starting with a dollar sign (e.g., `$0` for the first matched wildcard in the pattern, `$1` for the second, etc.).
+    *   *Rationale:* Provides the absolute simplest, lowest-risk, and highest-performance binder implementation. Wildcards are collected in a simple linear array (`matched = [val0, val1]`), and substituted directly by index (`$0 -> matched[0]`).
+*   **Phase B (Source Directives):** Wildcards are named F♭m word identifiers starting with a leading question mark (e.g. `?a`, `?b`, `?c`).
+    *   *Rationale:* Since source-file `.rewrite` rules will be written and maintained by library authors, named wildcards provide excellent self-documentation and prevent fragility when pattern elements are reordered. Naming conflicts with soft-private helper words (`_log__n`) and preprocessor-private helper words (`__helper`) are completely avoided since they never start with `?`.
+*   **Alternatives Considered:** Using named wildcards in Phase A JSON. Deferred because positional backreferences are a perfect, simple stopgap for the config-based optimizer.
 
 ### Decision 3: Phase-Ordering & Definition-Level Optimization
 To prevent automatic inlining from prematurely expanding high-level subroutine calls and destroying match patterns (e.g. expanding `sq` to `dup *` before a `.rewrite [ _a sq ]` rule can match), the compiler SHALL execute optimization and rewrite rules directly on individual subroutine definitions inside the symbol definition dictionary (`defs` map) prior to inlining them.
@@ -39,8 +47,8 @@ To prevent automatic inlining from prematurely expanding high-level subroutine c
 *   **Rationale:** Resolves the compiler phase-ordering problem elegantly. It guarantees that high-level rewrite patterns are matched and folded inside subroutines, while keeping compiler state tracking minimal.
 *   **Alternatives Considered:** Refusing to inline rewrite target words until post-optimization (Solution B). Rejected because it adds complex state tracking to the inliner and requires a separate post-optimization cleanup inlining pass.
 
-### Decision 4: Multi-Quotation Guard Syntax (The "Where" Clause) - **Phase B (Deferred)**
-To handle conditional matches without syntactic ambiguity (e.g. distinguishing a literal quotation in a pattern from a wildcard's condition), the `.rewrite` compiler directive SHALL eventually support a **3-quotation syntax**: `.rewrite [pattern] [replacement] [guard]` in Phase B.
+### Decision 4: Multi-Quotation Guard Syntax (The "Where" Clause) - **Phase C (Deferred)**
+To handle conditional matches without syntactic ambiguity (e.g. distinguishing a literal quotation in a pattern from a wildcard's condition), the `.rewrite` compiler directive SHALL eventually support a **3-quotation syntax**: `.rewrite [pattern] [replacement] [guard]` in Phase C.
 *   **How it works:** The first quotation specifies the structural pattern. The second quotation specifies the replacement code generator. The optional third quotation specifies a guard expression. The compile-time VM evaluates this guard with all matched wildcards pushed to the stack. If it returns `0` (false), the match is aborted.
 *   **Rationale:** Avoids all syntax clashes and leaves F♭m's core tokenizer and lexer 100% unaltered.
 

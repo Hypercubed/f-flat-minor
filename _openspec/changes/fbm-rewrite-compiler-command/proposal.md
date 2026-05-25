@@ -11,6 +11,11 @@ This design draws inspiration from significant prior art in language optimizatio
 
 ## What Changes
 
+To ensure a highly incremental, reliable, and low-risk roll-out, the implementation is structured into three progressive phases:
+*   **PHASE A: JSON-Configured TS Optimizer:** Convert the hardcoded rules array in `typescript/core/src/optimizer.ts` to be data-driven. The TypeScript compiler loads these optimization rules from a structured `rules.json` configuration file at compile-time and executes optimizations declaratively, eliminating hardcoded JS optimization logic.
+*   **PHASE B: Basic Rewrite Rules (.rewrite Directive without Guards):** Introduce the basic `.rewrite [pattern] [replacement]` compiler command (2-quotation syntax) inside source files, enabling the compiler parser to register rules dynamically during file parsing. Port this basic `.rewrite` matching and evaluation to Go and C++ runtimes.
+*   **PHASE C: Conditional Rewrite Rules (With Guards) - Deferred:** Introduce the 3-quotation syntax (`.rewrite [pattern] [replacement] [guard]`) and VM-assisted guard evaluation for complex optimizations (such as power-of-2 shift strength reductions).
+
 *   **Compiler Directives:** Adds `.rewrite` as a standard compiler directive in the _F♭m⁺_ specification.
 *   **IR Representation:** Adds support for wildcard tokens (such as symbol names starting with an underscore: `_a`, `_b`) to act as pattern match variables.
 *   **Optimizer Flow:** Integrates pattern matching and evaluation into the compiler's post-parsing optimization pipeline.
