@@ -1,5 +1,7 @@
 #include "ff.h"
 
+using mpz_int = cpp_int;
+
 // Global VM state definitions
 Stack stack;
 Queue queue;
@@ -464,7 +466,23 @@ void enqueue_back(const Queue& q)
   queue.insert(queue.end(), q.begin(), q.end());
 }
 
-bool tryParseNumber(const std::string& s, mpz_int& result)
+bool parse_with_base(const std::string& digits, int base, cpp_int& result)
+{
+  result = 0;
+  for (char c : digits)
+  {
+    int digit;
+    if (c >= '0' && c <= '9') digit = c - '0';
+    else if (c >= 'a' && c <= 'z') digit = c - 'a' + 10;
+    else if (c >= 'A' && c <= 'Z') digit = c - 'A' + 10;
+    else return false;
+    if (digit >= base) return false;
+    result = result * base + digit;
+  }
+  return true;
+}
+
+bool tryParseNumber(const std::string& s, cpp_int& result)
 {
   // Guard: bare + and - are operator tokens, not numeric literals
   if (s == "+" || s == "-")
@@ -502,8 +520,8 @@ bool tryParseNumber(const std::string& s, mpz_int& result)
         // Hexadecimal
         std::string hex_digits = digits.substr(2);
         if (hex_digits.empty()) return false;
-        mpz_int val;
-        if (mpz_set_str(val.backend().data(), hex_digits.c_str(), 16) != 0)
+        cpp_int val;
+        if (!parse_with_base(hex_digits, 16, val))
           return false;
         result = negative ? -val : val;
         return true;
@@ -513,8 +531,8 @@ bool tryParseNumber(const std::string& s, mpz_int& result)
         // Binary
         std::string bin_digits = digits.substr(2);
         if (bin_digits.empty()) return false;
-        mpz_int val;
-        if (mpz_set_str(val.backend().data(), bin_digits.c_str(), 2) != 0)
+        cpp_int val;
+        if (!parse_with_base(bin_digits, 2, val))
           return false;
         result = negative ? -val : val;
         return true;
@@ -524,8 +542,8 @@ bool tryParseNumber(const std::string& s, mpz_int& result)
         // Octal
         std::string oct_digits = digits.substr(2);
         if (oct_digits.empty()) return false;
-        mpz_int val;
-        if (mpz_set_str(val.backend().data(), oct_digits.c_str(), 8) != 0)
+        cpp_int val;
+        if (!parse_with_base(oct_digits, 8, val))
           return false;
         result = negative ? -val : val;
         return true;

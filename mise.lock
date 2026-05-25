@@ -128,6 +128,14 @@ url = "https://dl.google.com/go/go1.26.1.darwin-amd64.tar.gz"
 checksum = "sha256:9b68112c913f45b7aebbf13c036721264bbba7e03a642f8f7490c561eebd1ecc"
 url = "https://dl.google.com/go/go1.26.1.windows-amd64.zip"
 
+[[tools."http:cosmocc"]]
+version = "4.0.2"
+backend = "http:cosmocc"
+
+[tools."http:cosmocc"."platforms.linux-x64"]
+checksum = "blake3:51a43465eeb9303a107b8cf165af9df6a62c96aea88b000ee66a9b90fd5afa04"
+url = "https://cosmo.zip/pub/cosmocc/cosmocc-4.0.2.zip"
+
 [[tools.hyperfine]]
 version = "1.20.0"
 backend = "aqua:sharkdp/hyperfine"

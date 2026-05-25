@@ -15,6 +15,7 @@ node = "24.14.0"
 perl = "latest"
 rust = "latest"
 wasmtime = "latest"
+"http:cosmocc" = { version = "4.0.2", url = "https://cosmo.zip/pub/cosmocc/cosmocc-{{version}}.zip" }
 
 [tasks.readme]
 # mise run readme

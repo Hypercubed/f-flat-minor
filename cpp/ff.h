@@ -11,25 +11,27 @@
 #include <cmath>
 #include <map>
 #include <functional>
-#include <boost/multiprecision/gmp.hpp>
+#include <boost/multiprecision/cpp_int.hpp>
 #include <boost/random.hpp>
 #include <boost/algorithm/string.hpp>
 
 using namespace boost::multiprecision;
 
-using Stack = std::stack<mpz_int>;
-using Queue = std::deque<mpz_int>;
-using Definition = std::deque<mpz_int>;
+using cpp_int = boost::multiprecision::cpp_int;
+using mpz_int = cpp_int;
+using Stack = std::stack<cpp_int>;
+using Queue = std::deque<cpp_int>;
+using Definition = std::deque<cpp_int>;
 
 // Global VM state (defined in ff.cpp)
 extern Stack stack;
 extern Queue queue;
 extern Stack rstack;
-extern std::deque<mpz_int> stash_queue;
+extern std::deque<cpp_int> stash_queue;
 extern std::map<int, Definition> defs;
 extern int nextOp;
 
-extern const mpz_int TWO;
+extern const cpp_int TWO;
 extern boost::random::mt19937 mt;
 
 #define POP()  \
@@ -81,7 +83,7 @@ enum op_code
 // Core VM functions
 void setup();
 void callOp(int op);
-void callOp(mpz_int op);
+void callOp(cpp_int op);
 void callSystem(int op);
 void run();
 
@@ -91,15 +93,15 @@ int getSymbol();
 void defineUser(const int& op, const Definition& def);
 void enqueue_front(const Definition& def);
 void enqueue_back(const Queue& q);
-void enqueueOp(mpz_int op);
+void enqueueOp(cpp_int op);
 
 // Numeric parsing
-bool tryParseNumber(const std::string& s, mpz_int& result);
+bool tryParseNumber(const std::string& s, cpp_int& result);
 
 // Tokenizer
 std::deque<std::string> tokenize(const std::string& source);
 
 // Bytecode support
-std::vector<mpz_int> vlqDecode(const std::string& encoded);
+std::vector<cpp_int> vlqDecode(const std::string& encoded);
 void executeBytecode(const std::string& encoded);
 std::string readBytecodeFile(const std::string& path);

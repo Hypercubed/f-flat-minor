@@ -15,7 +15,8 @@ name = 'build:#'
 target = './build/#'
 deps = ['./#.cpp']
 run = '''
-  g++ $DEP -std=c++11 -o $TARGET -O2 -lgmp
+  cosmoc++ $DEP -std=c++11 -isystem /usr/include -o $TARGET -O2 && \
+  assimilate $TARGET
 '''
 
 [[task]]
@@ -23,18 +24,45 @@ name = 'build:run'
 target = './build/run'
 deps = ['./ff.cpp', './ff.h', './run.cpp']
 run = '''
-  g++ ./ff.cpp ./run.cpp -std=c++11 -o $TARGET -O2 -lgmp
+  cosmoc++ ./ff.cpp ./run.cpp -std=c++11 -isystem /usr/include -o $TARGET -O2 && \
+  assimilate $TARGET
 '''
 
 [[task]]
 name = 'build:execute'
 target = './build/execute'
 deps = ['./ff.cpp', './ff.h', './execute.cpp']
-run = 'g++ ./ff.cpp ./execute.cpp -std=c++11 -o $TARGET -O2 -lgmp'
+run = 'cosmoc++ ./ff.cpp ./execute.cpp -std=c++11 -isystem /usr/include -o $TARGET -O2 && assimilate $TARGET'
 
 [[task]]
 name = 'build'
 deps = ['build:run', 'build:execute', 'build:fact']
+
+[[task]]
+name = 'release:#'
+target = './build/#.com'
+deps = ['./#.cpp']
+run = '''
+  cosmoc++ $DEP -std=c++11 -isystem /usr/include -o $TARGET -O2
+'''
+
+[[task]]
+name = 'release:run'
+target = './build/run.com'
+deps = ['./ff.cpp', './ff.h', './run.cpp']
+run = '''
+  cosmoc++ ./ff.cpp ./run.cpp -std=c++11 -isystem /usr/include -o $TARGET -O2
+'''
+
+[[task]]
+name = 'release:execute'
+target = './build/execute.com'
+deps = ['./ff.cpp', './ff.h', './execute.cpp']
+run = 'cosmoc++ ./ff.cpp ./execute.cpp -std=c++11 -isystem /usr/include -o $TARGET -O2'
+
+[[task]]
+name = 'release'
+deps = ['release:run', 'release:execute', 'release:fact']
 
 [[task]]
 name = 'interpret'
@@ -63,12 +91,7 @@ cmp = '../ff/example.out'
 [[task]]
 name = 'ffb-self'
 dep = 'build:execute'
-run = '''
-  cp ./build/execute /tmp/ff-self-exec
-  cat ../ff/example.ffb >> /tmp/ff-self-exec
-  /tmp/ff-self-exec
-  rm -f /tmp/ff-self-exec
-'''
+run = '(cp ./build/execute /tmp/ff-self-exec && cat ../ff/example.ffb >> /tmp/ff-self-exec && /tmp/ff-self-exec; STATUS=$?; rm -f /tmp/ff-self-exec; exit $STATUS)'
 template = 'cmp'
 [task.template-options]
 cmp = '../ff/example.out'
