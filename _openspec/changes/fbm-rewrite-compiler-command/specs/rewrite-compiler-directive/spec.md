@@ -10,15 +10,15 @@ The Deno/TypeScript compiler optimizer SHALL support loading its optimization ru
 ### Requirement: JSON Rule Schema & Examples (Phase A)
 The `rules.json` schema SHALL support specifying an array of rule objects, where each rule contains:
 - `name`: A string identifier for the rule.
-- `pattern`: An array of strings/numbers representing a pure F♭m sequence to match (standard F♭m source words, literal values, or positional wildcards starting with `$` like `$0`, `$1`).
-- `replacement`: An array of strings/numbers representing standard F♭m stack-code to execute for generating the folded IR.
-- `guard` (optional): An array of strings/numbers representing an F♭m guard quotation to execute for validating conditional constraints.
+- `pattern`: A space-separated string representing a pure F♭m sequence to match (standard F♭m source words, literal values, or positional wildcards starting with `$` like `$0`, `$1`).
+- `replacement`: A space-separated string representing standard F♭m stack-code to execute for generating the folded IR.
+- `guards` (optional): An array of space-separated strings, each representing an F♭m guard quotation to execute sequentially for validating conditional constraints.
 
 #### Sub-Requirement: Positional Wildcards (Phase A)
 Wildcards within the Phase A `rules.json` file SHALL be represented using positional backreferences starting with `$` (e.g., `$0` for the first matched wildcard in the pattern sequence, `$1` for the second, etc.).
 
 #### Sub-Requirement: Standard F♭m Token Mapping
-Both the pattern and replacement arrays in `rules.json` SHALL use standard F♭m source word names (e.g. `+`, `*`, `swap`, `dup`, `eval`, `,`) rather than internal compiler opcode identifiers (e.g. `ADD`, `MUL`, `SWAP`, `DUP`, `CALL`, `CONS`), maintaining complete alignment with F♭m source syntax.
+Both the pattern and replacement strings in `rules.json` SHALL use standard F♭m source word names (e.g. `+`, `*`, `swap`, `dup`, `eval`, `,`) rather than internal compiler opcode identifiers (e.g. `ADD`, `MUL`, `SWAP`, `DUP`, `CALL`, `CONS`), maintaining complete alignment with F♭m source syntax.
 
 #### Sub-Requirement: JSON Schema Structure Examples
 The JSON rule file SHALL follow the structures in the following examples:
@@ -27,8 +27,8 @@ The JSON rule file SHALL follow the structures in the following examples:
 ```json
 {
   "name": "Constant Folding - a b ADD",
-  "pattern": [ "$0", "$1", "+" ],
-  "replacement": [ "$0", "$1", "+" ]
+  "pattern": "$0 $1 +",
+  "replacement": "$0 $1 +"
 }
 ```
 
@@ -36,8 +36,8 @@ The JSON rule file SHALL follow the structures in the following examples:
 ```json
 {
   "name": "Algebraic Simplification - 0 ADD",
-  "pattern": [ "0", "+" ],
-  "replacement": []
+  "pattern": "0 +",
+  "replacement": ""
 }
 ```
 
@@ -46,24 +46,26 @@ To produce delayed/non-evaluated output IR instructions (like `<<` in a shift st
 ```json
 {
   "name": "Strength Reduction - Power of 2 MUL -> SHIFTL",
-  "pattern": [ "$0", "*" ],
-  "guard": [ "$0", "dup", "dup", "1", "-", "&", "0", "=", "swap", "0", ">", "&" ],
-  "replacement": [ "$0", "log2", "[", "<<", "]", "," ]
+  "pattern": "$0 *",
+  "guards": [
+    "$0 dup dup 1 - & 0 = swap 0 > &"
+  ],
+  "replacement": "$0 log2 [ << ] ,"
 }
 ```
 
 ### Requirement: VM-Assisted F♭m Guard & Replacement Evaluation (Phase A)
 The optimizer SHALL scan the compiler's instruction stream and perform pattern matching against the loaded JSON rules. When a match is found, it SHALL:
 1. Bind positional wildcards to their matched literal values in a linear array.
-2. If a `guard` is specified, substitute wildcards into the guard array, execute it on an isolated compile-time VM (`Engine`), and only commit the match if the VM returns a non-zero (true) value.
-3. Substitute wildcards into the `replacement` array, execute the F♭m quotation on the VM, and harvest the resulting stack values as the folded output IR.
+2. If `guards` are specified, substitute wildcards into each guard sequence, execute each sequentially on an isolated compile-time VM (`Engine`), and only commit the match if all guards return a non-zero (true) value.
+3. Substitute wildcards into the `replacement` sequence, execute the F♭m quotation on the VM, and harvest the resulting stack values as the folded output IR.
 
 #### Scenario: Successful conditional match and fold in the JSON optimizer
 - **WHEN** the loaded rule is:
   - `name: "Constant Folding - a b DIV"`
-  - `pattern: ["$0", "$1", "/"]`
-  - `guard: ["$1", "0", "!="]`
-  - `replacement: ["$0", "$1", "/"]`
+  - `pattern: "$0 $1 /"`
+  - `guards": [ "$1 0 !=" ]`
+  - `replacement: "$0 $1 /"`
 - **AND** the stream contains `[ 42 10 / ]`
 - **THEN** the optimizer binds `$0 = 42`, `$1 = 10`, executes guard `[ 10 0 != ]` resulting in `1` (true), executes replacement `[ 42 10 / ]` on the VM, and replaces the matched stream with `[ 4 ]`
 

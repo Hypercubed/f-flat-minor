@@ -2,9 +2,9 @@
 
 ## 1. Rules Extraction & Loader
 
-- [ ] 1.1 Create `typescript/core/src/rules.json` and extract all 36+ hardcoded optimization rules into a structured JSON schema where pattern, replacement, and optional guard are standard F♭m stack-code sequences.
-- [ ] 1.2 Implement a JSON loader and pattern compiler in `Optimizer` (`typescript/core/src/optimizer.ts`) to dynamically compile pattern string tokens (like `"+"`, `"$0"`) into matching function predicates at startup.
-- [ ] 1.3 Implement compile-time VM-assisted evaluation in the optimizer: spin up a temporary, isolated `Engine` instance. If a guard is present, substitute wildcard values into the guard F♭m stack-code array, execute it on the VM, and only proceed if the VM returns a non-zero (true) value. Then, substitute wildcards into the replacement F♭m stack-code array, execute it on the VM, and harvest resulting stack values as folded IR instructions.
+- [ ] 1.1 Create `typescript/core/src/rules.json` and extract all 36+ hardcoded optimization rules into a structured JSON schema where pattern, replacement, and optional guards are space-separated F♭m stack-code strings.
+- [ ] 1.2 Implement a JSON loader and pattern compiler in `Optimizer` (`typescript/core/src/optimizer.ts`) to parse `rules.json`, split the space-separated strings by whitespace, and dynamically compile pattern string tokens (like `"+"`, `"$0"`) into matching function predicates at startup.
+- [ ] 1.3 Implement compile-time VM-assisted evaluation in the optimizer: spin up a temporary, isolated `Engine` instance. If `guards` are present, substitute wildcard values into each guard string, split by whitespace, execute sequentially on the VM, and only proceed if all return a non-zero (true) value. Then, substitute wildcards into the replacement string, split, execute on the VM, and harvest resulting stack values as folded IR instructions.
 
 ## 2. Rule Matcher & Rewriter
 
