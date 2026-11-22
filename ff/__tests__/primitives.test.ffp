@@ -1,0 +1,112 @@
+.import ../lib/tap.ffp
+
+TAP-VERSION
+
+/* @effect nop: ... == ... */
+
+/* @effect putc: N == { prints char(N) } */
+
+/* @effect getc: == N {reads char} ensures 0 <= N ∧ N < 256 */
+
+/* @effect putn: N == { prints N } */
+
+/* @effect clock: == T { pushes the current time T } */
+
+/* @effect drop: ... A == ... */
+
+/* @effect <<: A B == A<<B */
+
+/* @effect >>: A B == A>>B */
+
+/* @effect clr: ... == ∅ */
+
+/* @effect rand: M == N requires 0 < M ensures 0 <= N ∧ N < M */
+
+/* @effect exit: N == { exits with code N } */
+
+/* @effect dup: A == A A */
+
+/* @effect depth: ..R == ..R #R */
+
+/* @effect swap: A B == B A */
+
+/* @effect %: A B == A%B requires B != 0 else ERROR */
+'\0%' SUBTEST
+    8 5 % 3 = OK
+    1 PLAN OK
+
+/* @effect &: A B == A&B */
+'\0&' SUBTEST
+    5 3 & 1 = OK
+    1 PLAN OK
+
+/* @effect *: A B == A*B */
+'\0*' SUBTEST
+    5 6 * 30 = OK
+    1 PLAN OK
+
+/* @effect +: A B == A+B */
+'\0+' SUBTEST
+    1 2 + 3 = OK
+    1 PLAN OK
+
+/* @effect -: A B == A-B */
+'\0-' SUBTEST
+    3 4 - -1 = OK
+    1 PLAN OK
+
+/* @effect .: == { prints stack } */
+
+/* @effect /: A B == A/B requires B != 0 else ERROR */
+'\0/' SUBTEST
+    8 4 / 2 = OK
+    1 PLAN OK
+
+/* @effect <: A B == F ensures F = if A<B then 1 else 0 */
+'\0<' SUBTEST
+    1 2 < OK
+    2 2 < not OK
+    4 3 < not OK
+    3 PLAN OK
+
+/* @effect =: A B == F ensures F = if A=B then 1 else 0 */
+'\0=' SUBTEST
+    9 10 = not OK
+    10 10 = OK
+    2 PLAN OK
+
+/* @effect >: A B == F ensures F = if A>B then 1 else 0 */
+'\0>' SUBTEST
+    5 6 > not OK
+    6 6 > not OK
+    8 7 > OK
+    3 PLAN OK
+
+/* @effect ^: A B == A^B requires 0 <= B else ERROR */
+'\0^' SUBTEST
+    9 12 ^ 282429536481 = OK
+    5 4 3 2 ^ ^ ^ 10 10 ^ % 8212890625 = OK
+    2 PLAN OK
+
+/* @effect |: A B == A|B */
+'\0|' SUBTEST
+    5 3 | 7 = OK
+    1 PLAN OK
+
+/* @effect ~: A == ~A */
+'\0~' SUBTEST
+    5 ~ -6 = OK
+    1 PLAN OK
+
+/* @effect cons: ..R A [B] == ..R [A B] */
+
+/* @effect eval: ..R [..R -- ..S] == ..S */
+
+/* @effect ?: ..R F [..R -- ..S] == ..S requires F != 0 */
+/* @effect ?: ..R F [..R -- ..S] == ..R requires F == 0 */
+'\0?' SUBTEST
+    5 true [ 3 + ] ? 8 = OK
+    5 false [ 3 + ] ? 5 = OK
+    2 PLAN OK
+
+13 PLAN

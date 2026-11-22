@@ -38,9 +38,108 @@
     "comments": {
       "patterns": [
         {
+          "name": "comment.block.effect.f-flat-minor",
+          "begin": "(/\\*\\s*)(@effect)\\b",
+          "beginCaptures": {
+            "1": {
+              "name": "punctuation.definition.comment.begin.f-flat-minor"
+            },
+            "2": {
+              "name": "keyword.directive.effect.f-flat-minor"
+            }
+          },
+          "end": "\\*/",
+          "endCaptures": {
+            "0": {
+              "name": "punctuation.definition.comment.end.f-flat-minor"
+            }
+          },
+          "patterns": [
+            {
+              "include": "#effectInner"
+            }
+          ]
+        },
+        {
+          "comment": "Any comment without an @effect/effect directive stays a plain comment: no special highlighting.",
           "name": "comment.block.f-flat-minor",
           "begin": "/\\*",
           "end": "\\*/"
+        }
+      ]
+    },
+    "effectInner": {
+      "comment": "Sub-patterns applied inside @effect / effect / legacy-== block comments only. Ordinary comments keep the plain comment.block scope above.",
+      "patterns": [
+        {
+          "comment": "{...} is a human-readable note, not parsed: swallow it whole so variable names inside do not leak into the variable scope.",
+          "name": "comment.note.effect.f-flat-minor",
+          "begin": "\\{",
+          "end": "\\}"
+        },
+        {
+          "comment": "Effect word name with colon: dup:, swap:, %:, <<:, .:, ?:, cons:, zero?:, ... (any single token, including symbolic words).",
+          "name": "entity.name.function.effect.f-flat-minor",
+          "match": "[^\\s\\[\\]{}]+:"
+        },
+        {
+          "name": "keyword.other.effect-clause.f-flat-minor",
+          "match": "\\b(?:requires|when|ensures|where)\\b"
+        },
+        {
+          "name": "keyword.control.conditional.effect.f-flat-minor",
+          "match": "\\b(?:if|then|else)\\b"
+        },
+        {
+          "comment": "ERROR is a keyword (the failure marker in `else ERROR`), not a variable.",
+          "name": "constant.language.error.effect.f-flat-minor",
+          "match": "\\bERROR\\b"
+        },
+        {
+          "comment": "#R is shorthand for R.length (the length of the named rest ..R).",
+          "name": "variable.other.rest-length.effect.f-flat-minor",
+          "match": "#[A-Z][A-Z0-9_]*\\b|\\b[A-Z][A-Z0-9_]*\\.length\\b"
+        },
+        {
+          "comment": "Named rests (..R, ..S), the unnamed rest (...), and the Unicode ellipsis (…).",
+          "name": "variable.other.rest.effect.f-flat-minor",
+          "match": "\\.\\.[A-Z][A-Z0-9_]*\\b|\\.\\.\\.|…"
+        },
+        {
+          "comment": "The empty stack.",
+          "name": "constant.language.empty-stack.effect.f-flat-minor",
+          "match": "∅"
+        },
+        {
+          "include": "#brackets"
+        },
+        {
+          "comment": "== is the input/output separator; -- is the quotation-effect separator in [..R -- ..S].",
+          "name": "keyword.operator.effect-separator.f-flat-minor",
+          "match": "==|--"
+        },
+        {
+          "comment": "Lean-operator function-call spellings used in ensures/where witnesses.",
+          "name": "support.function.effect.f-flat-minor",
+          "match": "\\b(?:land|lor|xor|lnot|shl|shr|pow)\\b"
+        },
+        {
+          "include": "#numbers"
+        },
+        {
+          "comment": "Uppercase variables (new syntax): A, B, N, LO, HI, ...",
+          "name": "variable.other.effect.f-flat-minor",
+          "match": "\\b[A-Z][A-Z0-9_]*\\b"
+        },
+        {
+          "comment": "Lowercase identifiers (old-syntax variables/words, e.g. `a b swap == b a`, `_loop`, and literal quotations like [swap]): the word/variable split is ambiguous in the old form, so both share the variable scope.",
+          "name": "variable.other.effect.f-flat-minor",
+          "match": "\\b[a-z_][a-z0-9_]*\\b"
+        },
+        {
+          "comment": "Arithmetic, comparison, bitwise/shift, Lean-operator spellings, logic symbols, and conditionals inside effects; same scope as in code.",
+          "name": "keyword.operator.f-flat-minor",
+          "match": "&&&|\\|\\|\\||\\^\\^\\^|<<<|>>>|~~~|<<|>>|<=|>=|!=|≠|∧|∨|¬|⊕|[+\\-*/%<=>&|~^?():;]"
         }
       ]
     },

@@ -1,13 +1,19 @@
+/* New-syntax effect annotations (Nov 20, 2026) sit above each
+   definition, next to the existing old-syntax comment (kept for
+   now). The @effect tag is read by the Lean generator; the plain
+   effect tag (no @) is a statement the generator skips until
+   Phase 8 (quotations). Recursive definitions are not annotated:
+   their effects need @rec-effect + @induction. */
+
 /* constants 1 2 3 */
-true: 1 ; /* true == 1 */
-false: 0 ; /* false == 0 */
+true: 1 ; /* @effect true: == 1 */
+false: 0 ; /* @effect false: == 0 */
 
 /* incrementors */
-
---: 1 - ; /* n -- == n-1 */
-++: 1 + ; /* n ++ == n+1 */
-pred: dup -- ; /* n pred == n n-1 */
-succ: dup ++ ; /* n succ == n n+1 */
+--: 1 - ; /* @effect --: N == N-1 */
+++: 1 + ; /* @effect ++: N == N+1 */
+pred: dup -- ; /* @effect pred: N == N N-1 */
+succ: dup ++ ; /* @effect succ: N == N N+1 */
 
 /* DIP words */
 /* Semantic anchors: slip/swap/dupd are foundational contracts.
@@ -15,61 +21,69 @@ succ: dup ++ ; /* n succ == n n+1 */
  * Wrapper definitions like `x: q< Y q> ;` are irreducible as definitions.
  * Outside defining wrappers, ERS may replace `q< Y q>` with the named word when available. */
 
+/* @effect slip: ..R [..R -- ..S] B == ..S B */
 slip: q< eval q> ; /* [A] b slip == a* b */
-swapd: q< swap q> ; /* a b c swapd == b a c */
-dupd: q< dup q> ; /* a b dupd == a a b */
+swapd: q< swap q> ; /* @effect swapd: A B C == B A C */
+dupd: q< dup q> ; /* @effect dupd: A B == A A B */
 
 /* shuffle words */
-drop2: drop drop ; /* a b drop2 == */
-dip: swap slip ; .inline /* a [B] dip == b* a */
-dipd: swap [dip] dip ; .inline /* stash top two; run [Q] on third; unstash (queue) */
-dig: swapd swap ; .inline /* a b c dig == b c a */
-bury: swap swapd ; .inline /* a b c bury == c a b */
-rot: bury swap ; .inline /* a b c rot == c b a */
-over: dupd swap ; .inline /* a b over == a b a */
-dup2: over over ; .inline /* a b dup2 == a b a b */
-run: dup slip ; .inline /* [A] run == a* [A] */
-nip: swap drop ; .inline /* a b nip == b */
-tuck: swap over ; .inline /* a b tuck == b a b */
-sip: over slip ; .inline /* a [B] sip == a b* a */
-sipd: [sip] dip ; .inline /* a [B] c sipd == a b* a c */
-bi: sipd dig slip swap ; .inline /* a [B] [C] bi == b c */
-bi2: [ [dup2] dip eval bury ] dip eval ; .inline /* a b [C] [D] bi2 == c d */
+
+drop2: drop drop ; /* @effect drop2: A B == */
+dip: swap slip ; .inline /* @effect dip: ..R A [..R -- ..S] == ..S A */
+dipd: swap [dip] dip ; .inline /* @effect dipd: ..R A B [..R -- ..S] == ..S A B */
+dig: swapd swap ; .inline /* @effect dig: A B C == B C A */
+bury: swap swapd ; .inline /* @effect bury: A B C == C A B */
+rot: bury swap ; .inline /* @effect rot: A B C == C B A */
+over: dupd swap ; .inline /* @effect over: A B == A B A */
+dup2: over over ; .inline /* @effect dup2: A B == A B A B */
+run: dup slip ; .inline /* @effect run: ..R [..R -- ..S] == ..S [..R -- ..S] */
+
+nip: swap drop ; .inline /* @effect nip: A B == B */
+
+tuck: swap over ; .inline /* @effect tuck: A B == B A B */
+
+sip: over slip ; .inline /* @effect sip: ..R A [..R A -- ..S] == ..S A */
+sipd: [sip] dip ; .inline /* @effect sipd: ..R A [..R A -- ..S] C == ..S A C */
+bi: sipd dig slip swap ; .inline /* @effect bi: ..R A [..R A --..S] [..R A --..T] ==..S ..T */
+bi2: [ [dup2] dip eval bury ] dip eval ; .inline /* @effect bi2: ..R A B [..R A B --..S] [..R A B --..T] ==..S ..T */
 
 /* inquisitive */
-zero?: 0 = ; /* n zero? == flag */
-not: zero? ; .inline /* flag not == flag' */
-nz?: zero? not ; .inline /* n nz? == flag */
-truthy?: nz? ; .inline /* n truthy? == flag */
-falsey?: zero? ; .inline /* n falsey? == flag */
-!=: = not ; .inline /* a b != == flag */
+zero?: 0 = ; /* @effect zero?: N == F ensures F = if N = 0 then 1 else 0 */
+not: zero? ; .inline /* @effect not: F == G ensures G = if F = 0 then 1 else 0 */
+nz?: zero? not ; .inline /* @effect nz?: N == F ensures F = if N != 0 then 1 else 0 */
+truthy?: nz? ; .inline /* @effect truthy?: N == F ensures F = if N != 0 then 1 else 0 */
+falsey?: zero? ; .inline /* @effect falsey?: N == F ensures F = if N = 0 then 1 else 0 */
+!=: = not ; .inline /* @effect !=: A B == F ensures F = if A != B then 1 else 0 */
 
 /* comparison */
-<=: > not ; .inline /* a b <= == flag */
->=: < not ; .inline /* a b >= == flag */
+<=: > not ; .inline /* @effect <=: A B == F ensures F = if A > B then 0 else 1 */
+>=: < not ; .inline /* @effect >=: A B == F ensures F = if A < B then 0 else 1 */
 
-sort2: dup2 > [swap] ? ; .inline /* a b sort2 == min max */
+sort2: dup2 > [swap] ? ; .inline /* @effect sort2: A B == X Y ensures X = if A < B then A else B ∧ Y = if A < B then B else A */
+/* @effect between?: LO HI N == F ensures F = if LO < HI then (if LO < N ∧ N < HI then 1 else 0) else (if HI < N ∧ N < LO then 1 else 0) */
 between?: [sort2] dip swap dupd < bury < and ; .inline /* lo hi n between? == flag */
 
 /* binary operators */
-bxor: dup2 ~ & rot ~ & | ; /* a b bxor == n */
+bxor: dup2 ~ & rot ~ & | ; /* @effect bxor: A B == A⊕B */
 
 /* logical */
-and: * truthy? ; /* a b and == flag */
-or: + truthy? ; /* a b or == flag */
-nand: * zero? ; /* a b nand == flag */
-nor: + zero? ; /* a b nor == flag */
+and: * truthy? ; /* @effect and: A B == F ensures F = if A * B != 0 then 1 else 0 */
+or: + truthy? ; /* @effect or: A B == F ensures F = if A + B != 0 then 1 else 0 */
+nand: * zero? ; /* @effect nand: A B == F ensures F = if A * B = 0 then 1 else 0 */
+nor: + zero? ; /* @effect nor: A B == F ensures F = if A + B = 0 then 1 else 0 */
 
 /* short circuit */
-or_else: [ sip swap ] dip swap [ drop2 true ] [eval] branch ; .inline /* a [B] [C] or_else == flag */
-and_also: [ sip swap ] dip swap [eval] [ drop2 false ] branch ; .inline /* a [B] [C] and_also == flag */
+or_else: [ sip swap ] dip swap [ drop2 true ] [eval] branch ; .inline /* @effect or_else: ..R A [..R A -- B] [..R A -- C] ==..R F ensures F = if B != 0 then 1 else C */
+and_also: [ sip swap ] dip swap [eval] [ drop2 false ] branch ; .inline /* @effect and_also: ..R A [..R A -- B] [..R A -- C] ==..R F ensures F = if B != 0 then C else 0 */
 
 /* branching */
-choose: rot [ swap ] ? drop ; .inline  /* flag a b choose == a or b */
-branch: choose eval ; .inline /* flag [B] [C] branch == b* or c* */
+choose: rot [ swap ] ? drop ; .inline  /* @effect choose: F A B == X ensures X = if F != 0 then A else B */
+/* @effect branch: ..R F [..R -- ..S] [..R -- ..T] == ..S requires F != 0 */
+/* @effect branch: ..R F [..R -- ..S] [..R -- ..T] == ..T requires F == 0 */
+branch: choose eval ; .inline
 
 /* stack */
-empty?: depth zero? ; /* … empty? == … flag */
+empty?: depth zero? ; /* @effect empty?: ..R == ..R F ensures F = if #R = 0 then 1 else 0 */
 pushtop: depth 1 > [ swap [pushtop] dip ] ? ; /* … a pushtop == a … */
 
 /* counters */

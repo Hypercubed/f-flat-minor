@@ -2,7 +2,7 @@
   "name": "vscode-f-flat-minor",
   "displayName": "F♭m (f-flat-minor) Language Support",
   "description": "Syntax highlighting and language support for f-flat-minor, a minimal stack-oriented programming language",
-  "version": "0.0.9",
+  "version": "0.0.14",
   "publisher": "hypercubed",
   "main": "./out/extension.js",
   "activationEvents": [
@@ -115,6 +115,13 @@
         "path": "./syntaxes/ff.tmLanguage.json"
       }
     ],
+    "themes": [
+      {
+        "label": "F♭m Dark",
+        "uiTheme": "vs-dark",
+        "path": "./themes/fbm-dark-color-theme.json"
+      }
+    ],
     "configurationDefaults": {
       "editor.tokenColorCustomizations": {
         "textMateRules": [
@@ -129,6 +136,47 @@
             "scope": ["meta.compiler.annotation.f-flat-minor"],
             "settings": {
               "foreground": "#808080"
+            }
+          },
+          {
+            "comment": "JSDoc-style: the whole effect comment is subdued italic. Inner rules only tint foregrounds; fontStyle inherits from this parent rule.",
+            "scope": ["comment.block.effect.f-flat-minor"],
+            "settings": {
+              "foreground": "#6E6E6E",
+              "fontStyle": "italic"
+            }
+          },
+          {
+            "scope": ["comment.block.effect.f-flat-minor keyword.directive.effect.f-flat-minor"],
+            "settings": {
+              "foreground": "#8F7C4D"
+            }
+          },
+          {
+            "scope": ["comment.block.effect.f-flat-minor entity.name.function.effect.f-flat-minor"],
+            "settings": {
+              "foreground": "#5F7E99"
+            }
+          },
+          {
+            "scope": [
+              "comment.block.effect.f-flat-minor keyword.other.effect-clause.f-flat-minor",
+              "comment.block.effect.f-flat-minor keyword.control.conditional.effect.f-flat-minor"
+            ],
+            "settings": {
+              "foreground": "#767094"
+            }
+          },
+          {
+            "scope": ["comment.block.effect.f-flat-minor constant.language.error.effect.f-flat-minor"],
+            "settings": {
+              "foreground": "#966262"
+            }
+          },
+          {
+            "scope": ["comment.block.effect.f-flat-minor comment.note.effect.f-flat-minor"],
+            "settings": {
+              "foreground": "#5F6E5F"
             }
           }
         ]

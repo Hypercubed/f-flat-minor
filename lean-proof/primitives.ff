@@ -1,0 +1,50 @@
+
+/* @effect nop: == */
+
+/* @effect putc: N == { prints char(N) } */
+/* @effect getc: == N {reads char} ensures 0 <= N ∧ N < 256 */
+/* @effect putn: N == { prints N } */
+/* @effect clock: == T { pushes the current time T } */
+/* @effect drop: A == */
+
+
+/* @effect <<: A B == A<<B */
+/* @effect >>: A B == A>>B */
+/* @effect clr: == ∅ */
+/* @effect rand: M == N requires 0 < M ensures 0 <= N ∧ N < M */
+/* @effect exit: N == { exits with code N } */
+/* @effect dup: A == A A */
+/* @effect depth: ..R == ..R #R */
+/* @effect swap: A B == B A */
+/* @effect %: A B == A%B requires B != 0 else ERROR */
+/* @effect &: A B == A&B */
+
+
+/* @effect *: A B == A*B */
+/* @effect +: A B == A+B */
+
+/* @effect -: A B == A-B */
+/* @effect .: == { prints stack } */
+/* @effect /: A B == A/B requires B != 0 else ERROR */
+
+
+/* @effect <: A B == F ensures F = if A<B then 1 else 0 */
+/* @effect =: A B == F ensures F = if A=B then 1 else 0 */
+/* @effect >: A B == F ensures F = if A>B then 1 else 0 */
+
+
+
+/* @effect ^: A B == A^B requires 0 <= B else ERROR */
+/* @effect |: A B == A|B */
+/* @effect ~: A == ~A */
+
+
+/* Quotations (Phase 8, Nov 20, 2026): the model tracks userDefs
+   + pointer-ness (a quotation is an Int, there is NO Val type).
+   `cons`, `eval`, and `?` are all live `@effect` theorems now.
+   `?` takes ONE quotation + a flag (the runtime's `IF`): the
+   run case and the discard case. */
+/* @effect cons: ..R A [B] == ..R [A B] */
+/* @effect eval: ..R [..R -- ..S] == ..S */
+/* @effect ?: ..R F [..R -- ..S] == ..S requires F != 0 */
+/* @effect ?: ..R F [..R -- ..S] == ..R requires F == 0 */

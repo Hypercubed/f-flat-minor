@@ -60,6 +60,10 @@ Install the `.vsix` from a window that is **connected to WSL** (green remote ind
 2. Status bar (bottom right): open an `.ff` / `.ffp` file and confirm the language mode is **F♭m** or **f-flat-minor** (not Plain Text). Set **Change Language Mode** if needed.
 3. Cursor keeps extensions under `~/.cursor/extensions/` (VS Code uses `~/.vscode/extensions/`).
 
+### Color theme — F♭m Dark
+
+This extension ships an **F♭m Dark** color theme (Dark Modern plus subdued italic `@effect` colors baked in as first-class `tokenColors`). Select it via **Preferences: Color Theme** for styling that survives reloads, Settings Sync, and profiles — unlike extension default colors, which any `editor.tokenColorCustomizations` entry silently discards. To refresh the snapshot after a base-theme update, run **Developer: Generate Color Theme From Current Settings** and replace `themes/fbm-dark-color-theme.json`.
+
 Muted gray for `.inline` / preprocessor lines comes from **default token color rules** in this extension. If you have **`editor.tokenColorCustomizations`** in user or workspace settings, those can override extension defaults.
 
 ## Supported File Types

@@ -1,0 +1,23 @@
+version = 0.1
+default-task = 'test:lean'
+
+[[task]]
+name = 'test:lean'
+deps = [
+  './check.py',
+  './generate.py',
+  './preamble.lean',
+  '../ff/__tests__/primitives.test.ffp',
+  '../ff/lib/core/core.ff'
+]
+serial = true
+invalidation = 'always'
+validation = 'none'
+run = '''
+  # check.py resolves lean itself (PATH, else ~/.elan/bin/lean)
+  # and emits TAP version 13 on stdout; prove gives the quick
+  # summary, one TAP test per emitted theorem. For the detail
+  # behind a failure, run `python3 check.py <file>` by hand --
+  # its `#` diagnostics are the Lean messages.
+  prove --exec "python3 check.py" ../ff/__tests__/primitives.test.ffp ../ff/lib/core/core.ff
+'''
