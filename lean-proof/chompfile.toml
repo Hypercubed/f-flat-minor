@@ -6,7 +6,12 @@ name = 'test:lean'
 deps = [
   './check.py',
   './generate.py',
-  './preamble.lean',
+  './lakefile.toml',
+  './lean-toolchain',
+  './Fbm.lean',
+  './Fbm/Interp.lean',
+  './Fbm/Prover.lean',
+  './Fbm/Main.lean',
   '../ff/__tests__/primitives.test.ffp',
   '../ff/lib/core/core.ff'
 ]
@@ -14,10 +19,13 @@ serial = true
 invalidation = 'always'
 validation = 'none'
 run = '''
-  # check.py resolves lean itself (PATH, else ~/.elan/bin/lean)
-  # and emits TAP version 13 on stdout; prove gives the quick
-  # summary, one TAP test per emitted theorem. For the detail
-  # behind a failure, run `python3 check.py <file>` by hand --
-  # its `#` diagnostics are the Lean messages.
+  # check.py resolves lake and lean itself (PATH, else ~/.elan/bin/)
+  # and runs `lake env lean --json` from lean-proof/ so generated
+  # files import the cached Fbm.Prover olean. Build first so the
+  # oleans are fresh, then emit TAP version 13 on stdout via prove
+  # (one TAP test per emitted theorem). For the detail behind a
+  # failure, run `python3 check.py <file>` by hand -- its `#`
+  # diagnostics are the Lean messages.
+  lake build
   prove --exec "python3 check.py" ../ff/__tests__/primitives.test.ffp ../ff/lib/core/core.ff
 '''

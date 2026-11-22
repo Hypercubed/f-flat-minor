@@ -1,0 +1,11 @@
+name = "fbm"
+version = "0.1.0"
+defaultTargets = ["Fbm", "fbm-interp"]
+edition = "2022-12-08"
+
+[[lean_lib]]
+name = "Fbm"
+
+[[lean_exe]]
+name = "fbm-interp"
+root = "Fbm.Main"

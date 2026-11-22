@@ -64,6 +64,19 @@ def resolve_lean(explicit):
     return None
 
 
+def resolve_lake(explicit):
+    """Find the Lake binary: --lake, PATH, or ~/.elan/bin/lake."""
+    if explicit:
+        return explicit
+    found = shutil.which("lake")
+    if found:
+        return found
+    elan = Path.home() / ".elan" / "bin" / "lake"
+    if elan.exists():
+        return str(elan)
+    return None
+
+
 def run_generator(src_path):
     """Run generate.py on src_path. Returns (lean_text, stderr, returncode)."""
     proc = subprocess.run(
@@ -72,15 +85,15 @@ def run_generator(src_path):
     return proc.stdout, proc.stderr, proc.returncode
 
 
-def run_lean(lean_bin, lean_path):
-    """Run `lean --json` on lean_path. Returns (errors, raw_stdout, returncode).
+def run_lean(lake_bin, lean_bin, lean_path):
+    """Run `lake env lean --json` on lean_path from lean-proof/. Returns (errors, raw_stdout, returncode).
 
     errors is a list of (line, column, message) for severity == "error".
     A line that is not JSON is kept as a raw message (defensive: Lean
     should only emit one JSON object per line with --json)."""
     proc = subprocess.run(
-        [lean_bin, "--json", str(lean_path)],
-        capture_output=True, text=True)
+        [lake_bin, "env", lean_bin, "--json", str(lean_path)],
+        capture_output=True, text=True, cwd=str(HERE))
     errors = []
     for line in proc.stdout.splitlines():
         line = line.strip()
@@ -180,6 +193,8 @@ def main():
     parser.add_argument("input", help=".ff file with @effect comments")
     parser.add_argument("--lean", default=None,
                         help="Lean binary (default: lean on PATH, else ~/.elan/bin/lean)")
+    parser.add_argument("--lake", default=None,
+                        help="Lake binary (default: lake on PATH, else ~/.elan/bin/lake)")
     args = parser.parse_args()
 
     src_path = Path(args.input)
@@ -191,6 +206,12 @@ def main():
     if lean_bin is None:
         print("check: Lean not found (not on PATH, no ~/.elan/bin/lean); "
               "pass --lean PATH", file=sys.stderr)
+        return 1
+
+    lake_bin = resolve_lake(args.lake)
+    if lake_bin is None:
+        print("check: Lake not found (not on PATH, no ~/.elan/bin/lake); "
+              "pass --lake PATH", file=sys.stderr)
         return 1
 
     lean_text, gen_stderr, gen_rc = run_generator(src_path)
@@ -214,7 +235,7 @@ def main():
         f.write(lean_text)
         lean_path = Path(f.name)
 
-    errors, _raw, _lean_rc = run_lean(lean_bin, lean_path)
+    errors, _raw, _lean_rc = run_lean(lake_bin, lean_bin, lean_path)
     markers = parse_markers(lean_text)
 
     # Group errors by source statement (several Lean errors can

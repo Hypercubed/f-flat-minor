@@ -17,7 +17,7 @@ for the ladder. See `PLAN.md` §4.)
 
 ```sh
 python3 generate.py examples/shuffles.ff out.lean
-~/workspace/tools/lean/lean-4.22.0-linux/bin/lean out.lean
+lake env lean out.lean
 ```
 
 Or pipe straight to Lean (output goes to stdout when no output
@@ -25,7 +25,7 @@ file is given; the summary goes to stderr, so stdout stays pure
 Lean — Lean reads stdin with `--stdin`):
 
 ```sh
-python3 generate.py examples/shuffles.ff | ~/workspace/tools/lean/lean-4.22.0-linux/bin/lean --stdin
+python3 generate.py examples/shuffles.ff | lake env lean --stdin
 ```
 
 `lean` exiting 0 with no output means every emitted theorem is
@@ -38,14 +38,19 @@ reads the effects and ignores the rest — the `.import`, the
 (Lean 4.36.0 via elan, verified Nov 20, 2026):
 
 ```sh
-python3 lean-proof/generate.py ff/__tests__/primitives.test.ffp | ~/.elan/bin/lean --stdin
+cd lean-proof && lake build
+python3 lean-proof/generate.py ff/__tests__/primitives.test.ffp | (cd lean-proof && lake env lean --stdin)
 ```
 
-Expected: exit 0, 34 theorems, no output. Note `lean` is not
-on `PATH` in a non-login shell — use the full `~/.elan/bin/lean`
-path (or add `~/.elan/bin` to `PATH`). And do not merge the
-generator's stderr into the pipe (`2>&1`): the summary line
-("generator: wrote stdout …") is not Lean and breaks parsing.
+Expected: exit 0, 34 theorems, no output. Note `lake`/`lean` are not
+on `PATH` in a non-login shell — use the full `~/.elan/bin/lake`
+/`~/.elan/bin/lean` paths (or add `~/.elan/bin` to `PATH`). Generated
+files start with `import Fbm.Prover`, so they must be checked via
+`lake env lean` from `lean-proof/` (which sets `LEAN_PATH` to the
+cached `.olean`s); run `lake build` first so the oleans are fresh.
+And do not merge the generator's stderr into the pipe (`2>&1`):
+the summary line ("generator: wrote stdout …") is not Lean and
+breaks parsing.
 
 Or run it via chomp from this directory — `lean-proof/` has
 its own `chompfile.toml` with a `test:lean` task (also the
@@ -80,7 +85,7 @@ python3 check.py ff/lib/core/core.ff
   theorem carries a `-- src: <file>:<line> <effect>` marker above
   it, so a Lean error can be traced back to the statement. Since
   v22 `⊕` is a bitwise-xor operator in effects (translated to
-  `xor`, defined in `preamble.lean`), and the prefix operators
+  `xor`, defined in `Fbm/Interp.lean`), and the prefix operators
   (`tmod`/`tdiv`/`land`/`lor`/`xor`/`shl`/`shr`) emit their
   operands parenthesised, so nested `&`/`|` expressions parse.
   Since v23 each bitwise/shift/power operation has three
@@ -89,7 +94,8 @@ python3 check.py ff/lib/core/core.ff
   the same helper (see the synonyms paragraph in the notation
   section below).
 - `check.py` — the checker (v21). Runs the generator, passes the
-  output to `lean --json`, and reports each result as a TAP
+  output to `lake env lean --json` (from `lean-proof/`), and reports
+each result as a TAP
   version 13 test, one per emitted theorem, named
   `<effect> (<file>:<line>)`, with the Lean message as `#`
   diagnostics. Exit 0 when every theorem proves, 1
@@ -97,10 +103,18 @@ python3 check.py ff/lib/core/core.ff
   invocation and error mapping lives here. TAP is the only
   output (no flag, no friendly report) — that is what the
   `test:lean` chomp task consumes via `prove`.
-- `preamble.lean` — the Lean interpreter (`Tok`, `step`, `exec`,
-  `run`, `Outcome`, helpers). Loaded at runtime by `generate.py`
-  (`{src}` is replaced with the input filename); edit it here,
-  not in `generate.py`.
+- `Fbm/Interp.lean` — the Lean interpreter (`Tok`, `step`, `exec`,
+  `run`, `Outcome`, helpers, `Defs`, `lookup`, `execQ`, `runQ`) with
+  zero prover dependencies; import it alone to run the model.
+- `Fbm/Prover.lean` — proof infrastructure (`execQ_ok_mono`,
+  `execQ_append`), importing `Fbm.Interp`. Generated files start
+  with `import Fbm.Prover`.
+- `Fbm/Main.lean` — standalone executable entrypoint importing only
+  `Fbm.Interp` (sample program printing its `Outcome`); build with
+  `lake build fbm-interp`, run with `lake exe fbm-interp`.
+- `lakefile.toml` / `lean-toolchain` — Lake package (core Lean 4 only,
+  no Mathlib) pinning `leanprover/lean4:v4.36.0`; run `lake build`
+  from `lean-proof/` before checking.
 - `HELP.md` — the generator manual (notation, scope, IO, `ensures`/
   `requires`, the proof ladder). Moved out of the module docstring
   (v19); the docstring is now a short pointer.

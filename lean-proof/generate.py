@@ -8,7 +8,8 @@ A pure translator: it parses, inlines, and emits Lean. It runs no
 tests and has no interpreter of its own. The full manual (notation,
 scope, IO, where/when, the proof ladder) is in HELP.md; the
 user-facing guide is README.md; the design and phases are PLAN.md.
-The Lean preamble lives in preamble.lean.
+The Lean interpreter and prover live in Fbm/Interp.lean and
+Fbm/Prover.lean (generated files import Fbm.Prover).
 """
 import re, sys
 from dataclasses import dataclass, field
@@ -119,14 +120,7 @@ def lean_name(word):
         name = "w_" + name
     return name
 
-def _load_preamble():
-    """Load the Lean preamble from preamble.lean (same directory
-    as this script). The file is the source of truth for the
-    interpreter; edit it there, not here."""
-    path = Path(__file__).resolve().parent / "preamble.lean"
-    return path.read_text()
-
-LEAN_PREAMBLE = _load_preamble()
+LEAN_HEADER = "import Fbm.Prover"
 
 def _rest(tok):
     """The rest-of-stack marker, in either spelling: the Unicode
@@ -4869,7 +4863,7 @@ def main():
     # Output lines and problems are initialised here (before the
     # effect-attachment loop) so a malformed @effect can be
     # recorded as a problem comment without crashing the run.
-    out_lines = [LEAN_PREAMBLE.replace("{src}", src_path.name)]
+    out_lines = [LEAN_HEADER]
     problems = []
     effects = {}  # word -> [(in_elems, out_elems, cond, where_text), ...] in file order
     effect_text = {}  # word -> [effect text, ...] in file order
