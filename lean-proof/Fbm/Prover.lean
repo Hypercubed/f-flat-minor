@@ -217,6 +217,60 @@ def SpecErr (prog : List Tok)
     ∃ (fuel : Nat) (defs' : Defs),
       execQ fuel prog (s0 ++ R) (q0 ++ qq) inp orc acts defs = (Outcome.err, defs')
 
+/-- `SpecExact`: exact-stack spec for words that observe or
+    wipe the whole stack (`clr` wipes, `depth` pushes the
+    length, `print` traces the whole stack, `empty?` tests
+    emptiness). No `R` frame: the program runs on exactly
+    `s0`, so length-observing words hold. Queue stays framed
+    (`qq`), input/oracle ignored (`∀ inp1 orc1`) like `Spec`.
+    Axioms: standard only. -/
+def SpecExact (prog : List Tok)
+    (pre : Stack → Stack → In → Oracle → List IOAction → Defs → Prop)
+    (post : Stack → Stack → List IOAction → Defs → Prop) : Prop :=
+  ∀ (qq : Stack) (inp : In) (orc : Oracle) (acts : List IOAction) (defs : Defs)
+    (s0 q0 : Stack),
+    pre s0 q0 inp orc acts defs →
+    ∃ (fuel : Nat) (s1 q1 : Stack) (acts1 : List IOAction) (defs1 : Defs),
+      post s1 q1 acts1 defs1 ∧
+      ∀ (inp1 : In) (orc1 : Oracle),
+      execQ fuel prog s0 (q0 ++ qq) inp1 orc1 acts defs =
+        (Outcome.ok s1 (q1 ++ qq) acts1, defs1)
+
+/-- `SpecIO`: input/oracle-threading spec for `getc` (reads
+    the input head), `clock`/`rand` (draw the oracle head).
+    Stack/queue stay framed (`R`/`qq`); the given `inp`/`orc`
+    (not fresh `∀`) is used, so the pre can pin `N :: tail`
+    / `o :: tail`. The leftover stream is invisible in
+    `Outcome.ok`, so the post only pins stacks/trace/defs.
+    Axioms: standard only. -/
+def SpecIO (prog : List Tok)
+    (pre : Stack → Stack → In → Oracle → List IOAction → Defs → Prop)
+    (post : Stack → Stack → List IOAction → Defs → Prop) : Prop :=
+  ∀ (R qq : Stack) (acts : List IOAction) (defs : Defs)
+    (s0 q0 : Stack) (inp : In) (orc : Oracle),
+    pre s0 q0 inp orc acts defs →
+    ∃ (fuel : Nat) (s1 q1 : Stack) (acts1 : List IOAction) (defs1 : Defs),
+      post s1 q1 acts1 defs1 ∧
+      execQ fuel prog (s0 ++ R) (q0 ++ qq) inp orc acts defs =
+        (Outcome.ok (s1 ++ R) (q1 ++ qq) acts1, defs1)
+
+/-- `SpecExit`: exit spec for `exit`. The program halts with
+    `Outcome.exit code acts'`; the frame is discarded (like a
+    wipe) and remaining tokens never run. Framed in input
+    (`R`/`qq` quantified) but the post pins only the code,
+    trace, and defs. Axioms: standard only. -/
+def SpecExit (prog : List Tok)
+    (pre : Stack → Stack → In → Oracle → List IOAction → Defs → Prop)
+    (post : Int → List IOAction → Defs → Prop) : Prop :=
+  ∀ (R qq : Stack) (inp : In) (orc : Oracle) (acts : List IOAction) (defs : Defs)
+    (s0 q0 : Stack),
+    pre s0 q0 inp orc acts defs →
+    ∃ (fuel : Nat) (code : Int) (acts1 : List IOAction) (defs1 : Defs),
+      post code acts1 defs1 ∧
+      ∀ (inp1 : In) (orc1 : Oracle),
+      execQ fuel prog (s0 ++ R) (q0 ++ qq) inp1 orc1 acts defs =
+        (Outcome.exit code acts1, defs1)
+
 /-- `Spec.seq`: compose two specs directly. The intermediate
     state is pinned by explicit equalities over `s1 q1 acts1 d1`
     (kept as `seq` implicits so `apply` unifies them): `h1`
@@ -617,11 +671,9 @@ theorem Spec.pow {A B : Int} {R qq : Stack} {acts : List IOAction} {defs : Defs}
 
 /-- `SpecErr` leaves for the three guarded prims: with the
     guard holding (zero divisor / negative exponent) the
-    single token fails. `clr`, `depth`, `print`, `getc`,
-    `rand`, `clock`, `exit` keep direct `run` theorems (their
-    effects mention the whole stack, the trace, the
-    input/oracle stream, or `Outcome.exit`, none of which a
-    frame-polymorphic `Spec` can pin). -/
+    single token fails. `clr`/`depth`/`print`/`empty?` use
+    `SpecExact`, `getc`/`clock`/`rand` use `SpecIO`, and
+    `exit` uses `SpecExit` (see above). -/
 theorem SpecErr.div_err {A B : Int} {R qq : Stack} {acts : List IOAction} {defs : Defs}
     (h : B = 0) :
     SpecErr [Tok.div]
@@ -651,6 +703,160 @@ theorem SpecErr.pow_err {A B : Int} {R qq : Stack} {acts : List IOAction} {defs 
   obtain ⟨hs, hq, ha, hd⟩ := hpre
   rw [hs, hq, ha, hd]
   exact ⟨1, defs, by simp [execQ, step, h]⟩
+
+/-- `SpecExact.seq`: compose two exact specs. The midpoint is
+    pinned by explicit equalities (like `Spec.seq`); only the
+    queue threads a frame (`qq`), the stack is exact. -/
+theorem SpecExact.seq {p1 p2 : List Tok}
+    {pre : Stack → Stack → In → Oracle → List IOAction → Defs → Prop}
+    {post : Stack → Stack → List IOAction → Defs → Prop}
+    {s1 q1 : Stack} {acts1 : List IOAction} {d1 : Defs}
+    (h1 : SpecExact p1 pre
+      (fun s' q' acts' d' => s' = s1 ∧ q' = q1 ∧ acts' = acts1 ∧ d' = d1))
+    (h2 : SpecExact p2
+      (fun s q _ _ acts defs => s = s1 ∧ q = q1 ∧ acts = acts1 ∧ defs = d1)
+      post) :
+    SpecExact (p1 ++ p2) pre post := by
+  intro qq inp orc acts defs s q hpre
+  obtain ⟨f1, t1, u1, b1, e1, hm, hu1⟩ := h1 qq inp orc acts defs s q hpre
+  rw [hm.1, hm.2.1, hm.2.2.1, hm.2.2.2] at hu1
+  obtain ⟨f2, s2, q2, a2, d2, hp, hu2⟩ :=
+    h2 qq inp orc acts1 d1 s1 q1 ⟨rfl, rfl, rfl, rfl⟩
+  exact ⟨f1 + f2 + 1, s2, q2, a2, d2, hp, fun inp1 orc1 =>
+    execQ_append f1 p1 s (q ++ qq) inp1 orc1 acts defs
+      s1 (q1 ++ qq) acts1 d1 (hu1 inp1 orc1) (fun i o => hu2 i o)⟩
+
+/-- `SpecExact.nil`: the empty program preserves everything. -/
+theorem SpecExact.nil {s0 q0 : Stack} {a0 : List IOAction} {d0 : Defs} :
+    SpecExact []
+    (fun s q _ _ acts defs => s = s0 ∧ q = q0 ∧ acts = a0 ∧ defs = d0)
+    (fun s' q' acts' d' => s' = s0 ∧ q' = q0 ∧ acts' = a0 ∧ d' = d0) := by
+  intro qq inp orc acts defs s q hpre
+  obtain ⟨hs, hq, ha, hd⟩ := hpre
+  rw [hs, hq, ha, hd]
+  exact ⟨0, s0, q0, a0, d0, ⟨rfl, rfl, rfl, rfl⟩,
+    by intro inp1 orc1; simp [execQ]⟩
+
+/-- Exact-stack leaves: `clr` wipes, `depth` pushes the
+    length, `print` traces the whole stack. `push`/`eq` are
+    also exact (for peeling `empty?` = `depth` + `push 0` +
+    `eq` entirely within `SpecExact`). -/
+theorem SpecExact.clr {R qq : Stack} {acts : List IOAction} {defs : Defs} :
+    SpecExact [Tok.clr]
+    (fun s q _ _ acts' d => s = R ∧ q = qq ∧ acts' = acts ∧ d = defs)
+    (fun s' q' acts' d' => s' = [] ∧ q' = qq ∧ acts' = acts ∧ d' = defs) := by
+  intro qq2 inp orc acts0 defs0 s0 q0 hpre
+  obtain ⟨hs, hq, ha, hd⟩ := hpre
+  rw [hs, hq, ha, hd]
+  exact ⟨1, [], qq, acts, defs, ⟨rfl, rfl, rfl, rfl⟩,
+    by intro inp1 orc1; simp [execQ, step]⟩
+
+theorem SpecExact.depth {R qq : Stack} {acts : List IOAction} {defs : Defs} :
+    SpecExact [Tok.depth]
+    (fun s q _ _ acts' d => s = R ∧ q = qq ∧ acts' = acts ∧ d = defs)
+    (fun s' q' acts' d' => s' = ((R.length : Int) :: R) ∧ q' = qq ∧
+      acts' = acts ∧ d' = defs) := by
+  intro qq2 inp orc acts0 defs0 s0 q0 hpre
+  obtain ⟨hs, hq, ha, hd⟩ := hpre
+  rw [hs, hq, ha, hd]
+  exact ⟨1, ((R.length : Int) :: R), qq, acts, defs, ⟨rfl, rfl, rfl, rfl⟩,
+    by intro inp1 orc1; simp [execQ, step]⟩
+
+theorem SpecExact.print {R qq : Stack} {acts : List IOAction} {defs : Defs} :
+    SpecExact [Tok.print]
+    (fun s q _ _ acts' d => s = R ∧ q = qq ∧ acts' = acts ∧ d = defs)
+    (fun s' q' acts' d' => s' = R ∧ q' = qq ∧
+      acts' = acts ++ [IOAction.print R] ∧ d' = defs) := by
+  intro qq2 inp orc acts0 defs0 s0 q0 hpre
+  obtain ⟨hs, hq, ha, hd⟩ := hpre
+  rw [hs, hq, ha, hd]
+  exact ⟨1, R, qq, acts ++ [IOAction.print R], defs, ⟨rfl, rfl, rfl, rfl⟩,
+    by intro inp1 orc1; simp [execQ, step]⟩
+
+theorem SpecExact.push {n : Int} {R qq : Stack} {acts : List IOAction} {defs : Defs} :
+    SpecExact [Tok.push n]
+    (fun s q _ _ acts' d => s = R ∧ q = qq ∧ acts' = acts ∧ d = defs)
+    (fun s' q' acts' d' => s' = n :: R ∧ q' = qq ∧ acts' = acts ∧ d' = defs) := by
+  intro qq2 inp orc acts0 defs0 s0 q0 hpre
+  obtain ⟨hs, hq, ha, hd⟩ := hpre
+  rw [hs, hq, ha, hd]
+  exact ⟨1, n :: R, qq, acts, defs, ⟨rfl, rfl, rfl, rfl⟩,
+    by intro inp1 orc1; simp [execQ, step]⟩
+
+theorem SpecExact.eq {A B : Int} {R qq : Stack} {acts : List IOAction} {defs : Defs} :
+    SpecExact [Tok.eq]
+    (fun s q _ _ acts' d => s = B :: A :: R ∧ q = qq ∧ acts' = acts ∧ d = defs)
+    (fun s' q' acts' d' => s' = (if A = B then 1 else 0) :: R ∧ q' = qq ∧
+      acts' = acts ∧ d' = defs) := by
+  intro qq2 inp orc acts0 defs0 s0 q0 hpre
+  obtain ⟨hs, hq, ha, hd⟩ := hpre
+  rw [hs, hq, ha, hd]
+  exact ⟨1, (if A = B then 1 else 0) :: R, qq, acts, defs, ⟨rfl, rfl, rfl, rfl⟩,
+    by intro inp1 orc1; simp [execQ, step]⟩
+
+/-- `SpecIO.getc`: push the input head. Holds for any `N`
+    (the byte range `0 <= N ∧ N < 256` rides along as an
+    unused `_hbyte` hypothesis in generated theorems). -/
+theorem SpecIO.getc {N : Int} {R qq : Stack} {tail : In}
+    {acts : List IOAction} {defs : Defs} :
+    SpecIO [Tok.getc]
+    (fun s q inp _ acts' d => s = R ∧ q = qq ∧ inp = N :: tail ∧
+      acts' = acts ∧ d = defs)
+    (fun s' q' acts' d' => s' = N :: R ∧ q' = qq ∧ acts' = acts ∧
+      d' = defs) := by
+  intro Rr qq2 acts0 defs0 s0 q0 inp0 orc0 hpre
+  obtain ⟨hs, hq, hi, ha, hd⟩ := hpre
+  rw [hs, hq, hi, ha, hd]
+  exact ⟨1, N :: R, qq, acts, defs, ⟨rfl, rfl, rfl, rfl⟩,
+    by simp [execQ, step]⟩
+
+/-- `SpecIO.clock`: push the oracle head. -/
+theorem SpecIO.clock {o : Int} {R qq : Stack} {tail : Oracle}
+    {acts : List IOAction} {defs : Defs} :
+    SpecIO [Tok.clock]
+    (fun s q _ orc acts' d => s = R ∧ q = qq ∧ orc = o :: tail ∧
+      acts' = acts ∧ d = defs)
+    (fun s' q' acts' d' => s' = o :: R ∧ q' = qq ∧ acts' = acts ∧
+      d' = defs) := by
+  intro Rr qq2 acts0 defs0 s0 q0 inp0 orc0 hpre
+  obtain ⟨hs, hq, ho, ha, hd⟩ := hpre
+  rw [hs, hq, ho, ha, hd]
+  exact ⟨1, o :: R, qq, acts, defs, ⟨rfl, rfl, rfl, rfl⟩,
+    by simp [execQ, step]⟩
+
+/-- `SpecIO.rand`: push `o % max` with its range. The guard
+    `0 < max` arrives as an explicit hypothesis (closed from
+    the outer `hw` by `assumption`/`omega`); the range rides
+    in the post, proved once here by the `Int.emod` lemmas. -/
+theorem SpecIO.rand {M o : Int} {R qq : Stack} {tail : Oracle}
+    {acts : List IOAction} {defs : Defs} (h : 0 < M) :
+    SpecIO [Tok.rand]
+    (fun s q _ orc acts' d => s = M :: R ∧ q = qq ∧ orc = o :: tail ∧
+      acts' = acts ∧ d = defs)
+    (fun s' q' acts' d' => s' = (o % M) :: R ∧ q' = qq ∧ acts' = acts ∧
+      d' = defs ∧ 0 ≤ o % M ∧ o % M < M) := by
+  intro Rr qq2 acts0 defs0 s0 q0 inp0 orc0 hpre
+  obtain ⟨hs, hq, ho, ha, hd⟩ := hpre
+  rw [hs, hq, ho, ha, hd]
+  have hne : M ≠ 0 := by omega
+  have hnonneg : 0 ≤ o % M := Int.emod_nonneg o hne
+  have hlt : o % M < M := by
+    have h := Int.emod_lt o hne
+    rwa [Int.natAbs_of_nonneg (by omega : 0 ≤ M)] at h
+  exact ⟨1, (o % M) :: R, qq, acts, defs,
+    ⟨rfl, rfl, rfl, rfl, hnonneg, hlt⟩,
+    by simp [execQ, step]⟩
+
+/-- `SpecExit.exit`: halt with the top input as the code. -/
+theorem SpecExit.exit {N : Int} {R qq : Stack} {acts : List IOAction} {defs : Defs} :
+    SpecExit [Tok.exit]
+    (fun s q _ _ acts' d => s = N :: R ∧ q = qq ∧ acts' = acts ∧ d = defs)
+    (fun code acts' d' => code = N ∧ acts' = acts ∧ d' = defs) := by
+  intro Rr qq2 inp orc acts0 defs0 s0 q0 hpre
+  obtain ⟨hs, hq, ha, hd⟩ := hpre
+  rw [hs, hq, ha, hd]
+  exact ⟨1, N, acts, defs, ⟨rfl, rfl, rfl⟩,
+    by intro inp1 orc1; simp [execQ]⟩
 
 /-- `Spec.cond` (nonzero): `?` runs the quotation body when the
     flag is decided nonzero. -/
@@ -989,6 +1195,52 @@ theorem Spec.cond_nonzero_head {qv F : Int} {body rest : List Tok}
       (fun s q _ _ a d => s = qv :: F :: R ∧ q = qq ∧ a = acts ∧ d = defs) post :=
   Spec.seq (Spec.cond_nonzero hf hlookup hbody) hrest
 
+/-- `SpecExact` head-peeling continuations (for `fbm_verify`):
+    peel one head token off `([t] ++ rest)`, computing the
+    exact mid-state from the pre. -/
+theorem SpecExact.clr_head {rest : List Tok} {R qq : Stack}
+    {acts : List IOAction} {defs : Defs} {post}
+    (h : SpecExact rest
+      (fun s q _ _ a d => s = [] ∧ q = qq ∧ a = acts ∧ d = defs) post) :
+    SpecExact ([Tok.clr] ++ rest)
+      (fun s q _ _ a d => s = R ∧ q = qq ∧ a = acts ∧ d = defs) post :=
+  SpecExact.seq SpecExact.clr h
+
+theorem SpecExact.depth_head {rest : List Tok} {R qq : Stack}
+    {acts : List IOAction} {defs : Defs} {post}
+    (h : SpecExact rest
+      (fun s q _ _ a d => s = ((R.length : Int) :: R) ∧ q = qq ∧
+        a = acts ∧ d = defs) post) :
+    SpecExact ([Tok.depth] ++ rest)
+      (fun s q _ _ a d => s = R ∧ q = qq ∧ a = acts ∧ d = defs) post :=
+  SpecExact.seq SpecExact.depth h
+
+theorem SpecExact.print_head {rest : List Tok} {R qq : Stack}
+    {acts : List IOAction} {defs : Defs} {post}
+    (h : SpecExact rest
+      (fun s q _ _ a d => s = R ∧ q = qq ∧
+        a = acts ++ [IOAction.print R] ∧ d = defs) post) :
+    SpecExact ([Tok.print] ++ rest)
+      (fun s q _ _ a d => s = R ∧ q = qq ∧ a = acts ∧ d = defs) post :=
+  SpecExact.seq SpecExact.print h
+
+theorem SpecExact.push_head {n : Int} {rest : List Tok} {R qq : Stack}
+    {acts : List IOAction} {defs : Defs} {post}
+    (h : SpecExact rest
+      (fun s q _ _ a d => s = n :: R ∧ q = qq ∧ a = acts ∧ d = defs) post) :
+    SpecExact ([Tok.push n] ++ rest)
+      (fun s q _ _ a d => s = R ∧ q = qq ∧ a = acts ∧ d = defs) post :=
+  SpecExact.seq SpecExact.push h
+
+theorem SpecExact.eq_head {A B : Int} {rest : List Tok} {R qq : Stack}
+    {acts : List IOAction} {defs : Defs} {post}
+    (h : SpecExact rest
+      (fun s q _ _ a d => s = (if A = B then 1 else 0) :: R ∧ q = qq ∧
+        a = acts ∧ d = defs) post) :
+    SpecExact ([Tok.eq] ++ rest)
+      (fun s q _ _ a d => s = B :: A :: R ∧ q = qq ∧ a = acts ∧ d = defs) post :=
+  SpecExact.seq SpecExact.eq h
+
 /-- Base case: the empty program preserves everything, so a
     `Spec []` goal follows from the pure implication
     `pre → post`. `fbm_verify` discharges the implication by
@@ -1000,6 +1252,18 @@ theorem Spec.nil_close {pre : Stack → Stack → In → Oracle → List IOActio
       pre s q inp orc acts defs → post s q acts defs) :
     Spec [] pre post := by
   intro R qq inp orc acts defs s q hpre
+  exact ⟨0, s, q, acts, defs, h s q inp orc acts defs hpre,
+    by intro inp1 orc1; simp [execQ]⟩
+
+/-- Base case for `SpecExact`: `SpecExact []` follows from
+    `pre → post` (same dischargers as `Spec.nil_close`). -/
+theorem SpecExact.nil_close
+    {pre : Stack → Stack → In → Oracle → List IOAction → Defs → Prop}
+    {post : Stack → Stack → List IOAction → Defs → Prop}
+    (h : ∀ (s q : Stack) (inp : In) (orc : Oracle) (acts : List IOAction) (defs : Defs),
+      pre s q inp orc acts defs → post s q acts defs) :
+    SpecExact [] pre post := by
+  intro qq inp orc acts defs s q hpre
   exact ⟨0, s, q, acts, defs, h s q inp orc acts defs hpre,
     by intro inp1 orc1; simp [execQ]⟩
 
@@ -1107,6 +1371,9 @@ def FbmVerify.introFresh : TacticM Bool := do
     if ty.getAppFn.isConstOf `Not then return false
     let tyWhnf ← whnfR ty
     if tyWhnf.getAppFn.isConstOf `Spec then return false
+    if tyWhnf.getAppFn.isConstOf `SpecExact then return false
+    if tyWhnf.getAppFn.isConstOf `SpecIO then return false
+    if tyWhnf.getAppFn.isConstOf `SpecExit then return false
     if tyWhnf.getAppFn.isConstOf `Ne then return false
     if tyWhnf.isForall then
       let (_, body) ← forallTelescope tyWhnf fun xs b =>
@@ -1187,10 +1454,13 @@ def FbmVerify.headTok : TacticM (Option Name) := do
   try
     let mvar ← getMainGoal
     let ty ← instantiateMVars (← mvar.getType)
-    if !ty.getAppFn.isConstOf `Spec then return none
+    let fn := ty.getAppFn
+    if !(fn.isConstOf `Spec || fn.isConstOf `SpecExact ||
+         fn.isConstOf `SpecIO || fn.isConstOf `SpecExit) then return none
     let args := ty.getAppArgs
-    -- `Spec` goals carry `(prog, pre, post)`; `SpecErr` goals carry
-    -- `(prog, pre)`. Either way the program is `args[0]`.
+    -- `Spec`/`SpecExact`/`SpecIO`/`SpecExit` goals carry
+    -- `(prog, pre, post)`; `SpecErr` goals carry `(prog, pre)`.
+    -- Either way the program is `args[0]`.
     if args.size != 3 && args.size != 2 then return none
     let prog ← instantiateMVars args[0]!
     if prog.hasMVar then return none
@@ -1471,6 +1741,16 @@ def FbmVerify.run (_deps : Array Term) : TacticM Unit := do
   -- know how to synthesize" while `apply` defers them as new
   -- goals (closed as side effects later).
   let nilCloseTac ← `(tactic| apply Spec.nil_close)
+  let exactNilCloseTac ← `(tactic| apply SpecExact.nil_close)
+  let exactClrTac ← `(tactic| apply SpecExact.clr_head)
+  let exactDepthTac ← `(tactic| apply SpecExact.depth_head)
+  let exactPrintTac ← `(tactic| apply SpecExact.print_head)
+  let exactPushTac ← `(tactic| apply SpecExact.push_head)
+  let exactEqTac ← `(tactic| apply SpecExact.eq_head)
+  let ioGetcTac ← `(tactic| apply SpecIO.getc)
+  let ioClockTac ← `(tactic| apply SpecIO.clock)
+  let ioRandTac ← `(tactic| apply SpecIO.rand)
+  let exitTac ← `(tactic| apply SpecExit.exit)
   let pushTac ← `(tactic| apply Spec.push_head)
   let dupTac ← `(tactic| apply Spec.dup_head)
   let swapTac ← `(tactic| apply Spec.swap_head)
@@ -1553,7 +1833,9 @@ def FbmVerify.run (_deps : Array Term) : TacticM Unit := do
         if ← FbmVerify.tryApply omegaTac then return true
         if ← FbmVerify.tryApply decideTac then return true
         return false
-      if !ty.getAppFn.isConstOf `Spec then
+      let _fn := ty.getAppFn
+      if !(_fn.isConstOf `Spec || _fn.isConstOf `SpecExact ||
+           _fn.isConstOf `SpecIO || _fn.isConstOf `SpecExit) then
         if (← inferType ty) == mkSort Level.zero then
           if ← FbmVerify.tryApply rflTac then return true
           if ← FbmVerify.atomicAssumption then return true
@@ -1588,8 +1870,12 @@ def FbmVerify.run (_deps : Array Term) : TacticM Unit := do
     if ← FbmVerify.tryApply normTac then return true
     let some hd ← FbmVerify.headTok | return false
     match hd with
-    | `nil => if ← FbmVerify.tryApply nilCloseTac then return true
-    | `Tok.push => if ← FbmVerify.tryApply pushTac then return true
+    | `nil =>
+        if ← FbmVerify.tryApply nilCloseTac then return true
+        if ← FbmVerify.tryApply exactNilCloseTac then return true
+    | `Tok.push =>
+        if ← FbmVerify.tryApply pushTac then return true
+        if ← FbmVerify.tryApply exactPushTac then return true
     | `Tok.dup => if ← FbmVerify.tryApply dupTac then return true
     | `Tok.swap => if ← FbmVerify.tryApply swapTac then return true
     | `Tok.drop => if ← FbmVerify.tryApply dropTac then return true
@@ -1597,7 +1883,16 @@ def FbmVerify.run (_deps : Array Term) : TacticM Unit := do
     | `Tok.qpull => if ← FbmVerify.tryApply qpullTac then return true
     | `Tok.gt => if ← FbmVerify.tryApply gtTac then return true
     | `Tok.lt => if ← FbmVerify.tryApply ltTac then return true
-    | `Tok.eq => if ← FbmVerify.tryApply eqTac then return true
+    | `Tok.eq =>
+        if ← FbmVerify.tryApply eqTac then return true
+        if ← FbmVerify.tryApply exactEqTac then return true
+    | `Tok.clr => if ← FbmVerify.tryApply exactClrTac then return true
+    | `Tok.depth => if ← FbmVerify.tryApply exactDepthTac then return true
+    | `Tok.print => if ← FbmVerify.tryApply exactPrintTac then return true
+    | `Tok.getc => if ← FbmVerify.tryApply ioGetcTac then return true
+    | `Tok.clock => if ← FbmVerify.tryApply ioClockTac then return true
+    | `Tok.rand => if ← FbmVerify.tryApply ioRandTac then return true
+    | `Tok.exit => if ← FbmVerify.tryApply exitTac then return true
     | `Tok.mul => if ← FbmVerify.tryApply mulTac then return true
     | `Tok.nop => if ← FbmVerify.tryApply nopTac then return true
     | `Tok.add => if ← FbmVerify.tryApply addTac then return true

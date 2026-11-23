@@ -614,27 +614,6 @@ def negate_cond(cond):
     if the condition cannot be parsed."""
     return _emit_expr(_negate_ast(_parse_expr(cond)))
 
-def _trace_for(name, prog, in_vars, in_lean):
-    """The IO trace (a Lean list expression) for a theorem's
-    `Outcome.ok` right-hand side. Only a bare effect on a single
-    IO primitive has a non-empty trace: `putc`/`putn` record the
-    value they print (the top input), `.` records the whole input
-    stack. `exit`/`rand`/`clock` and every pure word record
-    nothing (`[]`) -- `exit`'s outcome is `Outcome.exit`, not
-    `ok`, and `rand`/`clock` perform no output. A defined word
-    never has a trace here, because IO inside a defined word is
-    refused before emission (see the program check in main)."""
-    if len(prog) == 1 and prog[0] == name and name in IO_PRIMS:
-        if name == "putc":
-            top = in_vars[-1] if in_vars else None
-            return f"[IOAction.putc {top}]" if top else "[]"
-        if name == "putn":
-            top = in_vars[-1] if in_vars else None
-            return f"[IOAction.putn {top}]" if top else "[]"
-        if name == ".":
-            return f"[IOAction.print ({in_lean})]"
-    return "[]"
-
 def parse_args(argv):
     """Parse command-line args: generate.py in.ff [out.lean|-].
     Returns (src_path, out_path) where out_path is None for stdout.
@@ -819,16 +798,28 @@ _RUNQ_SIM_TOKENS = {
 }
 
 
-def _sim_runq(tokens, stack, stack_rest, queue, queue_tail):
-    """Simulate `tokens` on a symbolic stack and queue (Phase 6).
-    `stack` is a list of Lean expressions, bottom-to-top (the last
-    element is the top); `stack_rest` is the rest variable name or
-    None. `queue` is a list of Lean expressions, head-first; the
-    head is `queue[0]`, the tail is the variable `queue_tail`.
+# Comparison tokens the shape pass understands:
+# they pop two values and push a Lean if-expression, `(if a < b
+# then 1 else 0)` -- the flag a `?` splits on. Only `<`, `=`,
+# `>` can appear in an inlined program (they are the F♭m
+# comparison primitives); `<=`, `>=`, `!=` are accepted for
+# completeness. The Lean operators are the pretty forms (`≤`,
+# `≥`, `≠`); `<=`/`>=` would also parse, but `!=` in Lean is
+# boolean, not the proposition, so it is never emitted here.
+_COND_CMP_OPS = {
+    "<": "<", "=": "=", ">": ">",
+    "<=": "≤", ">=": "≥", "!=": "≠",
+}
+
+
+def _shape_runq(tokens, stack, stack_rest, queue, queue_tail):
+    """Track the statement shape of `tokens` on a symbolic stack
+    and queue (lean-generator-cleanup: a fuel-free statement-shape
+    pass). Handles only stack shuffles, `q<` / `q>`,
+    and literals -- the tokens allowed in a runQ prefix/suffix.
     Returns (stack, stack_rest, queue, queue_tail). Raises
-    ValueError for an unsupported token or an underflow (a pop
-    from the rest / from the ambient queue tail, whose head cannot
-    be named)."""
+    ValueError for an unsupported token or an underflow. No fuel
+    is counted and no proof steps are simulated."""
     stack = list(stack)
     queue = list(queue)
     for tok in tokens:
@@ -868,25 +859,23 @@ def _sim_runq(tokens, stack, stack_rest, queue, queue_tail):
     return stack, stack_rest, queue, queue_tail
 
 
-def _sim_runq_expanded(tokens, lits, stack, stack_rest, queue, queue_tail):
-    """Simulate `tokens` on a symbolic stack and queue (Phase 6,
-    v30: the literal-expanding version of _sim_runq). `tokens` may
-    contain ("lit", k) markers; when `eval` dispatches on a lit
-    marker, the literal's body is spliced in front of the remaining
-    tokens and simulation continues. Stops at the first `eval`
-    whose stack top is a variable (not a lit marker). Returns
-    (stack, stack_rest, queue, queue_tail, steps, remaining):
-    the state at the dispatch point (the quotation code still on
-    top of `stack`), the number of execQ steps consumed before
-    the dispatch (each token processed counts 1, each literal-eval
-    dispatch counts 1; the dispatch itself is NOT counted -- it is
-    the +1 in the fuel formula), and the tokens not yet consumed
-    (the suffix). Raises ValueError for an unsupported token, an
-    underflow, or no eval on a variable quotation."""
+def _shape_runq_expanded(tokens, lits, stack, stack_rest, queue, queue_tail):
+    """Track the statement shape with literal splicing
+    (lean-generator-cleanup: a fuel-free statement-shape pass).
+    `tokens` may contain ("lit", k)
+    markers; when `eval` dispatches on one, the literal's body
+    is spliced in front of the remaining tokens and    tracking
+    continues. Stops at the first `eval` whose stack top is a
+    variable. Returns (stack, stack_rest, queue, queue_tail,
+    steps, remaining): the state at the dispatch point (the
+    quotation code still on top) and the tokens not yet consumed
+    (the suffix). `steps` is always 0 (fuel counting was removed;
+    kept only so call sites keep their tuple shape). Raises
+    ValueError for an unsupported token, an underflow, or no
+    eval on a variable quotation."""
     stack = list(stack)
     queue = list(queue)
     rest = list(tokens)
-    steps = 0
     lit_names = {f"lit{k}" for k in range(len(lits))}
     while True:
         if not rest:
@@ -899,25 +888,16 @@ def _sim_runq_expanded(tokens, lits, stack, stack_rest, queue, queue_tail):
                 raise ValueError("eval underflows the stack in a runQ prefix")
             top = stack[-1]
             if top in lit_names:
-                # Literal dispatch: pop the code, splice the
-                # literal's body in front of the remaining tokens.
                 k = int(top[3:])
                 stack.pop()
                 rest = list(lits[k]) + rest
-                steps += 1
                 continue
             if top.lstrip("-").isdigit():
                 raise ValueError(
                     "eval on an integer in a runQ prefix (the quotation "
                     "code must be a variable or a literal)")
-            # Variable quotation: the dispatch point. The code
-            # stays on top; the caller pops it for the body's
-            # input stack. The dispatch itself is not counted in
-            # `steps` (it is the +1 in the fuel formula).
-            return stack, stack_rest, queue, queue_tail, steps, rest
-        steps += 1
+            return stack, stack_rest, queue, queue_tail, 0, rest
         if isinstance(tok, tuple) and tok[0] == "lit":
-            # A literal marker: push its code variable.
             stack.append(f"lit{tok[1]}")
             continue
         if isinstance(tok, int):
@@ -955,42 +935,25 @@ def _sim_runq_expanded(tokens, lits, stack, stack_rest, queue, queue_tail):
             f"(only stack shuffles, q< / q>, and literals are)")
 
 
-# Comparison tokens the runQ cond simulator understands (v31):
-# they pop two values and push a Lean if-expression, `(if a < b
-# then 1 else 0)` -- the flag a `?` splits on. Only `<`, `=`,
-# `>` can appear in an inlined program (they are the F♭m
-# comparison primitives); `<=`, `>=`, `!=` are accepted for
-# completeness. The Lean operators are the pretty forms (`≤`,
-# `≥`, `≠`); `<=`/`>=` would also parse, but `!=` in Lean is
-# boolean, not the proposition, so it is never emitted here.
-_COND_CMP_OPS = {
-    "<": "<", "=": "=", ">": ">",
-    "<=": "≤", ">=": "≥", "!=": "≠",
-}
-
-
-def _sim_runq_cond(tokens, stack, stack_rest, queue, queue_tail, stop_at_cond=True):
-    """Simulate `tokens` on a symbolic stack and queue (Phase 6,
-    v31: the cond variant of _sim_runq). Like _sim_runq, but it
-    also handles comparison tokens by pushing a Lean
-    if-expression, and literal markers by pushing their code
-    variables. With stop_at_cond (the default) it stops at the
-    first `?` and returns (stack, stack_rest, queue, queue_tail,
-    steps, remaining): the state at the dispatch point (the
-    quotation code on top, the flag below it), the number of
-    tokens consumed before the dispatch, and the tokens after
-    it. With stop_at_cond False it simulates the whole list (a
-    `?` there is a ValueError -- one `?` at a time) and returns
-    the same tuple with remaining []. Raises ValueError for an
-    unsupported token (eval, cons, other computing words, IO)
-    or an underflow."""
+def _shape_runq_cond(tokens, stack, stack_rest, queue, queue_tail, stop_at_cond=True):
+    """Track the statement shape with comparisons (lean-generator-
+    cleanup: a fuel-free statement-shape pass).
+    Like `_shape_runq`, but comparison tokens push a Lean
+    if-expression and literal markers push their code variables.
+    With stop_at_cond it stops at the first `?` and returns
+    (stack, stack_rest, queue, queue_tail, steps, remaining).
+    With stop_at_cond False it tracks the whole list (a `?`
+    there is a ValueError) and returns the same tuple with
+    remaining []. `steps` is always 0 (fuel counting was
+    removed; kept only so call sites keep their tuple shape).
+    Raises ValueError for an unsupported token or an
+    underflow."""
     stack = list(stack)
     queue = list(queue)
-    steps = 0
     for i, tok in enumerate(tokens):
         if tok == "?":
             if stop_at_cond:
-                return (stack, stack_rest, queue, queue_tail, steps,
+                return (stack, stack_rest, queue, queue_tail, 0,
                         list(tokens[i + 1:]))
             raise ValueError(
                 "? is not supported in a runQ cond body/suffix "
@@ -1031,35 +994,26 @@ def _sim_runq_cond(tokens, stack, stack_rest, queue, queue_tail, stop_at_cond=Tr
             raise ValueError(
                 f"token {tok!r} is not supported in a runQ cond prefix "
                 f"(only stack shuffles, q< / q>, comparisons, and literals are)")
-        steps += 1
     if stop_at_cond:
         raise ValueError(
             "the program has no ? dispatch (the cond path needs one)")
-    return stack, stack_rest, queue, queue_tail, steps, []
+    return stack, stack_rest, queue, queue_tail, 0, []
 
 
-def _sim_runq_between(tokens, lits, stack, stack_rest, queue, queue_tail):
-    """Simulate `tokens` on a symbolic stack and queue (Phase 6,
-    v33: the between? variant). Like _sim_runq_cond, but it also
-    splices literal bodies in when `eval` dispatches on them
-    (like _sim_runq_expanded), and stops at the first `?`. The
-    `?` is inside the spliced literal body (a word like sort2);
-    the tokens before it are only shuffles, q< / q>,
-    comparisons, and literal markers, so any computing token
-    before the `?` is a ValueError. Returns (stack, stack_rest,
-    queue, queue_tail, steps, remaining, eval_lit): the state at
-    the `?` dispatch (the quotation code on top, the flag below
-    it), the number of tokens consumed before the dispatch (each
-    token processed counts 1, each literal-eval dispatch counts
-    1), the tokens not yet consumed, and the lit index the eval
-    dispatched on (None when the `?` was reached without an
-    eval). Raises ValueError for an unsupported token, an
-    underflow, an eval on a variable quotation, or no `?`
-    dispatch."""
+def _shape_runq_between(tokens, lits, stack, stack_rest, queue, queue_tail):
+    """Track the statement shape with literal splicing up to `?`
+    (lean-generator-cleanup: a fuel-free statement-shape pass).
+    Like `_shape_runq_cond`, but `eval`
+    on a literal splices that literal's body in front of the
+    remaining tokens (like `_shape_runq_expanded`). Returns
+    (stack, stack_rest, queue, queue_tail, steps, remaining,
+    eval_lit). `steps` is always 0 (fuel counting was removed;
+    kept only so call sites keep their tuple shape). Raises
+    ValueError for an unsupported token, an underflow, an eval
+    on a variable quotation, or no `?` dispatch."""
     stack = list(stack)
     queue = list(queue)
     rest = list(tokens)
-    steps = 0
     eval_lit = None
     lit_names = {f"lit{k}" for k in range(len(lits))}
     while True:
@@ -1069,7 +1023,7 @@ def _sim_runq_between(tokens, lits, stack, stack_rest, queue, queue_tail):
                 "needs one inside the literal body)")
         tok = rest.pop(0)
         if tok == "?":
-            return (stack, stack_rest, queue, queue_tail, steps, rest,
+            return (stack, stack_rest, queue, queue_tail, 0, rest,
                     eval_lit)
         if tok == "eval":
             if not stack:
@@ -1079,7 +1033,6 @@ def _sim_runq_between(tokens, lits, stack, stack_rest, queue, queue_tail):
                 eval_lit = int(top[3:])
                 stack.pop()
                 rest = list(lits[eval_lit]) + rest
-                steps += 1
                 continue
             if top.lstrip("-").isdigit():
                 raise ValueError(
@@ -1088,7 +1041,6 @@ def _sim_runq_between(tokens, lits, stack, stack_rest, queue, queue_tail):
             raise ValueError(
                 "eval on a variable quotation in a runQ between prefix "
                 "(the eval must run a literal)")
-        steps += 1
         if isinstance(tok, tuple) and tok[0] == "lit":
             stack.append(f"lit{tok[1]}")
             continue
@@ -1203,7 +1155,6 @@ class EmitCtx:
     hw_binder: str = ""
     simp_args: str = ""
     hguard_line: str | None = None
-    trace: str = "[]"
     oracle_binder: str = ""
     oracle_arg: str = "[]"
     suffix: str = ""
@@ -1672,7 +1623,7 @@ class EmitCtx:
         # elements; the rest sits underneath them. The queue
         # starts as the ambient `qq`.
         try:
-            p_stack, p_rest, p_queue, p_tail, steps, remaining = _sim_runq_expanded(
+            p_stack, p_rest, p_queue, p_tail, steps, remaining = _shape_runq_expanded(
                 prog, lits, list(in_vars), in_rest_name, [], "qq")
         except ValueError as ex:
             return self.problem(str(ex))
@@ -1701,7 +1652,7 @@ class EmitCtx:
         # restored. A second eval here is a clean problem (the
         # plain simulator refuses it).
         try:
-            s_stack, s_rest, s_queue, s_tail = _sim_runq(
+            s_stack, s_rest, s_queue, s_tail = _shape_runq(
                 remaining, list(body_out_extra), body_out_rest, list(p_queue), p_tail)
         except ValueError as ex:
             return self.problem(str(ex))
@@ -1954,7 +1905,7 @@ class EmitCtx:
         # is bottom-to-top elements; the rest sits underneath
         # them. The queue starts as the ambient `qq`.
         try:
-            p_stack, p_rest, p_queue, p_tail, steps, remaining = _sim_runq_cond(
+            p_stack, p_rest, p_queue, p_tail, steps, remaining = _shape_runq_cond(
                 prog, list(in_vars), rest_name, [], "qq", stop_at_cond=True)
         except ValueError as ex:
             return self.problem(str(ex))
@@ -2017,13 +1968,13 @@ class EmitCtx:
         # branch runs only the suffix. The queue must be restored
         # to the ambient `qq` on both branches.
         try:
-            b_stack, _, b_queue, _, _, _ = _sim_runq_cond(
+            b_stack, _, b_queue, _, _, _ = _shape_runq_cond(
                 body_prog, list(stack_below), p_rest, list(p_queue), p_tail,
                 stop_at_cond=False)
-            run_stack, _, run_queue, _, _, _ = _sim_runq_cond(
+            run_stack, _, run_queue, _, _, _ = _shape_runq_cond(
                 remaining, list(b_stack), p_rest, list(b_queue), p_tail,
                 stop_at_cond=False)
-            disc_stack, _, disc_queue, _, _, _ = _sim_runq_cond(
+            disc_stack, _, disc_queue, _, _, _ = _shape_runq_cond(
                 remaining, list(stack_below), p_rest, list(p_queue), p_tail,
                 stop_at_cond=False)
         except ValueError as ex:
@@ -2293,7 +2244,7 @@ class EmitCtx:
         # Simulate the prefix up to the `?` dispatch. The input
         # stack is the flag and the two codes, on the input rest.
         try:
-            p_stack, p_rest, p_queue, p_tail, steps, remaining = _sim_runq_cond(
+            p_stack, p_rest, p_queue, p_tail, steps, remaining = _shape_runq_cond(
                 prog, [flag_var, code1, code2], in_rest, [], "qq",
                 stop_at_cond=True)
         except ValueError as ex:
@@ -2345,14 +2296,14 @@ class EmitCtx:
         suffix_pre = remaining[:-1]
         try:
             if is_run:
-                b_stack, _, b_queue, _, _, _ = _sim_runq_cond(
+                b_stack, _, b_queue, _, _, _ = _shape_runq_cond(
                     body_prog, list(stack_below), p_rest, list(p_queue),
                     p_tail, stop_at_cond=False)
-                f_stack, _, f_queue, _, _, _ = _sim_runq_cond(
+                f_stack, _, f_queue, _, _, _ = _shape_runq_cond(
                     suffix_pre, list(b_stack), p_rest, list(b_queue),
                     p_tail, stop_at_cond=False)
             else:
-                f_stack, _, f_queue, _, _, _ = _sim_runq_cond(
+                f_stack, _, f_queue, _, _, _ = _shape_runq_cond(
                     suffix_pre, list(stack_below), p_rest, list(p_queue),
                     p_tail, stop_at_cond=False)
         except ValueError as ex:
@@ -2641,7 +2592,7 @@ class EmitCtx:
         # below the quotation code.
         try:
             p_stack, p_rest, p_queue, p_tail, steps, remaining, eval_lit = (
-                _sim_runq_between(prog, lits, list(in_vars), rest_name,
+                _shape_runq_between(prog, lits, list(in_vars), rest_name,
                                   [], "qq"))
         except ValueError as ex:
             return self.problem(str(ex))
@@ -3046,7 +2997,7 @@ class EmitCtx:
         # --- First simulation: program start to the first
         # variable eval. ---
         try:
-            p_stack, p_rest, p_queue, p_tail, steps1, remaining1 = _sim_runq_expanded(
+            p_stack, p_rest, p_queue, p_tail, steps1, remaining1 = _shape_runq_expanded(
                 prog, lits, list(in_vars), in_rest_name, [], "qq")
         except ValueError as ex:
             return self.problem(str(ex))
@@ -3079,7 +3030,7 @@ class EmitCtx:
         # output value alone (v35: bi2's prefix (A, B) is still
         # on the stack here). ---
         try:
-            m_stack, m_rest, m_queue, m_tail, steps2, remaining2 = _sim_runq_expanded(
+            m_stack, m_rest, m_queue, m_tail, steps2, remaining2 = _shape_runq_expanded(
                 remaining1, lits, prefix1 + [out_val1], in_rest_name, list(p_queue), p_tail)
         except ValueError as ex:
             return self.problem(str(ex))
@@ -3105,7 +3056,7 @@ class EmitCtx:
         # --- Third simulation: the suffix from body2's output
         # (again the full output: prefix plus value, v35). ---
         try:
-            f_stack, f_rest, f_queue, f_tail = _sim_runq(
+            f_stack, f_rest, f_queue, f_tail = _shape_runq(
                 remaining2, prefix2 + [out_val2], in_rest_name, list(m_queue), m_tail)
         except ValueError as ex:
             return self.problem(str(ex))
@@ -3484,7 +3435,7 @@ class EmitCtx:
         # --- Simulate the prefix to B's eval. ---
         try:
             (p_stack, p_rest, p_queue, p_tail, steps1,
-             remaining1) = _sim_runq_expanded(
+             remaining1) = _shape_runq_expanded(
                 prog, lits, list(in_vars), in_rest_name, [], "qq")
         except ValueError as ex:
             return self.problem(
@@ -3517,7 +3468,7 @@ class EmitCtx:
         # --- Simulate Rest1 to the cond. ---
         try:
             (c_stack, c_rest, c_queue, c_tail, _steps_cond,
-             remaining_after) = _sim_runq_cond(
+             remaining_after) = _shape_runq_cond(
                 remaining1, b_out_elems, p_rest, p_queue, p_tail,
                 stop_at_cond=True)
         except ValueError as ex:
@@ -3566,13 +3517,13 @@ class EmitCtx:
             elems, rest, queue, tail = arm_elems, arm_rest, arm_queue, arm_tail
             if run:
                 try:
-                    (elems, rest, queue, tail, _s, _r) = _sim_runq_cond(
+                    (elems, rest, queue, tail, _s, _r) = _shape_runq_cond(
                         litS_body, elems, rest, queue, tail,
                         stop_at_cond=False)
                 except ValueError as ex:
                     raise ValueError(f"cond body simulation failed ({ex})")
             try:
-                (elems, rest, queue, tail, _s, _r) = _sim_runq_cond(
+                (elems, rest, queue, tail, _s, _r) = _shape_runq_cond(
                     pre_eval, elems, rest, queue, tail,
                     stop_at_cond=False)
             except ValueError as ex:
@@ -3675,7 +3626,7 @@ class EmitCtx:
         conc_below = conc_elems[:-1]
         try:
             (conc_out, conc_out_rest, conc_out_q, conc_out_t,
-             _s, _r) = _sim_runq_cond(
+             _s, _r) = _shape_runq_cond(
                 lits[conc_lit], conc_below, conc_rest, conc_queue,
                 conc_tail, stop_at_cond=False)
         except ValueError as ex:
@@ -4390,11 +4341,6 @@ class EmitCtx:
         uses_oracle = name in ORACLE_PRIMS
         self.oracle_binder = " (o : Int) (orc : Oracle)" if uses_oracle else ""
         self.oracle_arg = "(o :: orc)" if uses_oracle else "[]"
-        # The trace for the `Outcome.ok` right-hand side: the
-        # actions this word performs (a single action for a bare
-        # IO primitive, `[]` otherwise).
-        in_vars_only = _effect_vars(in_elems)
-        self.trace = _trace_for(name, self.prog_tokens[name], in_vars_only, self.in_lean)
         # A `when` condition becomes a hypothesis named `hw`. The
         # ladder must pass `run` (the theorems are stated with it),
         # the program, and `hw` to simp: simp cannot unfold `run`
@@ -4408,6 +4354,7 @@ class EmitCtx:
         # effects (the claim is the guard holding, not its negation)
         # and when the `when` IS the guard (hw already is the guard).
         # The top input is the last input variable, in typed order.
+        in_vars_only = _effect_vars(in_elems)
         self.hguard_line = None
         if name in GUARDS and not self.is_error and self.cond_lean is not None:
             top_var = in_vars_only[-1] if in_vars_only else None
@@ -4542,19 +4489,22 @@ class EmitCtx:
         return out, new_hyps, new_binders
 
     def _spec_emit(self, pre, post, hyps, binders, prog_app, deps,
-                    is_specerr=False):
-        """Write the doc comment and the Spec/SpecErr theorem with
+                    is_specerr=False, head=None):
+        """Write the doc comment and the Spec-family theorem with
         a uniform `by fbm_verify [...]` proof. Records the theorem
-        name for downstream dep computation."""
+        name for downstream dep computation. `head` selects the
+        predicate (`Spec`, `SpecExact`, `SpecIO`, `SpecExit`);
+        `is_specerr` selects `SpecErr` (pre only)."""
         self.out_lines.append(
             f"-- src: {self.src_path}:{self.src_line} {self.src_effect}")
         self.out_lines.append(f"/-- {self.ln}: @effect {self.effect_body} -/")
-        if not is_specerr:
+        if head is None:
+            head = "SpecErr" if is_specerr else "Spec"
+        if head == "Spec" and not is_specerr:
             post, hyps, binders = self._lift_post_conditionals(
                 post, hyps, binders)
         hyp_binders = "".join(f" {h}" for h in hyps)
-        head = "SpecErr" if is_specerr else "Spec"
-        if is_specerr:
+        if head == "SpecErr":
             concl = f"    {head} ({prog_app}) {pre} := by"
         else:
             concl = f"    {head} ({prog_app}) {pre} {post} := by"
@@ -4598,6 +4548,103 @@ class EmitCtx:
                    f"{ctx.hw_binder} (qq : Stack)")
         return self._spec_emit(pre, "", [], binders,
                                self._spec_prog_app(), deps, is_specerr=True)
+
+    def _emit_spec_exact(self, deps):
+        """Exact-stack words (`clr`, `depth`, `print`, `empty?`):
+        `SpecExact` with pre/post from the @effect (where
+        witnesses substituted inline, as in `_emit_spec_normal`)."""
+        ctx = self
+        wit = {}
+        if ctx.where_eqs is not None:
+            wit = dict(zip([lhs for lhs, _ in ctx.where_eqs], ctx.witnesses))
+        out_elems = [wit.get(e, e) for e in ctx.out_vars]
+        out_stack = lean_list_bottom_to_top(
+            out_elems, ctx.rest_name if ctx.out_rest else None)
+        trace = "[]"
+        if ctx.name == ".":
+            trace = f"[] ++ [IOAction.print ({ctx.rest_name})]"
+        pre = self._spec_pre(ctx.in_lean)
+        post = self._spec_post(out_stack, trace)
+        binders = (f" (defs : Defs){ctx.binder_part}{ctx.rest_binder}"
+                   f"{ctx.hw_binder} (qq : Stack)")
+        return self._spec_emit(pre, post, [], binders,
+                               self._spec_prog_app(), deps, head="SpecExact")
+
+    def _emit_spec_io(self, deps):
+        """Input/oracle words (`getc`, `clock`, `rand`): `SpecIO`
+        pinning the stream head in the pre."""
+        ctx = self
+        prog_app = self._spec_prog_app()
+        if ctx.name == "getc":
+            out_only = [e for e in ctx.out_vars if e not in ("...", "∅")]
+            if len(out_only) != 1:
+                return ctx.problem("getc pushes exactly one output")
+            out_var = out_only[0]
+            pre = (f"(fun st qu inp _ acts d => st = {ctx.in_lean} ∧ "
+                   f"qu = qq ∧ inp = {out_var} :: tail ∧ "
+                   f"acts = [] ∧ d = defs)")
+            post = self._spec_post(f"{out_var} :: {ctx.in_lean}")
+            binders = (f" (defs : Defs){ctx.binder_part}{ctx.rest_binder}"
+                       f" (tail : In)"
+                       f" (_hbyte : 0 <= {out_var} ∧ {out_var} < 256)"
+                       f" (qq : Stack)")
+            return self._spec_emit(pre, post, [], binders, prog_app,
+                                   deps, head="SpecIO")
+        if ctx.name == "clock":
+            out_only = [e for e in ctx.out_vars if e not in ("...", "∅")]
+            if len(out_only) != 1:
+                return ctx.problem("clock pushes exactly one output")
+            pre = (f"(fun st qu _ orc acts d => st = {ctx.in_lean} ∧ "
+                   f"qu = qq ∧ orc = o :: tail ∧ "
+                   f"acts = [] ∧ d = defs)")
+            post = self._spec_post(f"o :: {ctx.in_lean}")
+            binders = (f" (defs : Defs){ctx.rest_binder}"
+                       f" (o : Int) (tail : Oracle) (qq : Stack)")
+            return self._spec_emit(pre, post, [], binders, prog_app,
+                                   deps, head="SpecIO")
+        if ctx.name == "rand":
+            if ctx.cond_lean is None:
+                return ctx.problem(
+                    "rand needs `when 0 < max`: the range is only "
+                    "true for a positive max")
+            if ctx.rand_where_text is None:
+                return ctx.problem(
+                    "rand needs a where clause giving the range, "
+                    "e.g. `where 0 <= n ∧ n < max`")
+            out_only = [e for e in ctx.out_vars if e not in ("...", "∅")]
+            in_only = [e for e in ctx.in_vars if e not in ("...", "∅")]
+            if len(out_only) != 1 or len(in_only) != 1:
+                return ctx.problem(
+                    "rand takes exactly one input (the max) and "
+                    "pushes exactly one output")
+            max_var = in_only[0]
+            rest = ctx.rest_name if ctx.in_rest else "[]"
+            pre = (f"(fun st qu _ orc acts d => st = {ctx.in_lean} ∧ "
+                   f"qu = qq ∧ orc = o :: tail ∧ "
+                   f"acts = [] ∧ d = defs)")
+            post = (f"(fun s' q' acts' d' => s' = (o % {max_var}) :: {rest} ∧ "
+                    f"q' = qq ∧ acts' = [] ∧ d' = defs ∧ "
+                    f"0 <= o % {max_var} ∧ o % {max_var} < {max_var})")
+            binders = (f" (defs : Defs){ctx.binder_part}{ctx.rest_binder}"
+                       f" (o : Int) (tail : Oracle){ctx.hw_binder} (qq : Stack)")
+            return self._spec_emit(pre, post, [], binders, prog_app,
+                                   deps, head="SpecIO")
+        return ctx.problem(f"not an IO word: {ctx.name!r}")
+
+    def _emit_spec_exit(self, deps):
+        """`exit` halts with the top input as the code: `SpecExit`."""
+        ctx = self
+        in_vars_only = _effect_vars(ctx.in_elems)
+        top_var = in_vars_only[-1] if in_vars_only else None
+        if top_var is None:
+            return ctx.problem("exit needs an input (the exit code)")
+        pre = self._spec_pre(ctx.in_lean)
+        post = (f"(fun code acts' d' => code = {top_var} ∧ "
+                f"acts' = [] ∧ d' = defs)")
+        binders = (f" (defs : Defs){ctx.binder_part}{ctx.rest_binder}"
+                   f" (qq : Stack)")
+        return self._spec_emit(pre, post, [], binders,
+                               self._spec_prog_app(), deps, head="SpecExit")
 
     def _emit_spec_quot(self, deps):
         """`eval` / `cons` / `?` primitives: direct corollaries of
@@ -4771,22 +4818,18 @@ class EmitCtx:
         ln = self.ln
         name = self.name
         # Prog defs are emitted up front by main(), in dependency
-        # order (compositional `++` over callee Progs). Fallbacks
-        # below keep the old direct `run` theorems for words that
-        # are not frame-polymorphic. Fallback prims: IO/oracle/exit
-        # words keep their dedicated old emitters.
+        # order (compositional `++` over callee Progs).
+        # Non-frame-polymorphic prims go through the Spec family:
+        # `exit` via `SpecExit`, `getc`/`clock`/`rand` via `SpecIO`,
+        # the rest (`clr`/`depth`/`print`) via `SpecExact` below.
         if self.name == "exit":
-            self._emit_doc()
-            return _emit_exit(self)
+            return self._emit_spec_exit(deps)
         if self.name == "rand":
-            self._emit_doc()
-            return _emit_rand(self)
+            return self._emit_spec_io(deps)
         if self.name == "clock":
-            self._emit_doc()
-            return _emit_clock(self)
+            return self._emit_spec_io(deps)
         if self.name == "getc":
-            self._emit_doc()
-            return _emit_getc(self)
+            return self._emit_spec_io(deps)
         # Quotation primitives: direct Spec corollaries.
         if getattr(self, "is_quot", False):
             return self._emit_spec_quot(deps)
@@ -4808,228 +4851,14 @@ class EmitCtx:
             return self._emit_spec_error(deps)
         # Plain words: Spec, unless the flat program touches a
         # non-frame-polymorphic primitive (clr/depth/print/getc/
-        # rand/clock/exit), which keeps the old direct `run`
-        # theorem (with transitive callee Progs in the simp set,
-        # since Prog defs are compositional now).
+        # rand/clock/exit), which goes through the Spec family
+        # (`SpecExact` for stack-observing words like `empty?`).
         flat = [t for t in self.prog_tokens.get(self.name, [])
                 if isinstance(t, str)]
         if any(t in ("clr", "depth", ".", "getc", "rand", "clock",
                       "exit") for t in flat):
-            extra = "".join(
-                f", {lean_name(w)}Prog" for w in self._transitive_words())
-            if extra:
-                self.simp_args += extra
-            self._emit_doc()
-            # `ensures` is aliased to `where` at parse time: an
-            # output constrained by an equation keeps the old
-            # existential-with-witness theorem (e.g. `empty?`).
-            if self.where_eqs is not None:
-                return _emit_where(self)
-            return _emit_normal(self)
+            return self._emit_spec_exact(deps)
         return self._emit_spec_normal(deps)
-
-def _emit_exit(ctx):
-    """`exit` halts with a code: the outcome is `Outcome.exit n []`,
-    not `ok` and not `err`. The code is the top input (the last
-    input variable)."""
-    in_vars_only = _effect_vars(ctx.in_elems)
-    top_var = in_vars_only[-1] if in_vars_only else None
-    if top_var is None:
-        return ctx.problem("exit needs an input (the exit code)")
-    ctx.out_lines.append(
-        f"theorem {ctx.ln}_effect{ctx.suffix}{ctx.binder_part}{ctx.rest_binder}{ctx.hw_binder} :")
-    ctx.out_lines.append(
-        f"    run {ctx.ln}Prog ({ctx.in_lean}) [] [] = Outcome.exit {top_var} [] := by")
-    ctx.out_lines.append(f"  first | rfl | (simp [{ctx.simp_args}]; try omega)")
-    return True
-
-
-def _emit_rand(ctx):
-    """`rand` pushes some `n` in `[0, max)` (for `max > 0`).
-    It needs a `when` (the positive-max guard) and a `where` (the
-    range); both are validated here, and the proof supplies the
-    witness `o % max` (the oracle head modulo the max) and proves
-    the range by the Int.emod lemmas. This is the only inequality
-    `where` the generator proves (the general case is Phase 3)."""
-    rand_bad = None
-    if ctx.cond_lean is None:
-        rand_bad = ("rand needs `when 0 < max`: the range is only "
-                    "true for a positive max")
-    elif ctx.rand_where_text is None:
-        rand_bad = ("rand needs a where clause giving the range, "
-                    "e.g. `where 0 <= n ∧ n < max`")
-    out_var = None
-    max_var = None
-    range_prop = None
-    if rand_bad is None:
-        # The output is a single variable; the input is a
-        # single variable (the max).
-        out_only = [e for e in ctx.out_vars if e not in ("...", "∅")]
-        in_only = [e for e in ctx.in_vars if e not in ("...", "∅")]
-        if len(out_only) != 1 or len(in_only) != 1:
-            rand_bad = ("rand takes exactly one input (the max) and "
-                        "pushes exactly one output")
-        else:
-            out_var, max_var = out_only[0], in_only[0]
-            parts = [p.strip() for p in ctx.rand_where_text.split("∧")]
-            if len(parts) != 2:
-                rand_bad = ("rand's where clause must be a range of the form "
-                            "`0 <= n ∧ n < max`")
-            else:
-                m1 = re.fullmatch(r"0\s*<=\s*([A-Za-z_][A-Za-z0-9_]*)", parts[0])
-                m2 = re.fullmatch(
-                    r"([A-Za-z_][A-Za-z0-9_]*)\s*<\s*([A-Za-z_][A-Za-z0-9_]*)",
-                    parts[1])
-                if (not m1 or m1.group(1) != out_var
-                        or not m2 or m2.group(1) != out_var
-                        or m2.group(2) != max_var):
-                    rand_bad = ("rand's where clause must be a range of the form "
-                                f"`0 <= {out_var} ∧ {out_var} < {max_var}`")
-                else:
-                    try:
-                        range_prop = " ∧ ".join(
-                            translate_expr(p) for p in parts)
-                    except ExprError as ex:
-                        rand_bad = f"cannot translate rand range: {ex}"
-    if rand_bad is not None:
-        return ctx.problem(rand_bad)
-    # The range: `0 <= o % max` (Int.emod_nonneg) and
-    # `o % max < max` (Int.emod_lt, via the absolute value).
-    # Plain omega cannot prove `0 ≤ o % max` -- it treats the
-    # modulo as opaque -- so the proof supplies the two bounds.
-    ctx.out_lines.append(
-        f"theorem {ctx.ln}_effect{ctx.suffix}{ctx.binder_part}{ctx.rest_binder}"
-        f"{ctx.oracle_binder}{ctx.hw_binder} :")
-    ctx.out_lines.append(
-        f"    ∃ {out_var}, ({range_prop}) ∧ "
-        f"run {ctx.ln}Prog ({ctx.in_lean}) [] {ctx.oracle_arg} = "
-        f"Outcome.ok ({out_var} :: {ctx.rest_name}) [] [] := by")
-    ctx.out_lines.append(f"  have hne : {max_var} ≠ 0 := by omega")
-    ctx.out_lines.append(
-        f"  have hnonneg : 0 ≤ o % {max_var} := Int.emod_nonneg o hne")
-    ctx.out_lines.append(f"  have hlt : o % {max_var} < {max_var} := by")
-    ctx.out_lines.append(f"    have h := Int.emod_lt o hne")
-    ctx.out_lines.append(
-        f"    rwa [Int.natAbs_of_nonneg (by omega : 0 ≤ {max_var})] at h")
-    ctx.out_lines.append(f"  refine ⟨o % {max_var}, ⟨hnonneg, hlt⟩, ?_⟩")
-    ctx.out_lines.append(f"  first | rfl | (simp [{ctx.simp_args}]; try omega)")
-    return True
-
-
-def _emit_clock(ctx):
-    """`clock` pushes the current time: some Int, with nothing else
-    sayable about it. The witness is the oracle head `o`; the output
-    variable is an existential, not a binder."""
-    out_only = [e for e in ctx.out_vars if e not in ("...", "∅")]
-    if len(out_only) != 1:
-        return ctx.problem("clock pushes exactly one output")
-    out_var = out_only[0]
-    ctx.out_lines.append(
-        f"theorem {ctx.ln}_effect{ctx.suffix}{ctx.rest_binder}{ctx.oracle_binder}{ctx.hw_binder} :")
-    ctx.out_lines.append(
-        f"    ∃ {out_var}, run {ctx.ln}Prog ({ctx.in_lean}) [] {ctx.oracle_arg} = "
-        f"Outcome.ok ({out_var} :: rest) [] [] := by")
-    ctx.out_lines.append(f"  refine ⟨o, ?_⟩")
-    ctx.out_lines.append(f"  first | rfl | (simp [{ctx.simp_args}]; try omega)")
-    return True
-
-
-def _emit_getc(ctx):
-    """`getc` reads one byte from the input stream and pushes it (EOF
-    pushes 0). The output variable is the head of the input stream,
-    so it is a binder (not an existential): the theorem says for any
-    byte `n` at the front of the input stream and any tail `inp`,
-    getc pushes `n`. The EOF case (empty input pushes 0) needs a way
-    to say the input stream is empty, which the notation does not
-    have yet. A `where` clause constrains the byte:
-    `where 0 <= n ∧ n < 256` (or `n <= 255`) -- it becomes a
-    hypothesis on the binder, not an existential, because `n` is the
-    input-stream head."""
-    out_only = [e for e in ctx.out_vars if e not in ("...", "∅")]
-    if len(out_only) != 1:
-        return ctx.problem("getc pushes exactly one output")
-    out_var = out_only[0]
-    getc_hw = ""
-    getc_simp = ctx.simp_args
-    if ctx.getc_where_text is not None:
-        parts = [p.strip() for p in ctx.getc_where_text.split("∧")]
-        range_ok = False
-        if len(parts) == 2:
-            m1 = re.fullmatch(r"0\s*<=\s*([A-Za-z_][A-Za-z0-9_]*)", parts[0])
-            m2 = re.fullmatch(
-                r"([A-Za-z_][A-Za-z0-9_]*)\s*<\s*256", parts[1])
-            m2b = re.fullmatch(
-                r"([A-Za-z_][A-Za-z0-9_]*)\s*<=\s*255", parts[1])
-            if (m1 and m1.group(1) == out_var
-                    and ((m2 and m2.group(1) == out_var)
-                         or (m2b and m2b.group(1) == out_var))):
-                range_ok = True
-        if not range_ok:
-            return ctx.problem(
-                f"getc's where clause must be the byte range "
-                f"`0 <= {out_var} ∧ {out_var} < 256` (or `<= 255`)")
-        try:
-            range_prop = " ∧ ".join(
-                translate_expr(p) for p in parts)
-        except ExprError as ex:
-            return ctx.problem(f"cannot translate getc range: {ex}")
-        getc_hw = f" (_hbyte : {range_prop})"
-        getc_simp = ctx.simp_args
-    ctx.out_lines.append(
-        f"theorem {ctx.ln}_effect{ctx.suffix}{ctx.binder_part}{ctx.rest_binder} (inp : In){getc_hw}{ctx.hw_binder} :")
-    ctx.out_lines.append(
-        f"    run {ctx.ln}Prog ({ctx.in_lean}) ({out_var} :: inp) [] = "
-        f"Outcome.ok ({out_var} :: {ctx.rest_name}) [] [] := by")
-    ctx.out_lines.append(f"  first | rfl | (simp [{getc_simp}]; try omega)")
-    return True
-
-
-def _emit_error(ctx):
-    """An error effect: the word fails (`run ... = Outcome.err`)."""
-    ctx.out_lines.append(f"theorem {ctx.ln}_effect{ctx.suffix}{ctx.binder_part}{ctx.rest_binder}{ctx.hw_binder} :")
-    ctx.out_lines.append(f"    run {ctx.ln}Prog ({ctx.in_lean}) [] [] = Outcome.err := by")
-    ctx.out_lines.append(f"  first | rfl | (simp [{ctx.simp_args}]; try omega)")
-    return True
-
-
-def _emit_where(ctx):
-    """A `where` effect is an existential: the output variables it
-    constrains are bound by `∃`, and the where property (a
-    conjunction of `var = witness` equations) goes before the exec
-    equation. The proof supplies the witnesses, proves the where
-    property by `rfl` (each equation becomes `witness = witness`
-    after substitution), and leaves the exec equation to the ladder."""
-    out_lean = lean_list_bottom_to_top(
-        ctx.out_vars, ctx.rest_name if ctx.out_rest else None)
-    where_prop = " ∧ ".join(
-        f"({lhs} = {w})" for (lhs, _), w in zip(ctx.where_eqs, ctx.witnesses))
-    where_proof = ("rfl" if len(ctx.where_eqs) == 1
-                   else "⟨" + ", ".join(["rfl"] * len(ctx.where_eqs)) + "⟩")
-    ctx.out_lines.append(f"theorem {ctx.ln}_effect{ctx.suffix}{ctx.binder_part}{ctx.rest_binder}{ctx.hw_binder} :")
-    ctx.out_lines.append(
-        f"    ∃ {' '.join(ctx.existential)}, ({where_prop}) ∧ "
-        f"run {ctx.ln}Prog ({ctx.in_lean}) [] {ctx.oracle_arg} = "
-        f"Outcome.ok ({out_lean}) [] {ctx.trace} := by")
-    if ctx.hguard_line is not None:
-        ctx.out_lines.append(ctx.hguard_line)
-    ctx.out_lines.append(
-        f"  refine ⟨{', '.join(ctx.witnesses)}, {where_proof}, ?_⟩")
-    ctx.out_lines.append(f"  first | rfl | (simp [{ctx.simp_args}]; try omega)")
-    return True
-
-
-def _emit_normal(ctx):
-    """The ordinary case: `run ... = Outcome.ok (...)`."""
-    out_lean = lean_list_bottom_to_top(
-        ctx.out_vars, ctx.rest_name if ctx.out_rest else None)
-    ctx.out_lines.append(f"theorem {ctx.ln}_effect{ctx.suffix}{ctx.binder_part}{ctx.rest_binder}{ctx.hw_binder} :")
-    ctx.out_lines.append(
-        f"    run {ctx.ln}Prog ({ctx.in_lean}) [] {ctx.oracle_arg} = "
-        f"Outcome.ok ({out_lean}) [] {ctx.trace} := by")
-    if ctx.hguard_line is not None:
-        ctx.out_lines.append(ctx.hguard_line)
-    ctx.out_lines.append(f"  first | rfl | (simp [{ctx.simp_args}]; try omega)")
-    return True
 
 
 def main():
