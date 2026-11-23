@@ -1,0 +1,15 @@
+# Tasks
+
+## 1. Compositional Spec Layer in Fbm.Prover
+
+- [x] 1.1 Define `Spec` (and `SpecErr` for `Outcome.err`) in `lean-proof/Fbm/Prover.lean` over `Fbm.Interp.execQ`, hiding explicit fuel and quantifying over frame stack, queue, input, oracle, and `defs`, and verify `lake build Fbm.Prover` compiles. (Done: single-`Defs` `Spec`/`SpecErr` compile; `lake build` green on definitions.)
+- [x] 1.2 Prove the core structural lemmas in `lean-proof/Fbm/Prover.lean` (`Spec.seq` via `execQ_append`, `Spec.frame`, `Spec.eval`, `Spec.cond`, `Spec.cons`, and `Spec.call`), and verify `lake build Fbm.Prover` compiles with only standard Lean axioms. (Done: `Spec.seq` composes Specs directly with explicit midpoint equalities; all 10 prim leaves + `Spec.eval`/`call`/`cond_*` proved, standard axioms only.)
+
+## 2. Lean Verification Tactic
+
+- [x] 2.1 Implement the `fbm_verify` tactic in `lean-proof/Fbm/Prover.lean` to peel primitive steps, apply dependency `Spec` lemmas, case-split on `?` (`cond`) flags, and discharge `eval` via quotation-slot hypotheses, and verify with unit test theorems in `Fbm.Prover` covering `slip`, `dip`, `branch`, `bi2`, `between?`, `or_else`, and `and_also`. (Done: all 11 unit theorems pass — `slip`, `dip`, `choose`, `branch1/2`, `sort2`, `between`, `bi2`, `or_else`, `and_also`. Root-caused the final `between` failure: bare-peeling a cond-containing callee (`sort2Prog`) with a midpoint-meta post shares those metas across `split` branches, so the first branch to close grounds them and dooms the other (false `HI = LO ∧ LO = HI` / flipped-flag goals — incompleteness, not unsoundness). Fixed by applying callee `Spec` lemmas from `deps` (`apply $dep` in `stepOnce` after `atomicAssumption`, before head-peeling; non-theorem `Prog` deps fail `apply` harmlessly) so the hbody closes via the callee's concrete branch-aware post. Also: `splitSingle`'s `hasMVar` gate removed (midpoint metas safely carried into branches); `logInfo` in tactics is lossy — use `dbg_trace` for critical probes; `catch _` in `splitSingle` swallows diagnostics. All TEMPs stripped; workspace clean.)
+
+## 3. Simplify generate.py and Verify Suites
+
+- [x] 3.1 Emit `Prog` definitions using `++` over callee `Prog`s and uniform `by fbm_verify [...]` `Spec`/`SpecErr` proofs; deleted the dead `_emit_runq*` / old quotation emit layer (`_sim_runq*` stays: `prepare()` still uses it for stack shapes). (Done Nov 22: 34 primitives + 45 core theorems emitted, 0 problems. `Spec` post pins concrete `defs` throughout — a `defs'` ghost floats free since `eval_head` grounds midpoints from the hypothesis; post `if`s lift to `C`-vars with equality hyps except bare-variable tests, which stay inline for `splitCondFlag`; `ensures`-as-`where` keeps the existential fallback for `empty?`.)
+- [x] 3.2 `lake build` green (0 warnings) and `chomp test:lean` passes all 79 tests; removed the Phase A `FbmVerify` test block from `Fbm/Prover.lean` (superseded by generated coverage); documented `Spec`/`fbm_verify`/fallback/`@rec-effect` boundary in `lean-proof/README.md` and `lean-proof/HELP.md`.

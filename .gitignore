@@ -20,8 +20,6 @@ rust/target/*
 */node_modules/*
 *.vsix
 __pycache__/
-.kilo
-.kiro
 .agent
 
 openspec

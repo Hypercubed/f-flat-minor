@@ -21,7 +21,8 @@ Currently, `lean-proof/generate.py` (~4,981 lines) inlines all word calls to `To
 ## Decisions
 
 - **Relational `Spec` over `execQ` vs. redefining the interpreter**: Keep `Fbm.Interp.execQ` as the sole operational semantics and define `Spec` as a predicate on top of `execQ`. This guarantees zero semantic drift between the standalone interpreter and the prover. Alternative: a separate big-step `Inductive` semantics (would require proving equivalence to `execQ` anyway).
-- **Lean tactic (`macro_rules` / `Lean.Elab.Tactic`) vs. `aesop`**: Core Lean 4 only (no Mathlib/Aesop dependency, matching `preamble.lean`'s "Lean 4 core only, no Mathlib" constraint). A small custom `Lean.Elab.Tactic` or `macro_rules` loop over `first | ...` is self-contained and fast.
+- **Compose callee programs via `++` rather than `Tok.call`**: `generate.py` should emit `Prog` definitions as list concatenations referencing already-annotated callee `Prog`s (e.g. `branchProg := chooseProg ++ [Tok.eval]`) rather than flattening all tokens or emitting `Tok.call code`. Because `execQ_append` already splits on `p1 ++ p2`, `Spec.seq` can apply `choose_effect` directly to the `chooseProg` sublist without allocating numeric opcodes in `defs` or threading `lookup defs` hypotheses for every defined word.
+- **Lean tactic (`macro_rules` / `Lean.Elab.Tactic`) vs. `aesop`**: Core Lean 4 only (no Mathlib/Aesop dependency, matching `lakefile.toml` and `Fbm/Interp.lean` / `Fbm/Prover.lean`). A small custom `Lean.Elab.Tactic` or `macro_rules` loop over `first | ...` is self-contained and fast.
 - **Gradual migration of `generate.py`**: Keep existing `@effect` theorem signatures compatible (or provide a thin bridge from `Spec` to `runQ`/`Outcome.ok`) so `primitives.test.ffp` and `core.ff` stay green throughout the transition.
 
 ## Risks / Trade-offs

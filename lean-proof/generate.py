@@ -1375,14 +1375,60 @@ class EmitCtx:
             self.problem(
                 "unknown word -- no definition in this file and not a primitive")
             return None
-        self.progs[name] = "[" + ", ".join(_tok_lean(t) for t in prog) + "]"
         self.prog_tokens[name] = prog
         self.prog_lits[name] = lits
         self.prog_raw_lits[name] = raw_lits
+        try:
+            comp = self._comp_prog_lean(name)
+        except ValueError as ex:
+            self.failed.add(name)
+            self.problem(str(ex))
+            return None
+        self.progs[name] = comp
         self.prog_lit_params[name] = (
             f" ({' '.join(f'lit{i}' for i in range(len(lits)))} : Int)"
             if lits else "")
         return prog, lits, raw_lits
+
+    def _comp_prog_lean(self, name):
+        """Compositional Prog expression (Phase B): `++` over
+        callee `Prog` defs instead of a flat token list. Each raw
+        definition token becomes one segment: a literal `[...]`
+        becomes `[Tok.push lit{k}]` (its self index, after its
+        inner literals, matching `_inline_tokens` order); an int
+        or primitive becomes its singleton; a defined word `W`
+        becomes `WProg` applied to `W`'s share of the outer lit
+        variables (in order). Primitive words are singletons."""
+        if name in PRIMS:
+            return f"[{PRIMS[name]}]"
+        parts = []
+        next_lit = 0
+        for tok in self.defs[name]:
+            if isinstance(tok, str) and tok.startswith("["):
+                inner = _literal_inner_tokens(tok)
+                _, inner_lits, _ = _inline_tokens(inner, self.defs, ())
+                m = len(inner_lits)
+                parts.append(f"[Tok.push lit{next_lit + m}]")
+                next_lit += m + 1
+            elif isinstance(tok, int) or tok in PRIMS:
+                parts.append(f"[{_tok_lean(tok)}]")
+            elif isinstance(tok, str) and tok in self.defs:
+                wprog, wlits, _ = inline_word(tok, self.defs)
+                m = len(wlits)
+                wln = lean_name(tok)
+                if m:
+                    args = " ".join(f"lit{next_lit + k}" for k in range(m))
+                    parts.append(f"{wln}Prog {args}")
+                else:
+                    parts.append(f"{wln}Prog")
+                next_lit += m
+            else:
+                raise ValueError(f"unsupported token {tok!r}")
+        if next_lit != len(self.prog_lits[name]):
+            raise ValueError(
+                f"literal count mismatch for {name!r}: "
+                f"{next_lit} walked vs {len(self.prog_lits[name])} inlined")
+        return " ++ ".join(parts)
 
     def prepare_quot(self):
         """Quotation words (eval, ?, cons): validate the bracket
@@ -1530,6 +1576,7 @@ class EmitCtx:
                     "[" + ", ".join(_tok_lean(t) for t in body_prog) + "]")
                 lit_prog_defs.append(None)
         self.runq_lit_words = lit_words
+        self.spec_lit_bodies = lit_body_lean
         # The quotation slot: the input element that is a pointer
         # slot `[..r ... -- ..s ...]`. Its sides are the body's
         # input and output stacks (a rest plus extra elements).
@@ -1646,6 +1693,7 @@ class EmitCtx:
         body_out_stack = lean_list_bottom_to_top(body_out_extra, body_out_rest)
         self.runq_body_in_stack = body_in_stack
         self.runq_body_out_rest = body_out_rest
+        self.runq_body_out_stack = body_out_stack
         self.runq_queue_dispatch = _queue_lean(p_queue, p_tail)
         # The suffix (the tokens after the dispatch) runs on the
         # body's output (queue unchanged by the body) and must land
@@ -1836,6 +1884,7 @@ class EmitCtx:
                     "[" + ", ".join(_tok_lean(t) for t in body_prog) + "]")
                 lit_prog_defs.append(None)
         self.runq_lit_words = lit_words
+        self.spec_lit_bodies = lit_body_lean
         # No quotation slot in the inputs or outputs: the `?`
         # dispatches on a literal from the definition, not on a
         # variable quotation, so a bracketed element here would
@@ -2163,6 +2212,7 @@ class EmitCtx:
                     "[" + ", ".join(_tok_lean(t) for t in body_prog) + "]")
                 lit_prog_defs.append(None)
         self.runq_lit_words = lit_words
+        self.spec_lit_bodies = lit_body_lean
         # Input/output shape: a rest, a flag variable, two
         # quotation slots; a single output rest. The slots are
         # `[..R -- ..S]` and `[..R -- ..T]` (both from the input
@@ -2385,6 +2435,9 @@ class EmitCtx:
         self.runq_prog_app = (
             f"{self.ln}Prog"
             + (f" {' '.join(self.runq_lit_vars)}" if self.runq_lit_vars else ""))
+        self.runq_direct_spec = (cond_lean, in_rest, case_out_rest,
+                                 flag_var, code1, code2, body1, body2,
+                                 code_var, body_var)
         self.is_runq_direct = True
         self.suffix = "" if self.n_effects == 1 else f"_{self.idx + 1}"
         return True
@@ -2839,6 +2892,7 @@ class EmitCtx:
                     "[" + ", ".join(_tok_lean(t) for t in body_prog) + "]")
                 lit_prog_defs.append(None)
         self.runq_lit_words = lit_words
+        self.spec_lit_bodies = lit_body_lean
         # The two quotation slots in the inputs. Each is a
         # pointer slot `[..r <vals> -- ..s]`; the output side
         # must be a bare rest `..s` (a single value). Any other
@@ -3150,6 +3204,10 @@ class EmitCtx:
             + f" ({out_val1} {out_val2} : Int)"
             + f" ({in_rest_name} : Stack)"
             + f" ({fuel1} {fuel2} : Nat) (qq : Stack)")
+        self.runq_compose_spec = (body1_in_stack, body1_out_stack, queue1,
+                                  code1, body1, body2_in_stack,
+                                  body2_out_stack, queue2, code2, body2,
+                                  fuel1, fuel2)
         self.is_runq_compose = True
         self.suffix = "" if self.n_effects == 1 else f"_{self.idx + 1}"
         return True
@@ -3234,6 +3292,7 @@ class EmitCtx:
                 lit_prog_defs.append(None)
         self.runq_lits = lit_body_lean
         self.runq_lit_words = lit_words
+        self.spec_lit_bodies = lit_body_lean
         # --- The two single-value slots. ---
         def parse_slot_side(side):
             """A slot input side (`..r`, `..r a`, `..r a b`) ->
@@ -3756,6 +3815,9 @@ class EmitCtx:
             + f" ({out_val1} {out_val2} : Int)"
             + f" ({in_rest_name} : Stack)"
             + f" ({fuel1} {fuel2} : Nat) (qq : Stack)")
+        self.runq_cf_spec = (b_in_stack, b_out_stack, q1p, code1, body1,
+                             c_in_stack, c_out_stack, q2p, code2, body2,
+                             fuel1, fuel2, in_rest_name)
         self.runq_cf_total_fuel = total_fuel
         self.runq_cf_hyps = hyps
         self.runq_cf_intro = intro
@@ -4364,285 +4426,407 @@ class EmitCtx:
         self.suffix = "" if self.n_effects == 1 else f"_{self.idx + 1}"
         return True
 
-    def emit(self):
-        """Write the program def (once per word), the doc comment,
-        and the theorem. Returns True when a theorem was emitted."""
+    # ---- Compositional Spec emission (Phase B) ----
+    # Every Spec-capable effect becomes:
+    #   theorem {ln}_effect{suffix}{binders} :
+    #       Spec ({prog_app}) {pre} {post} := by
+    #     fbm_verify [{deps}]
+    # (or SpecErr for `else ERROR` branches). `by fbm_verify [...]`
+    # is the UNIFORM proof: head-peeling via Spec.*_head lemmas,
+    # callee-Spec dep application, cond splits, quotation-slot
+    # assumption closure, nil_close + simp_all/omega leaves.
+    # Frame-polymorphic prims (stack/arithmetic/bitwise/shift,
+    # putc/putn, guarded div/mod/pow) and all pure/slot/cond
+    # defined words use it. NOT frame-polymorphic (clr, depth,
+    # print, getc, rand, clock, exit) keep the old direct `run`
+    # theorems via the fallback in emit().
+
+    # NOTE: the pre-lambda stack/queue binders are `st`/`qu`, NOT
+    # `s`/`q`: several theorems bind an Int quotation code named
+    # `q`, and a lambda `q` would shadow it (the `(q :: R)` in the
+    # pre would then read the queue, not the code). The tactic
+    # reads these positions structurally, so the names are free.
+    def _spec_pre(self, in_stack):
+        return (f"(fun st qu _ _ acts d => st = {in_stack} ∧ qu = qq ∧ "
+                f"acts = [] ∧ d = defs)")
+
+    def _spec_post(self, out_stack, trace="[]", defs_out="defs"):
+        return (f"(fun s' q' acts' d' => s' = {out_stack} ∧ q' = qq ∧ "
+                f"acts' = {trace} ∧ d' = {defs_out})")
+
+    def _spec_hbody(self, hname, body, b_in, qd, b_out):
+        # Bodies never change `defs` (no `cons` in quotation
+        # bodies): pre and post both pin concrete `defs`, so no
+        # `defs'` binder is needed anywhere in generated theorems.
+        # (A `defs'` ghost would float free: `eval_head` grounds
+        # its midpoints from the hypothesis, and a rigid
+        # autoimplicit `defs'` can never unify with `defs`.)
+        return (f"({hname} : Spec {body} "
+                f"(fun st qu _ _ acts d => st = {b_in} ∧ qu = {qd} ∧ "
+                f"acts = [] ∧ d = defs) "
+                f"(fun s' q' acts' d' => s' = {b_out} ∧ q' = {qd} ∧ "
+                f"acts' = [] ∧ d' = defs))")
+
+    def _spec_prog_app(self):
+        lits = self.prog_lits.get(self.name, [])
+        args = "".join(f" lit{i}" for i in range(len(lits)))
+        return f"{self.ln}Prog{args}"
+
+    def _spec_lit_hyps(self):
+        return [f"(hlookupLit{k} : lookup defs lit{k} = some {b})"
+                for k, b in enumerate(self.spec_lit_bodies)]
+
+    def _lift_post_conditionals(self, post, hyps, binders):
+        """Replace each `(if ...)` term in a Spec post with a fresh
+        stack variable plus an equality hypothesis (`(hCk : Ck =
+        (if ...))`). `fbm_verify`'s `splitSingle` only fires when
+        an `ite` appears on exactly one side of the goal: a
+        computed `cond` flag lives in the (mid) pre, so the
+        statement post must not repeat `if` terms inline (as
+        `sort2`'s `ensures` would render them). Returns the new
+        `(post, hyps, binders)`."""
+        import re as _re
+        taken = binders + " " + post + " " + " ".join(hyps)
+
+        def fresh(base):
+            k = 0
+            while _re.search(rf"\b{base}{k}\b", taken):
+                k += 1
+            return k
+
+        new_hyps = list(hyps)
+        new_binders = binders
+        out = post
+        cursor = 0
+        while True:
+            start = out.find("(if ", cursor)
+            if start < 0:
+                break
+            depth = 0
+            end = None
+            for i in range(start, len(out)):
+                if out[i] == "(":
+                    depth += 1
+                elif out[i] == ")":
+                    depth -= 1
+                    if depth == 0:
+                        end = i + 1
+                        break
+            if end is None:
+                break
+            ite = out[start:end]
+            # A bare-variable test (`if (V ≠ 0) then X else Y`
+            # with `if`-free branches) stays inline: the `cond`
+            # flag is the free variable itself, and
+            # `splitCondFlag` (`by_cases V = 0`) plus the branch
+            # hypothesis closes it -- exactly the shape of the
+            # hand-written `choose`/`or_else`/`and_also` tests.
+            # Lifting it would poison `splitCondFlag`'s
+            # already-decided guard (the hyp mentions both the
+            # flag and a `0` literal).
+            m = _re.fullmatch(
+                r"\(if \(([A-Za-z_][A-Za-z0-9_']*) (≠|=) 0\) "
+                r"then (.*) else (.*)\)", ite, _re.DOTALL)
+            if (m is not None and "(if " not in m.group(3)
+                    and "(if " not in m.group(4)):
+                cursor = end
+                continue
+            k = fresh("C")
+            var = f"C{k}"
+            hyp = f"hC{k}"
+            taken += f" {var} {hyp}"
+            out = out[:start] + var + out[end:]
+            new_hyps.append(f"({hyp} : {var} = {ite})")
+            new_binders += f" ({var} : Int)"
+            cursor = start + len(var)
+        return out, new_hyps, new_binders
+
+    def _spec_emit(self, pre, post, hyps, binders, prog_app, deps,
+                    is_specerr=False):
+        """Write the doc comment and the Spec/SpecErr theorem with
+        a uniform `by fbm_verify [...]` proof. Records the theorem
+        name for downstream dep computation."""
+        self.out_lines.append(
+            f"-- src: {self.src_path}:{self.src_line} {self.src_effect}")
+        self.out_lines.append(f"/-- {self.ln}: @effect {self.effect_body} -/")
+        if not is_specerr:
+            post, hyps, binders = self._lift_post_conditionals(
+                post, hyps, binders)
+        hyp_binders = "".join(f" {h}" for h in hyps)
+        head = "SpecErr" if is_specerr else "Spec"
+        if is_specerr:
+            concl = f"    {head} ({prog_app}) {pre} := by"
+        else:
+            concl = f"    {head} ({prog_app}) {pre} {post} := by"
+        self.out_lines.append(
+            f"theorem {self.ln}_effect{self.suffix}{binders}{hyp_binders} :")
+        self.out_lines.append(concl)
+        self.out_lines.append(f"  fbm_verify [{', '.join(deps)}]")
+        self.was_spec = True
+        return True
+
+    def _emit_doc(self):
+        self.out_lines.append(
+            f"-- src: {self.src_path}:{self.src_line} {self.src_effect}")
+        self.out_lines.append(f"/-- {self.ln}: @effect {self.effect_body} -/")
+
+    def _emit_spec_normal(self, deps):
+        """Pure / where / guarded-prim success case."""
+        ctx = self
+        wit = {}
+        if ctx.where_eqs is not None:
+            wit = dict(zip([lhs for lhs, _ in ctx.where_eqs], ctx.witnesses))
+        out_elems = [wit.get(e, e) for e in ctx.out_vars]
+        out_stack = lean_list_bottom_to_top(
+            out_elems, ctx.rest_name if ctx.out_rest else None)
+        trace = "[]"
+        if ctx.name in ("putc", "putn"):
+            top = ctx.in_vars[-1]
+            trace = f"[] ++ [IOAction.{ctx.name} ({top})]"
+        pre = self._spec_pre(ctx.in_lean)
+        post = self._spec_post(out_stack, trace)
+        binders = (f" (defs : Defs){ctx.binder_part}{ctx.rest_binder}"
+                   f"{ctx.hw_binder} (qq : Stack)")
+        return self._spec_emit(pre, post, [], binders,
+                               self._spec_prog_app(), deps)
+
+    def _emit_spec_error(self, deps):
+        """`else ERROR` branch of a guarded prim: SpecErr."""
+        ctx = self
+        pre = self._spec_pre(ctx.in_lean)
+        binders = (f" (defs : Defs){ctx.binder_part}{ctx.rest_binder}"
+                   f"{ctx.hw_binder} (qq : Stack)")
+        return self._spec_emit(pre, "", [], binders,
+                               self._spec_prog_app(), deps, is_specerr=True)
+
+    def _emit_spec_quot(self, deps):
+        """`eval` / `cons` / `?` primitives: direct corollaries of
+        the Spec.eval / Spec.cons / Spec.cond lemmas."""
+        ctx = self
+        prog_app = self._spec_prog_app()
+        if ctx.quot_kind == "eval":
+            q, body = ctx.quot_q, ctx.quot_body
+            ir, orr = ctx.quot_in_rest, ctx.quot_out_rest
+            pre = self._spec_pre(ctx.quot_in_stack)
+            post = self._spec_post(ctx.quot_out_stack)
+            binders = (f" (defs : Defs) ({q} : Int) ({body} : List Tok)"
+                       f" ({ir} {orr} : Stack) (qq : Stack)")
+            hyps = [f"(hlookup : lookup defs {q} = some {body})",
+                    self._spec_hbody("hbody", body, ir, "qq", orr)]
+            return self._spec_emit(pre, post, hyps, binders, prog_app,
+                                   deps)
+        if ctx.quot_kind == "cons":
+            pre = self._spec_pre(ctx.quot_in_stack)
+            post = self._spec_post(ctx.quot_out_stack, "[]",
+                                   ctx.quot_defs_prime)
+            binders = (f" (defs : Defs) ({ctx.quot_a} {ctx.quot_b} : Int)"
+                       f" ({ctx.quot_in_rest} : Stack) (qq : Stack)")
+            return self._spec_emit(pre, post, [], binders, prog_app,
+                                   deps)
+        if ctx.quot_kind == "?":
+            q, body = ctx.quot_q, ctx.quot_body
+            flag, ir, orr = ctx.quot_flag, ctx.quot_in_rest, ctx.quot_out_rest
+            pre = self._spec_pre(ctx.quot_in_stack)
+            post = self._spec_post(ctx.quot_out_stack)
+            if orr != ir:
+                binders = (f" (defs : Defs) ({q} : Int) "
+                           f"({body} : List Tok) ({flag} : Int) "
+                           f"({ir} {orr} : Stack) (qq : Stack)")
+                hyps = [f"(hf : {ctx.quot_cond_lean})",
+                        f"(hlookup : lookup defs {q} = some {body})",
+                        self._spec_hbody("hbody", body, ir, "qq", orr)]
+            else:
+                binders = (f" (defs : Defs) ({q} : Int) ({flag} : Int) "
+                           f"({ir} : Stack) (qq : Stack)")
+                hyps = [f"(hf : {ctx.quot_cond_lean})"]
+            return self._spec_emit(pre, post, hyps, binders, prog_app,
+                                   deps)
+        return self.problem(f"not a quotation word: {ctx.quot_kind!r}")
+
+    def _emit_spec_runq(self, deps):
+        """One variable eval (slip/dip/run/sip/...)."""
+        ctx = self
+        binders = self.runq_binders.replace(" (fuel : Nat)", "").replace(
+            " (defs' : Defs)", "")
+        hyps = (self._spec_lit_hyps()
+                + [f"(hlookup : lookup defs {self.runq_q} = "
+                   f"some {self.runq_body})"]
+                + [self._spec_hbody("hbody", self.runq_body,
+                                     self.runq_body_in_stack,
+                                     self.runq_queue_dispatch,
+                                     self.runq_body_out_stack)])
+        pre = self._spec_pre(self.runq_in_stack)
+        post = self._spec_post(self.runq_out_stack)
+        return self._spec_emit(pre, post, hyps, binders,
+                               self.runq_prog_app, deps)
+
+    def _emit_spec_cond(self, deps):
+        """One `?` on a literal (sort2/choose)."""
+        ctx = self
+        hyps = self._spec_lit_hyps()
+        pre = self._spec_pre(self.runq_in_stack)
+        post = self._spec_post(self.runq_out_stack)
+        return self._spec_emit(pre, post, hyps, self.runq_cond_binders,
+                               self.runq_prog_app, deps)
+
+    def _emit_spec_direct(self, deps):
+        """`?` + trailing eval (branch): one theorem per case."""
+        ctx = self
+        (cond_lean, in_rest, case_out, _flag_var, code1, code2,
+         body1, body2, code_var, body_var) = self.runq_direct_spec
+        binders = self.runq_direct_binders.replace(" (fuel : Nat)", "").replace(
+            " (defs' : Defs)", "")
+        hyps = ([f"(hf : {cond_lean})"]
+                + self._spec_lit_hyps()
+                + [f"(hlookup{code1} : lookup defs {code1} = some {body1})",
+                   f"(hlookup{code2} : lookup defs {code2} = some {body2})",
+                   self._spec_hbody("hbody", body_var, in_rest, "qq",
+                                     case_out)])
+        pre = self._spec_pre(self.runq_direct_in_stack)
+        post = self._spec_post(case_out)
+        return self._spec_emit(pre, post, hyps, binders,
+                               self.runq_prog_app, deps)
+
+    def _emit_spec_between(self, deps):
+        """Literal [W] via eval, W with one `?` (between?)."""
+        ctx = self
+        hyps = [f"(hlookupLit{k} : {h})"
+                for k, h in enumerate(self.runq_between_hyps)]
+        pre = self._spec_pre(self.runq_between_in_stack)
+        post = self._spec_post(self.runq_between_out_stack)
+        return self._spec_emit(pre, post, hyps, self.runq_between_binders,
+                               self.runq_prog_app, deps)
+
+    def _emit_spec_compose(self, deps):
+        """Two variable evals (bi/bi2)."""
+        ctx = self
+        (b1in, b1out, q1, code1, body1, b2in, b2out, q2, code2, body2,
+         fuel1, fuel2) = self.runq_compose_spec
+        binders = self.runq_compose_binders.replace(
+            f" ({fuel1} {fuel2} : Nat)", "")
+        hyps = (self._spec_lit_hyps()
+                + [f"(hlookup{code1} : lookup defs {code1} = some {body1})",
+                   f"(hlookup{code2} : lookup defs {code2} = some {body2})",
+                   self._spec_hbody("hbodyB", body1, b1in, q1, b1out),
+                   self._spec_hbody("hbodyC", body2, b2in, q2, b2out)])
+        pre = self._spec_pre(self.runq_compose_in_stack)
+        post = self._spec_post(self.runq_compose_out_stack)
+        return self._spec_emit(pre, post, hyps, binders,
+                               self.runq_prog_app, deps)
+
+    def _emit_spec_cf(self, deps):
+        """Computed-flag branch (or_else/and_also)."""
+        ctx = self
+        (b_in, b_out, q1, code1, body1, c_in, c_out, q2, code2, body2,
+         fuel1, fuel2, _in_rest) = self.runq_cf_spec
+        binders = self.runq_cf_binders.replace(
+            f" ({fuel1} {fuel2} : Nat)", "")
+        hyps = (self._spec_lit_hyps()
+                + [f"(hlookup{code1} : lookup defs {code1} = some {body1})",
+                   f"(hlookup{code2} : lookup defs {code2} = some {body2})",
+                   self._spec_hbody("hbodyB", body1, b_in, q1, b_out),
+                   self._spec_hbody("hbodyC", body2, c_in, q2, c_out)])
+        pre = self._spec_pre(self.runq_cf_in_stack)
+        post = self._spec_post(self.runq_cf_out_stack)
+        return self._spec_emit(pre, post, hyps, binders,
+                               self.runq_prog_app, deps)
+
+    def _transitive_words(self):
+        """Defined words referenced by this word: executed callee
+        tokens plus single-word literal targets, transitively."""
+        out = []
+        visited = {self.name}
+
+        def visit(w):
+            raw = self.defs.get(w)
+            if raw is None:
+                return
+            for t in raw:
+                if isinstance(t, str) and t.startswith("["):
+                    try:
+                        inner = _literal_inner_tokens(t)
+                    except ValueError:
+                        continue
+                    if (len(inner) == 1 and isinstance(inner[0], str)
+                            and inner[0] in self.defs
+                            and inner[0] not in PRIMS):
+                        if inner[0] not in visited:
+                            visited.add(inner[0])
+                            out.append(inner[0])
+                            visit(inner[0])
+                elif (isinstance(t, str) and t in self.defs
+                        and t not in PRIMS):
+                    if t not in visited:
+                        visited.add(t)
+                        out.append(t)
+                        visit(t)
+
+        visit(self.name)
+        return out
+
+    def emit(self, deps):
+        """Write the doc comment and the theorem. Returns True when
+        a theorem was emitted. `deps` are the `fbm_verify` dep
+        names (own Prog def plus already-emitted callee Specs)."""
         ln = self.ln
-        if self.name not in self.prog_emitted:
-            params = self.prog_lit_params.get(self.name, "")
-            self.out_lines.append(f"def {ln}Prog{params} : List Tok := {self.progs[self.name]}")
-            self.prog_emitted.add(self.name)
-        # Prog defs for words named by single-word literal bodies
-        # (v30): they have no effect of their own, so their Prog
-        # def is not emitted above, but this theorem's lookup
-        # hypothesis names them and its proof's simp set unfolds
-        # them. (A word that does have an effect emits its own Prog
-        # def when its effect is processed; the guard skips it here
-        # if that already happened.)
-        for w in getattr(self, "runq_lit_words", []):
-            if w not in self.prog_emitted:
-                wln = lean_name(w)
-                wparams = self.prog_lit_params.get(w, "")
-                self.out_lines.append(f"def {wln}Prog{wparams} : List Tok := {self.progs[w]}")
-                self.prog_emitted.add(w)
-        # Rest def for the compose path (v34): the program after
-        # the first eval's body (e.g. biRest1), referenced by the
-        # theorem's `have` steps. Guarded like the Prog defs (a
-        # second effect on the same word reuses it).
-        if getattr(self, "is_runq_compose", False):
-            rname = self.runq_compose_rest_name
-            if rname not in self.prog_emitted:
-                self.out_lines.append(
-                    f"def {rname} : List Tok := {self.runq_compose_rest_lean}")
-                self.prog_emitted.add(rname)
-        # Doc comment uses the sanitised name: a raw `--` right after
-        # `/-- ` breaks Lean's comment lexer (verified with a minimal
-        # file). The effect text itself, after some text, is fine.
-        # The doc comment keeps the original effect text, including
-        # any `{...}` note (the note is stripped for parsing, not
-        # for documentation). The `-- src:` marker above it is the
-        # traceability link: it names the .ff file and line the
-        # statement came from, so a Lean error at this theorem can
-        # be mapped back (check.py reads it).
-        self.out_lines.append(f"-- src: {self.src_path}:{self.src_line} {self.src_effect}")
-        self.out_lines.append(f"/-- {ln}: @effect {self.effect_body} -/")
+        name = self.name
+        # Prog defs are emitted up front by main(), in dependency
+        # order (compositional `++` over callee Progs). Fallbacks
+        # below keep the old direct `run` theorems for words that
+        # are not frame-polymorphic. Fallback prims: IO/oracle/exit
+        # words keep their dedicated old emitters.
         if self.name == "exit":
+            self._emit_doc()
             return _emit_exit(self)
         if self.name == "rand":
+            self._emit_doc()
             return _emit_rand(self)
         if self.name == "clock":
+            self._emit_doc()
             return _emit_clock(self)
         if self.name == "getc":
+            self._emit_doc()
             return _emit_getc(self)
+        # Quotation primitives: direct Spec corollaries.
         if getattr(self, "is_quot", False):
-            if self.quot_kind == "eval":
-                return _emit_eval(self)
-            if self.quot_kind == "cons":
-                return _emit_cons(self)
-            if self.quot_kind == "?":
-                return _emit_cond(self)
+            return self._emit_spec_quot(deps)
+        # Defined words with quotation structure: Spec forms.
         if getattr(self, "is_runq", False):
-            return _emit_runq(self)
+            return self._emit_spec_runq(deps)
         if getattr(self, "is_runq_cond", False):
-            return _emit_runq_cond(self)
+            return self._emit_spec_cond(deps)
         if getattr(self, "is_runq_direct", False):
-            return _emit_runq_direct(self)
+            return self._emit_spec_direct(deps)
         if getattr(self, "is_runq_between", False):
-            return _emit_runq_between(self)
+            return self._emit_spec_between(deps)
         if getattr(self, "is_runq_compose", False):
-            return _emit_runq_compose(self)
+            return self._emit_spec_compose(deps)
         if getattr(self, "is_runq_computed_flag", False):
-            return _emit_runq_computed_flag(self)
+            return self._emit_spec_cf(deps)
+        # Guarded-prim `else ERROR` branches: SpecErr.
         if self.is_error:
-            return _emit_error(self)
-        if self.where_eqs is not None:
-            return _emit_where(self)
-        return _emit_normal(self)
-
-
-def _emit_quot_theorem(ctx, binders, hyps):
-    """Shared tail for the quotation theorems: the header, the
-    execQ conclusion, and the proof. `binders` is the binder
-    string (starting with a space); each hypothesis becomes a
-    `→` line before the conclusion. (v28: the theorems are
-    queue-polymorphic — they use `execQ` with a queue variable
-    `qq` instead of `runQ` with an empty queue — so a body can
-    be run with a non-empty queue, which is what composition
-    inside a word like `slip` (which stashes on the queue) needs.
-    The old `runQ` form is the `qq = []` special case.)"""
-    hyps_part = "".join(f"\n    {h} →" for h in hyps)
-    ctx.out_lines.append(
-        f"theorem {ctx.ln}_effect{ctx.suffix}{binders} :{hyps_part}")
-    ctx.out_lines.append(
-        f"    execQ (fuel + 1) {ctx.ln}Prog {ctx.quot_in_stack} qq [] [] [] defs = "
-        f"(Outcome.ok {ctx.quot_out_stack} qq [], {ctx.quot_defs_prime}) := by")
-    if ctx.quot_intro is not None:
-        ctx.out_lines.append(f"  {ctx.quot_intro}")
-    ctx.out_lines.append(f"  {ctx.quot_simp}")
-    if ctx.quot_finish is not None:
-        ctx.out_lines.append(f"  {ctx.quot_finish}")
-    return True
-
-
-def _emit_eval(ctx):
-    """`eval` runs the body of a quotation: the theorem is
-    conditional on the body having the stated effect (the
-    hypothesis `execQ fuel body r qq ... = ok s qq`) and on the lookup
-    (`lookup defs q = some body`). Fuel is universally
-    quantified; the dispatch uses `fuel + 1`, the body `fuel`.
-    The queue `qq` is universally quantified (v28) so the
-    theorem can be used when the queue is non-empty."""
-    binders = (f" (defs : Defs) ({ctx.quot_q} : Int) "
-               f"({ctx.quot_body} : List Tok) "
-               f"({ctx.quot_in_rest} {ctx.quot_out_rest} : Stack) "
-               f"(defs' : Defs) (fuel : Nat) (qq : Stack)")
-    return _emit_quot_theorem(ctx, binders, ctx.quot_hyps)
-
-
-def _emit_cons(ctx):
-    """`cons` builds a fresh quotation: the output top is the
-    fresh code `defs.length`, and the table gains the body
-    `[push a, call B]`. No hypotheses -- one step, no body to
-    run."""
-    binders = (f" (defs : Defs) ({ctx.quot_a} {ctx.quot_b} : Int) "
-               f"({ctx.quot_in_rest} : Stack) (fuel : Nat) (qq : Stack)")
-    return _emit_quot_theorem(ctx, binders, ctx.quot_hyps)
-
-
-def _emit_cond(ctx):
-    """`?` runs the quotation when the flag is non-zero, and
-    discards it when the flag is zero. The run case is
-    conditional on the body (like eval); the discard case only
-    needs the flag hypothesis."""
-    if ctx.quot_out_rest != ctx.quot_in_rest:
-        binders = (f" (defs : Defs) ({ctx.quot_q} : Int) "
-                   f"({ctx.quot_body} : List Tok) "
-                   f"({ctx.quot_flag} : Int) "
-                   f"({ctx.quot_in_rest} {ctx.quot_out_rest} : Stack) "
-                   f"(defs' : Defs) (fuel : Nat) (qq : Stack)")
-    else:
-        binders = (f" (defs : Defs) ({ctx.quot_q} : Int) "
-                   f"({ctx.quot_flag} : Int) "
-                   f"({ctx.quot_in_rest} : Stack) (fuel : Nat) (qq : Stack)")
-    return _emit_quot_theorem(ctx, binders, ctx.quot_hyps)
-
-
-def _emit_runq(ctx):
-    """A defined word containing `eval` (Phase 6): the theorem is
-    a runQ theorem, conditional on the quotation's lookup and on
-    the body's effect (with the queue at dispatch time), proved
-    by `execQ_append` joining the body and the suffix."""
-    hyps_part = "".join(f"\n    {h} →" for h in ctx.runq_hyps)
-    ctx.out_lines.append(
-        f"theorem {ctx.ln}_effect{ctx.suffix}{ctx.runq_binders} :{hyps_part}")
-    # The stacks are parenthesised: `::` binds less tightly
-    # than function application. The program application is
-    # parenthesised too: `sipdProg lit0` as an argument to execQ
-    # must read as one program, not as `sipdProg` followed by a
-    # separate `lit0` argument.
-    ctx.out_lines.append(
-        f"    execQ {ctx.runq_total_fuel} ({ctx.runq_prog_app}) ({ctx.runq_in_stack}) qq [] [] [] defs = "
-        f"(Outcome.ok ({ctx.runq_out_stack}) qq [], defs') := by")
-    ctx.out_lines.append(f"  {ctx.runq_intro}")
-    ctx.out_lines.extend(ctx.runq_proof)
-    return True
-
-
-def _emit_runq_cond(ctx):
-    """A defined word containing `?` (Phase 6, v31): the theorem
-    is a runQ theorem with a FIXED fuel (no fuel binder, no body
-    hypothesis), proved by a case split on the flag and pure
-    simp. The output is the direct form (the where equations
-    substituted in)."""
-    hyps_part = "".join(f"\n    {h} →" for h in ctx.runq_cond_hyps)
-    ctx.out_lines.append(
-        f"theorem {ctx.ln}_effect{ctx.suffix}{ctx.runq_cond_binders} :{hyps_part}")
-    # The stacks and the program application are parenthesised:
-    # `::` binds less tightly than function application, and
-    # `sort2Prog lit0` as an argument to execQ must read as one
-    # program, not as `sort2Prog` followed by a separate `lit0`
-    # argument (as in _emit_runq).
-    ctx.out_lines.append(
-        f"    execQ {ctx.runq_cond_fuel} ({ctx.runq_prog_app}) ({ctx.runq_in_stack}) qq [] [] [] defs = "
-        f"(Outcome.ok ({ctx.runq_out_stack}) qq [], defs) := by")
-    if ctx.runq_cond_intro:
-        ctx.out_lines.append(f"  {ctx.runq_cond_intro}")
-    ctx.out_lines.extend(ctx.runq_cond_proof)
-    return True
-
-
-def _emit_runq_direct(ctx):
-    """A defined word containing `?` and `eval` (Phase 6, v32):
-    the theorem is a runQ theorem proved by direct simp -- the
-    cond reduces via the literal lookup, the eval dispatch
-    reduces via the quotation lookup to the body's hypothesis.
-    The run case matches the hypothesis exactly; the discard
-    case needs one extra fuel (the cond does not run the body),
-    lifted by execQ_ok_mono."""
-    hyps_part = "".join(f"\n    {h} →" for h in ctx.runq_direct_hyps)
-    ctx.out_lines.append(
-        f"theorem {ctx.ln}_effect{ctx.suffix}{ctx.runq_direct_binders} :{hyps_part}")
-    # The stacks and the program application are parenthesised
-    # (as in _emit_runq / _emit_runq_cond): `::` binds less
-    # tightly than function application, and `branchProg lit0`
-    # as an argument to execQ must read as one program.
-    ctx.out_lines.append(
-        f"    execQ {ctx.runq_direct_fuel} ({ctx.runq_prog_app}) ({ctx.runq_direct_in_stack}) qq [] [] [] defs = "
-        f"(Outcome.ok ({ctx.runq_direct_out_stack}) qq [], defs') := by")
-    ctx.out_lines.append(f"  {ctx.runq_direct_intro}")
-    ctx.out_lines.extend(ctx.runq_direct_proof)
-    return True
-
-
-def _emit_runq_between(ctx):
-    """A defined word that runs a literal [W] via eval, where W
-    itself contains one `?` (Phase 6, v33): the theorem is a runQ
-    theorem with a FIXED fuel (no fuel binder, no body
-    hypothesis), proved by direct simp with a trichotomy case
-    split on the `?`'s computed flag. The output is the direct
-    form (the where right-hand side substituted in)."""
-    hyps_part = "".join(f"\n    {h} →" for h in ctx.runq_between_hyps)
-    ctx.out_lines.append(
-        f"theorem {ctx.ln}_effect{ctx.suffix}{ctx.runq_between_binders} :{hyps_part}")
-    # The stacks and the program application are parenthesised
-    # (as in _emit_runq_cond): `::` binds less tightly than
-    # function application, and `betweenProg lit0 lit1` as an
-    # argument to execQ must read as one program.
-    ctx.out_lines.append(
-        f"    execQ {ctx.runq_between_fuel} ({ctx.runq_prog_app}) ({ctx.runq_between_in_stack}) qq [] [] [] defs = "
-        f"(Outcome.ok ({ctx.runq_between_out_stack}) qq [], defs) := by")
-    if ctx.runq_between_intro:
-        ctx.out_lines.append(f"  {ctx.runq_between_intro}")
-    ctx.out_lines.extend(ctx.runq_between_proof)
-    return True
-
-
-def _emit_runq_compose(ctx):
-    """A defined word with exactly two evals on variable
-    quotations (Phase 6, v34): the theorem is a runQ theorem
-    with two fuel binders (one per eval body) and body
-    hypotheses universally quantified over the leftover
-    input/oracle, proved by nested execQ_append (the general
-    composer). Defs are unchanged. The Rest1 def (the program
-    after the first eval's body) is emitted by emit()."""
-    hyps_part = "".join(f"\n    {h} →" for h in ctx.runq_compose_hyps)
-    ctx.out_lines.append(
-        f"theorem {ctx.ln}_effect{ctx.suffix}{ctx.runq_compose_binders} :{hyps_part}")
-    # The stacks and the program application are parenthesised
-    # (as in _emit_runq): `::` binds less tightly than
-    # function application, and `biProg lit0` as an argument
-    # to execQ must read as one program.
-    ctx.out_lines.append(
-        f"    execQ {ctx.runq_compose_total_fuel} ({ctx.runq_prog_app}) ({ctx.runq_compose_in_stack}) qq [] [] [] defs = "
-        f"(Outcome.ok ({ctx.runq_compose_out_stack}) qq [], defs) := by")
-    ctx.out_lines.append(f"  {ctx.runq_compose_intro}")
-    ctx.out_lines.extend(ctx.runq_compose_proof)
-    return True
-
-
-def _emit_runq_computed_flag(ctx):
-    """The computed-flag path (v36): a defined word that runs a
-    quotation B, then branches on B's single output value, one
-    arm concrete and the other [eval] running C. The theorem's
-    conclusion carries the `where` if-expression directly (no
-    runQ rest); the proof is an execQ_append for B, a by_cases
-    on the flag, and either a direct simp (concrete arm) or a
-    second execQ_append for C. Defs are unchanged. The Rest1
-    is an inline list, so no Rest def is emitted."""
-    hyps_part = "".join(f"\n    {h} →" for h in ctx.runq_cf_hyps)
-    ctx.out_lines.append(
-        f"theorem {ctx.ln}_effect{ctx.suffix}{ctx.runq_cf_binders} :{hyps_part}")
-    # The stacks and the program application are parenthesised
-    # (as in _emit_runq): `::` binds less tightly than
-    # function application, and `orElseProg lit0` as an argument
-    # to execQ must read as one program.
-    ctx.out_lines.append(
-        f"    execQ {ctx.runq_cf_total_fuel} ({ctx.runq_prog_app}) ({ctx.runq_cf_in_stack}) qq [] [] [] defs = "
-        f"(Outcome.ok ({ctx.runq_cf_out_stack}) qq [], defs) := by")
-    ctx.out_lines.append(f"  {ctx.runq_cf_intro}")
-    ctx.out_lines.extend(ctx.runq_cf_proof)
-    return True
-
+            return self._emit_spec_error(deps)
+        # Plain words: Spec, unless the flat program touches a
+        # non-frame-polymorphic primitive (clr/depth/print/getc/
+        # rand/clock/exit), which keeps the old direct `run`
+        # theorem (with transitive callee Progs in the simp set,
+        # since Prog defs are compositional now).
+        flat = [t for t in self.prog_tokens.get(self.name, [])
+                if isinstance(t, str)]
+        if any(t in ("clr", "depth", ".", "getc", "rand", "clock",
+                      "exit") for t in flat):
+            extra = "".join(
+                f", {lean_name(w)}Prog" for w in self._transitive_words())
+            if extra:
+                self.simp_args += extra
+            self._emit_doc()
+            # `ensures` is aliased to `where` at parse time: an
+            # output constrained by an equation keeps the old
+            # existential-with-witness theorem (e.g. `empty?`).
+            if self.where_eqs is not None:
+                return _emit_where(self)
+            return _emit_normal(self)
+        return self._emit_spec_normal(deps)
 
 def _emit_exit(ctx):
     """`exit` halts with a code: the outcome is `Outcome.exit n []`,
@@ -4940,6 +5124,7 @@ def main():
     prog_lit_params = {}  # word -> " (lit0 lit1 : Int)" or "" (v30)
     failed = set()
     prog_emitted = set()
+    ctxs = []
     for name, idx, n_effects, in_elems, out_elems, cond, where_text, effect_body, src_line, src_effect in entries:
         ctx = EmitCtx(name=name, idx=idx, n_effects=n_effects,
                       in_elems=in_elems, out_elems=out_elems, cond=cond,
@@ -4953,9 +5138,70 @@ def main():
                       out_lines=out_lines, problems=problems)
         if not ctx.prepare():
             continue
-        if ctx.emit():
+        ctxs.append(ctx)
+    # Phase B: emit all Prog defs up front, in dependency order
+    # (callee before caller), as compositional `++` over callee
+    # Progs. Words are raw definition tokens plus single-word
+    # literal targets, transitively.
+    order = []
+    visit_state = {}
+
+    def visit(w):
+        st = visit_state.get(w)
+        if st == "done" or st == "doing":
+            return
+        if w in PRIMS:
+            visit_state[w] = "done"
+            order.append(w)
+            return
+        visit_state[w] = "doing"
+        for t in defs.get(w, []):
+            if isinstance(t, str) and t.startswith("["):
+                try:
+                    inner = _literal_inner_tokens(t)
+                except ValueError:
+                    continue
+                if (len(inner) == 1 and isinstance(inner[0], str)
+                        and inner[0] in defs and inner[0] not in PRIMS):
+                    visit(inner[0])
+            elif isinstance(t, str) and t in defs and t not in PRIMS:
+                visit(t)
+        visit_state[w] = "done"
+        order.append(w)
+    for _ctx in ctxs:
+        visit(_ctx.name)
+    if ctxs:
+        for w in order:
+            if w in failed or w in progs:
+                continue
+            ctxs[0]._compute_prog(w)
+    for w in order:
+        if w not in progs or w in prog_emitted:
+            continue
+        out_lines.append(
+            f"def {lean_name(w)}Prog{prog_lit_params.get(w, '')} : "
+            f"List Tok := {progs[w]}")
+        prog_emitted.add(w)
+    # Theorems in file order (check.py maps them back by the
+    # `-- src:` markers). Deps for `fbm_verify [...]` are the
+    # word's own Prog plus already-emitted transitive callee
+    # Spec theorems (same-word siblings excluded: each case
+    # proves itself by peeling).
+    emitted_spec = {}
+    for ctx in ctxs:
+        deps = [f"{ctx.ln}Prog"]
+        for w in ctx._transitive_words():
+            if w == ctx.name:
+                continue
+            for t in emitted_spec.get(w, []):
+                if t not in deps:
+                    deps.append(t)
+        if ctx.emit(deps):
             out_lines.append('')
             emitted += 1
+            if getattr(ctx, "was_spec", False):
+                emitted_spec.setdefault(ctx.name, []).append(
+                    f"{ctx.ln}_effect{ctx.suffix}")
 
     if problems:
         print("generator: problems (no theorem emitted for these):", file=sys.stderr)

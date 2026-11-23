@@ -106,9 +106,29 @@ each result as a TAP
 - `Fbm/Interp.lean` — the Lean interpreter (`Tok`, `step`, `exec`,
   `run`, `Outcome`, helpers, `Defs`, `lookup`, `execQ`, `runQ`) with
   zero prover dependencies; import it alone to run the model.
-- `Fbm/Prover.lean` — proof infrastructure (`execQ_ok_mono`,
-  `execQ_append`), importing `Fbm.Interp`. Generated files start
-  with `import Fbm.Prover`.
+- `Fbm/Prover.lean` — proof infrastructure: the `Spec` / `SpecErr`
+  predicate layer over `execQ` (frame-polymorphic pre/post
+  conditions quantifying over stack, queue, input, oracle,
+  actions, and `defs`), the `Spec.*_head` continuation lemmas,
+  and the `fbm_verify` tactic that discharges `Spec` goals by
+  head-peeling. Generated files start with `import Fbm.Prover`.
+
+## Emission (Phase B, 2026-11-22): compositional `Spec` theorems
+
+Defined words emit a `Prog` definition composed with `++` over
+callee `Prog`s (e.g. `def slipProg : List Tok := [Tok.qpush] ++
+[Tok.eval] ++ [Tok.qpull]`), plus one `Spec` (or `SpecErr`, for
+`else ERROR` branches) theorem per `@effect`, proved by uniform
+`by fbm_verify [...]` with already-emitted callee `Spec`s as
+deps. `defs` never changes inside a quotation body, so every
+generated post pins `d' = defs` concretely (no `defs'` binder);
+post `if`-terms are lifted to fresh variables with equality
+hypotheses, except bare-variable tests (`if (b ≠ 0) then …`).
+Words touching non-frame-polymorphic primitives (`clr`,
+`depth`, `.`, `getc`, `rand`, `clock`, `exit`) keep the old
+direct `run … = Outcome.ok …` theorems. Recursive words stay
+out of scope: they need human induction (`@rec-effect` /
+`@proof` territory, see `PLAN.md` §3.5).
 - `Fbm/Main.lean` — standalone executable entrypoint importing only
   `Fbm.Interp` (sample program printing its `Outcome`); build with
   `lake build fbm-interp`, run with `lake exe fbm-interp`.

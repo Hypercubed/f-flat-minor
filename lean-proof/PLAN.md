@@ -1290,6 +1290,16 @@ pi.ffp). Full regression GREEN under v36 (VM):
 primitives 34, core 45, all examples as under
 v25, Lean exit 0; wrong.ff 3 theorems, Lean exit
 1 (1 failure, as designed).
+**Note on `or_else` / `and_also` generality (2026-11-22):**
+The v36 `@effect`s assume both `[B]` and `[C]` always run
+and return single `Int`s (`..R A [..R A -- B] [..R A -- C] == ..R F`).
+Expressing the full generic short-circuiting form in `@effect`
+itself would require two additions not yet in this plan:
+(1) `requires` over a quotation's output (`requires B != 0` /
+`requires B == 0`, so the skipped arm does not need `[C]`'s `Spec`),
+and (2) stack-level `if` (`if B != 0 then ..R 1 else ..T`) so `[C]`
+can return an arbitrary stack `..T`. Until then, the generic
+short-circuiting theorem can be stated via `@lean` or in `Fbm/Prover.lean`.
 
 IO effects (DONE, generator v16, Nov 18, 2026): the
 interpreter gains an action trace (`IOAction`: `putc` /

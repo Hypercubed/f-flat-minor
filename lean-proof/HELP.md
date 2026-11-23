@@ -275,6 +275,17 @@ What the generator does:
      steps pulls it into `exec`), with `rand` also depending
      on `Quot.sound` (from the `Int.emod` lemmas); no `sorryAx`.
 
+Phase B emission (v34, Nov 22, 2026): defined words instead emit
+a `Prog` composed with `++` over callee `Prog`s and a `Spec` /
+`SpecErr` theorem proved by uniform `by fbm_verify [...]`
+(`Fbm/Prover.lean`: `Spec` predicates, `Spec.*_head`
+continuation lemmas, `fbm_verify` tactic). The old `run`-ladder
+theorems above remain only for words touching
+non-frame-polymorphic primitives (`clr`, `depth`, `.`, `getc`,
+`rand`, `clock`, `exit`). Recursive words are still refused —
+they need human induction (`@rec-effect` / `@proof`, PLAN.md
+§3.5), which the generator does not emit.
+
 ## Checking: check.py (v21)
 
 `generate.py` is a pure translator — it never runs Lean. `check.py`
