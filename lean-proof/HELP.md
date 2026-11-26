@@ -92,7 +92,15 @@ Scope (prototype, deliberately small):
     v37 the rest may sit anywhere in the output (`..R A == A
     ..R` emits `R ++ [A]`), and a list-valued call may be
     spliced onto it (`..R0 intRange(A,B+1)` emits
-    `intRange A (B+1) ++ R0`).
+    `intRange A (B+1) ++ R0`). For loop trajectories,
+    `iterates(F,N,A)` is surface sugar for
+    `SpecHist2 F N.toNat A <rest>`: it takes three arguments
+    (function value `F`, Int counter `N`, and Int seed `A`), with
+    no spaces after commas (same convention as `intRange(A,B+1)`).
+    The generator automatically applies `.toNat` to `N` and
+    mechanically threads the effect's named rest (`R0` in practice)
+    as the fourth argument, splicing directly without appending a
+    duplicate rest.
     The output rest is preserved unless the input explicitly
     wrote `...` (or `..R`) without the output doing so -- that is a
     whole-stack word (clr, sum!): the rest goes in and does

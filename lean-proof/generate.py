@@ -385,7 +385,7 @@ def lean_list_bottom_to_top(elems, rest_var):
 # An output element that is a call to one of these is a list-valued
 # splice (multiple values), not a single Int. `intRange` is defined in
 # `Fbm/Prover.lean`; others may come from `@lean` blocks.
-KNOWN_LIST_FUNCS = {"intRange", "SpecIter", "SpecHist2"}
+KNOWN_LIST_FUNCS = {"intRange", "SpecIter", "SpecHist2", "iterates"}
 
 def _is_list_splice_elem(elem):
     """True when an output element (Lean-translated) is a list-valued
@@ -402,6 +402,18 @@ def _is_list_splice_elem(elem):
     # is a known list function (`intRange A B`, `SpecHist2 F ...`).
     m = re.match(r"^([A-Za-z_][A-Za-z0-9_']*)\s+\S", e)
     if m and m.group(1) in KNOWN_LIST_FUNCS:
+        return True
+    return False
+
+def _splice_consumes_rest(elem, rest_name):
+    """True when a list splice element already has the rest of stack
+    incorporated into its tail (e.g. `SpecHist2 F N.toNat A R0`).
+    In that case, lean_output_stack should not append `(rest_name)`."""
+    if not rest_name:
+        return False
+    e = elem.strip().lstrip("(").rstrip(")")
+    m = re.match(r"^([A-Za-z_][A-Za-z0-9_']*)\b", e)
+    if m and m.group(1) in ("SpecHist2", "iterates"):
         return True
     return False
 
@@ -432,7 +444,8 @@ def lean_output_stack(out_elems, rest_name):
             segs.append(f"({e})")
         else:
             segs.append(f"[({e})]")
-    if rest_name:
+    rest_consumed = bool(top) and _splice_consumes_rest(top[0], rest_name)
+    if rest_name and not rest_consumed:
         segs.append(f"({rest_name})")
     for e in reversed(bottom):
         segs.append(f"[({e})]")
@@ -591,7 +604,7 @@ def _parse_expr(s):
         raise ExprError(f"trailing tokens in {s!r}")
     return ast
 
-def _emit_expr(ast):
+def _emit_expr(ast, rest_name=None):
     kind = ast[0]
     if kind in ("num", "var"):
         return ast[1]
@@ -607,20 +620,33 @@ def _emit_expr(ast):
     if kind == "call":
         # Lean application is space-separated, not f(a, b):
         # `min(a,b)` in an effect means `min a b` in Lean.
+        if ast[1] == "iterates":
+            if len(ast[2]) != 3:
+                raise ExprError(f"iterates(F,N,A) takes exactly 3 arguments, got {len(ast[2])}")
+            f_ast, n_ast, a_ast = ast[2]
+            f_lean = _emit_expr(f_ast, rest_name=rest_name)
+            if n_ast[0] == "tonat":
+                n_lean = f"{n_ast[1]}.toNat"
+            else:
+                n_raw = _emit_expr(n_ast, rest_name=rest_name)
+                n_lean = f"{n_raw}.toNat"
+            a_lean = _emit_expr(a_ast, rest_name=rest_name)
+            rn = rest_name or "rest"
+            return f"SpecHist2 {f_lean} {n_lean} {a_lean} {rn}"
         if not ast[2]:
             return ast[1]
-        return ast[1] + " " + " ".join(_emit_expr(a) for a in ast[2])
+        return ast[1] + " " + " ".join(_emit_expr(a, rest_name=rest_name) for a in ast[2])
     if kind == "neg":
-        return f"(-{_emit_expr(ast[1])})"
+        return f"(-{_emit_expr(ast[1], rest_name=rest_name)})"
     if kind == "not":
-        return f"(¬ {_emit_expr(ast[1])})"
+        return f"(¬ {_emit_expr(ast[1], rest_name=rest_name)})"
     if kind == "lnot":
         # `lnot` in the preamble (v23, @[simp]); `~` and `~~~`
         # both emit it, as does the `lnot(a)` call form.
-        return f"(lnot ({_emit_expr(ast[1])}))"
+        return f"(lnot ({_emit_expr(ast[1], rest_name=rest_name)}))"
     if kind == "if":
-        return (f"(if {_emit_expr(ast[1])} then {_emit_expr(ast[2])} "
-                f"else {_emit_expr(ast[3])})")
+        return (f"(if {_emit_expr(ast[1], rest_name=rest_name)} then {_emit_expr(ast[2], rest_name=rest_name)} "
+                f"else {_emit_expr(ast[3], rest_name=rest_name)})")
     if kind == "bin":
         op, l, r = ast[1], ast[2], ast[3]
         # Prefix operators (tmod/tdiv/land/lor/xor/lnot/shl/shr) take
@@ -632,32 +658,32 @@ def _emit_expr(ast):
         # F♭m symbol (`&`), Lean's operator (`&&&`), and the f()
         # form (`land(a, b)`); all three emit the same helper.
         if op == "%":
-            return f"(tmod ({_emit_expr(l)}) ({_emit_expr(r)}))"
+            return f"(tmod ({_emit_expr(l, rest_name=rest_name)}) ({_emit_expr(r, rest_name=rest_name)}))"
         if op == "/":
-            return f"(tdiv ({_emit_expr(l)}) ({_emit_expr(r)}))"
+            return f"(tdiv ({_emit_expr(l, rest_name=rest_name)}) ({_emit_expr(r, rest_name=rest_name)}))"
         if op in ("&", "&&&"):
-            return f"(land ({_emit_expr(l)}) ({_emit_expr(r)}))"
+            return f"(land ({_emit_expr(l, rest_name=rest_name)}) ({_emit_expr(r, rest_name=rest_name)}))"
         if op == "!=":
-            return f"({_emit_expr(l)} ≠ {_emit_expr(r)})"
+            return f"({_emit_expr(l, rest_name=rest_name)} ≠ {_emit_expr(r, rest_name=rest_name)})"
         if op == "==":
-            return f"({_emit_expr(l)} = {_emit_expr(r)})"
+            return f"({_emit_expr(l, rest_name=rest_name)} = {_emit_expr(r, rest_name=rest_name)})"
         if op in ("|", "|||"):
-            return f"(lor ({_emit_expr(l)}) ({_emit_expr(r)}))"
+            return f"(lor ({_emit_expr(l, rest_name=rest_name)}) ({_emit_expr(r, rest_name=rest_name)}))"
         if op in ("⊕", "^^^"):
             # Bitwise xor (v22): `xor` in the preamble, defined
             # as (a & ~b) | (b & ~a), `@[simp]` so the ladder
             # unfolds it. `^` in F♭m is power, so xor is `⊕`
             # (also `^^^`, Lean's Nat xor, and `xor(a, b)`).
-            return f"(xor ({_emit_expr(l)}) ({_emit_expr(r)}))"
+            return f"(xor ({_emit_expr(l, rest_name=rest_name)}) ({_emit_expr(r, rest_name=rest_name)}))"
         if op == "^":
             # Lean's `^` on Int takes a Nat exponent; the effect
             # writes an Int exponent, so it is converted here.
-            return f"({_emit_expr(l)} ^ ({_emit_expr(r)}).toNat)"
+            return f"({_emit_expr(l, rest_name=rest_name)} ^ ({_emit_expr(r, rest_name=rest_name)}).toNat)"
         if op in ("<<", "<<<"):
-            return f"(shl ({_emit_expr(l)}) ({_emit_expr(r)}))"
+            return f"(shl ({_emit_expr(l, rest_name=rest_name)}) ({_emit_expr(r, rest_name=rest_name)}))"
         if op in (">>", ">>>"):
-            return f"(shr ({_emit_expr(l)}) ({_emit_expr(r)}))"
-        return f"({_emit_expr(l)} {op} {_emit_expr(r)})"
+            return f"(shr ({_emit_expr(l, rest_name=rest_name)}) ({_emit_expr(r, rest_name=rest_name)}))"
+        return f"({_emit_expr(l, rest_name=rest_name)} {op} {_emit_expr(r, rest_name=rest_name)})"
     raise ExprError(f"bad AST node {ast!r}")
 
 _CMP_OPS = {"=", "==", "!=", "<", "<=", ">", ">="}
@@ -677,7 +703,7 @@ def _needs_translation(e):
             or "=" in e or "<" in e or ">" in e
             or re.search(r"[A-Za-z_][A-Za-z0-9_']*\s*\(", e) is not None)
 
-def translate_expr(s, coerce_cmp=False):
+def translate_expr(s, coerce_cmp=False, rest_name=None):
     """Translate an effect expression to Lean. `%` and `&` mean
     F♭m's operators (truncating mod, bitwise and), not Lean's
     (Euclidean `%`, no Int `&`), so they become the `tmod` /
@@ -688,7 +714,7 @@ def translate_expr(s, coerce_cmp=False):
     `(if <cond> then 1 else 0)`.
     Raises ExprError on anything it cannot translate."""
     ast = _parse_expr(s)
-    lean = _emit_expr(ast)
+    lean = _emit_expr(ast, rest_name=rest_name)
     if coerce_cmp and ast[0] == "bin" and ast[1] in _CMP_OPS:
         return f"(if {lean} then 1 else 0)"
     return lean
@@ -1848,7 +1874,7 @@ class EmitCtx:
         try:
             if not self.is_error:
                 self.out_vars = [
-                    translate_expr(e, coerce_cmp=True) if _needs_translation(e) else e
+                    translate_expr(e, coerce_cmp=True, rest_name=self.rest_name) if _needs_translation(e) else e
                     for e in self.out_vars]
             self.cond_lean = translate_expr(cond) if cond is not None else None
         except ExprError as ex:
@@ -4890,7 +4916,7 @@ class EmitCtx:
             # An error effect has no output expression to translate.
             if not self.is_error:
                 self.out_vars = [
-                    translate_expr(e, coerce_cmp=True) if _needs_translation(e) else e
+                    translate_expr(e, coerce_cmp=True, rest_name=self.rest_name) if _needs_translation(e) else e
                     for e in self.out_vars]
             self.cond_lean = translate_expr(cond) if cond is not None else None
         except ExprError as ex:
