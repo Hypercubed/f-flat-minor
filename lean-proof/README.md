@@ -431,6 +431,50 @@ rot: bury swap ;
 - No `Int` annotations anywhere in the `.ff` file: every value
   is an Int by default. The generated Lean says `(a b c : Int)`
   once, in the binder line, and the body has no type annotations.
+- `@lean` blocks (v37): a `/* @lean ... */` comment is emitted
+  verbatim into the generated Lean, in file order (helpers and
+  `#check`s for the proofs below it). `sorry`, `admit`, and
+  `axiom` are rejected up front — a block containing them is a
+  generator problem, not a theorem.
+- Recursive words (v37): a word that reaches itself through
+  the call graph is no longer refused. Its program keeps the
+  call boundary opaque — a `Tok.call self_<word>` token with
+  `(self_<word> : Int)` code and `(hself_<word> : lookup defs
+  self_<word> = some (<word>Prog ...))` hypotheses — instead of
+  inlining forever. Callers that reach a recursive word keep
+  their callee's boundary opaque the same way and compose the
+  callee's proven effect lemma (`fbm_verify` applies it where
+  the `Tok.call` peels). A directly self-recursive word needs
+  `@by-proof` or `@by-induction` (below): `fbm_verify` alone
+  cannot do induction.
+- Non-leading `..R` and list splices (v37): the named rest may
+  sit anywhere in the output (`..R A == A ..R` emits
+  `R ++ [A]` — pushtop), and a list-valued call may be spliced
+  onto the rest (`..R0 A B == ..R0 intRange(A,B+1)` emits
+  `intRange A (B+1) ++ R0` — range, count).
+- Functional quotation slots (v37): `[X -- F X]` is a quotation
+  whose body maps `X :: R` to `(F X) :: X :: R` (F a function,
+  not code). The theorem binds `(F : Int → Int)` plus the
+  body's universally-quantified contract as a hypothesis, so
+  `_loop` states `SpecHist2(F,N.toNat,A,R0)` and callers
+  instantiate it (with `succ`, for `range`/`count`). Other
+  slot shapes stay runQ-style as before.
+- `@by-proof` (v37): a trailing `@by-proof <tactic>` clause
+  replaces the `fbm_verify [...]` proof with the given tactic
+  body (for arithmetic bridges `fbm_verify` cannot derive,
+  e.g. range's `have hBA ...; have hAdd ...; fbm_verify
+  [...]`, or a hand-written induction). `sorry`/`admit`/`axiom`
+  are rejected up front. Single-line rule: `;` separates
+  tactics, but a `by <tac>` block absorbs a following `;` into
+  itself — parenthesise it (`:= (by omega); fbm_verify ...`),
+  or the rest of the script silently runs as part of the `have`.
+- `@by-induction` (v37): a trailing `@by-induction <pattern>`
+  clause proves by induction instead of straight `fbm_verify`:
+  `N - 1` (strong Nat induction on `N.toNat`, e.g. `_loop`;
+  needs a nonneg hypothesis such as a `when 0 <= N`) and
+  `R.length` (List induction on the rest `R`, e.g. `pushtop`).
+  Anything else is a clean problem. At most one of `@by-proof` /
+  `@by-induction` per effect.
 
 ## What it does, step by step
 
@@ -474,6 +518,8 @@ rot: bury swap ;
 | `examples/shifts.ff` | 3 theorems (`<<`, `>>`, and a defined word `dbl` using `<<`), `lean` exit 0 |
 | `examples/getc.ff` | 1 theorem (`getc == n {reads char} where 0 <= n ∧ n < 256`), `lean` exit 0 |
 | `examples/wrong.ff` | `rot` claimed as `b c a`: the theorem is now emitted (no concrete check any more) and `lean` rejects it — the failure is ambiguous, which is the known tradeoff of removing the mirror (see above) |
+| `ff/lib/core/core.ff` (2026-11-26, v37) | 52 theorems (45 non-recursive words plus `pushtop`/`_loop` by `@by-induction`, `loop`/`times`/`seq` by callee-lemma composition, `range`/`count` by `@by-proof` arithmetic bridges), `chomp test:lean` green, `#print axioms` = `[propext, Classical.choice, Quot.sound]`, no `sorryAx` |
+| `ff/__tests__/primitives.test.ffp` | 34 theorems (all primitives), `chomp test:lean` green |
 
 Generated outputs are saved under `outputs/` as
 `generated-shuffles.lean`, `generated-arith.lean`,
@@ -498,9 +544,11 @@ equation compiler, and every theorem mentions `exec` (via
 
 - Body tokens: integers, `nop clr dup swap drop q< q> + - * / % & depth < = > | ~ ^ << >> putc putn . exit rand clock getc`, and calls
   to words in the same file. Nothing else yet.
-- Non-recursive words only: calls are inlined. A recursive word
-  (e.g. `fact`) needs fuel + induction, as in `Fact.lean` — the
-  generator does not do that, and says so.
+- Recursive words prove by induction (v37): a self-recursive
+  word keeps an opaque `Tok.call` boundary and needs `@by-proof`
+  or `@by-induction`; its callers compose its proven lemma.
+  Only direct self-recursion and rec-reaching callers are
+  supported — mutual recursion is a clean problem.
 - Quotations (`[A]`, `?`, `dip`, …) are refused: a quotation's
   effect has to be given as a hypothesis first (the `where`
   form discussed in chat), which the prototype does not parse.
@@ -530,3 +578,8 @@ equation compiler, and every theorem mentions `exec` (via
   use the sanitised name.
 - `n-1 :: []` parses as `n - (1 :: [])`. Every list element is
   parenthesised in the generated code.
+- `have h : T := by tac; next` parses as `by (tac; next)`:
+  the `by` block absorbs the rest of the tactic sequence. In a
+  single-line `@by-proof`, parenthesise every `by` block
+  (`:= (by omega); fbm_verify ...`). Multi-tactic `by` blocks
+  on one line need the same treatment.

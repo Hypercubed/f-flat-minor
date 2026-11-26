@@ -36,6 +36,8 @@ def _rename_ast_vars(ast, mapping):
     if kind == "call":
         return ("call", ast[1],
                 [_rename_ast_vars(a, mapping) for a in ast[2]])
+    if kind == "tonat":
+        return ("tonat", mapping.get(ast[1], ast[1]))
     return ast
 
 
@@ -46,7 +48,7 @@ def _ast_var_names(ast):
     kind = ast[0]
     if kind == "var":
         return {ast[1]}
-    if kind == "restlen":
+    if kind in ("restlen", "tonat"):
         return {ast[1]}
     if kind in ("neg", "not", "lnot"):
         return _ast_var_names(ast[1])
@@ -222,7 +224,15 @@ def _parse_quot_slot(elem):
     tokens, e.g. `..r`, `..s`);
     ("var", name) for `[B]` -- a plain quotation variable;
     ("cons_out", a, b) for `[a B]` -- cons's output, a quotation
-    built from value `a` and quotation `B`.
+    built from value `a` and quotation `B`;
+    ("fun", x, f) for `[X -- F X]` -- a functional slot: the
+    quotation maps `X :: R` to `(F X) :: X :: R` (pushes `F X`
+    on top, preserves `X`, the rest, and the queue -- the
+    contract of `_loop`-family bodies like `succ`). The output
+    side must be exactly `F X` (two bare identifiers, the second
+    repeating the input side). `F` becomes an `(F : Int → Int)`
+    binder; `X` is universally quantified inside the body
+    hypothesis.
     Returns None when the element is not bracketed, and
     ("bad", inner) when it is bracketed but unrecognised."""
     if not (elem.startswith("[") and elem.endswith("]")):
@@ -243,6 +253,10 @@ def _parse_quot_slot(elem):
         # problem).
         if re.fullmatch(r"[A-Z][A-Za-z0-9_]*", right):
             return ("ptr_val", left, right)
+        mfun = re.fullmatch(r"([A-Za-z_][A-Za-z0-9_']*)\s+([A-Za-z_][A-Za-z0-9_']*)", right)
+        if mfun and mfun.group(2) == left.strip() and re.fullmatch(
+                r"[A-Za-z_][A-Za-z0-9_']*", left.strip()):
+            return ("fun", left.strip(), mfun.group(1))
         return ("ptr", left, right)
     parts = inner.split()
     if len(parts) == 1:
@@ -367,6 +381,70 @@ def lean_list_bottom_to_top(elems, rest_var):
         return " :: ".join(exprs) + " :: []" if False else _cons_chain(exprs, "[]")
     return _cons_chain(exprs, rest_var)
 
+# (v37) Calls returning a Stack (list splice) in `@effect` outputs.
+# An output element that is a call to one of these is a list-valued
+# splice (multiple values), not a single Int. `intRange` is defined in
+# `Fbm/Prover.lean`; others may come from `@lean` blocks.
+KNOWN_LIST_FUNCS = {"intRange", "SpecIter", "SpecHist2"}
+
+def _is_list_splice_elem(elem):
+    """True when an output element (Lean-translated) is a list-valued
+    splice (v37): a call to a known list function (`intRange(A,B)`),
+    or a bare lowercase identifier (`xs`). Int singles (uppercase vars,
+    numbers, arithmetic) return False. Rest markers are not passed here."""
+    e = elem.strip()
+    if re.fullmatch(r"[a-z][A-Za-z0-9_']*", e):
+        return True
+    m = re.match(r"^([A-Za-z_][A-Za-z0-9_']*)\s*\(", e)
+    if m and m.group(1) in KNOWN_LIST_FUNCS:
+        return True
+    # Lean-application form (translated from `f(A,B, ...)`): head
+    # is a known list function (`intRange A B`, `SpecHist2 F ...`).
+    m = re.match(r"^([A-Za-z_][A-Za-z0-9_']*)\s+\S", e)
+    if m and m.group(1) in KNOWN_LIST_FUNCS:
+        return True
+    return False
+
+def lean_output_stack(out_elems, rest_name):
+    """Output stack (bottom-to-top, possibly with `..R` anywhere and
+    list splices) -> Lean top-first list expression (v37).
+    `out_elems` are Lean-translated elements plus at most one `..R`
+    rest marker (`..` + rest_name); `rest_name` may be None (no rest).
+    List splices (see `_is_list_splice_elem`) are only allowed at/above
+    the rest (the top part); the bottom part (below the rest) must be
+    Int singles. Returns a `++`-chain (e.g. `R ++ [(A)]`, `xs ++ R`)."""
+    rest_tok = f"..{rest_name}" if rest_name else None
+    if rest_tok and rest_tok in out_elems:
+        idx = out_elems.index(rest_tok)
+        bottom = out_elems[:idx]
+        top = out_elems[idx + 1:]
+    else:
+        bottom, top = [], list(out_elems)
+    for b in bottom:
+        if _is_list_splice_elem(b):
+            raise ValueError(
+                f"list splice {b!r} below the rest is not supported "
+                f"(put list outputs above `..{rest_name}`)")
+    # Top-first order: reverse(top) ++ [R] ++ reverse(bottom).
+    segs = []
+    for e in reversed(top):
+        if _is_list_splice_elem(e):
+            segs.append(f"({e})")
+        else:
+            segs.append(f"[({e})]")
+    if rest_name:
+        segs.append(f"({rest_name})")
+    for e in reversed(bottom):
+        segs.append(f"[({e})]")
+    if not segs:
+        return "[]"
+    if len(segs) == 1:
+        s = segs[0]
+        # `[(x)]` is a singleton; keep the `++`-free form when it is
+        # the whole stack (avoids `R`-less chains like `[(A)]`).
+        return s
+    return " ++ ".join(segs)
+
 def _cons_chain(exprs, tail):
     # Each element is parenthesised: without it, `n-1 :: []` parses
     # as `n - (1 :: [])` in Lean (verified by the error it produced).
@@ -465,7 +543,9 @@ def _parse_expr(s):
                 left = ("var", val)
                 # Dot access: `<name>.length` is the length of the
                 # named rest `..name` (v20: `..r` + `r.length`
-                # replaces the old `rest.length`, which is dropped).
+                # replaces the old `rest.length`, which is dropped),
+                # and `<name>.toNat` is `Int.toNat` (v37: needed by
+                # `SpecIterN` witnesses over an `Int` counter).
                 # Anything else with a dot is rejected: stack
                 # variables are Ints, only a rest list has a length.
                 # Whether `val` is actually the rest binder is
@@ -473,9 +553,12 @@ def _parse_expr(s):
                 if peek() == ("dot", "."):
                     next_tok()
                     k2, v2 = next_tok()
-                    if k2 != "ident" or v2 != "length":
-                        raise ExprError(f"unsupported field access in {s!r}")
-                    left = ("restlen", val)
+                    if k2 == "ident" and v2 == "toNat":
+                        left = ("tonat", val)
+                    else:
+                        if k2 != "ident" or v2 != "length":
+                            raise ExprError(f"unsupported field access in {s!r}")
+                        left = ("restlen", val)
         elif kind == "op" and val == "-":
             left = ("neg", parse(80))
         elif kind == "op" and val == "¬":
@@ -517,6 +600,10 @@ def _emit_expr(ast):
         # Ints, so the cast is part of the translation. `name` must
         # be the effect's rest binder (checked in prepare()).
         return f"({ast[1]}.length : Int)"
+    if kind == "tonat":
+        # `<name>.toNat` is `Int.toNat` (a Nat). `name` must be an
+        # `Int` stack variable (checked in prepare()).
+        return f"({ast[1]}.toNat)"
     if kind == "call":
         # Lean application is space-separated, not f(a, b):
         # `min(a,b)` in an effect means `min a b` in Lean.
@@ -633,23 +720,85 @@ def parse_args(argv):
     return src_path, out_path
 
 
+# Tokens forbidden in verbatim Lean blocks and @by-proof / @by-induction
+# clauses (v37): they would smuggle an unproved claim past the
+# checker. The generator rejects them up front; Lean's `#print
+# axioms` is the backstop, not the only line of defence.
+_FORBIDDEN_LEAN_RE = re.compile(r"\b(sorry|admit|axiom)\b")
+
+def _check_lean_safe(body, where):
+    """Raise ValueError when a verbatim Lean block contains
+    `sorry`, `admit`, or `axiom` (v37)."""
+    m = _FORBIDDEN_LEAN_RE.search(body)
+    if m:
+        raise ValueError(
+            f"{where} contains forbidden token {m.group(1)!r} "
+            f"(no sorry / admit / axiom in verbatim Lean)")
+
+def _split_proof_clauses(body):
+    """Split trailing `@by-proof` / `@by-induction` clauses off an `@effect`
+    body (v37). Returns `(core, by_proof, by_induction)`. Clauses must be
+    at the tail (`@by-proof <tactic>`, `@by-induction <pattern>`); at most
+    one of each, and not both together. Raises ValueError on duplicates,
+    empty clauses, both-together, or forbidden `sorry`/`admit`/`axiom`
+    tokens."""
+    marks = [(m.start(), m.end(), m.group(1))
+             for m in re.finditer(r"\s@(by-proof|by-induction)\b", body)]
+    if not marks:
+        return body, None, None
+    marks.sort()
+    core = body[:marks[0][0]].strip()
+    clauses = {}
+    for i, (s, e, kind) in enumerate(marks):
+        nxt = marks[i + 1][0] if i + 1 < len(marks) else len(body)
+        text = body[e:nxt].strip()
+        if not text:
+            raise ValueError(f"@{kind} clause has no body")
+        if kind in clauses:
+            raise ValueError(f"duplicate @{kind} clause")
+        clauses[kind] = text
+    if "by-proof" in clauses and "by-induction" in clauses:
+        raise ValueError("@by-proof and @by-induction cannot be combined on one @effect")
+    by_proof = clauses.get("by-proof")
+    by_ind = clauses.get("by-induction")
+    if by_proof is not None:
+        _check_lean_safe(by_proof, "@by-proof clause")
+    if by_ind is not None:
+        _check_lean_safe(by_ind, "@by-induction clause")
+    if not core:
+        raise ValueError("@effect has no effect before @by-proof / @by-induction")
+    return core, by_proof, by_ind
+
 def extract_effects(text):
     """Strip ordinary /* */ comments, keeping @effect bodies.
-    Returns (effects_list, text_without_comments): effects_list is
-    a list of (source line, @effect body) in file order (the body
-    without the '@effect' tag); the returned text has every comment
-    replaced by a single space so definitions still parse. The
-    source line is what the `-- src:` marker in the generated Lean
-    reports, so a Lean error can be traced back to the statement
-    it came from."""
+    Returns (effects_list, lean_blocks, text_without_comments):
+    effects_list is a list of (source line, @effect body) in file
+    order (the body without the '@effect' tag); lean_blocks is a
+    list of (source line, @lean body) in file order (the body
+    without the '@lean' tag, emitted verbatim); the returned text
+    has every comment replaced by a single space so definitions
+    still parse. The source line is what the `-- src:` marker in
+    the generated Lean reports, so a Lean error can be traced
+    back to the statement it came from."""
     effects_list = []
+    lean_blocks = []
     for m in re.finditer(r"/\*(.*?)\*/", text, flags=re.S):
         body = m.group(1).strip()
         if body.startswith("@effect"):
             line = text.count("\n", 0, m.start()) + 1
             effects_list.append((line, body[len("@effect"):].strip()))
+        elif body.startswith("@lean"):
+            line = text.count("\n", 0, m.start()) + 1
+            lean_body = body[len("@lean"):].strip()
+            try:
+                _check_lean_safe(lean_body, f"@lean block (line {line})")
+            except ValueError as ex:
+                # Record as problem later via main(); keep marker.
+                lean_blocks.append((line, f"-- ERROR: {ex}"))
+                continue
+            lean_blocks.append((line, lean_body))
     text2 = re.sub(r"/\*(.*?)\*/", " ", text, flags=re.S)
-    return effects_list, text2
+    return effects_list, lean_blocks, text2
 
 
 def parse_definitions(text):
@@ -669,37 +818,154 @@ def parse_definitions(text):
 
 
 def _tok_lean(tok):
-    """A program token (int, primitive name, or ("lit", k) marker)
-    as a Lean Tok expression. A literal marker becomes a push of
-    its code variable (`Tok.push lit{k}`)."""
+    """A program token (int, primitive name, ("lit", k) marker, or
+    ("call", word) marker) as a Lean Tok expression. A literal marker
+    becomes a push of its code variable (`Tok.push lit{k}`); a call
+    marker (v37, recursive call) becomes `Tok.call self_<word>`."""
     if isinstance(tok, int):
         return f"Tok.push {tok}"
     if isinstance(tok, tuple) and tok[0] == "lit":
         return f"Tok.push lit{tok[1]}"
+    if isinstance(tok, tuple) and tok[0] == "call":
+        return f"Tok.call {_self_var(tok[1])}"
     return PRIMS[tok]
 
 
-def _inline_tokens(tokens, defs, seen):
+def _tok_lean_renamed(tok, lit_prefix):
+    """`_tok_lean` with literal markers pushed as `{lit_prefix}{k}`
+    (for a callee's literal codes bound in the caller's theorem,
+    e.g. `_loop_lit0` when proving `loop`). Call markers already
+    render as the callee's own `Tok.call self_*`."""
+    if isinstance(tok, tuple) and tok[0] == "lit":
+        return f"Tok.push {lit_prefix}{tok[1]}"
+    return _tok_lean(tok)
+
+
+def _self_var(word):
+    """The Lean code variable for a recursive word's own defs-table
+    entry (v37): `self_<lean_name>`, shared by all references to that
+    word's code (direct `Tok.call` and single-word `[W]` literals
+    that resolve through it)."""
+    return f"self_{lean_name(word)}"
+
+def _is_rec_single_word(raw, body_prog, defs):
+    """True when a literal should be emitted via its inlined body (with
+    `Tok.call self_*`) instead of a `WProg` reference (v37): the raw is a
+    single defined word `W` and either the inlined body contains a
+    recursive-call marker or `W` itself is on the rec-reaching frontier
+    (its `WProg` reference would be underapplied -- frontier Prog defs
+    take `self_*` params -- or circular)."""
+    if not (len(raw) == 1 and isinstance(raw[0], str)
+            and raw[0] in defs and raw[0] not in PRIMS):
+        return False
+    if any(isinstance(t, tuple) and t[0] == "call" for t in body_prog):
+        return True
+    return raw[0] in _compute_rec_frontier(defs)
+
+def _compute_rec_frontier(defs, rec_words=None):
+    """Words that can reach a recursive word (including recursive
+    words themselves). The generator keeps call boundaries opaque
+    at this frontier (a `Tok.call` marker instead of inlining or
+    delegating through): fbm_verify then composes the callee's
+    proven effect lemma instead of re-peeling its body (which
+    needs the callee's own induction). Words outside the frontier
+    inline and delegate exactly as before."""
+    if rec_words is None:
+        rec_words = _compute_rec_words(defs)
+    return {w for w in defs if _rec_deps_of(w, defs, rec_words)}
+
+def _direct_callees_of_tokens(tokens, defs):
+    """Direct callee words referenced by a raw token list (v37): bare
+    word tokens plus words named inside `[...]` literals (recursively).
+    Used to compute the raw call graph for recursion detection."""
+    out = set()
+    for tok in tokens:
+        if isinstance(tok, str) and tok.startswith("["):
+            try:
+                inner = _literal_inner_tokens(tok)
+            except ValueError:
+                continue
+            for t in inner:
+                if isinstance(t, str) and t in defs:
+                    out.add(t)
+                if isinstance(t, str) and t.startswith("["):
+                    out |= _direct_callees_of_tokens([t], defs)
+        elif isinstance(tok, str) and tok in defs:
+            out.add(tok)
+    return out
+
+def _compute_rec_words(defs):
+    """The set of recursive words (v37): words that can reach themselves
+    through the raw call graph (bare tokens and literal contents)."""
+    succ = {}
+    for w, toks in defs.items():
+        succ[w] = _direct_callees_of_tokens(toks, defs)
+    rec = set()
+    for w in defs:
+        # DFS from w looking for w.
+        stack = list(succ.get(w, ()))
+        seen_dfs = set()
+        while stack:
+            v = stack.pop()
+            if v == w:
+                rec.add(w)
+                break
+            if v in seen_dfs:
+                continue
+            seen_dfs.add(v)
+            stack.extend(succ.get(v, ()))
+    return rec
+
+def _rec_deps_of(word, defs, rec_words=None):
+    """Recursive words reachable from `word` (v37, including itself
+    when recursive): the `self_*` params its Prog/def needs."""
+    if rec_words is None:
+        rec_words = _compute_rec_words(defs)
+    succ = {}
+    for w, toks in defs.items():
+        succ[w] = _direct_callees_of_tokens(toks, defs)
+    out = set()
+    stack = [word]
+    seen_dfs = set()
+    while stack:
+        v = stack.pop()
+        if v in seen_dfs:
+            continue
+        seen_dfs.add(v)
+        if v in rec_words:
+            out.add(v)
+        stack.extend(succ.get(v, ()))
+    return out
+
+def _inline_tokens(tokens, defs, seen, frontier=None):
     """Inline a token list (a definition body or a literal's
     contents). Returns (prog, lits, raw_lits): prog is the flat
     token list (ints, primitive names, ("lit", k) markers for
-    quotation literals); lits is the list of literal-body programs
-    (inlined, in the same format), collected INNERMOST-FIRST
-    (when inlining a literal, its contents are inlined first --
-    which may append inner literals -- then this literal's body);
-    raw_lits is the list of raw inner-token lists, parallel to
-    lits (raw_lits[k] is the tokens as written inside literal k's
-    brackets -- needed to tell a single-word literal `[sip]` from
-    a multi-token one). A literal's markers are remapped to their
-    positions in the outer `lits` as they are collected.
-    Recursive calls are refused (ValueError)."""
+    quotation literals, ("call", word) markers for recursive calls);
+    lits is the list of literal-body programs (inlined, in the same
+    format), collected INNERMOST-FIRST (when inlining a literal,
+    its contents are inlined first -- which may append inner
+    literals -- then this literal's body); raw_lits is the list of
+    raw inner-token lists, parallel to lits (raw_lits[k] is the tokens
+    as written inside literal k's brackets -- needed to tell a
+    single-word literal `[sip]` from a multi-token one). A literal's
+    markers are remapped to their positions in the outer `lits` as
+    they are collected. (v37) A call to a word already on the `seen`
+    stack (a recursive call) emits a ("call", word) marker for
+    `Tok.call self_<word>` instead of raising ValueError.
+    `frontier` (default: the rec-reaching words) also emits call
+    markers instead of inlining: fbm_verify composes the callee's
+    proven lemma at the call boundary rather than re-peeling a
+    body whose induction lives elsewhere."""
+    if frontier is None:
+        frontier = _compute_rec_frontier(defs)
     out = []
     lits = []
     raw_lits = []
     for tok in tokens:
         if isinstance(tok, str) and tok.startswith("["):
             inner = _literal_inner_tokens(tok)
-            body_prog, body_lits, body_raws = _inline_tokens(inner, defs, seen)
+            body_prog, body_lits, body_raws = _inline_tokens(inner, defs, seen, frontier)
             base = len(lits)
             lits.extend(body_lits)
             raw_lits.extend(body_raws)
@@ -715,32 +981,44 @@ def _inline_tokens(tokens, defs, seen):
         elif isinstance(tok, int) or tok in PRIMS:
             out.append(tok)
         elif isinstance(tok, str) and tok in defs:
-            sub_prog, sub_lits, sub_raws = inline_word(tok, defs, seen)
-            base = len(lits)
-            lits.extend(sub_lits)
-            raw_lits.extend(sub_raws)
-            for t in sub_prog:
-                if isinstance(t, tuple) and t[0] == "lit":
-                    out.append(("lit", base + t[1]))
-                else:
-                    out.append(t)
+            if tok in seen or tok in frontier:
+                out.append(("call", tok))
+            else:
+                sub_prog, sub_lits, sub_raws = inline_word(tok, defs, seen, frontier)
+                base = len(lits)
+                lits.extend(sub_lits)
+                raw_lits.extend(sub_raws)
+                for t in sub_prog:
+                    if isinstance(t, tuple) and t[0] == "lit":
+                        out.append(("lit", base + t[1]))
+                    else:
+                        out.append(t)
         else:
             raise ValueError(f"unsupported token {tok!r}")
     return out, lits, raw_lits
 
 
-def inline_word(name, defs, seen=()):
+def inline_word(name, defs, seen=(), frontier=None):
     """Inline a defined word. Returns (prog, lits, raw_lits)
-    (see _inline_tokens). Recursive calls are refused
-    (ValueError). (v30: the third element, the raw inner-token
-    lists, is what the runQ path uses to tell a single-word
-    literal `[sip]` -- whose body is the word's `Prog` def --
-    from a multi-token literal, whose body is a literal list.)"""
+    (see _inline_tokens). (v37) Recursive calls (a word already on
+    `seen`, or on the rec-reaching `frontier`) emit ("call", word)
+    markers instead of raising ValueError. (v30: the third element,
+    the raw inner-token lists, is what the runQ path uses to tell a
+    single-word literal `[sip]` -- whose body is the word's `Prog`
+    def -- from a multi-token literal, whose body is a literal
+    list.)"""
+    if frontier is None:
+        frontier = _compute_rec_frontier(defs)
     if name in seen:
-        raise ValueError(f"recursive word {name!r} -- needs fuel + induction, not inlining")
+        # (v37) Recursive call: a marker for `Tok.call self_<name>`
+        # instead of infinite inlining. The caller (`_inline_tokens`)
+        # normally intercepts this case first (including frontier
+        # words, which always emit call markers there); this branch
+        # covers direct calls.
+        return [("call", name)], [], []
     if name not in defs:
         raise ValueError(f"unknown word {name!r}")
-    return _inline_tokens(defs[name], defs, seen + (name,))
+    return _inline_tokens(defs[name], defs, seen + (name,), frontier)
 
 
 QUOT_TOKENS = ("eval", "?", "cons")
@@ -1131,6 +1409,7 @@ class EmitCtx:
     prog_lits: dict
     prog_raw_lits: dict
     prog_lit_params: dict
+    prog_self_vars: dict
     failed: set
     prog_emitted: set
     out_lines: list
@@ -1147,6 +1426,7 @@ class EmitCtx:
     witnesses: list | None = None
     in_rest: bool = True
     out_rest: bool = True
+    out_rest_idx: int | None = None
     in_lean: str = ""
     existential: list = field(default_factory=list)
     binder_part: str = ""
@@ -1158,6 +1438,17 @@ class EmitCtx:
     oracle_binder: str = ""
     oracle_arg: str = "[]"
     suffix: str = ""
+    # (v37) Proof-clause overrides from `@by-proof` / `@by-induction`.
+    by_proof: str | None = None
+    by_induction: str | None = None
+    # Computed by _prepare_recursive() (recursive words only).
+    is_recursive: bool = False
+    rec_self_vars: list = field(default_factory=list)
+    rec_lit_bodies: list = field(default_factory=list)
+    rec_lit_words: list = field(default_factory=list)
+    rec_deps_sorted: list = field(default_factory=list)
+    rec_frontier_sorted: list = field(default_factory=list)
+    rec_fun_slots: list = field(default_factory=list)
     # Computed by prepare_quot() (quotation words only).
     is_quot: bool = False
     quot_kind: str = ""
@@ -1336,7 +1627,13 @@ class EmitCtx:
             self.problem(str(ex))
             return None
         self.progs[name] = comp
-        self.prog_lit_params[name] = (
+        # (v37) Prog defs whose compositional body mentions a recursive
+        # `self_*` code variable (a frontier call kept opaque) take those
+        # as `(self_* : Int)` params ahead of the lit params.
+        self_vars = sorted(set(re.findall(r"self_[A-Za-z0-9_']+", comp)))
+        self_part = "".join(f" ({v} : Int)" for v in self_vars)
+        self.prog_self_vars[name] = self_vars
+        self.prog_lit_params[name] = self_part + (
             f" ({' '.join(f'lit{i}' for i in range(len(lits)))} : Int)"
             if lits else "")
         return prog, lits, raw_lits
@@ -1349,29 +1646,51 @@ class EmitCtx:
         inner literals, matching `_inline_tokens` order); an int
         or primitive becomes its singleton; a defined word `W`
         becomes `WProg` applied to `W`'s share of the outer lit
-        variables (in order). Primitive words are singletons."""
+        variables (in order) plus `W`'s own `self_*` params (same
+        global names, bound by every frontier caller). Primitive
+        words are singletons. (v37) A direct self-reference
+        (`tok == name`, a bare recursive call at top level), or any
+        callee on the rec-reaching frontier, becomes
+        `[Tok.call self_<tok>]` instead of delegating: fbm_verify
+        composes the callee's proven lemma at the opaque call
+        boundary rather than re-peeling a body whose induction
+        lives elsewhere."""
         if name in PRIMS:
             return f"[{PRIMS[name]}]"
+        try:
+            frontier = _compute_rec_frontier(self.defs)
+        except Exception:
+            frontier = set()
         parts = []
         next_lit = 0
         for tok in self.defs[name]:
             if isinstance(tok, str) and tok.startswith("["):
                 inner = _literal_inner_tokens(tok)
-                _, inner_lits, _ = _inline_tokens(inner, self.defs, ())
+                # (v37) Count inner lits with `name` on the seen stack so
+                # recursive `[name]` inside matches the inlined program
+                # (call marker, not full inlining).
+                _, inner_lits, _ = _inline_tokens(inner, self.defs, (name,), frontier)
                 m = len(inner_lits)
                 parts.append(f"[Tok.push lit{next_lit + m}]")
                 next_lit += m + 1
             elif isinstance(tok, int) or tok in PRIMS:
                 parts.append(f"[{_tok_lean(tok)}]")
             elif isinstance(tok, str) and tok in self.defs:
-                wprog, wlits, _ = inline_word(tok, self.defs)
+                if tok == name or tok in frontier:
+                    parts.append(f"[Tok.call {_self_var(tok)}]")
+                    continue
+                got_w = self._compute_prog(tok)
+                if got_w is None:
+                    raise ValueError(f"cannot build program for {tok!r}")
+                _, wlits, _ = got_w
                 m = len(wlits)
                 wln = lean_name(tok)
+                wself = " ".join(self.prog_self_vars.get(tok, []))
                 if m:
                     args = " ".join(f"lit{next_lit + k}" for k in range(m))
-                    parts.append(f"{wln}Prog {args}")
+                    parts.append(f"{wln}Prog" + (f" {wself}" if wself else "") + f" {args}")
                 else:
-                    parts.append(f"{wln}Prog")
+                    parts.append(f"{wln}Prog" + (f" {wself}" if wself else ""))
                 next_lit += m
             else:
                 raise ValueError(f"unsupported token {tok!r}")
@@ -1380,6 +1699,274 @@ class EmitCtx:
                 f"literal count mismatch for {name!r}: "
                 f"{next_lit} walked vs {len(self.prog_lits[name])} inlined")
         return " ++ ".join(parts)
+
+    def _prepare_recursive(self, rec_words):
+        """Recursive word (v37): `Tok.call` + `lookup defs` hypotheses,
+        arbitrary-position `..R` / list-splice outputs, `@by-proof` /
+        `@by-induction` proofs. No shape simulation (the proof is manual).
+        Supports one functional quotation slot `[X -- F X]` (the
+        `_loop` family): `B` maps `X :: R` to `(F X) :: X :: R`.
+        Other slot forms (runQ-style) stay clean problems. Returns
+        True when ready to emit."""
+        name = self.name
+        in_elems, out_elems = self.in_elems, self.out_elems
+        cond, where_text = self.cond, self.where_text
+        if self.is_error:
+            return self.problem("a recursive effect cannot be an ERROR effect")
+        fun_slots = []  # (elem, X, F) for input functional slots, in order
+        for e in in_elems:
+            s = _parse_quot_slot(e)
+            if s is not None:
+                if s[0] != "fun":
+                    return self.problem(
+                        f"recursive effect slot {e!r} is not a functional "
+                        f"`[X -- F X]` slot (runQ-style slots are not supported "
+                        f"on recursive words)")
+                _, X, F = s
+                if X == F:
+                    return self.problem(
+                        f"functional slot {e!r} needs distinct names "
+                        f"(`[X -- F X]` with X ≠ F)")
+                fun_slots.append((e, X, F))
+        if len(fun_slots) > 1:
+            return self.problem(
+                "a recursive effect takes at most one functional slot yet")
+        fun_elems = {e for e, _, _ in fun_slots}
+        for e in out_elems:
+            s = _parse_quot_slot(e)
+            if s is not None:
+                if s[0] != "fun" or e not in fun_elems:
+                    return self.problem(
+                        "a recursive output slot must repeat an input "
+                        f"functional slot (found {e!r})")
+                continue
+            if e.startswith("["):
+                return self.problem(
+                    f"a recursive effect takes no quotation element {e!r}")
+        self.rec_fun_slots = []
+        if fun_slots:
+            used_q = set(_effect_vars(in_elems + out_elems + ([cond] if cond else [])
+                                     + ([where_text] if where_text else [])))
+            # Uppercase: a lowercase code variable would be misread as
+            # a list splice (bare lowercase identifier) in outputs.
+            q_var = "Q"
+            while q_var in used_q:
+                q_var += "_"
+            body_var = "body"
+            while body_var in used_q:
+                body_var += "_"
+            e, X, F = fun_slots[0]
+            self.rec_fun_slots = [(q_var, body_var, X, F)]
+        if name in self.failed:
+            return False
+        got = self._compute_prog(name)
+        if got is None:
+            return False
+        prog, lits, raw_lits = got
+        # Rest validation (v37 output rules: input far-left only, output
+        # anywhere; named rest required for non-leading outputs).
+        def named_rest(tok):
+            m = re.fullmatch(r"\.\.([A-Za-z_][A-Za-z0-9_]*)", tok or "")
+            return m.group(1) if m else None
+        in_first = in_elems[0] if in_elems else None
+        out_first = out_elems[0] if out_elems else None
+        in_empty = in_first == "∅"
+        out_empty = out_first == "∅"
+        if "∅" in in_elems[1:] or "∅" in out_elems[1:]:
+            return self.problem("∅ is only allowed at the far left (the rest position)")
+        if any(named_rest(e) is not None for e in in_elems[1:]):
+            return self.problem("a named rest (..r) is only allowed at the far left on the input")
+        if any(e == "..." for e in out_elems[1:]):
+            return self.problem("'...' is only allowed at the far left (the rest position)")
+        in_named = named_rest(in_first)
+        out_nameds = [named_rest(e) for e in out_elems if named_rest(e) is not None]
+        if len(out_nameds) > 1:
+            return self.problem("the output names more than one rest")
+        out_named = out_nameds[0] if out_nameds else None
+        if out_named is not None and in_named is None and not in_empty:
+            return self.problem(
+                f"the output names a rest ..{out_named} that the input does not name")
+        if in_named is not None and out_named is not None and in_named != out_named:
+            return self.problem(
+                f"the rest is named ..{in_named} on the input and ..{out_named} on the output")
+        self.rest_name = in_named or out_named or "rest"
+        self.in_rest = not in_empty
+        self.out_rest = (out_first == "..." or out_named is not None) or (
+            not out_empty and not in_empty and not (in_first == "..." or in_named is not None))
+        self.out_rest_idx = None
+        if out_named is not None:
+            for _i, _e in enumerate(out_elems):
+                if named_rest(_e) == out_named:
+                    self.out_rest_idx = _i
+                    break
+        is_rest_tok = lambda e: e in ("...", "∅") or named_rest(e) is not None
+        fun_q = self.rec_fun_slots[0][0] if self.rec_fun_slots else None
+        self.in_vars = [(fun_q if e in fun_elems else e) for e in in_elems
+                        if not is_rest_tok(e)]
+        self.out_vars = [(fun_q if e in fun_elems else e) for e in out_elems
+                         if not is_rest_tok(e)]
+        # Length / where / translation (mirrors the standard path, v37
+        # output rules for list splices).
+        for e in self.out_vars + ([cond] if cond else []) + ([where_text] if where_text else []):
+            for m in re.finditer(r"([A-Za-z_][A-Za-z0-9_]*)\s*\.\s*length\b", e):
+                if m.group(1) != self.rest_name or self.rest_name == "rest":
+                    return self.problem(f"{m.group(1)}.length is not the length of a named rest")
+            for m in re.finditer(r"#([A-Za-z_][A-Za-z0-9_]*)", e):
+                if m.group(1) != self.rest_name or self.rest_name == "rest":
+                    return self.problem(f"#{m.group(1)} is not the length of a named rest")
+        if where_text is not None:
+            try:
+                self.where_eqs = parse_where_clauses(where_text)
+            except ValueError as ex:
+                return self.problem(str(ex))
+        else:
+            self.where_eqs = None
+        def needs_translation(e):
+            return ("%" in e or "/" in e or "&" in e or "|" in e or "^" in e or "~" in e
+                    or "⊕" in e or "#" in e or "<<" in e or ">>" in e or "." in e
+                    or re.search(r"[A-Za-z_][A-Za-z0-9_']*\s*\(", e) is not None)
+        try:
+            if not self.is_error:
+                self.out_vars = [translate_expr(e) if needs_translation(e) else e
+                                 for e in self.out_vars]
+            self.cond_lean = translate_expr(cond) if cond is not None else None
+        except ExprError as ex:
+            return self.problem(f"cannot translate expression: {ex}")
+        if self.where_eqs is not None:
+            input_vars = _effect_vars(in_elems + ([cond] if cond else []))
+            # A functional slot's `X` is universally quantified inside
+            # the body hypothesis, not a statement-level input: a
+            # witness mentioning it would leave `X` unbound.
+            for _fe, _fX, _fF in fun_slots:
+                if _fX in input_vars:
+                    input_vars.remove(_fX)
+            if self.in_rest and self.rest_name not in input_vars:
+                input_vars.append(self.rest_name)
+            output_vars = _effect_vars(out_elems)
+            lhs_set, bad = set(), None
+            for lhs, _rhs in self.where_eqs:
+                if lhs in lhs_set:
+                    bad = f"where constrains {lhs!r} twice"
+                    break
+                lhs_set.add(lhs)
+                if lhs in input_vars:
+                    bad = f"where cannot constrain {lhs!r}, which is an input"
+                    break
+                if lhs not in output_vars:
+                    bad = f"where constrains {lhs!r}, which is not an output variable"
+                    break
+            if bad is None:
+                for v in output_vars:
+                    if v not in input_vars and v not in lhs_set:
+                        bad = f"output variable {v!r} is not determined by the inputs or the where clause"
+                        break
+            if bad is None:
+                witnesses = []
+                for lhs, rhs in self.where_eqs:
+                    for v in _effect_vars([rhs]):
+                        if v not in input_vars:
+                            bad = f"where witness for {lhs!r} mentions {v!r}, which is not an input"
+                            break
+                    if bad is not None:
+                        break
+                    try:
+                        witnesses.append(translate_expr(rhs))
+                    except ExprError as ex:
+                        bad = f"cannot translate where witness {rhs!r}: {ex}"
+                        break
+                if bad is None:
+                    self.witnesses = witnesses
+            if bad is not None:
+                return self.problem(bad)
+        # Program already computed; IO check (recursive words with IO
+        # inside are refused like the standard path).
+        io_used = [t for t in prog if isinstance(t, str) and t in IO_PRIMS]
+        if io_used:
+            self.failed.add(name)
+            return self.problem(f"IO word {io_used[0]!r} cannot be used inside a defined word yet")
+        # Binders (mirrors `_emit_spec_normal`/`_exact` inputs). A
+        # functional slot's `X` is universally quantified inside the
+        # body hypothesis (never a binder); its `F` gets an
+        # `(F : Int → Int)` binder below; the code variable `q`
+        # joins the Int binders.
+        self.existential = [lhs for lhs, _ in self.where_eqs] if self.where_eqs is not None else []
+        fun_xs = {X for _, X, _ in fun_slots}
+        fun_fs = [F for _, _, F in fun_slots]
+        seen_vars = [v for v in _effect_vars(in_elems + out_elems + ([cond] if cond else []))
+                     if v not in self.existential and v != self.rest_name
+                     and v not in fun_xs and v not in fun_fs]
+        # Lowercase list-splice variables bound by `where` are already in
+        # `existential`; a bare lowercase output spliced without `where`
+        # was rejected above as undetermined.
+        if fun_q is not None:
+            seen_vars.append(fun_q)
+        binders = " ".join(seen_vars)
+        self.in_lean = lean_list_bottom_to_top(
+            self.in_vars, self.rest_name if self.in_rest else None)
+        if self.in_rest or (self.out_rest and not self.is_error):
+            self.rest_binder = f" ({self.rest_name} : Stack)"
+        else:
+            self.rest_binder = ""
+        self.binder_part = f" ({binders} : Int)" if binders else ""
+        for qv, bv, _X, F in self.rec_fun_slots:
+            self.binder_part += f" ({F} : Int → Int) ({bv} : List Tok)"
+        self.hw_binder = f" (hw : {self.cond_lean})" if self.cond_lean is not None else ""
+        self.simp_args = f"run, exec, step, {self.ln}Prog" + (", hw" if self.cond_lean is not None else "")
+        self.suffix = "" if self.n_effects == 1 else f"_{self.idx + 1}"
+        # Recursive hypotheses: self code + lookup + literal lookups (with
+        # `Tok.call self_*` bodies where applicable, v37).
+        rec_deps = sorted(_rec_deps_of(name, self.defs, rec_words))
+        # Frontier deps: every rec-reaching word reachable from here
+        # (including non-recursive intermediaries like `loop` on the
+        # way to `_loop`). The proof composes their effect lemmas at
+        # the opaque call boundaries, so each needs a self code and a
+        # lookup hypothesis.
+        frontier = _compute_rec_frontier(self.defs, rec_words)
+        seen_dfs, stack_dfs, frontier_reached = set(), [name], set()
+        while stack_dfs:
+            v = stack_dfs.pop()
+            if v in seen_dfs:
+                continue
+            seen_dfs.add(v)
+            if v in frontier:
+                frontier_reached.add(v)
+            stack_dfs.extend(_direct_callees_of_tokens(
+                self.defs.get(v, []), self.defs))
+        rec_frontier = sorted(frontier_reached)
+        self.rec_self_vars = [_self_var(r) for r in rec_frontier]
+        # Literal bodies (same single-word logic as runQ, with v37
+        # recursive override via `_is_rec_single_word`).
+        lit_body_lean, lit_words = [], []
+        for k, raw in enumerate(raw_lits):
+            body_prog = lits[k]
+            if (len(raw) == 1 and isinstance(raw[0], str)
+                    and raw[0] in self.defs and raw[0] not in PRIMS):
+                w = raw[0]
+                if _is_rec_single_word(raw, body_prog, self.defs):
+                    lit_body_lean.append(
+                        "[" + ", ".join(_tok_lean(t) for t in body_prog) + "]")
+                    if self._compute_prog(w) is None:
+                        return False
+                    lit_words.append(w)
+                    continue
+                if any(isinstance(t, tuple) and t[0] == "lit" for t in body_prog):
+                    return self.problem(
+                        f"a literal naming {w!r}, which itself contains a literal, is not supported yet")
+                lit_body_lean.append(f"{lean_name(w)}Prog")
+                if self._compute_prog(w) is None:
+                    return False
+                lit_words.append(w)
+            elif len(raw) == 1 and isinstance(raw[0], str) and raw[0] in PRIMS:
+                lit_body_lean.append(f"[{PRIMS[raw[0]]}]")
+            else:
+                lit_body_lean.append(
+                    "[" + ", ".join(_tok_lean(t) for t in body_prog) + "]")
+        self.rec_lit_bodies = lit_body_lean
+        self.rec_lit_words = lit_words
+        self.rec_deps_sorted = rec_deps
+        self.rec_frontier_sorted = rec_frontier
+        self.is_recursive = True
+        return True
 
     def prepare_quot(self):
         """Quotation words (eval, ?, cons): validate the bracket
@@ -1504,6 +2091,18 @@ class EmitCtx:
             if (len(raw) == 1 and isinstance(raw[0], str)
                     and raw[0] in self.defs and raw[0] not in PRIMS):
                 w = raw[0]
+                if _is_rec_single_word(raw, body_prog, self.defs):
+                    # (v37) Recursive single-word literal `[W]`: emit the
+                    # inlined body (with `Tok.call self_W`) directly instead
+                    # of a `WProg` reference (which would be underapplied /
+                    # circular). Ensure `WProg` exists for `hself`.
+                    lit_body_lean.append(
+                        "[" + ", ".join(_tok_lean(t) for t in body_prog) + "]")
+                    lit_prog_defs.append(None)
+                    if self._compute_prog(w) is None:
+                        return False
+                    lit_words.append(w)
+                    continue
                 if any(isinstance(t, tuple) and t[0] == "lit" for t in body_prog):
                     return self.problem(
                         f"a literal naming {w!r}, which itself contains a "
@@ -1817,6 +2416,18 @@ class EmitCtx:
             if (len(raw) == 1 and isinstance(raw[0], str)
                     and raw[0] in self.defs and raw[0] not in PRIMS):
                 w = raw[0]
+                if _is_rec_single_word(raw, body_prog, self.defs):
+                    # (v37) Recursive single-word literal `[W]`: emit the
+                    # inlined body (with `Tok.call self_W`) directly instead
+                    # of a `WProg` reference (which would be underapplied /
+                    # circular). Ensure `WProg` exists for `hself`.
+                    lit_body_lean.append(
+                        "[" + ", ".join(_tok_lean(t) for t in body_prog) + "]")
+                    lit_prog_defs.append(None)
+                    if self._compute_prog(w) is None:
+                        return False
+                    lit_words.append(w)
+                    continue
                 if any(isinstance(t, tuple) and t[0] == "lit" for t in body_prog):
                     return self.problem(
                         f"a literal naming {w!r}, which itself contains a "
@@ -2145,6 +2756,18 @@ class EmitCtx:
             if (len(raw) == 1 and isinstance(raw[0], str)
                     and raw[0] in self.defs and raw[0] not in PRIMS):
                 w = raw[0]
+                if _is_rec_single_word(raw, body_prog, self.defs):
+                    # (v37) Recursive single-word literal `[W]`: emit the
+                    # inlined body (with `Tok.call self_W`) directly instead
+                    # of a `WProg` reference (which would be underapplied /
+                    # circular). Ensure `WProg` exists for `hself`.
+                    lit_body_lean.append(
+                        "[" + ", ".join(_tok_lean(t) for t in body_prog) + "]")
+                    lit_prog_defs.append(None)
+                    if self._compute_prog(w) is None:
+                        return False
+                    lit_words.append(w)
+                    continue
                 if any(isinstance(t, tuple) and t[0] == "lit" for t in body_prog):
                     return self.problem(
                         f"a literal naming {w!r}, which itself contains a "
@@ -2825,6 +3448,18 @@ class EmitCtx:
             if (len(raw) == 1 and isinstance(raw[0], str)
                     and raw[0] in self.defs and raw[0] not in PRIMS):
                 w = raw[0]
+                if _is_rec_single_word(raw, body_prog, self.defs):
+                    # (v37) Recursive single-word literal `[W]`: emit the
+                    # inlined body (with `Tok.call self_W`) directly instead
+                    # of a `WProg` reference (which would be underapplied /
+                    # circular). Ensure `WProg` exists for `hself`.
+                    lit_body_lean.append(
+                        "[" + ", ".join(_tok_lean(t) for t in body_prog) + "]")
+                    lit_prog_defs.append(None)
+                    if self._compute_prog(w) is None:
+                        return False
+                    lit_words.append(w)
+                    continue
                 if any(isinstance(t, tuple) and t[0] == "lit" for t in body_prog):
                     return self.problem(
                         f"a literal naming {w!r}, which itself contains a "
@@ -3224,6 +3859,14 @@ class EmitCtx:
             if (len(raw) == 1 and isinstance(raw[0], str)
                     and raw[0] in self.defs and raw[0] not in PRIMS):
                 w = raw[0]
+                if _is_rec_single_word(raw, body_prog, self.defs):
+                    lit_body_lean.append(
+                        "[" + ", ".join(_tok_lean(t) for t in body_prog) + "]")
+                    lit_prog_defs.append(None)
+                    if self._compute_prog(w) is None:
+                        return False
+                    lit_words.append(w)
+                    continue
                 if any(isinstance(t, tuple) and t[0] == "lit" for t in body_prog):
                     return self.problem(
                         f"computed-flag path: a literal naming {w!r}, which "
@@ -3974,6 +4617,24 @@ class EmitCtx:
         if "ERROR" in out_elems and out_elems != ["ERROR"]:
             return self.problem("ERROR must be the whole output")
         self.is_error = out_elems == ["ERROR"]
+        # (v37) Recursive words (self-reachable through the call graph)
+        # run their own preparation: `Tok.call` + `lookup defs` hypotheses,
+        # arbitrary-position `..R` / list-splice outputs, and `@by-proof` /
+        # `@by-induction` proofs (fbm_verify cannot do induction).
+        # Callers that transitively reach a recursive word (e.g. `loop`
+        # via `_loop`) join them: their proofs compose the callee's
+        # effect lemma, so they need the same `Tok.call`/`lookup`
+        # hypotheses (plus the callee's literal-code binders).
+        try:
+            _rec_words = _compute_rec_words(self.defs)
+        except Exception:
+            _rec_words = set()
+        try:
+            _rec_reached = _rec_deps_of(name, self.defs, _rec_words) if name in self.defs else set()
+        except Exception:
+            _rec_reached = set()
+        if name in _rec_words or _rec_reached:
+            return self._prepare_recursive(_rec_words)
         # Quotation words run their own preparation (the standard
         # rest validation does not apply -- the input and output
         # rests differ, and a quotation effect takes no where).
@@ -4139,10 +4800,19 @@ class EmitCtx:
         out_empty = out_first == "∅"
         if "∅" in in_elems[1:] or "∅" in out_elems[1:]:
             return self.problem("∅ is only allowed at the far left (the rest position)")
-        if any(named_rest(e) is not None for e in in_elems[1:] + out_elems[1:]):
-            return self.problem("a named rest (..r) is only allowed at the far left (the rest position)")
+        # (v37) Named rest: input still far-left only; output may place
+        # `..R` in any position (e.g. `..R A == A ..R`). `...` stays
+        # far-left only (it has no name to reference elsewhere).
+        if any(named_rest(e) is not None for e in in_elems[1:]):
+            return self.problem("a named rest (..r) is only allowed at the far left on the input")
+        if any(e == "..." for e in out_elems[1:]):
+            return self.problem("'...' is only allowed at the far left (the rest position)")
         in_named = named_rest(in_first)
-        out_named = named_rest(out_first)
+        out_nameds = [named_rest(e) for e in out_elems
+                      if named_rest(e) is not None]
+        if len(out_nameds) > 1:
+            return self.problem("the output names more than one rest (only one `..R` allowed)")
+        out_named = out_nameds[0] if out_nameds else None
         if out_named is not None and in_named is None and not in_empty:
             return self.problem(
                 f"the output names a rest ..{out_named} that the input does not name")
@@ -4152,9 +4822,19 @@ class EmitCtx:
                 f"on the output; use the same name on both sides")
         self.rest_name = in_named or out_named or "rest"
         in_explicit = in_first == "..." or in_named is not None
+        # (v37) `out_named` may sit anywhere in the output, so the
+        # explicit-rest check looks at the whole output side.
         out_explicit = out_first == "..." or out_named is not None
         self.in_rest = not in_empty
         self.out_rest = out_explicit or (not out_empty and not in_empty and not in_explicit)
+        # (v37) Position of `..R` in the output (None when absent);
+        # used by `lean_output_stack` for non-leading rests.
+        self.out_rest_idx = None
+        if out_named is not None:
+            for _i, _e in enumerate(out_elems):
+                if named_rest(_e) == out_named:
+                    self.out_rest_idx = _i
+                    break
         is_rest_tok = lambda e: e in ("...", "∅") or named_rest(e) is not None
         self.in_vars = [e for e in in_elems if not is_rest_tok(e)]
         self.out_vars = [e for e in out_elems if not is_rest_tok(e)]
@@ -4416,8 +5096,9 @@ class EmitCtx:
 
     def _spec_prog_app(self):
         lits = self.prog_lits.get(self.name, [])
-        args = "".join(f" lit{i}" for i in range(len(lits)))
-        return f"{self.ln}Prog{args}"
+        self_args = "".join(f" {v}" for v in self.prog_self_vars.get(self.name, []))
+        lit_args = "".join(f" lit{i}" for i in range(len(lits)))
+        return f"{self.ln}Prog{self_args}{lit_args}"
 
     def _spec_lit_hyps(self):
         return [f"(hlookupLit{k} : lookup defs lit{k} = some {b})"
@@ -4488,11 +5169,58 @@ class EmitCtx:
             cursor = start + len(var)
         return out, new_hyps, new_binders
 
+    def _out_stack_lean(self, wit):
+        """Output stack Lean expression (v37): legacy cons-chain unless
+        the output needs the new translation (non-leading `..R` or a
+        list-valued splice), in which case `lean_output_stack`. `wit`
+        maps where-variables to their (translated) witnesses."""
+        ctx = self
+        out_sub = [wit.get(e, e) for e in ctx.out_vars]
+        needs_new = False
+        if ctx.out_rest_idx is not None and ctx.out_rest_idx != 0:
+            needs_new = True
+        if any(_is_list_splice_elem(e) for e in out_sub):
+            needs_new = True
+        if not needs_new:
+            return lean_list_bottom_to_top(
+                out_sub, ctx.rest_name if ctx.out_rest else None)
+        # Build the full bottom-to-top list with `..R` at its recorded
+        # position (normalising `...` to `..R`). `out_vars` are the
+        # translated non-rest elements in order; substitute witnesses.
+        rest_tok = f"..{ctx.rest_name}" if ctx.out_rest else None
+        full = []
+        vi = 0
+        for i, e in enumerate(ctx.out_elems):
+            is_rest = (ctx.out_rest_idx is not None and i == ctx.out_rest_idx)
+            if e in ("...", "∅") and ctx.out_rest and ctx.out_rest_idx is None:
+                # Legacy anonymous rest at far left (should not reach here
+                # via needs_new unless list splices present).
+                continue
+            if is_rest:
+                full.append(rest_tok)
+                continue
+            # Non-rest original element: take next translated var.
+            # (`...`/`∅` at far left with out_rest_idx None are skipped
+            # above; named rests elsewhere are caught by is_rest.)
+            if e in ("...", "∅"):
+                continue
+            if vi >= len(ctx.out_vars):
+                raise ValueError("output element alignment failed")
+            t = ctx.out_vars[vi]
+            vi += 1
+            full.append(wit.get(t, t))
+        # Anonymous `...` rest at far left (list-splice case with no
+        # named rest): prepend `..rest`.
+        if ctx.out_rest and rest_tok not in full:
+            full = [rest_tok] + full
+        return lean_output_stack(full, ctx.rest_name if ctx.out_rest else None)
+
     def _spec_emit(self, pre, post, hyps, binders, prog_app, deps,
                     is_specerr=False, head=None):
         """Write the doc comment and the Spec-family theorem with
-        a uniform `by fbm_verify [...]` proof. Records the theorem
-        name for downstream dep computation. `head` selects the
+        a uniform `by fbm_verify [...]` proof (or a custom `@by-proof`
+        tactic / `@by-induction` skeleton when present). Records the
+        theorem name for downstream dep computation. `head` selects the
         predicate (`Spec`, `SpecExact`, `SpecIO`, `SpecExit`);
         `is_specerr` selects `SpecErr` (pre only)."""
         self.out_lines.append(
@@ -4511,6 +5239,25 @@ class EmitCtx:
         self.out_lines.append(
             f"theorem {self.ln}_effect{self.suffix}{binders}{hyp_binders} :")
         self.out_lines.append(concl)
+        if self.by_proof is not None:
+            # (v37) Custom tactic body from `@by-proof`. Accept with or
+            # without a leading `by`; emit indented under the `:= by`.
+            tac = self.by_proof.strip()
+            if tac.startswith("by\n") or tac.startswith("by "):
+                tac = tac[2:].strip()
+            elif tac == "by":
+                tac = ""
+            if "\n" in tac:
+                for line in tac.split("\n"):
+                    self.out_lines.append(f"  {line}" if line.strip() else "")
+            else:
+                self.out_lines.append(f"  {tac}" if tac else "  skip")
+            self.was_spec = True
+            return True
+        if self.by_induction is not None:
+            return self._emit_induction_skeleton(
+                pre, post, hyps, binders, prog_app, deps,
+                is_specerr=is_specerr, head=head)
         self.out_lines.append(f"  fbm_verify [{', '.join(deps)}]")
         self.was_spec = True
         return True
@@ -4526,9 +5273,7 @@ class EmitCtx:
         wit = {}
         if ctx.where_eqs is not None:
             wit = dict(zip([lhs for lhs, _ in ctx.where_eqs], ctx.witnesses))
-        out_elems = [wit.get(e, e) for e in ctx.out_vars]
-        out_stack = lean_list_bottom_to_top(
-            out_elems, ctx.rest_name if ctx.out_rest else None)
+        out_stack = self._out_stack_lean(wit)
         trace = "[]"
         if ctx.name in ("putc", "putn"):
             top = ctx.in_vars[-1]
@@ -4557,9 +5302,7 @@ class EmitCtx:
         wit = {}
         if ctx.where_eqs is not None:
             wit = dict(zip([lhs for lhs, _ in ctx.where_eqs], ctx.witnesses))
-        out_elems = [wit.get(e, e) for e in ctx.out_vars]
-        out_stack = lean_list_bottom_to_top(
-            out_elems, ctx.rest_name if ctx.out_rest else None)
+        out_stack = self._out_stack_lean(wit)
         trace = "[]"
         if ctx.name == ".":
             trace = f"[] ++ [IOAction.print ({ctx.rest_name})]"
@@ -4778,6 +5521,229 @@ class EmitCtx:
         return self._spec_emit(pre, post, hyps, binders,
                                self.runq_prog_app, deps)
 
+    def _emit_spec_recursive(self, deps):
+        """Recursive word (v37): Spec (or SpecExact when the flat program
+        touches a non-frame-polymorphic primitive like `depth`) with self
+        code + lookup hypotheses and literal-lookup hypotheses. A word
+        that is itself recursive needs `@by-proof` / `@by-induction`
+        (fbm_verify cannot do induction); without either, this is a clean
+        problem. A non-recursive caller of a recursive word composes the
+        callee's effect lemma, so plain `fbm_verify` suffices (no clause)."""
+        ctx = self
+        is_self_rec = ctx.name in ctx.rec_deps_sorted
+        if is_self_rec and ctx.by_proof is None and ctx.by_induction is None:
+            return ctx.problem(
+                f"recursive word {ctx.name!r} needs `@by-proof` or `@by-induction` "
+                f"(fbm_verify cannot prove recursion; see HELP.md)")
+        wit = {}
+        if ctx.where_eqs is not None:
+            wit = dict(zip([lhs for lhs, _ in ctx.where_eqs], ctx.witnesses))
+        out_stack = self._out_stack_lean(wit)
+        trace = "[]"
+        pre = self._spec_pre(ctx.in_lean)
+        post = self._spec_post(out_stack, trace)
+        # Frame-polymorphic unless the flat program touches exact-only
+        # prims (depth etc.), like the standard dispatch. Computed first:
+        # functional-slot body hypotheses use the same head.
+        flat = [t for t in self.prog_tokens.get(self.name, []) if isinstance(t, str)]
+        head = "SpecExact" if any(t in ("clr", "depth", ".", "getc", "rand",
+                                          "clock", "exit") for t in flat) else "Spec"
+        # Self binders + lookup hypotheses (one per frontier dep: every
+        # rec-reaching word reachable from here, v37).
+        self_binders = "".join(f" ({v} : Int)" for v in ctx.rec_self_vars)
+        # The `hself` hypothesis pins each self code to its Prog. The Prog
+        # application needs its self args (frontier call params, same
+        # global names, bound above) plus its lit args.
+        prog_app = self._spec_prog_app()
+        hself_hyps = []
+        # Literal lookups (bodies may contain `Tok.call self_*`).
+        hlit_hyps = []
+        for k, b in enumerate(ctx.rec_lit_bodies):
+            hlit_hyps.append(f"(hlookupLit{k} : lookup defs lit{k} = some {b})")
+        # Lit code binders (the word's own lit vars).
+        lit_binders = ""
+        n_lits = len(ctx.rec_lit_bodies)
+        if n_lits:
+            lit_binders = f" ({' '.join(f'lit{k}' for k in range(n_lits))} : Int)"
+        # Non-self frontier deps with literal codes (e.g. `_loop`'s two
+        # lits when proving `loop`): the caller binds `{r}_lit{k}` codes
+        # and pins them to the callee's literal bodies (with `lit` refs
+        # renamed to the caller's `{r}_lit{j}` binders).
+        for r, v in zip(ctx.rec_frontier_sorted, ctx.rec_self_vars):
+            rln = lean_name(r)
+            got_r = self._compute_prog(r)
+            if got_r is None:
+                return False
+            _r_prog, r_lits, r_raw_lits = got_r
+            r_self_args = "".join(f" {s}" for s in self.prog_self_vars.get(r, []))
+            if r == ctx.name:
+                n_lits_self = len(ctx.rec_lit_bodies)
+                lit_args = "".join(f" lit{k}" for k in range(n_lits_self))
+                hself_hyps.append(
+                    f"(hself_{rln} : lookup defs {v} = some ({rln}Prog{r_self_args}{lit_args}))")
+                continue
+            r_prefix = f"{rln}_lit"
+            r_bodies = []
+            for k, raw in enumerate(r_raw_lits):
+                body_prog = r_lits[k]
+                if (len(raw) == 1 and isinstance(raw[0], str)
+                        and raw[0] in self.defs and raw[0] not in PRIMS):
+                    w = raw[0]
+                    if _is_rec_single_word(raw, body_prog, self.defs):
+                        r_bodies.append(
+                            "[" + ", ".join(_tok_lean_renamed(t, r_prefix)
+                                            for t in body_prog) + "]")
+                        if self._compute_prog(w) is None:
+                            return False
+                        continue
+                    if any(isinstance(t, tuple) and t[0] == "lit" for t in body_prog):
+                        return self.problem(
+                            f"a literal naming {w!r}, which itself contains a literal, "
+                            f"is not supported yet")
+                    r_bodies.append(f"{lean_name(w)}Prog")
+                    if self._compute_prog(w) is None:
+                        return False
+                    continue
+                elif len(raw) == 1 and isinstance(raw[0], str) and raw[0] in PRIMS:
+                    r_bodies.append(f"[{PRIMS[raw[0]]}]")
+                else:
+                    r_bodies.append(
+                        "[" + ", ".join(_tok_lean_renamed(t, r_prefix)
+                                        for t in body_prog) + "]")
+            r_args = "".join(f" {r_prefix}{k}" for k in range(len(r_bodies)))
+            hself_hyps.append(
+                f"(hself_{rln} : lookup defs {v} = some ({rln}Prog{r_self_args}{r_args}))")
+            for k, b in enumerate(r_bodies):
+                hlit_hyps.append(
+                    f"(hlookup{rln}Lit{k} : lookup defs {r_prefix}{k} = some {b})")
+            if r_bodies:
+                lit_binders += f" ({' '.join(f'{r_prefix}{k}' for k in range(len(r_bodies)))} : Int)"
+        binders = (f" (defs : Defs){ctx.binder_part}{ctx.rest_binder}"
+                   f"{ctx.hw_binder}{self_binders}{lit_binders} (qq : Stack)")
+        hyps = hself_hyps + hlit_hyps
+        # Functional slots: the body's universally-quantified contract
+        # (`B` maps `X :: R` to `(F X) :: X :: R`) plus the code lookup.
+        # The caller's own body hypothesis discharges the callee lemma's
+        # body premise by assumption when the shapes match.
+        for qv, bv, X, F in ctx.rec_fun_slots:
+            hyps.append(
+                f"(hbody{qv} : ∀ (X : Int) (R qr : Stack), {head} {bv} "
+                f"(fun st q0 _ _ acts d => st = X :: R ∧ q0 = qr ∧ "
+                f"acts = [] ∧ d = defs) "
+                f"(fun s' q' acts' d' => s' = ({F} X) :: X :: R ∧ q' = qr ∧ "
+                f"acts' = [] ∧ d' = defs))")
+            hyps.append(f"(hlookup{qv} : lookup defs {qv} = some {bv})")
+        return self._spec_emit(pre, post, hyps, binders, prog_app, deps, head=head)
+
+    def _emit_induction_skeleton(self, pre, post, hyps, binders, prog_app, deps,
+                                 is_specerr=False, head=None):
+        """Induction skeleton for `@by-induction <pattern>` (v37).
+        Validates the pattern against the word body, then emits an induction
+        tactic over the target with `fbm_verify` discharging base/step goals.
+        Two shapes (the core.ff catalogue): List induction on the rest `R`
+        (`R.length` / `R.tail` patterns, e.g. `pushtop`) and strong Nat
+        induction on `N.toNat` (`N - 1` patterns, e.g. `_loop`). Anything else
+        is a clean problem."""
+        pat = (self.by_induction or "").strip()
+        low = pat.lower()
+        if is_specerr:
+            return self.problem("@by-induction cannot be used on an ERROR effect")
+        # Find the induction target: `R` (list) or `N` (int counter).
+        is_list = ("r.length" in low or "r.tail" in low or " on r" in low
+                   or low.startswith("r ") or " on r," in low)
+        is_nat = ("n - 1" in low or "n-1" in low or " on n" in low
+                  or "strong on n" in low)
+        if is_list and not is_nat:
+            target = self.rest_name
+            # Validate: word must be recursive and body must mention a
+            # self-call (directly or via a literal). The generator already
+            # routed here via `_prepare_recursive`, so recursion holds; check
+            # the pattern names the rest.
+            if target == "rest" or target not in pat:
+                # Fall back to `R` when the pattern says `R.length`.
+                if "R" not in pat and "r" not in low:
+                    return self.problem(
+                        f"@by-induction pattern {pat!r} does not name the rest R")
+                target = self.rest_name if self.rest_name != "rest" else "R"
+            # Header (`theorem ... := by`) already emitted by `_spec_emit`;
+            # append only the induction skeleton. `generalizing qq`: the
+            # self-call runs under a `qpush`-extended queue (`dip` saves
+            # the kept element on `q`), so `ih` must be usable at any
+            # ambient queue — otherwise `apply ih` fails to match and
+            # `fbm_verify` re-peels the body forever.
+            self.out_lines.append(f"  induction {target} generalizing qq with")
+            self.out_lines.append(f"  | nil => fbm_verify [{', '.join(deps)}]")
+            self.out_lines.append(
+                f"  | cons a {target} ih => fbm_verify [{', '.join(deps + ['ih'])}]")
+            self.was_spec = True
+            return True
+        if is_nat and not is_list:
+            # Strong induction on N.toNat. Requires a nonneg hypothesis:
+            # `hw : 0 ≤ N` (from `when`) or an explicit `0 ≤ N` in pat.
+            # Validate the body recurses (already true via routing).
+            # Find the Int binder for N: first Int binder that appears in pat
+            # (case-insensitive `n`). Fall back to `N`.
+            target = "N"
+            for v in _effect_vars([self.src_effect]):
+                if v.lower() == "n" or v == "N":
+                    # Prefer the exact binder spelling from the effect.
+                    target = v
+                    break
+                if "n" in low and v.lower().startswith("n"):
+                    target = v
+                    break
+            # Header already emitted by `_spec_emit`; append only the skeleton.
+            # The theorem binders include `(N : Int)` via binder_part.
+            # `generalizing`: the self-call runs under a `qpush`-extended
+            # queue (`dip` saves the kept element on `q`) and with a
+            # decremented counter and extended history, so `ih` must be
+            # usable at any ambient queue, rest, counter, and accumulator
+            # (`pushtop`'s List skeleton generalises only `qq`; the Nat
+            # skeleton also generalises the rest and the other Int inputs).
+            # Every name here must be a theorem binder with no undischarged
+            # hypothesis mentioning it (else it is reverted as a premise and
+            # `apply ih` leaves a side goal) -- see HELP.md.
+            gen_extra = ["qq"]
+            if self.in_rest or self.out_rest:
+                gen_extra.append(self.rest_name)
+            fun_qs = {qv for qv, _, _, _ in self.rec_fun_slots}
+            for v in self.in_vars:
+                if (v != target and v not in fun_qs and v not in gen_extra
+                        and re.fullmatch(r"[A-Za-z_][A-Za-z0-9_']*", v)):
+                    gen_extra.append(v)
+            gen_list = " ".join([target] + gen_extra)
+            # Functional-slot body hypotheses must be `apply`able (a
+            # `∀`-hypothesis is invisible to `assumption`): they join
+            # the lemma list so the body's `Spec` side goal unifies,
+            # assigning the accumulator/rest/value metas. Words without
+            # functional slots are unaffected (empty list).
+            hbodies = [f"hbody{qv}" for qv, _, _, _ in self.rec_fun_slots]
+            zero_deps = deps + hbodies
+            succ_deps = deps + hbodies + ["ih"]
+            self.out_lines.append(f"  have hnn : 0 ≤ {target} := by omega")
+            self.out_lines.append(
+                f"  induction e : {target}.toNat generalizing {gen_list} with")
+            # The `cond` flag (`dup`ed counter) is a free variable here:
+            # `condOk` fires `cond_zero` only on an `Eq flag 0` decision
+            # (and `splitCondFlag` refuses when any hyp mentions both the
+            # flag and a zero literal, as `hnn` does), so the zero case
+            # derives the equation first; dually the step case derives
+            # `≠ 0` so `cond_nonzero` fires (`by omega` uses `hnn`, `e`).
+            self.out_lines.append(f"  | zero =>")
+            self.out_lines.append(
+                f"    have hN0 : {target} = 0 := by omega")
+            self.out_lines.append(f"    fbm_verify [{', '.join(zero_deps)}]")
+            self.out_lines.append(f"  | succ k ih =>")
+            self.out_lines.append(
+                f"    have hNe : {target} ≠ 0 := by omega")
+            self.out_lines.append(
+                f"    fbm_verify [{', '.join(succ_deps)}]")
+            self.was_spec = True
+            return True
+        return self.problem(
+            f"@by-induction pattern {pat!r} not recognised (expected an `R.length` "
+            f"/ `R.tail` list pattern or an `N - 1` strong pattern)")
+
     def _transitive_words(self):
         """Defined words referenced by this word: executed callee
         tokens plus single-word literal targets, transitively."""
@@ -4846,6 +5812,11 @@ class EmitCtx:
             return self._emit_spec_compose(deps)
         if getattr(self, "is_runq_computed_flag", False):
             return self._emit_spec_cf(deps)
+        # (v37) Recursive words: Spec/SpecExact with self + lit hyps,
+        # proved via @by-proof / @by-induction (fbm_verify cannot do
+        # induction, so a missing clause is a clean problem).
+        if getattr(self, "is_recursive", False):
+            return self._emit_spec_recursive(deps)
         # Guarded-prim `else ERROR` branches: SpecErr.
         if self.is_error:
             return self._emit_spec_error(deps)
@@ -4864,7 +5835,7 @@ class EmitCtx:
 def main():
     src_path, out_path = parse_args(sys.argv)
     text = src_path.read_text()
-    effects_list, text2 = extract_effects(text)
+    effects_list, lean_blocks, text2 = extract_effects(text)
     defs = parse_definitions(text2)
 
     # Attach @effect comments to words by the word named in the
@@ -4878,6 +5849,18 @@ def main():
     # recorded as a problem comment without crashing the run.
     out_lines = [LEAN_HEADER]
     problems = []
+    # (v37) Verbatim @lean blocks, in file order, right after the
+    # header so helper definitions/lemmas are in scope for the
+    # theorems below. Each carries its source line for traceback.
+    for lean_line, lean_body in lean_blocks:
+        if lean_body.startswith("-- ERROR:"):
+            problems.append(f"@lean block (line {lean_line}): {lean_body[len('-- ERROR: '):]}")
+            out_lines.append(f"-- @lean from {src_path}:{lean_line} REJECTED: {lean_body}")
+            out_lines.append("")
+            continue
+        out_lines.append(f"-- @lean from {src_path}:{lean_line}, pasted verbatim")
+        out_lines.append(lean_body)
+        out_lines.append("")
     effects = {}  # word -> [(in_elems, out_elems, cond, where_text), ...] in file order
     effect_text = {}  # word -> [effect text, ...] in file order
     effect_line = {}  # word -> [source line, ...] in file order
@@ -4897,19 +5880,37 @@ def main():
             if not left:
                 raise ValueError(f"@effect has no inputs and no word: {e!r}")
             word = left[-1]
+        # (v37) Split trailing `@by-proof` / `@by-induction` clauses
+        # before parsing the stack picture; they ride along into
+        # EmitCtx and select the proof body at emission.
+        try:
+            core_body, by_proof, by_ind = _split_proof_clauses(body)
+        except ValueError as ex:
+            problems.append(f"{word} (line {src_line}): {ex}")
+            out_lines.append(f"-- {lean_name(word)}: no theorem emitted (src {src_path}:{src_line}): {ex}")
+            out_lines.append("")
+            continue
         # A malformed effect (unclosed `{`, stray `}`, missing
         # `==`) is a clean problem, not a crash: it is recorded
         # here and reported with the rest, so one bad effect does
         # not lose the whole file.
         try:
-            parsed = parse_effect(body, word=word)
+            parsed = parse_effect(core_body, word=word)
         except ValueError as ex:
             problems.append(f"{word}: {ex}")
             out_lines.append(f"-- {lean_name(word)}: no theorem emitted (src {src_path}:{src_line}): {ex}")
             out_lines.append("")
             continue
-        effects.setdefault(word, []).append(parsed)
-        effect_text.setdefault(word, []).append(body)
+        in_elems, out_elems, cond, where_text, else_error = parsed
+        if else_error and (by_proof is not None or by_ind is not None):
+            msg = "@by-proof / @by-induction cannot be combined with `else ERROR`"
+            problems.append(f"{word} (line {src_line}): {msg}")
+            out_lines.append(f"-- {lean_name(word)}: no theorem emitted (src {src_path}:{src_line}): {msg}")
+            out_lines.append("")
+            continue
+        effects.setdefault(word, []).append(
+            (in_elems, out_elems, cond, where_text, else_error, by_proof, by_ind))
+        effect_text.setdefault(word, []).append(core_body)
         effect_line.setdefault(word, []).append(src_line)
         effect_full.setdefault(word, []).append(e)
 
@@ -4925,12 +5926,12 @@ def main():
     entries = []
     for name in effects:
         expanded = []
-        for idx, (in_elems, out_elems, cond, where_text, else_error) in enumerate(effects[name]):
+        for idx, (in_elems, out_elems, cond, where_text, else_error, by_proof, by_ind) in enumerate(effects[name]):
             body = effect_text[name][idx]
             src_line = effect_line[name][idx]
             full = effect_full[name][idx]
             if else_error:
-                expanded.append((in_elems, out_elems, cond, where_text, body, src_line, full))
+                expanded.append((in_elems, out_elems, cond, where_text, body, src_line, full, by_proof, by_ind))
                 try:
                     neg = negate_cond(cond)
                 except ExprError:
@@ -4939,30 +5940,34 @@ def main():
                     # for the error effect (the success effect's own
                     # translation fails the same way).
                     neg = f"¬ ({cond})"
-                expanded.append((in_elems, ["ERROR"], neg, None, body + " [else ERROR]", src_line, full + " [else ERROR]"))
+                expanded.append((in_elems, ["ERROR"], neg, None, body + " [else ERROR]", src_line, full + " [else ERROR]", None, None))
             else:
-                expanded.append((in_elems, out_elems, cond, where_text, body, src_line, full))
-        for idx, (in_elems, out_elems, cond, where_text, body, src_line, full) in enumerate(expanded):
+                expanded.append((in_elems, out_elems, cond, where_text, body, src_line, full, by_proof, by_ind))
+        for idx, (in_elems, out_elems, cond, where_text, body, src_line, full, by_proof, by_ind) in enumerate(expanded):
             entries.append((name, idx, len(expanded), in_elems,
-                            out_elems, cond, where_text, body, src_line, full))
+                            out_elems, cond, where_text, body, src_line, full,
+                            by_proof, by_ind))
     emitted = 0
     progs = {}
     prog_tokens = {}  # word -> raw token list (for the trace / oracle checks)
     prog_lits = {}  # word -> literal-body programs (v30)
     prog_raw_lits = {}  # word -> raw inner-token lists, parallel to prog_lits (v30)
     prog_lit_params = {}  # word -> " (lit0 lit1 : Int)" or "" (v30)
+    prog_self_vars = {}  # word -> [self_* vars] (frontier call params, v37)
     failed = set()
     prog_emitted = set()
     ctxs = []
-    for name, idx, n_effects, in_elems, out_elems, cond, where_text, effect_body, src_line, src_effect in entries:
+    for name, idx, n_effects, in_elems, out_elems, cond, where_text, effect_body, src_line, src_effect, by_proof, by_ind in entries:
         ctx = EmitCtx(name=name, idx=idx, n_effects=n_effects,
                       in_elems=in_elems, out_elems=out_elems, cond=cond,
                       where_text=where_text, effect_body=effect_body,
                       src_line=src_line, src_path=str(src_path),
                       src_effect=src_effect,
+                      by_proof=by_proof, by_induction=by_ind,
                       defs=defs, progs=progs, prog_tokens=prog_tokens,
                       prog_lits=prog_lits, prog_raw_lits=prog_raw_lits,
                       prog_lit_params=prog_lit_params,
+                      prog_self_vars=prog_self_vars,
                       failed=failed, prog_emitted=prog_emitted,
                       out_lines=out_lines, problems=problems)
         if not ctx.prepare():

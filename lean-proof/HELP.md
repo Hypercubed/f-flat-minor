@@ -88,7 +88,11 @@ Scope (prototype, deliberately small):
     A named rest `..R` at the far left (v20) names the rest
     list `r`, so an output can refer to it:
     `/* @effect depth: ..R == ..R R.length */`. The name must
-    be the same on both sides when it appears on both.
+    be the same on both sides when it appears on both. Since
+    v37 the rest may sit anywhere in the output (`..R A == A
+    ..R` emits `R ++ [A]`), and a list-valued call may be
+    spliced onto it (`..R0 intRange(A,B+1)` emits
+    `intRange A (B+1) ++ R0`).
     The output rest is preserved unless the input explicitly
     wrote `...` (or `..R`) without the output doing so -- that is a
     whole-stack word (clr, sum!): the rest goes in and does
@@ -105,10 +109,17 @@ Scope (prototype, deliberately small):
     arithmetic shift right (Int, Nat count); `<<<` does not
     exist for Int, so `<<` is multiplication. In an output
     expression, `<<` / `>>` become `shl` / `shr`.
-  * Only non-recursive words are supported: calls are inlined,
-    and a recursive call is refused (that word needs fuel +
-    induction, as in Fact.lean -- see the README in this folder).
-    A refused word gets a comment in the output, not a theorem.
+  * Recursive words are supported (v37): a word that reaches
+    itself through the call graph is not inlined forever — the
+    call boundary stays opaque as `Tok.call self_<word>` with
+    `(self_<word> : Int)` and `lookup defs` hypotheses, and the
+    proof composes the callee's proven effect lemma at that
+    boundary. Callers reaching a recursive word work the same
+    way (their `Prog` takes the callee's `self_*` params, and
+    `fbm_verify` applies the callee lemma where the `Tok.call`
+    peels). A directly self-recursive word needs `@by-proof`
+    or `@by-induction` — `fbm_verify` alone cannot do
+    induction. Mutual recursion is refused.
   * Output elements are either variables or Lean Int expressions
     in the input variables, written without spaces, e.g. `n-1`,
     `a*b`, `min(a,b)`. (Spaces separate stack elements, so an
@@ -134,7 +145,11 @@ Scope (prototype, deliberately small):
     `[..R -- ..S]` is a pointer whose body has effect
     `[..R -- ..S]`; `[B]` is a plain quotation variable; `[a B]`
     is cons's output (a quotation built from value `a` and
-    quotation `B`). There is no `Val` type — the stack stays
+    quotation `B`). A functional slot `[X -- F X]` (v37) is a
+    quotation whose body maps `X :: R` to `(F X) :: X :: R`:
+    the theorem binds `(F : Int → Int)` and the body's
+    universally-quantified contract (so it is `apply`able,
+    unlike an assumption). There is no `Val` type — the stack stays
     `List Int`, and the model gains a `userDefs` table plus a
     fuelled, defs-aware interpreter (`execQ` / `runQ`) alongside the
     ordinary `run`. `eval` and the `?` run case are conditional
@@ -282,9 +297,29 @@ a `Prog` composed with `++` over callee `Prog`s and a `Spec` /
 continuation lemmas, `fbm_verify` tactic). The old `run`-ladder
 theorems above remain only for words touching
 non-frame-polymorphic primitives (`clr`, `depth`, `.`, `getc`,
-`rand`, `clock`, `exit`). Recursive words are still refused —
-they need human induction (`@rec-effect` / `@proof`, PLAN.md
-§3.5), which the generator does not emit.
+`rand`, `clock`, `exit`). Recursive words (v37) keep an opaque
+`Tok.call` boundary and compose the callee's proven lemma;
+self-recursive words need `@by-proof` or `@by-induction`
+(below) since `fbm_verify` cannot do induction.
+
+Proof clauses (v37, at the tail of an `@effect`, at most one of
+the two; `sorry`/`admit`/`axiom` rejected up front):
+`@by-proof <tactic>` replaces the `fbm_verify [...]` proof
+with the given tactic body — an arithmetic bridge (`have` +
+`fbm_verify`), an explicit normalisation (`simp_all`) before
+it, or a hand-written induction. The `fbm_verify` dependency
+list must then be written by hand (copy it from the
+plain-emission output). `@by-induction <pattern>` generates an
+induction skeleton with `fbm_verify` discharging base and step
+goals: `N - 1` (strong induction on `N.toNat`, generalising the
+queue, rest, and other inputs; needs nonneg — `when 0 <= N`)
+or `R.length` (List induction on the rest). Anything else is a
+clean problem. Single-line rule: `;` separates tactics, but a
+`by <tac>` block absorbs a following `;` into itself —
+parenthesise it (`:= (by omega); fbm_verify ...`).
+
+`@lean` blocks (v37): `/* @lean ... */` is emitted verbatim
+in file order (same `sorry`/`admit`/`axiom` rejection).
 
 ## Checking: check.py (v21)
 

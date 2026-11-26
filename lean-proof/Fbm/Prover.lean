@@ -1241,6 +1241,199 @@ theorem SpecExact.eq_head {A B : Int} {rest : List Tok} {R qq : Stack}
       (fun s q _ _ a d => s = B :: A :: R ∧ q = qq ∧ a = acts ∧ d = defs) post :=
   SpecExact.seq SpecExact.eq h
 
+/-- `SpecExact` leaves and heads for frame-polymorphic tokens used inside
+    exact programs (v37, `pushtop`): `gt` (branch flag), `swap`/`qpush` /
+    `qpull` (queue shuffles), `eval` / `call` (quotation recursion), and
+    `cond` (branch). Proved like their `Spec` counterparts but for
+    `SpecExact` (exact stack, framed queue). Axioms: standard only. -/
+theorem SpecExact.gt {A B : Int} {R qq : Stack} {acts : List IOAction} {defs : Defs} :
+    SpecExact [Tok.gt]
+    (fun s q _ _ acts' d => s = B :: A :: R ∧ q = qq ∧ acts' = acts ∧ d = defs)
+    (fun s' q' acts' d' => s' = (if A > B then 1 else 0) :: R ∧ q' = qq ∧
+      acts' = acts ∧ d' = defs) := by
+  intro qq2 inp orc acts0 defs0 s0 q0 hpre
+  obtain ⟨hs, hq, ha, hd⟩ := hpre
+  rw [hs, hq, ha, hd]
+  exact ⟨1, (if A > B then 1 else 0) :: R, qq, acts, defs, ⟨rfl, rfl, rfl, rfl⟩,
+    by intro inp1 orc1; simp [execQ, step]⟩
+
+theorem SpecExact.gt_head {A B : Int} {rest : List Tok} {R qq : Stack}
+    {acts : List IOAction} {defs : Defs} {post}
+    (h : SpecExact rest
+      (fun s q _ _ a d => s = (if A > B then 1 else 0) :: R ∧ q = qq ∧
+        a = acts ∧ d = defs) post) :
+    SpecExact ([Tok.gt] ++ rest)
+      (fun s q _ _ a d => s = B :: A :: R ∧ q = qq ∧ a = acts ∧ d = defs) post :=
+  SpecExact.seq SpecExact.gt h
+
+theorem SpecExact.swap {X Y : Int} {R qq : Stack} {acts : List IOAction} {defs : Defs} :
+    SpecExact [Tok.swap]
+    (fun s q _ _ acts' d => s = Y :: X :: R ∧ q = qq ∧ acts' = acts ∧ d = defs)
+    (fun s' q' acts' d' => s' = X :: Y :: R ∧ q' = qq ∧ acts' = acts ∧ d' = defs) := by
+  intro qq2 inp orc acts0 defs0 s0 q0 hpre
+  obtain ⟨hs, hq, ha, hd⟩ := hpre
+  rw [hs, hq, ha, hd]
+  exact ⟨1, X :: Y :: R, qq, acts, defs, ⟨rfl, rfl, rfl, rfl⟩,
+    by intro inp1 orc1; simp [execQ, step]⟩
+
+theorem SpecExact.swap_head {X Y : Int} {rest : List Tok} {R qq : Stack}
+    {acts : List IOAction} {defs : Defs} {post}
+    (h : SpecExact rest
+      (fun s q _ _ a d => s = X :: Y :: R ∧ q = qq ∧ a = acts ∧ d = defs) post) :
+    SpecExact ([Tok.swap] ++ rest)
+      (fun s q _ _ a d => s = Y :: X :: R ∧ q = qq ∧ a = acts ∧ d = defs) post :=
+  SpecExact.seq SpecExact.swap h
+
+theorem SpecExact.qpush {B : Int} {R qq : Stack} {acts : List IOAction} {defs : Defs} :
+    SpecExact [Tok.qpush]
+    (fun s q _ _ acts' d => s = B :: R ∧ q = qq ∧ acts' = acts ∧ d = defs)
+    (fun s' q' acts' d' => s' = R ∧ q' = B :: qq ∧ acts' = acts ∧ d' = defs) := by
+  intro qq2 inp orc acts0 defs0 s0 q0 hpre
+  obtain ⟨hs, hq, ha, hd⟩ := hpre
+  rw [hs, hq, ha, hd]
+  exact ⟨1, R, B :: qq, acts, defs, ⟨rfl, rfl, rfl, rfl⟩,
+    by intro inp1 orc1; simp [execQ, step]⟩
+
+theorem SpecExact.qpush_head {B : Int} {rest : List Tok} {R qq : Stack}
+    {acts : List IOAction} {defs : Defs} {post}
+    (h : SpecExact rest
+      (fun s q _ _ a d => s = R ∧ q = B :: qq ∧ a = acts ∧ d = defs) post) :
+    SpecExact ([Tok.qpush] ++ rest)
+      (fun s q _ _ a d => s = B :: R ∧ q = qq ∧ a = acts ∧ d = defs) post :=
+  SpecExact.seq SpecExact.qpush h
+
+theorem SpecExact.qpull {B : Int} {S qq : Stack} {acts : List IOAction} {defs : Defs} :
+    SpecExact [Tok.qpull]
+    (fun s q _ _ acts' d => s = S ∧ q = B :: qq ∧ acts' = acts ∧ d = defs)
+    (fun s' q' acts' d' => s' = B :: S ∧ q' = qq ∧ acts' = acts ∧ d' = defs) := by
+  intro qq2 inp orc acts0 defs0 s0 q0 hpre
+  obtain ⟨hs, hq, ha, hd⟩ := hpre
+  rw [hs, hq, ha, hd]
+  exact ⟨1, B :: S, qq, acts, defs, ⟨rfl, rfl, rfl, rfl⟩,
+    by intro inp1 orc1; simp [execQ, step]⟩
+
+theorem SpecExact.qpull_head {B : Int} {S qq : Stack} {rest : List Tok}
+    {acts : List IOAction} {defs : Defs} {post}
+    (h : SpecExact rest
+      (fun s q _ _ a d => s = B :: S ∧ q = qq ∧ a = acts ∧ d = defs) post) :
+    SpecExact ([Tok.qpull] ++ rest)
+      (fun s q _ _ a d => s = S ∧ q = B :: qq ∧ a = acts ∧ d = defs) post :=
+  SpecExact.seq SpecExact.qpull h
+
+theorem SpecExact.eval {qv : Int} {body : List Tok}
+    {R S qq : Stack} {acts : List IOAction} {defs defs' : Defs}
+    (hlookup : lookup defs qv = some body)
+    (hbody : SpecExact body
+      (fun s q _ _ acts' d => s = R ∧ q = qq ∧ acts' = acts ∧ d = defs)
+      (fun s' q' acts' d' => s' = S ∧ q' = qq ∧ acts' = acts ∧ d' = defs')) :
+    SpecExact [Tok.eval]
+    (fun s q _ _ acts' d => s = qv :: R ∧ q = qq ∧ acts' = acts ∧ d = defs)
+    (fun s' q' acts' d' => s' = S ∧ q' = qq ∧ acts' = acts ∧ d' = defs') := by
+  intro qq2 inp orc acts0 defs0 s0 q0 hpre
+  obtain ⟨hs, hq, ha, hd⟩ := hpre
+  rw [hs, hq, ha, hd]
+  obtain ⟨fb, s1, q1, a1, d1, hpost, hue⟩ :=
+    hbody qq2 inp orc acts defs R qq ⟨rfl, rfl, rfl, rfl⟩
+  refine ⟨fb + 1, s1, q1, a1, d1, hpost, ?_⟩
+  intro inp1 orc1
+  have hstack : ((qv :: R) ++ []) = (qv :: (R ++ [])) := by simp
+  simp only [execQ, hlookup]
+  simpa using hue inp1 orc1
+
+theorem SpecExact.eval_head {qv : Int} {body rest : List Tok}
+    {R S qq : Stack} {acts : List IOAction} {defs defs' : Defs} {post}
+    (hlookup : lookup defs qv = some body)
+    (hbody : SpecExact body
+      (fun s q _ _ a d => s = R ∧ q = qq ∧ a = acts ∧ d = defs)
+      (fun s' q' a d => s' = S ∧ q' = qq ∧ a = acts ∧ d = defs'))
+    (hrest : SpecExact rest
+      (fun s q _ _ a d => s = S ∧ q = qq ∧ a = acts ∧ d = defs') post) :
+    SpecExact ([Tok.eval] ++ rest)
+      (fun s q _ _ a d => s = qv :: R ∧ q = qq ∧ a = acts ∧ d = defs) post :=
+  SpecExact.seq (SpecExact.eval hlookup hbody) hrest
+
+theorem SpecExact.call {code : Int} {body : List Tok}
+    {R S qq : Stack} {acts : List IOAction} {defs defs' : Defs}
+    (hlookup : lookup defs code = some body)
+    (hbody : SpecExact body
+      (fun s q _ _ acts' d => s = R ∧ q = qq ∧ acts' = acts ∧ d = defs)
+      (fun s' q' acts' d' => s' = S ∧ q' = qq ∧ acts' = acts ∧ d' = defs')) :
+    SpecExact [Tok.call code]
+    (fun s q _ _ acts' d => s = R ∧ q = qq ∧ acts' = acts ∧ d = defs)
+    (fun s' q' acts' d' => s' = S ∧ q' = qq ∧ acts' = acts ∧ d' = defs') := by
+  intro qq2 inp orc acts0 defs0 s0 q0 hpre
+  obtain ⟨hs, hq, ha, hd⟩ := hpre
+  rw [hs, hq, ha, hd]
+  obtain ⟨fb, s1, q1, a1, d1, hpost, hue⟩ :=
+    hbody qq2 inp orc acts defs R qq ⟨rfl, rfl, rfl, rfl⟩
+  refine ⟨fb + 1, s1, q1, a1, d1, hpost, ?_⟩
+  intro inp1 orc1
+  simp only [execQ, hlookup]
+  simpa using hue inp1 orc1
+
+theorem SpecExact.call_head {code : Int} {body rest : List Tok}
+    {R S qq : Stack} {acts : List IOAction} {defs defs' : Defs} {post}
+    (hlookup : lookup defs code = some body)
+    (hbody : SpecExact body
+      (fun s q _ _ a d => s = R ∧ q = qq ∧ a = acts ∧ d = defs)
+      (fun s' q' a d => s' = S ∧ q' = qq ∧ a = acts ∧ d = defs'))
+    (hrest : SpecExact rest
+      (fun s q _ _ a d => s = S ∧ q = qq ∧ a = acts ∧ d = defs') post) :
+    SpecExact ([Tok.call code] ++ rest)
+      (fun s q _ _ a d => s = R ∧ q = qq ∧ a = acts ∧ d = defs) post :=
+  SpecExact.seq (SpecExact.call hlookup hbody) hrest
+
+theorem SpecExact.cond_nonzero {qv F : Int} {body : List Tok}
+    {R S qq : Stack} {acts : List IOAction} {defs defs' : Defs}
+    (hf : F ≠ 0) (hlookup : lookup defs qv = some body)
+    (hbody : SpecExact body
+      (fun s q _ _ acts' d => s = R ∧ q = qq ∧ acts' = acts ∧ d = defs)
+      (fun s' q' acts' d' => s' = S ∧ q' = qq ∧ acts' = acts ∧ d' = defs')) :
+    SpecExact [Tok.cond]
+    (fun s q _ _ acts' d => s = qv :: F :: R ∧ q = qq ∧ acts' = acts ∧ d = defs)
+    (fun s' q' acts' d' => s' = S ∧ q' = qq ∧ acts' = acts ∧ d' = defs') := by
+  intro qq2 inp orc acts0 defs0 s0 q0 hpre
+  obtain ⟨hs, hq, ha, hd⟩ := hpre
+  rw [hs, hq, ha, hd]
+  obtain ⟨fb, s1, q1, a1, d1, hpost, hue⟩ :=
+    hbody qq2 inp orc acts defs R qq ⟨rfl, rfl, rfl, rfl⟩
+  refine ⟨fb + 1, s1, q1, a1, d1, hpost, ?_⟩
+  intro inp1 orc1
+  simp [execQ, hlookup, hf]
+  simpa using hue inp1 orc1
+
+theorem SpecExact.cond_zero {qv F : Int} {R qq : Stack}
+    {acts : List IOAction} {defs : Defs} (hf : F = 0) :
+    SpecExact [Tok.cond]
+    (fun s q _ _ acts' d => s = qv :: F :: R ∧ q = qq ∧ acts' = acts ∧ d = defs)
+    (fun s' q' acts' d' => s' = R ∧ q' = qq ∧ acts' = acts ∧ d' = defs) := by
+  intro qq2 inp orc acts0 defs0 s0 q0 hpre
+  obtain ⟨hs, hq, ha, hd⟩ := hpre
+  rw [hs, hq, ha, hd]
+  refine ⟨1, R, qq, acts, defs, ⟨rfl, rfl, rfl, rfl⟩, ?_⟩
+  intro inp1 orc1
+  simp [execQ, hf]
+
+theorem SpecExact.cond_nonzero_head {qv F : Int} {body rest : List Tok}
+    {R S qq : Stack} {acts : List IOAction} {defs defs' : Defs} {post}
+    (hf : F ≠ 0) (hlookup : lookup defs qv = some body)
+    (hbody : SpecExact body
+      (fun s q _ _ a d => s = R ∧ q = qq ∧ a = acts ∧ d = defs)
+      (fun s' q' a d => s' = S ∧ q' = qq ∧ a = acts ∧ d = defs'))
+    (hrest : SpecExact rest
+      (fun s q _ _ a d => s = S ∧ q = qq ∧ a = acts ∧ d = defs') post) :
+    SpecExact ([Tok.cond] ++ rest)
+      (fun s q _ _ a d => s = qv :: F :: R ∧ q = qq ∧ a = acts ∧ d = defs) post :=
+  SpecExact.seq (SpecExact.cond_nonzero hf hlookup hbody) hrest
+
+theorem SpecExact.cond_zero_head {qv F : Int} {rest : List Tok} {R qq : Stack}
+    {acts : List IOAction} {defs : Defs} {post} (hf : F = 0)
+    (hrest : SpecExact rest
+      (fun s q _ _ a d => s = R ∧ q = qq ∧ a = acts ∧ d = defs) post) :
+    SpecExact ([Tok.cond] ++ rest)
+      (fun s q _ _ a d => s = qv :: F :: R ∧ q = qq ∧ a = acts ∧ d = defs) post :=
+  SpecExact.seq (SpecExact.cond_zero hf) hrest
+
 /-- Base case: the empty program preserves everything, so a
     `Spec []` goal follows from the pure implication
     `pre → post`. `fbm_verify` discharges the implication by
@@ -1267,6 +1460,169 @@ theorem SpecExact.nil_close
   exact ⟨0, s, q, acts, defs, h s q inp orc acts defs hpre,
     by intro inp1 orc1; simp [execQ]⟩
 
+/- Iteration and range helpers (complete-core-ff-effects Phase 1):
+   `_loop` executes an arbitrary quotation `[B]` `N` times (`N ≥ 0`).
+   `SpecIter` folds a Lean endofunction on stacks `n` times so
+   `_loop_effect`, `loop_effect`, `times_effect`, and `seq_effect`
+   state clean contracts; `intRange` builds the concrete integer
+   lists that `range_effect` and `count_effect` instantiate with
+   `succ`. Axioms: standard only. -/
+def SpecIter : Nat → (Stack → Stack) → Stack → Stack
+  | 0, _, s => s
+  | n + 1, f, s => f (SpecIter n f s)
+
+theorem SpecIter_zero (f : Stack → Stack) (s : Stack) :
+    SpecIter 0 f s = s := rfl
+
+theorem SpecIter_succ (n : Nat) (f : Stack → Stack) (s : Stack) :
+    SpecIter (n + 1) f s = f (SpecIter n f s) := rfl
+
+theorem SpecIter_add (m n : Nat) (f : Stack → Stack) (s : Stack) :
+    SpecIter (m + n) f s = SpecIter m f (SpecIter n f s) := by
+  induction m generalizing s with
+  | zero => simp [SpecIter]
+  | succ k ih =>
+    have h : k + 1 + n = (k + n) + 1 := by omega
+    rw [h]
+    simp [SpecIter_succ, ih]
+
+/-- `SpecIterN f n a` iterates a single-value map `f : Int → Int`
+    `n` times starting from `a`. This is the form `_loop`'s
+    contract uses: the quotation `[B]` maps the accumulator `X`
+    to `f X` (rest and queue preserved), so after `N` iterations
+    the accumulator is `SpecIterN f N.toNat A`. -/
+def SpecIterN (f : Int → Int) : Nat → Int → Int
+  | 0, a => a
+  | n + 1, a => f (SpecIterN f n a)
+
+theorem SpecIterN_zero (f : Int → Int) (a : Int) :
+    SpecIterN f 0 a = a := rfl
+
+theorem SpecIterN_succ (n : Nat) (f : Int → Int) (a : Int) :
+    SpecIterN f (n + 1) a = f (SpecIterN f n a) := rfl
+
+/-- One `_loop` iteration step on stacks: `B` maps `X :: r` to
+    `(F X) :: X :: r` (pushes `F X` on top, preserves `X` and the
+    rest — the contract of a functional quotation slot
+    `[X -- F X]`, e.g. `succ`). -/
+def SpecPush1 (F : Int → Int) : Stack → Stack
+  | [] => []
+  | x :: r => (F x) :: x :: r
+
+/-- `_loop`'s accumulator history: `n` iterations of `B` starting
+    from `A :: R0`, outermost-first. `SpecHist2 F 0 A R0 = [A] ++ R0`
+    and each step pushes the next value on top, so
+    `SpecHist2 succ 4 3 [] = [7, 6, 5, 4, 3]` (top-first), i.e.
+    `range 3 7` pushes `3, 4, 5, 6, 7`. -/
+def SpecHist2 (F : Int → Int) (n : Nat) (A : Int) (R0 : Stack) : Stack :=
+  SpecIter n (SpecPush1 F) (A :: R0)
+
+@[simp] theorem SpecHist2_zero (F : Int → Int) (A : Int) (R0 : Stack) :
+    SpecHist2 F 0 A R0 = A :: R0 := rfl
+
+@[simp] theorem SpecHist2_succ (F : Int → Int) (n : Nat) (A : Int) (R0 : Stack) :
+    SpecHist2 F (n + 1) A R0 =
+      SpecPush1 F (SpecHist2 F n A R0) := rfl
+
+/-- `SpecIter` commutes with one more application on the left:
+    iterating `n` times starting from `s x` is one step applied
+    to iterating `n` times from `x`. -/
+theorem SpecIter_step_comm (n : Nat) (s : Stack → Stack) (x : Stack) :
+    SpecIter n s (s x) = s (SpecIter n s x) := by
+  induction n generalizing x with
+  | zero => rfl
+  | succ k ih => simp [SpecIter_succ, ih]
+
+/-- The `_loop` assembly equation: one outer iteration from `A`
+    is `k` iterations starting from the pushed value `F A` on top
+    of `A :: R0`. Closes the inductive step of `_loop`/`loop`/`times`/
+    `seq` when `simp` rewrites with it. -/
+@[simp] theorem SpecHist2_shift (F : Int → Int) (k : Nat) (A : Int) (R0 : Stack) :
+    SpecHist2 F (k + 1) A R0 =
+      SpecHist2 F k (F A) (A :: R0) :=
+  (SpecIter_step_comm k _ _).symm
+
+/-- Assembly in pushed form: `k` iterations from the pushed value
+    `(F X) :: X :: R` is one `SpecPush1` step applied to `k`
+    iterations from `X :: R`. This is the exact shape fbm_verify's
+    final reconciliation needs after the body hypothesis assigns
+    the accumulator and rest metas. -/
+@[simp] theorem SpecHist2_push (F : Int → Int) (k : Nat) (X : Int) (R : Stack) :
+    SpecHist2 F k (F X) (X :: R) =
+      SpecPush1 F (SpecHist2 F k X R) :=
+  SpecIter_step_comm k (SpecPush1 F) (X :: R)
+
+
+/-- `intRange lo hi` is `[hi-1, ..., lo]` (top-first order: the head
+    is the top of the pushed range). Empty when `hi ≤ lo`. Defined by
+    recursion on the Nat distance so `range`/`count` specs compute it
+    directly from `A`, `B` inputs; `..R (intRange A B)` then means
+    `intRange A B ++ R`. -/
+def intRangeAux : Nat → Int → List Int
+  | 0, _ => []
+  | n + 1, lo => (lo + (n : Int)) :: intRangeAux n lo
+
+def intRange (lo hi : Int) : List Int :=
+  intRangeAux ((hi - lo).toNat) lo
+
+theorem intRange_of_le (lo hi : Int) (h : hi ≤ lo) :
+    intRange lo hi = [] := by
+  have h0 : (hi - lo).toNat = 0 := by omega
+  simp [intRange, intRangeAux, h0]
+
+@[simp] theorem intRange_succ_of_le (lo hi : Int) (h : lo ≤ hi) :
+    intRange lo (hi + 1) = hi :: intRange lo hi := by
+  have hge : (0 : Int) ≤ hi - lo := by omega
+  have h1 : hi + 1 - lo = (hi - lo) + 1 := by omega
+  have h2 : ((hi + 1 - lo).toNat) = ((hi - lo).toNat + 1) := by
+    rw [h1, Int.toNat_add hge (by omega : (0 : Int) ≤ 1)]
+    rfl
+  have hcast : (Nat.cast ((hi - lo).toNat) : Int) = hi - lo :=
+    Int.toNat_of_nonneg hge
+  simp only [intRange, h2, intRangeAux]
+  congr 1
+  omega
+
+/-- List-append / depth helpers for rotation and range posts:
+    `R ++ [A]` length, cons-append reassociation, and
+    `List.length` casting used by `pushtop`/`depth` reasoning. -/
+theorem append_singleton_length (R : Stack) (A : Int) :
+    (R ++ [A]).length = R.length + 1 := by
+  simp
+
+theorem cons_append_singleton (A : Int) (R : Stack) (B : Int) :
+    (A :: R) ++ [B] = A :: (R ++ [B]) := by
+  rfl
+
+theorem length_cons_add_one (A : Int) (R : Stack) :
+    (A :: R).length = R.length + 1 := by
+  simp
+
+/-- History of `succ` iterations is the integer range: `n`
+    iterations from `A` push `A, ..., A+n`, i.e. `intRange`.
+    Connects `seq`-based proofs (`range`, `count`) to `intRange` posts. -/
+@[simp]
+theorem SpecHist2_succ_range (n : Nat) (A : Int) (R0 : Stack) :
+    SpecHist2 (fun x => x + 1) n A R0 = intRange A (A + (n : Int) + 1) ++ R0 := by
+  induction n generalizing A with
+  | zero =>
+    have h : (A + 1 - A).toNat = 1 := by omega
+    simp [SpecHist2, SpecIter, intRange, h, intRangeAux]
+  | succ k ih =>
+    have h1 : A ≤ A + (k : Int) := by omega
+    have h2 : A ≤ A + ((k + 1 : Nat) : Int) := by omega
+    have e1 := intRange_succ_of_le A (A + (k : Int)) h1
+    have e2 := intRange_succ_of_le A (A + ((k + 1 : Nat) : Int)) h2
+    have e1b : intRange A (A + ((k + 1 : Nat) : Int)) =
+        (A + (k : Int)) :: intRange A (A + (k : Int)) := by
+      have ce : A + ((k + 1 : Nat) : Int) = A + (k : Int) + 1 := by omega
+      rw [ce]; exact e1
+    have key : (A + (k : Int)) + 1 = A + ((k + 1 : Nat) : Int) := by omega
+    simp only [SpecHist2_succ]
+    rw [ih, e2, e1b, e1]
+    simp only [List.cons_append, SpecPush1]
+    rw [key]
+
 open Lean Elab Tactic Meta in
 section
 /- `fbm_verify` automation (compositional-lean-prover Phase A):
@@ -1283,10 +1639,18 @@ section
    `@rec-effect` with human induction. -/
 syntax "fbm_verify" ("[" term,* "]")? : tactic
 
+/-- Goal type with `mdata` stripped. A `have` (like the decision
+    facts the `@by-induction` Nat skeleton emits) can wrap the
+    goal's type in `mdata`, which `getAppFn` / `getAppArgs` /
+    `isConstOf` do not see through (empty args, wrapper head).
+    Every top-level goal-type dissection must use this. -/
+def FbmVerify.goalTy (mvar : MVarId) : TacticM Expr := do
+  return (← instantiateMVars (← mvar.getType)).consumeMData
+
 def FbmVerify.falsePresent : TacticM Bool := do
   try
     for g in (← getGoals) do
-      if (← instantiateMVars (← g.getType)).isConstOf `False then return true
+      if (← FbmVerify.goalTy g).isConstOf `False then return true
     return false
   catch _ => return false
 
@@ -1327,6 +1691,21 @@ def FbmVerify.tryApply (stx : TSyntax `tactic) : TacticM Bool := do
       return true
     catch _ => return false
 
+/-- Closer: run `stx` on the focused goal, succeeding only if the
+    focused goal is discharged (assigned). Anything else —
+    simplify-without-close, new side goals — is rolled back, so a
+    heavy tactic like `simp_all` can never mangle a live `Spec`
+    goal. Used for contradictory branches (dead `cond` arms after
+    `splitSingle`): `contradiction`/`simp_all`/`omega` derive
+    `False` from the branch hyps and close any goal. -/
+def FbmVerify.tryClose (stx : TSyntax `tactic) : TacticM Bool := do
+  FbmVerify.atomic do
+    try
+      let mvar ← getMainGoal
+      evalTactic stx
+      return (← mvar.isAssigned)
+    catch _ => return false
+
 /-- Per-hypothesis atomic `assumption`: for each local
     hypothesis (most recent first), `isDefEq`-unify its type
     against the goal and `assign` on success, rolling back
@@ -1359,7 +1738,7 @@ def FbmVerify.atomicAssumption : TacticM Bool := do
 def FbmVerify.introFresh : TacticM Bool := do
   try
     let mvar ← getMainGoal
-    let ty ← instantiateMVars (← mvar.getType)
+    let ty ← FbmVerify.goalTy mvar
     -- Do not intro into a `Spec`: `seq`/`eval`/prims apply at
     -- `Spec` level; the `∃ fuel` inside is supplied by lemmas.
     -- Do not intro a negation (`F ≠ 0`, `¬P`): that masks an
@@ -1414,8 +1793,8 @@ def FbmVerify.flagOfStackEq (s : Expr) (h : Expr) : MetaM (Option Expr) := do
 def FbmVerify.condGoalFlag : TacticM (Option Expr) := do
   try
     let mvar ← getMainGoal
-    let ty ← instantiateMVars (← mvar.getType)
-    if !ty.getAppFn.isConstOf `Spec then return none
+    let ty ← FbmVerify.goalTy mvar
+    if !(ty.getAppFn.isConstOf `Spec || ty.getAppFn.isConstOf `SpecExact) then return none
     let args := ty.getAppArgs
     if args.size != 3 then return none
     let progWhnf ← whnf args[0]!
@@ -1453,7 +1832,7 @@ def FbmVerify.condGoalFlag : TacticM (Option Expr) := do
 def FbmVerify.headTok : TacticM (Option Name) := do
   try
     let mvar ← getMainGoal
-    let ty ← instantiateMVars (← mvar.getType)
+    let ty ← FbmVerify.goalTy mvar
     let fn := ty.getAppFn
     if !(fn.isConstOf `Spec || fn.isConstOf `SpecExact ||
          fn.isConstOf `SpecIO || fn.isConstOf `SpecExit) then return none
@@ -1480,8 +1859,8 @@ has that shape. -/
 def FbmVerify.preHeadQv : TacticM (Option Expr) := do
   try
     let mvar ← getMainGoal
-    let ty ← instantiateMVars (← mvar.getType)
-    if !ty.getAppFn.isConstOf `Spec then return none
+    let ty ← FbmVerify.goalTy mvar
+    if !(ty.getAppFn.isConstOf `Spec || ty.getAppFn.isConstOf `SpecExact) then return none
     let args := ty.getAppArgs
     if args.size != 3 then return none
     let pre := args[1]!
@@ -1626,8 +2005,8 @@ def FbmVerify.condOk (nonzero : Bool) : TacticM Bool := do
 def FbmVerify.splitCondFlag : TacticM Bool := do
   try
     let mvar ← getMainGoal
-    let ty ← instantiateMVars (← mvar.getType)
-    if !ty.getAppFn.isConstOf `Spec then return false
+    let ty ← FbmVerify.goalTy mvar
+    if !(ty.getAppFn.isConstOf `Spec || ty.getAppFn.isConstOf `SpecExact) then return false
     let args := ty.getAppArgs
     if args.size != 3 then return false
     let progWhnf ← whnf args[0]!
@@ -1703,8 +2082,8 @@ def FbmVerify.findIte (p : Expr) : TacticM (Option Expr) := do
 def FbmVerify.splitSingle : TacticM Bool := do
   try
     let mvar ← getMainGoal
-    let ty ← instantiateMVars (← mvar.getType)
-    if !ty.getAppFn.isConstOf `Spec then return false
+    let ty ← FbmVerify.goalTy mvar
+    if !(ty.getAppFn.isConstOf `Spec || ty.getAppFn.isConstOf `SpecExact) then return false
     -- No `hasMVar` gate: the flag itself was already checked
     -- concrete by the caller; pre/post midpoint metas are safely
     -- carried into both `split` branches and ground later.
@@ -1747,6 +2126,14 @@ def FbmVerify.run (_deps : Array Term) : TacticM Unit := do
   let exactPrintTac ← `(tactic| apply SpecExact.print_head)
   let exactPushTac ← `(tactic| apply SpecExact.push_head)
   let exactEqTac ← `(tactic| apply SpecExact.eq_head)
+  let exactGtTac ← `(tactic| apply SpecExact.gt_head)
+  let exactSwapTac ← `(tactic| apply SpecExact.swap_head)
+  let exactQpushTac ← `(tactic| apply SpecExact.qpush_head)
+  let exactQpullTac ← `(tactic| apply SpecExact.qpull_head)
+  let exactEvalTac ← `(tactic| apply SpecExact.eval_head)
+  let exactCallTac ← `(tactic| apply SpecExact.call_head)
+  let exactZeroTac ← `(tactic| apply SpecExact.cond_zero_head)
+  let exactNonzeroTac ← `(tactic| apply SpecExact.cond_nonzero_head)
   let ioGetcTac ← `(tactic| apply SpecIO.getc)
   let ioClockTac ← `(tactic| apply SpecIO.clock)
   let ioRandTac ← `(tactic| apply SpecIO.rand)
@@ -1802,6 +2189,15 @@ def FbmVerify.run (_deps : Array Term) : TacticM Unit := do
   let rflTac ← `(tactic| rfl)
   let contradictionTac ← `(tactic| contradiction)
   let omegaTac ← `(tactic| omega)
+  -- Congruence-then-arithmetic: `omega` treats uninterpreted
+  -- applications (`intRange`, `++`) as opaque atoms, so an equation
+  -- like `intRange A X = intRange A Y` (or under `++ R0`) defeats
+  -- it even when `X = Y` is linear arithmetic (`hw` in context).
+  -- Peel up to three congruence levels, then `omega` on the
+  -- arithmetic leaves. Tried only after plain `omega` fails, and
+  -- as a must-close (atomic rollback), so over-decomposition can
+  -- never mangle a live goal.
+  let congrOmegaTac ← `(tactic| first | (congr 1 <;> omega) | (congr 1 <;> congr 1 <;> omega) | (congr 1 <;> congr 1 <;> congr 1 <;> omega))
   let decideTac ← `(tactic| decide)
   -- One pass over the current main goal. Returns true on progress.
   -- Single focus (no round-robin): every head lemma consumes its
@@ -1811,7 +2207,7 @@ def FbmVerify.run (_deps : Array Term) : TacticM Unit := do
     -- Never touch a bare-metavariable goal.
     let isBare ← (try do
       let mvar ← getMainGoal
-      let ty ← instantiateMVars (← mvar.getType)
+      let ty ← FbmVerify.goalTy mvar
       pure ty.isMVar
     catch _ => pure false)
     if isBare then return false
@@ -1820,7 +2216,7 @@ def FbmVerify.run (_deps : Array Term) : TacticM Unit := do
     -- intro (for the implications), then arithmetic.
     do
       let mvar ← getMainGoal
-      let ty ← instantiateMVars (← mvar.getType)
+      let ty ← FbmVerify.goalTy mvar
       -- `SpecErr` goals: close by assumption, then the three
       -- guarded-prim error leaves (side condition `h` closes by
       -- assumption/omega like the success guards).
@@ -1844,6 +2240,7 @@ def FbmVerify.run (_deps : Array Term) : TacticM Unit := do
           if ← FbmVerify.splitConjHyp then return true
           if ← FbmVerify.tryApply simpAllTac then return true
           if ← FbmVerify.tryApply omegaTac then return true
+          if ← FbmVerify.tryClose congrOmegaTac then return true
           if ← FbmVerify.tryApply decideTac then return true
         return false
     -- `Spec` goals: per-hyp atomic `assumption` first. This
@@ -1877,11 +2274,19 @@ def FbmVerify.run (_deps : Array Term) : TacticM Unit := do
         if ← FbmVerify.tryApply pushTac then return true
         if ← FbmVerify.tryApply exactPushTac then return true
     | `Tok.dup => if ← FbmVerify.tryApply dupTac then return true
-    | `Tok.swap => if ← FbmVerify.tryApply swapTac then return true
+    | `Tok.swap =>
+        if ← FbmVerify.tryApply swapTac then return true
+        if ← FbmVerify.tryApply exactSwapTac then return true
     | `Tok.drop => if ← FbmVerify.tryApply dropTac then return true
-    | `Tok.qpush => if ← FbmVerify.tryApply qpushTac then return true
-    | `Tok.qpull => if ← FbmVerify.tryApply qpullTac then return true
-    | `Tok.gt => if ← FbmVerify.tryApply gtTac then return true
+    | `Tok.qpush =>
+        if ← FbmVerify.tryApply qpushTac then return true
+        if ← FbmVerify.tryApply exactQpushTac then return true
+    | `Tok.qpull =>
+        if ← FbmVerify.tryApply qpullTac then return true
+        if ← FbmVerify.tryApply exactQpullTac then return true
+    | `Tok.gt =>
+        if ← FbmVerify.tryApply gtTac then return true
+        if ← FbmVerify.tryApply exactGtTac then return true
     | `Tok.lt => if ← FbmVerify.tryApply ltTac then return true
     | `Tok.eq =>
         if ← FbmVerify.tryApply eqTac then return true
@@ -1911,9 +2316,13 @@ def FbmVerify.run (_deps : Array Term) : TacticM Unit := do
     | `Tok.eval =>
         if ← FbmVerify.qvOk then
           if ← FbmVerify.tryApply evalTac then return true
+        if ← FbmVerify.qvOk then
+          if ← FbmVerify.tryApply exactEvalTac then return true
     | `Tok.call =>
         if ← FbmVerify.qvOk then
           if ← FbmVerify.tryApply callTac then return true
+        if ← FbmVerify.qvOk then
+          if ← FbmVerify.tryApply exactCallTac then return true
     | `Tok.cond => do
         let some F ← FbmVerify.condGoalFlag | return false
         let Fi ← instantiateMVars F
@@ -1926,12 +2335,22 @@ def FbmVerify.run (_deps : Array Term) : TacticM Unit := do
           else return false
         if ← FbmVerify.condOk true then
           if ← FbmVerify.tryApply nonzeroTac then return true
+          if ← FbmVerify.tryApply exactNonzeroTac then return true
         if ← FbmVerify.condOk false then
           if ← FbmVerify.tryApply zeroTac then return true
+          if ← FbmVerify.tryApply exactZeroTac then return true
         -- Free undecided flag: case-split, then decide per branch.
         if ← FbmVerify.splitCondFlag then return true
-        return false
-    | _ => return false
+        pure ()
+    | _ => pure ()
+    -- Contradictory-branch closers (dead `cond` arms after
+    -- `splitSingle`): sound, and rolled back unless the focused
+    -- goal is discharged. `contradiction` first (cheap), then
+    -- `omega` (arithmetic refutation), then `simp_all` (heavy:
+    -- evaluates lengths, substitutes equations, refutes).
+    if ← FbmVerify.tryClose contradictionTac then return true
+    if ← FbmVerify.tryClose omegaTac then return true
+    if ← FbmVerify.tryClose simpAllTac then return true
     return false
   -- Single-focus loop over `Prop` goals: each iteration closes
   -- or transforms the focused goal (head peels strictly shrink
@@ -1963,6 +2382,23 @@ def FbmVerify.run (_deps : Array Term) : TacticM Unit := do
         pure ((← inferType ty) == mkSort Level.zero)
       if isProp then props := props.push g
     if props.isEmpty then
+      -- Dead branch whose `Prop` goals all closed by refutation,
+      -- leaving only deferred (`Stack`/`Defs`) goals: close them by
+      -- the same refutation. Anything unclosable restores state and
+      -- throws exactly as before (no behavior change for live
+      -- proofs: closers fail on consistent hyps and roll back).
+      let saved ← saveState
+      let mut allClosed := true
+      for g in active do
+        setGoals [g]
+        let closed ← g.withContext do
+          if ← FbmVerify.tryClose contradictionTac then return true
+          if ← FbmVerify.tryClose omegaTac then return true
+          if ← FbmVerify.tryClose simpAllTac then return true
+          return false
+        if !closed then allClosed := false; break
+      if allClosed then continue
+      restoreState saved
       throwError m!"fbm_verify: stuck with only deferred type goals"
     let mut progressed := false
     for f in props do
