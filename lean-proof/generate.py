@@ -660,14 +660,38 @@ def _emit_expr(ast):
         return f"({_emit_expr(l)} {op} {_emit_expr(r)})"
     raise ExprError(f"bad AST node {ast!r}")
 
-def translate_expr(s):
+_CMP_OPS = {"=", "==", "!=", "<", "<=", ">", ">="}
+
+def _needs_translation(e):
+    """True when an output element contains operators, length/call
+    syntax, or comparisons that must be translated to Lean."""
+    # (v23) `⊕` is the only operator that needs naming: the Lean
+    # operators (`&&&`, `|||`, `^^^`, `<<<`, `>>>`, `~~~`) all contain
+    # their ASCII operator as a substring, so the checks below already
+    # catch them; comparisons (`=`, `==`, `!=`, `<`, `<=`, `>`, `>=`)
+    # all contain `=`, `<`, or `>`; every f() form is caught by the
+    # call regex.
+    return ("%" in e or "/" in e or "&" in e or "|" in e or "^" in e or "~" in e
+            or "⊕" in e or "#" in e
+            or "<<" in e or ">>" in e or "." in e
+            or "=" in e or "<" in e or ">" in e
+            or re.search(r"[A-Za-z_][A-Za-z0-9_']*\s*\(", e) is not None)
+
+def translate_expr(s, coerce_cmp=False):
     """Translate an effect expression to Lean. `%` and `&` mean
     F♭m's operators (truncating mod, bitwise and), not Lean's
     (Euclidean `%`, no Int `&`), so they become the `tmod` /
     `land` helpers; `!=` becomes `≠` and `==` becomes `=`,
     because Lean's `!=` / `==` are boolean, not propositions.
+    When `coerce_cmp` is True (whole output elements), a top-level
+    comparison node `("bin", op, l, r)` is wrapped as
+    `(if <cond> then 1 else 0)`.
     Raises ExprError on anything it cannot translate."""
-    return _emit_expr(_parse_expr(s))
+    ast = _parse_expr(s)
+    lean = _emit_expr(ast)
+    if coerce_cmp and ast[0] == "bin" and ast[1] in _CMP_OPS:
+        return f"(if {lean} then 1 else 0)"
+    return lean
 
 _NEGATE_OP = {"!=": "==", "==": "!=", "<": ">=", "<=": ">",
               ">": "<=", ">=": "<"}
@@ -1821,14 +1845,11 @@ class EmitCtx:
                 return self.problem(str(ex))
         else:
             self.where_eqs = None
-        def needs_translation(e):
-            return ("%" in e or "/" in e or "&" in e or "|" in e or "^" in e or "~" in e
-                    or "⊕" in e or "#" in e or "<<" in e or ">>" in e or "." in e
-                    or re.search(r"[A-Za-z_][A-Za-z0-9_']*\s*\(", e) is not None)
         try:
             if not self.is_error:
-                self.out_vars = [translate_expr(e) if needs_translation(e) else e
-                                 for e in self.out_vars]
+                self.out_vars = [
+                    translate_expr(e, coerce_cmp=True) if _needs_translation(e) else e
+                    for e in self.out_vars]
             self.cond_lean = translate_expr(cond) if cond is not None else None
         except ExprError as ex:
             return self.problem(f"cannot translate expression: {ex}")
@@ -4865,21 +4886,12 @@ class EmitCtx:
         # untranslatable is a clean problem, not a theorem.
         # A `when` condition is always translated (`!=` -> `≠`,
         # `==` -> `=`).
-        def needs_translation(e):
-            # (v23) `⊕` is the only operator that needs naming: the
-            # Lean operators (`&&&`, `|||`, `^^^`, `<<<`, `>>>`,
-            # `~~~`) all contain their ASCII operator as a
-            # substring, so the checks below already catch them,
-            # and every f() form is caught by the call regex.
-            return ("%" in e or "/" in e or "&" in e or "|" in e or "^" in e or "~" in e
-                    or "⊕" in e or "#" in e
-                    or "<<" in e or ">>" in e or "." in e
-                    or re.search(r"[A-Za-z_][A-Za-z0-9_']*\s*\(", e) is not None)
         try:
             # An error effect has no output expression to translate.
             if not self.is_error:
-                self.out_vars = [translate_expr(e) if needs_translation(e) else e
-                                 for e in self.out_vars]
+                self.out_vars = [
+                    translate_expr(e, coerce_cmp=True) if _needs_translation(e) else e
+                    for e in self.out_vars]
             self.cond_lean = translate_expr(cond) if cond is not None else None
         except ExprError as ex:
             return self.problem(f"cannot translate expression: {ex}")

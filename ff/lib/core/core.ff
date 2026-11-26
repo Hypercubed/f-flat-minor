@@ -21,8 +21,7 @@ succ: dup ++ ; /* @effect succ: N == N N+1 */
  * Wrapper definitions like `x: q< Y q> ;` are irreducible as definitions.
  * Outside defining wrappers, ERS may replace `q< Y q>` with the named word when available. */
 
-/* @effect slip: ..R [..R -- ..S] B == ..S B */
-slip: q< eval q> ; /* [A] b slip == a* b */
+slip: q< eval q> ; /* @effect slip: ..R [..R -- ..S] B == ..S B */
 swapd: q< swap q> ; /* @effect swapd: A B C == B A C */
 dupd: q< dup q> ; /* @effect dupd: A B == A A B */
 
@@ -48,12 +47,12 @@ bi: sipd dig slip swap ; .inline /* @effect bi: ..R A [..R A --..S] [..R A --..T
 bi2: [ [dup2] dip eval bury ] dip eval ; .inline /* @effect bi2: ..R A B [..R A B --..S] [..R A B --..T] ==..S ..T */
 
 /* inquisitive */
-zero?: 0 = ; /* @effect zero?: N == F ensures F = if N = 0 then 1 else 0 */
-not: zero? ; .inline /* @effect not: F == G ensures G = if F = 0 then 1 else 0 */
-nz?: zero? not ; .inline /* @effect nz?: N == F ensures F = if N != 0 then 1 else 0 */
-truthy?: nz? ; .inline /* @effect truthy?: N == F ensures F = if N != 0 then 1 else 0 */
-falsey?: zero? ; .inline /* @effect falsey?: N == F ensures F = if N = 0 then 1 else 0 */
-!=: = not ; .inline /* @effect !=: A B == F ensures F = if A != B then 1 else 0 */
+zero?: 0 = ; /* @effect zero?: N == N=0 */
+not: zero? ; .inline /* @effect not: F == F=0 */
+nz?: zero? not ; .inline /* @effect nz?: N == N!=0 */
+truthy?: nz? ; .inline /* @effect truthy?: N == N!=0 */
+falsey?: zero? ; .inline /* @effect falsey?: N == N=0 */
+!=: = not ; .inline /* @effect !=: A B == A!=B */
 
 /* comparison */
 <=: > not ; .inline /* @effect <=: A B == F ensures F = if A > B then 0 else 1 */
@@ -67,10 +66,10 @@ between?: [sort2] dip swap dupd < bury < and ; .inline /* lo hi n between? == fl
 bxor: dup2 ~ & rot ~ & | ; /* @effect bxor: A B == A⊕B */
 
 /* logical */
-and: * truthy? ; /* @effect and: A B == F ensures F = if A * B != 0 then 1 else 0 */
-or: + truthy? ; /* @effect or: A B == F ensures F = if A + B != 0 then 1 else 0 */
-nand: * zero? ; /* @effect nand: A B == F ensures F = if A * B = 0 then 1 else 0 */
-nor: + zero? ; /* @effect nor: A B == F ensures F = if A + B = 0 then 1 else 0 */
+and: * truthy? ; /* @effect and: A B == A*B!=0 */
+or: + truthy? ; /* @effect or: A B == A+B!=0 */
+nand: * zero? ; /* @effect nand: A B == A*B=0 */
+nor: + zero? ; /* @effect nor: A B == A+B=0 */
 
 /* short circuit */
 or_else: [ sip swap ] dip swap [ drop2 true ] [eval] branch ; .inline /* @effect or_else: ..R A [..R A -- B] [..R A -- C] ==..R F ensures F = if B != 0 then 1 else C */
@@ -83,7 +82,7 @@ choose: rot [ swap ] ? drop ; .inline  /* @effect choose: F A B == X ensures X =
 branch: choose eval ; .inline
 
 /* stack */
-empty?: depth zero? ; /* @effect empty?: ..R == ..R F ensures F = if #R = 0 then 1 else 0 */
+empty?: depth zero? ; /* @effect empty?: ..R == ..R #R=0 */
 pushtop: depth 1 > [ swap [pushtop] dip ] ? ; /* @effect pushtop: ..R A == A ..R @by-induction R.length */
 
 /* counters */

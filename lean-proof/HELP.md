@@ -141,6 +141,25 @@ Scope (prototype, deliberately small):
     `and`/`or` make bare `and`/`or` ambiguous). An f() call in
     a direct output takes no space after the comma
     (`land(a,b)`); in an `ensures` clause spaces are fine.
+
+    Comparison-coercion sugar: any whole output element whose
+    top-level operator is a comparison (`=`, `==`, `!=`, `<`,
+    `<=`, `>`, `>=`, written without spaces) automatically
+    coerces to `(if <cond> then 1 else 0)` inline in the
+    postcondition, with no existential or `ensures` clause
+    needed. For example, `/* @effect empty?: ..R == ..R #R=0 */`
+    is sugar for `/* @effect empty?: ..R == ..R F ensures F =
+    if #R = 0 then 1 else 0 */`, `/* @effect zero?: N == N=0 */`
+    for `N == F ensures F = if N = 0 then 1 else 0`, and
+    `/* @effect <: A B == A<B */` for `A B == F ensures F = if
+    A<B then 1 else 0`. Scope limits: coercion applies ONLY to
+    whole output elements whose top AST node is one of those
+    seven comparisons — nested comparisons inside larger
+    expressions (e.g. `(#R=0)+1`, `A<B<C`) stay in `Prop`
+    position and surface as Lean type errors; logical operators
+    (`∧`, `∨`, `¬`) are never coerced; `requires` / `when`
+    conditions stay propositions; and the explicit `ensures` /
+    `where` form continues to work unchanged.
     Quotations (v24): a quotation slot is written in brackets.
     `[..R -- ..S]` is a pointer whose body has effect
     `[..R -- ..S]`; `[B]` is a plain quotation variable; `[a B]`
