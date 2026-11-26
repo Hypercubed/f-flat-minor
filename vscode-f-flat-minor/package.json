@@ -142,20 +142,20 @@
             "comment": "JSDoc-style: the whole effect comment is subdued italic. Inner rules only tint foregrounds; fontStyle inherits from this parent rule.",
             "scope": ["comment.block.effect.f-flat-minor"],
             "settings": {
-              "foreground": "#6E6E6E",
+              "foreground": "#606060",
               "fontStyle": "italic"
             }
           },
           {
             "scope": ["comment.block.effect.f-flat-minor keyword.directive.effect.f-flat-minor"],
             "settings": {
-              "foreground": "#8F7C4D"
+              "foreground": "#7D6C43"
             }
           },
           {
             "scope": ["comment.block.effect.f-flat-minor entity.name.function.effect.f-flat-minor"],
             "settings": {
-              "foreground": "#5F7E99"
+              "foreground": "#536E86"
             }
           },
           {
@@ -164,19 +164,58 @@
               "comment.block.effect.f-flat-minor keyword.control.conditional.effect.f-flat-minor"
             ],
             "settings": {
-              "foreground": "#767094"
+              "foreground": "#676282"
             }
           },
           {
             "scope": ["comment.block.effect.f-flat-minor constant.language.error.effect.f-flat-minor"],
             "settings": {
-              "foreground": "#966262"
+              "foreground": "#845656"
             }
           },
           {
             "scope": ["comment.block.effect.f-flat-minor comment.note.effect.f-flat-minor"],
             "settings": {
-              "foreground": "#5F6E5F"
+              "foreground": "#536053"
+            }
+          },
+          {
+            "scope": [
+              "comment.block.effect.f-flat-minor variable.other.effect.f-flat-minor",
+              "comment.block.effect.f-flat-minor variable.other.rest.effect.f-flat-minor",
+              "comment.block.effect.f-flat-minor variable.other.rest-length.effect.f-flat-minor"
+            ],
+            "settings": {
+              "foreground": "#5E7383"
+            }
+          },
+          {
+            "scope": [
+              "comment.block.effect.f-flat-minor keyword.operator.effect-separator.f-flat-minor",
+              "comment.block.effect.f-flat-minor keyword.operator.f-flat-minor",
+              "comment.block.effect.f-flat-minor punctuation.definition.quote.begin.f-flat-minor",
+              "comment.block.effect.f-flat-minor punctuation.definition.quote.end.f-flat-minor"
+            ],
+            "settings": {
+              "foreground": "#606060"
+            }
+          },
+          {
+            "scope": ["comment.block.effect.f-flat-minor constant.numeric.f-flat-minor"],
+            "settings": {
+              "foreground": "#697662"
+            }
+          },
+          {
+            "scope": ["comment.block.effect.f-flat-minor support.function.effect.f-flat-minor"],
+            "settings": {
+              "foreground": "#6D6954"
+            }
+          },
+          {
+            "scope": ["comment.block.effect.f-flat-minor constant.language.empty-stack.effect.f-flat-minor"],
+            "settings": {
+              "foreground": "#606D60"
             }
           }
         ]

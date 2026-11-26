@@ -4,5 +4,99 @@
     "*.ff": "f-flat-minor",
     "*.ffp": "f-flat-minor"
   },
-  "workbench.colorTheme": "F♭m Dark"
+  "workbench.colorTheme": "F♭m Dark",
+  // Live theme iteration without a VSIX reinstall:
+  // VS Code loads themes/grammars from the *installed* extension copy, not
+  // this repo, so editing vscode-f-flat-minor/themes/ alone does nothing
+  // until you repackage + reinstall. These workspace textMateRules apply on
+  // top of F♭m Dark from this repo's working copy, so color tweaks here show
+  // up on save + Reload Window with no packaging step. (Grammar/scoping
+  // changes in syntaxes/ff.tmLanguage.json still need an extension reload.)
+  // Keep in sync with vscode-f-flat-minor/themes/fbm-dark-color-theme.json
+  // and the configurationDefaults in vscode-f-flat-minor/package.json.
+  "editor.tokenColorCustomizations": {
+    "[F♭m Dark]": {
+      "textMateRules": [
+        {
+          "scope": ["comment.block.effect.f-flat-minor"],
+          "settings": {
+            "foreground": "#606060",
+            "fontStyle": "italic"
+          }
+        },
+        {
+          "scope": ["comment.block.effect.f-flat-minor keyword.directive.effect.f-flat-minor"],
+          "settings": {
+            "foreground": "#7D6C43"
+          }
+        },
+        {
+          "scope": ["comment.block.effect.f-flat-minor entity.name.function.effect.f-flat-minor"],
+          "settings": {
+            "foreground": "#536E86"
+          }
+        },
+        {
+          "scope": [
+            "comment.block.effect.f-flat-minor keyword.other.effect-clause.f-flat-minor",
+            "comment.block.effect.f-flat-minor keyword.control.conditional.effect.f-flat-minor"
+          ],
+          "settings": {
+            "foreground": "#676282"
+          }
+        },
+        {
+          "scope": ["comment.block.effect.f-flat-minor constant.language.error.effect.f-flat-minor"],
+          "settings": {
+            "foreground": "#845656"
+          }
+        },
+        {
+          "scope": ["comment.block.effect.f-flat-minor comment.note.effect.f-flat-minor"],
+          "settings": {
+            "foreground": "#536053"
+          }
+        },
+        {
+          "scope": [
+            "comment.block.effect.f-flat-minor variable.other.effect.f-flat-minor",
+            "comment.block.effect.f-flat-minor variable.other.rest.effect.f-flat-minor",
+            "comment.block.effect.f-flat-minor variable.other.rest-length.effect.f-flat-minor"
+          ],
+          "settings": {
+            "foreground": "#5E7383"
+          }
+        },
+        {
+          "scope": [
+            "comment.block.effect.f-flat-minor keyword.operator.effect-separator.f-flat-minor",
+            "comment.block.effect.f-flat-minor keyword.operator.f-flat-minor",
+            "comment.block.effect.f-flat-minor punctuation.definition.quote.begin.f-flat-minor",
+            "comment.block.effect.f-flat-minor punctuation.definition.quote.end.f-flat-minor"
+          ],
+          "settings": {
+            "foreground": "#606060"
+          }
+        },
+        {
+          "scope": ["comment.block.effect.f-flat-minor constant.numeric.f-flat-minor"],
+          "settings": {
+            "foreground": "#697662"
+          }
+        },
+        {
+          "scope": ["comment.block.effect.f-flat-minor support.function.effect.f-flat-minor"],
+          "settings": {
+            "foreground": "#6D6954"
+          }
+        },
+        {
+          "scope": ["comment.block.effect.f-flat-minor constant.language.empty-stack.effect.f-flat-minor"],
+          "settings": {
+            "foreground": "#606D60"
+          }
+        }
+      ]
+    }
+  }
 }
