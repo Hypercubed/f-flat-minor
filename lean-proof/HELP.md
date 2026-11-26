@@ -374,3 +374,32 @@ generator reported no problems, 1 otherwise. The generated Lean
 is kept in a temp file (path printed to stderr on failure) so
 the failing theorem can be opened. Lean is resolved as `lean`
 on PATH, else `~/.elan/bin/lean`, else `--lean PATH`.
+
+`.ffp` files with imports go through the REAL preprocessor
+(Phase 7 lite): `check.py --pp` runs
+`node --experimental-strip-types -- <repo>/node/bin/ff-preprocess.ts <file>`
+and pipes its flattened stdout into `generate.py --stdin <file>`
+(the requested file stays the `-- src:` label; line numbers are
+the flattened stream's). `check.py --label ORIG FLAT` skips the
+preprocessor and treats FLAT as already-flattened output,
+labelling markers with ORIG (for the chomp-cached
+`./build/prelude.flat.ff`). Non-`--pp`/non-`--label` behavior is
+unchanged (raw file straight to `generate.py`). Node resolves
+like lean/lake: `node` on PATH, else a short candidate list,
+else `--node PATH` — no new dependencies. Theorems are emitted
+for the ENTIRE flattened output (no emit-filter). `test:lean`
+is two roots: `check.py --label ../ff/lib/prelude.ffp
+./build/prelude.flat.ff` (the whole library via imports — one
+run verifies every annotated file in the tree; definitions with
+no `@effect` are skipped silently, no theorem and no problem;
+the `:prelude` chomp task rebuilds the flat file only when the
+library or preprocessor changes, and `:build` rebuilds the
+oleans only when the Lean sources change) and `check.py
+../ff/__tests__/primitives.test.ffp` (unchanged raw path).
+
+Single file: `chomp single -- <file>` (from lean-proof/, paths
+relative to it) runs the same generate + Lean pipeline on one
+file — `.ffp` via `--pp`, `.ff` raw — calling `check.py`
+directly (no `prove` wrapper) so the full TAP stream prints,
+with `:build` as a cached dep. Always reruns; a failing proof
+fails the task.

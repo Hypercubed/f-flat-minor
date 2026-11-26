@@ -2,8 +2,8 @@
 
 /* Predicates */
 
-negitive?: 0 < ; /* n negitive? == flag */
-positive?: 0 > ; /* n positive? == flag */
-divisor?: % zero? ; .inline /* n d divisor? == flag */
-even?: 2 divisor? ; .inline /* n even? == flag */
-odd?: even? not ; .inline /* n odd? == flag */
+negitive?: 0 < ; /* @effect negitive?: N == N<0 */
+positive?: 0 > ; /* @effect positive?: N == 0<N */
+divisor?: % zero? ; .inline /* @effect divisor?: N D == (N%D)=0 requires D!=0 */
+even?: 2 divisor? ; .inline /* @effect even?: N == (N%2)=0 */
+odd?: even? not ; .inline /* @effect odd?: N == (N%2)!=0 */

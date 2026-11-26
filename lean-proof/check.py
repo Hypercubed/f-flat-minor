@@ -45,6 +45,13 @@ from pathlib import Path
 
 HERE = Path(__file__).resolve().parent
 GENERATOR = HERE / "generate.py"
+PREPROCESSOR = HERE.parent / "node" / "bin" / "ff-preprocess.ts"
+# Fallback node locations when `node` is not on PATH (mirrors the
+# lean/lake resolution below: explicit flag, PATH, then this list).
+NODE_CANDIDATES = [
+    Path.home() / ".hermes" / "tools" / "node-26.12.1-linux-x64" / "bin" / "node",
+    Path("/home/jmh/.hermes/tools/node-26.12.1-linux-x64/bin/node"),
+]
 
 MARKER_RE = re.compile(r"^-- src: (\S+):(\d+) (.*)$")
 THEOREM_RE = re.compile(r"^theorem (\S+)")
@@ -77,11 +84,47 @@ def resolve_lake(explicit):
     return None
 
 
+def resolve_node(explicit):
+    """Find the Node binary: --node, PATH, or a short candidate list."""
+    if explicit:
+        return explicit
+    found = shutil.which("node")
+    if found:
+        return found
+    seen = set()
+    for cand in NODE_CANDIDATES:
+        if cand in seen:
+            continue
+        seen.add(cand)
+        if cand.exists():
+            return str(cand)
+    return None
+
+
 def run_generator(src_path):
     """Run generate.py on src_path. Returns (lean_text, stderr, returncode)."""
     proc = subprocess.run(
         [sys.executable, str(GENERATOR), str(src_path)],
         capture_output=True, text=True)
+    return proc.stdout, proc.stderr, proc.returncode
+
+
+def run_preprocessor(node_bin, src_path):
+    """Run the TS preprocessor on src_path. Returns (flat_text, stderr, returncode)."""
+    proc = subprocess.run(
+        [node_bin, "--experimental-strip-types", "--",
+         str(PREPROCESSOR), str(src_path)],
+        capture_output=True, text=True)
+    return proc.stdout, proc.stderr, proc.returncode
+
+
+def run_generator_stdin(flat_text, label_path):
+    """Run generate.py --stdin on flattened text. label_path is the
+    requested file, used only for `-- src:` markers (line numbers
+    are the flattened stream's). Returns (lean_text, stderr, returncode)."""
+    proc = subprocess.run(
+        [sys.executable, str(GENERATOR), "--stdin", str(label_path)],
+        input=flat_text, capture_output=True, text=True)
     return proc.stdout, proc.stderr, proc.returncode
 
 
@@ -195,6 +238,18 @@ def main():
                         help="Lean binary (default: lean on PATH, else ~/.elan/bin/lean)")
     parser.add_argument("--lake", default=None,
                         help="Lake binary (default: lake on PATH, else ~/.elan/bin/lake)")
+    parser.add_argument("--pp", action="store_true",
+                        help="run the TS preprocessor on the input first, then "
+                             "generate.py --stdin on its flattened output "
+                             "(for .ffp files with imports)")
+    parser.add_argument("--node", default=None,
+                        help="Node binary for --pp (default: node on PATH, "
+                             "else a short candidate list)")
+    parser.add_argument("--label", default=None,
+                        help="src path reported in -- src: markers (default: the input file); "
+                             "with --label the input is treated as already-flattened "
+                             "preprocessor output and piped via generate.py --stdin "
+                             "(for the chomp-cached ./build/prelude.flat.ff)")
     args = parser.parse_args()
 
     src_path = Path(args.input)
@@ -214,7 +269,37 @@ def main():
               "pass --lake PATH", file=sys.stderr)
         return 1
 
-    lean_text, gen_stderr, gen_rc = run_generator(src_path)
+    if args.pp and args.label is not None:
+        print("check: --pp and --label cannot be combined "
+              "(--pp preprocesses; --label takes already-flattened input)",
+              file=sys.stderr)
+        return 1
+    if args.pp:
+        node_bin = resolve_node(args.node)
+        if node_bin is None:
+            print("check: Node not found (not on PATH, no candidate node binary); "
+                  "pass --node PATH", file=sys.stderr)
+            return 1
+        flat_text, pp_stderr, pp_rc = run_preprocessor(node_bin, src_path)
+        if pp_rc != 0:
+            print("check: preprocessor failed:", file=sys.stderr)
+            print(pp_stderr, file=sys.stderr)
+            return 1
+        # Label the requested file in `-- src:` markers; line
+        # numbers are the flattened stream's (accepted limitation).
+        lean_text, gen_stderr, gen_rc = run_generator_stdin(flat_text, src_path)
+    elif args.label is not None:
+        # Already-flattened input (the chomp-cached prelude.flat.ff):
+        # pipe it via generate.py --stdin so the markers name the
+        # original .ffp root, not the temp file.
+        try:
+            flat_text = src_path.read_text()
+        except OSError as ex:
+            print(f"check: cannot read {src_path}: {ex}", file=sys.stderr)
+            return 1
+        lean_text, gen_stderr, gen_rc = run_generator_stdin(flat_text, Path(args.label))
+    else:
+        lean_text, gen_stderr, gen_rc = run_generator(src_path)
     if gen_rc != 0:
         print("check: generator failed:", file=sys.stderr)
         print(gen_stderr, file=sys.stderr)

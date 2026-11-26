@@ -1,31 +1,89 @@
 version = 0.1
 default-task = 'test:lean'
 
+# Lean oleans: rebuilt only when the Lean sources change (no
+# invalidation override, so chomp caches this). test:lean depends
+# on :build rather than running `lake build` itself. The target
+# is a stamp file (touched after `lake build`) rather than an
+# olean: lake leaves oleans untouched when sources are unchanged,
+# so an olean target would stay older than its deps forever and
+# rebuild every time.
 [[task]]
-name = 'test:lean'
+name = 'build'
+target = './build/lean.stamp'
 deps = [
-  './check.py',
-  './generate.py',
   './lakefile.toml',
   './lean-toolchain',
   './Fbm.lean',
   './Fbm/Interp.lean',
+  './Fbm/Arith.lean',
   './Fbm/Prover.lean',
   './Fbm/Main.lean',
+]
+run = '''
+  mkdir -p ./build
+  lake build
+  touch $TARGET
+'''
+
+# Flattened prelude: preprocessed once to a temp file, rebuilt
+# only when the library or the preprocessor changes. test:lean
+# then checks the temp file with --label so the `-- src:`
+# markers still name ../ff/lib/prelude.ffp.
+[[task]]
+name = 'prelude'
+target = './build/prelude.flat.ff'
+deps = [
+  '../ff/lib/prelude.ffp',
+  '../ff/lib/**/*.ffp',
+  '../ff/lib/**/*.ff',
+  '../node/bin/ff-preprocess.ts',
+  '../node/src/**/*.ts',
+]
+run = '''
+  mkdir -p ./build
+  node --experimental-strip-types -- ../node/bin/ff-preprocess.ts ../ff/lib/prelude.ffp > $TARGET
+'''
+
+# Single file: run the generate + Lean pipeline on one file.
+# Usage (from lean-proof/): chomp single -- <file>
+# Paths are relative to lean-proof/, e.g.:
+#   chomp single -- ../ff/__tests__/primitives.test.ffp
+#   chomp single -- ../ff/lib/math/pred.ffp
+# .ffp files go through the real preprocessor (--pp); .ff files
+# run raw. :build is a cached dep so the oleans exist before
+# `lake env lean` runs; invalidation is always (a single check
+# is never cached) and ok-only so a failing proof fails the task.
+[[task]]
+name = 'check'
+args = ['FILE']
+deps = [
+  ':build',
+  './check.py',
+  './generate.py',
+]
+invalidation = 'always'
+validation = 'ok-only'
+run = '''
+  if [ -z "$FILE" ]; then echo "usage: chomp check -- <file.ff|file.ffp>"; exit 1; fi
+  case "$FILE" in
+    *.ffp) python3 check.py --pp "$FILE" ;;
+    *) python3 check.py "$FILE" ;;
+  esac
+'''
+
+[[task]]
+name = 'test:lean'
+deps = [
+  ':build',
+  ':prelude',
+  './check.py',
+  './generate.py',
   '../ff/__tests__/primitives.test.ffp',
-  '../ff/lib/core/core.ff'
 ]
 serial = true
 invalidation = 'always'
-validation = 'none'
+validation = 'ok-only'
 run = '''
-  # check.py resolves lake and lean itself (PATH, else ~/.elan/bin/)
-  # and runs `lake env lean --json` from lean-proof/ so generated
-  # files import the cached Fbm.Prover olean. Build first so the
-  # oleans are fresh, then emit TAP version 13 on stdout via prove
-  # (one TAP test per emitted theorem). For the detail behind a
-  # failure, run `python3 check.py <file>` by hand -- its `#`
-  # diagnostics are the Lean messages.
-  lake build
-  prove --exec "python3 check.py" ../ff/__tests__/primitives.test.ffp ../ff/lib/core/core.ff
+  prove --exec "python3 check.py" ../ff/__tests__/primitives.test.ffp ./build/prelude.flat.ff
 '''

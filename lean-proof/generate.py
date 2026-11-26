@@ -3,6 +3,7 @@
 
 Usage:  python3 generate.py in.ff [out.lean]
         python3 generate.py in.ff | lean --stdin
+        python3 generate.py --stdin in.ff [out.lean] < flattened.ff
 
 A pure translator: it parses, inlines, and emits Lean. It runs no
 tests and has no interpreter of its own. The full manual (notation,
@@ -122,7 +123,7 @@ def lean_name(word):
         name = "w_" + name
     return name
 
-LEAN_HEADER = "import Fbm.Prover"
+LEAN_HEADER = "import Fbm.Prover\nimport Fbm.Arith"
 
 def _rest(tok):
     """The rest-of-stack marker, in either spelling: the Unicode
@@ -678,6 +679,9 @@ def _emit_expr(ast, rest_name=None):
         if op == "^":
             # Lean's `^` on Int takes a Nat exponent; the effect
             # writes an Int exponent, so it is converted here.
+            # A numeric literal is already Nat, so it is emitted bare.
+            if r[0] == "num":
+                return f"({_emit_expr(l, rest_name=rest_name)} ^ {_emit_expr(r, rest_name=rest_name)})"
             return f"({_emit_expr(l, rest_name=rest_name)} ^ ({_emit_expr(r, rest_name=rest_name)}).toNat)"
         if op in ("<<", "<<<"):
             return f"(shl ({_emit_expr(l, rest_name=rest_name)}) ({_emit_expr(r, rest_name=rest_name)}))"
@@ -753,21 +757,32 @@ def negate_cond(cond):
 
 def parse_args(argv):
     """Parse command-line args: generate.py in.ff [out.lean|-].
-    Returns (src_path, out_path) where out_path is None for stdout.
-    `--help` prints the short usage; the full manual is HELP.md."""
-    if len(argv) == 2 and argv[1] in ("-h", "--help"):
+    Returns (src_path, out_path, from_stdin) where out_path is None
+    for stdout. `--help` prints the short usage; the full manual
+    is HELP.md. With `--stdin`, in.ff is only the label used in
+    `-- src:` markers (the requested file) and the program text is
+    read from stdin (flattened preprocessor output)."""
+    args = list(argv)
+    from_stdin = False
+    if "--stdin" in args[1:]:
+        from_stdin = True
+        args = [args[0]] + [a for a in args[1:] if a != "--stdin"]
+    if len(args) == 2 and args[1] in ("-h", "--help"):
         print("usage: generate.py in.ff [out.lean|-]")
+        print("       generate.py --stdin in.ff [out.lean|-] < flattened.ff")
         print("       out.lean omitted (or '-') writes Lean to stdout")
+        print("       --stdin reads the program from stdin; in.ff is only the -- src: label")
         print("       full manual: HELP.md (notation, scope, IO, requires/ensures)")
         sys.exit(0)
-    if len(argv) < 2 or len(argv) > 3:
+    if len(args) < 2 or len(args) > 3:
         print("usage: generate.py in.ff [out.lean|-]", file=sys.stderr)
+        print("       generate.py --stdin in.ff [out.lean|-] < flattened.ff", file=sys.stderr)
         print("       out.lean omitted (or '-') writes Lean to stdout", file=sys.stderr)
         sys.exit(2)
-    src_path = Path(argv[1])
-    out_arg = argv[2] if len(argv) == 3 else None
+    src_path = Path(args[1])
+    out_arg = args[2] if len(args) == 3 else None
     out_path = None if out_arg in (None, "-") else Path(out_arg)
-    return src_path, out_path
+    return src_path, out_path, from_stdin
 
 
 # Tokens forbidden in verbatim Lean blocks and @by-proof / @by-induction
@@ -5877,8 +5892,8 @@ class EmitCtx:
 
 
 def main():
-    src_path, out_path = parse_args(sys.argv)
-    text = src_path.read_text()
+    src_path, out_path, from_stdin = parse_args(sys.argv)
+    text = sys.stdin.read() if from_stdin else src_path.read_text()
     effects_list, lean_blocks, text2 = extract_effects(text)
     defs = parse_definitions(text2)
 
