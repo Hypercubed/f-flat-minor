@@ -811,6 +811,12 @@ def _split_proof_clauses(body):
         raise ValueError("@by-proof and @by-induction cannot be combined on one @effect")
     by_proof = clauses.get("by-proof")
     by_ind = clauses.get("by-induction")
+    # Newlines are never significant in the `;`-separated tactic grammar,
+    # so collapse every run of whitespace containing a newline to one space.
+    if by_proof is not None:
+        by_proof = re.sub(r"\s*\n\s*", " ", by_proof)
+    if by_ind is not None:
+        by_ind = re.sub(r"\s*\n\s*", " ", by_ind)
     if by_proof is not None:
         _check_lean_safe(by_proof, "@by-proof clause")
     if by_ind is not None:
@@ -5909,7 +5915,10 @@ def main():
         # token works here, including symbolic words (`%:`, `<<:`,
         # `.:`, `~:`). Old syntax (word in postfix position before
         # `==`) is still accepted when there is no prefix.
-        m = re.match(r"^([^\s:]+):\s+(.*)$", e)
+        # DOTALL: the body may span lines (multi-line @by-proof /
+        # @by-induction); without it `$` cannot anchor past the
+        # first newline and the match fails, misreading the word.
+        m = re.match(r"^([^\s:]+):\s+(.*)$", e, re.DOTALL)
         if m:
             word, body = m.group(1), m.group(2)
         else:
@@ -5950,7 +5959,9 @@ def main():
             (in_elems, out_elems, cond, where_text, else_error, by_proof, by_ind))
         effect_text.setdefault(word, []).append(core_body)
         effect_line.setdefault(word, []).append(src_line)
-        effect_full.setdefault(word, []).append(e)
+        # The `-- src:` marker is a Lean line comment: it must stay on
+        # one line even when the @effect was written multi-line.
+        effect_full.setdefault(word, []).append(re.sub(r"\s*\n\s*", " ", e))
 
 
     # One entry per effect, in file order; a word's effects share

@@ -93,5 +93,12 @@ loop: _loop drop ; /* @effect loop: A [X -- F X] N == iterates(F,N,A) [X -- F X]
 times: loop drop ; /* @effect times: A [X -- F X] N == iterates(F,N,A) when 0 <= N */
 seq: swap times ; /* @effect seq: A N [X -- F X] == iterates(F,N,A) when 0 <= N */
 
-range: over - [succ] seq ; /* @effect range: A B == intRange(A,B+1) when 0 <= B - A @by-proof have hBA : ((B - A).toNat : Int) = B - A := Int.toNat_of_nonneg hw; have hAdd : A + (B - A) = B := (by omega); fbm_verify [rangeProg, over_effect, dupd_effect, succ_effect, inc_effect, seq_effect, times_effect, loop_effect, _loop_effect] */
-count: 0 swap ++ [succ] seq drop ; /* @effect count: N == intRange(0,N+1) when 0 <= N @by-proof have hN : (N + 1).toNat = N.toNat + 1 := (by omega); have hcast : ((N.toNat : Int)) = N := Int.toNat_of_nonneg hw; simp_all; fbm_verify [countProg, inc_effect, succ_effect, seq_effect, times_effect, loop_effect, _loop_effect] */
+/* @effect range: A B == intRange(A,B+1) when 0 <= B - A
+   @by-proof have hBA : ((B - A).toNat : Int) = B - A := Int.toNat_of_nonneg hw; have hAdd : A + (B - A) = B := (by omega);
+   fbm_verify [rangeProg, over_effect, dupd_effect, succ_effect, inc_effect, seq_effect, times_effect, loop_effect, _loop_effect] */
+range: over - [succ] seq ;
+
+/* @effect count: N == intRange(0,N+1) when 0 <= N
+   @by-proof have hN : (N + 1).toNat = N.toNat + 1 := (by omega); have hcast : ((N.toNat : Int)) = N := Int.toNat_of_nonneg hw; simp_all;
+   fbm_verify [countProg, inc_effect, succ_effect, seq_effect, times_effect, loop_effect, _loop_effect] */
+count: 0 swap ++ [succ] seq drop ; 
