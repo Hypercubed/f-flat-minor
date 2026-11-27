@@ -929,7 +929,7 @@ def _self_var(word):
     that resolve through it)."""
     return f"self_{lean_name(word)}"
 
-def _is_rec_single_word(raw, body_prog, defs):
+def _is_rec_single_word(raw, body_prog, defs, frontier=None):
     """True when a literal should be emitted via its inlined body (with
     `Tok.call self_*`) instead of a `WProg` reference (v37): the raw is a
     single defined word `W` and either the inlined body contains a
@@ -941,9 +941,11 @@ def _is_rec_single_word(raw, body_prog, defs):
         return False
     if any(isinstance(t, tuple) and t[0] == "call" for t in body_prog):
         return True
-    return raw[0] in _compute_rec_frontier(defs)
+    if frontier is None:
+        frontier = _compute_rec_frontier(defs)
+    return raw[0] in frontier
 
-def _compute_rec_frontier(defs, rec_words=None):
+def _compute_rec_frontier(defs, rec_words=None, succ=None):
     """Words that can reach a recursive word (including recursive
     words themselves). The generator keeps call boundaries opaque
     at this frontier (a `Tok.call` marker instead of inlining or
@@ -951,9 +953,12 @@ def _compute_rec_frontier(defs, rec_words=None):
     proven effect lemma instead of re-peeling its body (which
     needs the callee's own induction). Words outside the frontier
     inline and delegate exactly as before."""
-    if rec_words is None:
-        rec_words = _compute_rec_words(defs)
-    return {w for w in defs if _rec_deps_of(w, defs, rec_words)}
+    if rec_words is None or succ is None:
+        if succ is None:
+            succ = _succ_map(defs)
+        if rec_words is None:
+            rec_words = _compute_rec_words(defs, succ)
+    return {w for w in defs if _rec_deps_of(w, defs, rec_words, succ)}
 
 def _direct_callees_of_tokens(tokens, defs):
     """Direct callee words referenced by a raw token list (v37): bare
@@ -975,12 +980,23 @@ def _direct_callees_of_tokens(tokens, defs):
             out.add(tok)
     return out
 
-def _compute_rec_words(defs):
-    """The set of recursive words (v37): words that can reach themselves
-    through the raw call graph (bare tokens and literal contents)."""
+def _succ_map(defs):
+    """The raw call-graph successor map (v37, perf): {word: direct
+    callees}. Computed ONCE per run in main() and threaded through
+    as an explicit argument; helpers accept it via `succ=None`
+    (None means build it, exactly as before). Same contents as the
+    inline loop `_compute_rec_words` used to build per call."""
     succ = {}
     for w, toks in defs.items():
         succ[w] = _direct_callees_of_tokens(toks, defs)
+    return succ
+
+
+def _compute_rec_words(defs, succ=None):
+    """The set of recursive words (v37): words that can reach themselves
+    through the raw call graph (bare tokens and literal contents)."""
+    if succ is None:
+        succ = _succ_map(defs)
     rec = set()
     for w in defs:
         # DFS from w looking for w.
@@ -997,14 +1013,14 @@ def _compute_rec_words(defs):
             stack.extend(succ.get(v, ()))
     return rec
 
-def _rec_deps_of(word, defs, rec_words=None):
+def _rec_deps_of(word, defs, rec_words=None, succ=None):
     """Recursive words reachable from `word` (v37, including itself
     when recursive): the `self_*` params its Prog/def needs."""
-    if rec_words is None:
-        rec_words = _compute_rec_words(defs)
-    succ = {}
-    for w, toks in defs.items():
-        succ[w] = _direct_callees_of_tokens(toks, defs)
+    if rec_words is None or succ is None:
+        if succ is None:
+            succ = _succ_map(defs)
+        if rec_words is None:
+            rec_words = _compute_rec_words(defs, succ)
     out = set()
     stack = [word]
     seen_dfs = set()
@@ -1495,6 +1511,12 @@ class EmitCtx:
     prog_emitted: set
     out_lines: list
     problems: list
+    # Rec-call-graph cache, computed ONCE per run in main() and shared
+    # across entries (same defs for the whole run). None means "not
+    # provided": _rec_cache() computes it lazily, exactly as before.
+    rec_words: set | None = None
+    rec_frontier: set | None = None
+    rec_succ: dict | None = None
     # Computed by prepare().
     ln: str = ""
     is_error: bool = False
@@ -1673,6 +1695,36 @@ class EmitCtx:
         self.out_lines.append("")
         return False
 
+    def _rec_cache(self, rec_words=None, frontier=None, succ=None):
+        """The run's (succ, rec_words, frontier), preferring explicit
+        args, then the shared main() cache, computing (and NOT storing
+        per-effect) only what is still missing. Never raises: on
+        error each missing piece falls back to empty, matching the
+        old per-effect try/except call sites."""
+        s = succ if succ is not None else self.rec_succ
+        r = rec_words if rec_words is not None else self.rec_words
+        f = frontier if frontier is not None else self.rec_frontier
+        try:
+            if s is None:
+                s = _succ_map(self.defs)
+            if r is None:
+                r = _compute_rec_words(self.defs, s)
+            if f is None:
+                f = _compute_rec_frontier(self.defs, r, s)
+        except Exception:
+            if s is None:
+                s = {}
+            if r is None:
+                r = set()
+            if f is None:
+                f = set()
+        return s, r, f
+
+    def _frontier_cached(self):
+        """The run's rec-reaching frontier (cached; computed lazily
+        only when main() did not provide it)."""
+        return self._rec_cache()[2]
+
     def _compute_prog(self, name):
         """Build and cache a word's program (v30). Returns
         (prog, lits, raw_lits), or None after recording a clean
@@ -1686,7 +1738,7 @@ class EmitCtx:
                     self.prog_raw_lits[name])
         if name in self.defs:
             try:
-                prog, lits, raw_lits = inline_word(name, self.defs)
+                prog, lits, raw_lits = inline_word(name, self.defs, frontier=self._frontier_cached())
             except ValueError as ex:
                 self.failed.add(name)
                 self.problem(str(ex))
@@ -1739,7 +1791,7 @@ class EmitCtx:
         if name in PRIMS:
             return f"[{PRIMS[name]}]"
         try:
-            frontier = _compute_rec_frontier(self.defs)
+            frontier = self._frontier_cached()
         except Exception:
             frontier = set()
         parts = []
@@ -1781,7 +1833,7 @@ class EmitCtx:
                 f"{next_lit} walked vs {len(self.prog_lits[name])} inlined")
         return " ++ ".join(parts)
 
-    def _prepare_recursive(self, rec_words):
+    def _prepare_recursive(self, rec_words=None, frontier=None, succ=None):
         """Recursive word (v37): `Tok.call` + `lookup defs` hypotheses,
         arbitrary-position `..R` / list-splice outputs, `@by-proof` /
         `@by-induction` proofs. No shape simulation (the proof is manual).
@@ -1993,13 +2045,14 @@ class EmitCtx:
         self.suffix = "" if self.n_effects == 1 else f"_{self.idx + 1}"
         # Recursive hypotheses: self code + lookup + literal lookups (with
         # `Tok.call self_*` bodies where applicable, v37).
-        rec_deps = sorted(_rec_deps_of(name, self.defs, rec_words))
+        _succ, _rec_words_eff, _frontier_eff = self._rec_cache(rec_words, frontier, succ)
+        rec_deps = sorted(_rec_deps_of(name, self.defs, _rec_words_eff, _succ))
         # Frontier deps: every rec-reaching word reachable from here
         # (including non-recursive intermediaries like `loop` on the
         # way to `_loop`). The proof composes their effect lemmas at
         # the opaque call boundaries, so each needs a self code and a
         # lookup hypothesis.
-        frontier = _compute_rec_frontier(self.defs, rec_words)
+        frontier = _frontier_eff
         seen_dfs, stack_dfs, frontier_reached = set(), [name], set()
         while stack_dfs:
             v = stack_dfs.pop()
@@ -2008,8 +2061,7 @@ class EmitCtx:
             seen_dfs.add(v)
             if v in frontier:
                 frontier_reached.add(v)
-            stack_dfs.extend(_direct_callees_of_tokens(
-                self.defs.get(v, []), self.defs))
+            stack_dfs.extend(_succ.get(v, ()))
         rec_frontier = sorted(frontier_reached)
         self.rec_self_vars = [_self_var(r) for r in rec_frontier]
         # Literal bodies (same single-word logic as runQ, with v37
@@ -2020,7 +2072,7 @@ class EmitCtx:
             if (len(raw) == 1 and isinstance(raw[0], str)
                     and raw[0] in self.defs and raw[0] not in PRIMS):
                 w = raw[0]
-                if _is_rec_single_word(raw, body_prog, self.defs):
+                if _is_rec_single_word(raw, body_prog, self.defs, self._frontier_cached()):
                     lit_body_lean.append(
                         "[" + ", ".join(_tok_lean(t) for t in body_prog) + "]")
                     if self._compute_prog(w) is None:
@@ -2169,7 +2221,7 @@ class EmitCtx:
             if (len(raw) == 1 and isinstance(raw[0], str)
                     and raw[0] in self.defs and raw[0] not in PRIMS):
                 w = raw[0]
-                if _is_rec_single_word(raw, body_prog, self.defs):
+                if _is_rec_single_word(raw, body_prog, self.defs, self._frontier_cached()):
                     # (v37) Recursive single-word literal `[W]`: emit the
                     # inlined body (with `Tok.call self_W`) directly instead
                     # of a `WProg` reference (which would be underapplied /
@@ -2494,7 +2546,7 @@ class EmitCtx:
             if (len(raw) == 1 and isinstance(raw[0], str)
                     and raw[0] in self.defs and raw[0] not in PRIMS):
                 w = raw[0]
-                if _is_rec_single_word(raw, body_prog, self.defs):
+                if _is_rec_single_word(raw, body_prog, self.defs, self._frontier_cached()):
                     # (v37) Recursive single-word literal `[W]`: emit the
                     # inlined body (with `Tok.call self_W`) directly instead
                     # of a `WProg` reference (which would be underapplied /
@@ -2834,7 +2886,7 @@ class EmitCtx:
             if (len(raw) == 1 and isinstance(raw[0], str)
                     and raw[0] in self.defs and raw[0] not in PRIMS):
                 w = raw[0]
-                if _is_rec_single_word(raw, body_prog, self.defs):
+                if _is_rec_single_word(raw, body_prog, self.defs, self._frontier_cached()):
                     # (v37) Recursive single-word literal `[W]`: emit the
                     # inlined body (with `Tok.call self_W`) directly instead
                     # of a `WProg` reference (which would be underapplied /
@@ -3526,7 +3578,7 @@ class EmitCtx:
             if (len(raw) == 1 and isinstance(raw[0], str)
                     and raw[0] in self.defs and raw[0] not in PRIMS):
                 w = raw[0]
-                if _is_rec_single_word(raw, body_prog, self.defs):
+                if _is_rec_single_word(raw, body_prog, self.defs, self._frontier_cached()):
                     # (v37) Recursive single-word literal `[W]`: emit the
                     # inlined body (with `Tok.call self_W`) directly instead
                     # of a `WProg` reference (which would be underapplied /
@@ -3937,7 +3989,7 @@ class EmitCtx:
             if (len(raw) == 1 and isinstance(raw[0], str)
                     and raw[0] in self.defs and raw[0] not in PRIMS):
                 w = raw[0]
-                if _is_rec_single_word(raw, body_prog, self.defs):
+                if _is_rec_single_word(raw, body_prog, self.defs, self._frontier_cached()):
                     lit_body_lean.append(
                         "[" + ", ".join(_tok_lean(t) for t in body_prog) + "]")
                     lit_prog_defs.append(None)
@@ -4704,15 +4756,13 @@ class EmitCtx:
         # effect lemma, so they need the same `Tok.call`/`lookup`
         # hypotheses (plus the callee's literal-code binders).
         try:
-            _rec_words = _compute_rec_words(self.defs)
+            _succ_p, _rec_words, _frontier_p = self._rec_cache()
+            _rec_reached = _rec_deps_of(name, self.defs, _rec_words, _succ_p) if name in self.defs else set()
         except Exception:
-            _rec_words = set()
-        try:
-            _rec_reached = _rec_deps_of(name, self.defs, _rec_words) if name in self.defs else set()
-        except Exception:
-            _rec_reached = set()
+            _rec_words, _rec_reached = set(), set()
+            _frontier_p, _succ_p = set(), {}
         if name in _rec_words or _rec_reached:
-            return self._prepare_recursive(_rec_words)
+            return self._prepare_recursive(_rec_words, _frontier_p, _succ_p)
         # Quotation words run their own preparation (the standard
         # rest validation does not apply -- the input and output
         # rests differ, and a quotation effect takes no where).
@@ -5654,7 +5704,7 @@ class EmitCtx:
                 if (len(raw) == 1 and isinstance(raw[0], str)
                         and raw[0] in self.defs and raw[0] not in PRIMS):
                     w = raw[0]
-                    if _is_rec_single_word(raw, body_prog, self.defs):
+                    if _is_rec_single_word(raw, body_prog, self.defs, self._frontier_cached()):
                         r_bodies.append(
                             "[" + ", ".join(_tok_lean_renamed(t, r_prefix)
                                             for t in body_prog) + "]")
@@ -5902,6 +5952,22 @@ def main():
     text = sys.stdin.read() if from_stdin else src_path.read_text()
     effects_list, lean_blocks, text2 = extract_effects(text)
     defs = parse_definitions(text2)
+    # Rec-call-graph cache, computed ONCE per run (not per effect).
+    # Same sets the per-effect code computed before; only the count
+    # changes (1 run, not 61). Failures fall back to empty, matching
+    # the old per-effect try/except call sites.
+    try:
+        _rec_succ = _succ_map(defs)
+    except Exception:
+        _rec_succ = {}
+    try:
+        _rec_words_run = _compute_rec_words(defs, _rec_succ)
+    except Exception:
+        _rec_words_run = set()
+    try:
+        _rec_frontier_run = _compute_rec_frontier(defs, _rec_words_run, _rec_succ)
+    except Exception:
+        _rec_frontier_run = set()
 
     # Attach @effect comments to words by the word named in the
     # effect itself: the last token before '==', in postfix
@@ -6036,7 +6102,8 @@ def main():
                       src_line=src_line, src_path=str(src_path),
                       src_effect=src_effect,
                       by_proof=by_proof, by_induction=by_ind,
-                      defs=defs, progs=progs, prog_tokens=prog_tokens,
+                      rec_words=_rec_words_run, rec_frontier=_rec_frontier_run,
+                      rec_succ=_rec_succ, defs=defs, progs=progs, prog_tokens=prog_tokens,
                       prog_lits=prog_lits, prog_raw_lits=prog_raw_lits,
                       prog_lit_params=prog_lit_params,
                       prog_self_vars=prog_self_vars,
