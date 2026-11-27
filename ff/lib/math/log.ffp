@@ -1,9 +1,9 @@
 .import ../core/core.ff
 .import ./atanh.ffp
 
-__n: 20 ; /* number of digits to use for fixed-point calculations */
-__s: 100000000000000000000 ; /* 10^n */
-__ln2: 69314718055994530941 ; /* ⌊ln(2)*10^n⌋ */
+__n: 20 ; /* @effect __n: == 20 */ /* number of digits to use for fixed-point calculations */
+__s: 100000000000000000000 ; /* @effect __s: == 100000000000000000000 */ /* 10^n */
+__ln2: 69314718055994530941 ; /* @effect __ln2: == 69314718055994530941 */ /* ⌊ln(2)*10^n⌋ */
 
 nln2:
   ++

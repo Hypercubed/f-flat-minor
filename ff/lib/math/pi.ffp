@@ -1,6 +1,6 @@
 .import ./atan-core.ffp
 
-__guard_digits: 20 ;
+__guard_digits: 20 ; /* @effect __guard_digits: == 20 */
 
 
 /* n -> ⌊π*10ⁿ⌋ */

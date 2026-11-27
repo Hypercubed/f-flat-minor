@@ -45,6 +45,5 @@ _atan__core_scaled:
 ; /* n u v _atan__core_scaled == ⌊10^n*atan(u/v)⌋ for reduced positive ratios */
 
 _atan__needs_pi4:
-  [ + sqr ] [ nip sqr 2 * ] bi2
-  >
-; /* u v _atan__needs_pi4 == u/v > tan(pi/8) for positive u <= v */
+  dup2 + sqr bury sqr 2 * bury drop swap >
+; /* @effect _atan__needs_pi4: U V == (U+V)^2>2*V^2 */ /* u v _atan__needs_pi4 == u/v > tan(pi/8) for positive u <= v */

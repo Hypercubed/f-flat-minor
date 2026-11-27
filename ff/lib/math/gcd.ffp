@@ -2,5 +2,5 @@
 
 __t: tuck % dup [ __t ] ? ;
 
-gcd: dup [ __t ] ? drop ;
-lcm: dup2 gcd / * ;
+gcd: dup [ __t ] ? drop ; /* @effect gcd: A B == G ensures G = gcd(A,B) @assume remainder-decrease needs well-founded induction beyond N-1/R.length patterns */
+lcm: dup2 gcd / * ; /* @effect lcm: A B == L requires gcd(A,B) != 0 ensures L = A*(B/gcd(A,B)) */

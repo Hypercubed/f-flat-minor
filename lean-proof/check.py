@@ -54,8 +54,9 @@ from pathlib import Path
 HERE = Path(__file__).resolve().parent
 GENERATOR = HERE / "generate.py"
 
-THEOREM_RE = re.compile(r"^theorem (\S+)")
+THEOREM_RE = re.compile(r"^(?:theorem|axiom) (\S+)")
 DOC_RE = re.compile(r"^/-- (.*) -/$")
+ASSUMED_RE = re.compile(r"^-- ASSUMED:\s*(.*)$")
 SUMMARY_RE = re.compile(r"(\d+) theorem\(s\) emitted, (\d+) problem\(s\)")
 
 
@@ -131,14 +132,15 @@ def run_lean(lake_bin, lean_bin, lean_path):
 
 
 def parse_theorems(lean_text):
-    """Emitted theorems in file order.
+    """Emitted theorems (and assumed axioms) in file order.
 
-    Returns a list of (gen_line, theorem, name). The name is the
-    effect text from the nearest `/-- word: @effect <effect> -/`
-    doc comment above the theorem (the `@effect ` tag word is
+    Returns a list of (gen_line, theorem, name, assumed). The name is
+    the effect text from the nearest `/-- word: @effect <effect> -/`
+    doc comment above the theorem/axiom (the `@effect ` tag word is
     stripped so it reads as the effect text); when no doc comment
     is found (e.g. a multi-line effect body), the name falls back
-    to the theorem name."""
+    to the theorem name. `assumed` is the `-- ASSUMED: <justification>`
+    text above an axiom, or None for proven theorems."""
     lines = lean_text.splitlines()
     theorems = []
     for i, line in enumerate(lines):
@@ -146,12 +148,19 @@ def parse_theorems(lean_text):
         if not m:
             continue
         theorem = m.group(1)
+        is_axiom = line.startswith("axiom")
         name = theorem
+        assumed = None
         for back in lines[max(0, i - 6):i]:
             d = DOC_RE.match(back)
             if d and ": @effect " in d.group(1):
                 name = d.group(1).replace(": @effect ", ": ", 1)
-        theorems.append((i + 1, theorem, name))
+        if is_axiom:
+            for back in lines[max(0, i - 3):i]:
+                a = ASSUMED_RE.match(back)
+                if a:
+                    assumed = a.group(1).strip()
+        theorems.append((i + 1, theorem, name, assumed))
     return theorems
 
 
@@ -176,7 +185,9 @@ def emit_tap(theorems, grouped, problem_lines, unmapped):
     Nothing but TAP goes to stdout."""
     n = 0
     failed = 0
-    for _gen, theorem, name in theorems:
+    for entry in theorems:
+        _gen, theorem, name = entry[0], entry[1], entry[2]
+        assumed = entry[3] if len(entry) > 3 else None
         n += 1
         messages = grouped.get(theorem)
         if messages:
@@ -190,6 +201,8 @@ def emit_tap(theorems, grouped, problem_lines, unmapped):
                     print(f"#   {line}")
         else:
             print(f"ok {n} - {name}")
+            if assumed:
+                print(f"# ASSUMED: {assumed}")
     for line in problem_lines:
         n += 1
         failed += 1
@@ -283,7 +296,7 @@ def main():
         if hit is None:
             unmapped.append((gen_line, message))
             continue
-        _gen, theorem, _name = hit
+        _gen, theorem = hit[0], hit[1]
         grouped.setdefault(theorem, []).append(message)
 
     # Pure TAP on stdout (the plan, then one test per theorem

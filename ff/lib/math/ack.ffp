@@ -1,14 +1,14 @@
 .import ./num.ffp
 
 /* Buck's F0–F5: n __F_M -- F(M,n) */
-__F_0: 1 + ;
-__F_1: 2 + ;
-__F_2: 2 * ;
-__F_3: 2 swap ^ ;
-__F_4: 2 swap ^^ ;
-__F_5: 2 swap ^^^ ;
+__F_0: 1 + ; /* @effect __F_0: N == M ensures M = N+1 */
+__F_1: 2 + ; /* @effect __F_1: N == M ensures M = N+2 */
+__F_2: 2 * ; /* @effect __F_2: N == M ensures M = 2*N */
+__F_3: 2 swap ^ ; /* @effect __F_3: N == M requires 0 <= N ensures M = 2^N */
+__F_4: 2 swap ^^ ; /* -effect __F_4: N == M (tetration 2^^N; PARKED: hyperoperation spec inexpressible; callee ^^ parked) */
+__F_5: 2 swap ^^^ ; /* -effect __F_5: N == M (pentation 2^^^N; PARKED: hyperoperation spec inexpressible; callee ^^^ parked) */
 
-/* m n -- F(m,n) */
+/* m n -- F(m,n) */ /* -effect __F: M N == F (PARKED: nested branch-of-literals on computed flags; branch inlines ?+eval so direct path demands quot-slot dual-effects, cond paths refuse branch/eval; no generator path for internal multi-way dispatch with where) */
 __F:
   over 3 <
   [ over zero? [ nip __F_0 ] [ swap 1 = [ __F_1 ] [ __F_2 ] branch ] branch ]

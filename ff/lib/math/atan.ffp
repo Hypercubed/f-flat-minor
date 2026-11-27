@@ -20,7 +20,7 @@ __den_zero:            /* n u v */
 ; /* n u v (v == 0) __den_zero == sign(u)*⌊π/2*10ⁿ⌋ */
 
 __quarter_pi: half_pi 2 / ; /* n __quarter_pi == ⌊10ⁿ*π/4⌋ */
-__diff_sum: [ - ] [ + ] bi2 ; /* u v __diff_sum == u-v u+v */
+__diff_sum: over over + bury - swap ; /* @effect __diff_sum: U V == D S ensures D = U-V ∧ S = U+V */ /* u v __diff_sum == u-v u+v */
 
 __atan_pos_scaled:
   dup2 >

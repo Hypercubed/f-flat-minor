@@ -7,9 +7,9 @@
 
 atan_shared_over3: [ [ over ] dip ] dip dig ; /* x a b c atan_shared_over3 == x a b c x */
 
-atan_shared_odd_prev: 2 * 1 - ; .inline /* n atan_shared_odd_prev == 2n-1 */
-atan_shared_odd_next: 2 * 1 + ; .inline /* n atan_shared_odd_next == 2n+1 */
-atan_shared_sqr_keep2: over sqr over sqr ; /* a b atan_shared_sqr_keep2 == a b a² b² */
+atan_shared_odd_prev: 2 * 1 - ; .inline /* @effect atan_shared_odd_prev: N == M ensures M = 2*N-1 */ /* n atan_shared_odd_prev == 2n-1 */
+atan_shared_odd_next: 2 * 1 + ; .inline /* @effect atan_shared_odd_next: N == M ensures M = 2*N+1 */ /* n atan_shared_odd_next == 2n+1 */
+atan_shared_sqr_keep2: over sqr over sqr ; /* @effect atan_shared_sqr_keep2: A B == A B P Q ensures P = A^2 ∧ Q = B^2 */ /* a b atan_shared_sqr_keep2 == a b a² b² */
 
 atan_shared_newq_stack: /* p q odd v² */
   dup [ [ dup2 ] dip * * ] dip /* p q odd q*odd*v² v² */
@@ -19,7 +19,7 @@ atan_shared_odd_from_precision:
   rot
   n->K
   swapd
-; .inline /* n u v atan_shared_odd_from_precision == u v odd */
+; .inline /* @effect atan_shared_odd_from_precision: N U V == U V O ensures O = (6*N+4)/5+10 */ /* n u v atan_shared_odd_from_precision == u v odd */
 
 atan_shared_seed_taylor_state: /* u v odd */
   dup                                            /* u v odd odd */
@@ -40,7 +40,7 @@ atan_shared_scale_tail_result:
 
 atan_shared_num_zero:
   drop2 drop 0
-; /* n u v (u == 0) atan_shared_num_zero == 0 */
+; /* @effect atan_shared_num_zero: N U V == Z ensures Z = 0 */ /* n u v (u == 0) atan_shared_num_zero == 0 */
 
-atan_shared_abs_pair: abs swap abs swap ; .inline /* u v atan_shared_abs_pair == |u| |v| */
-atan_shared_sign_pair_product: dup2 * sgn ; /* u v atan_shared_sign_pair_product == u v sgn(u*v) */
+atan_shared_abs_pair: abs swap abs swap ; .inline /* @effect atan_shared_abs_pair: U V == A B ensures A = if U < 0 then -1*U else U ∧ B = if V < 0 then -1*V else V */ /* u v atan_shared_abs_pair == |u| |v| */
+atan_shared_sign_pair_product: dup2 * sgn ; /* @effect atan_shared_sign_pair_product: U V == U V S ensures S = if 0 < U*V then 1 else if U*V < 0 then -1 else 0 */ /* u v atan_shared_sign_pair_product == u v sgn(u*v) */

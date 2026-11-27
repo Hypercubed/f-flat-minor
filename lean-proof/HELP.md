@@ -355,7 +355,7 @@ a zero-progress round, so proofs that close without it (all of
 `sort2`/`between?`, `abs`, `clamp`) never observe it.
 
 Proof clauses (v37, at the tail of an `@effect`, at most one of
-the two; `sorry`/`admit`/`axiom` rejected up front):
+the three; `sorry`/`admit`/`axiom` rejected up front):
 `@by-proof <tactic>` replaces the `fbm_verify [...]` proof
 with the given tactic body — an arithmetic bridge (`have` +
 `fbm_verify`), an explicit normalisation (`simp_all`) before
@@ -369,6 +369,23 @@ or `R.length` (List induction on the rest). Anything else is a
 clean problem. Single-line rule: `;` separates tactics, but a
 `by <tac>` block absorbs a following `;` into itself —
 parenthesise it (`:= (by omega); fbm_verify ...`).
+`@assume <justification>` records the word as an assumed lemma:
+the generator emits its `Spec` statement as a Lean `axiom`
+(statement-identical to the theorem it would have proven, with
+a `-- ASSUMED: <justification>` comment above it) instead of a
+`theorem ... := by fbm_verify`; `Prog` emission and caller dep
+lists work unchanged, so callers compose over the assumed lemma
+via `fbm_verify [..., <word>_effect, ...]` exactly as if it were
+proven. The justification is mandatory (empty `@assume` is a
+parse error); mixing `@assume` and proven clauses on one word
+is an error (the axiom and theorem would collide). Lifecycle:
+assume now → prove later → delete the clause; everything
+downstream recompiles unchanged when the assumption is
+discharged. Audit with `grep axiom` (open assumptions in
+generated Lean) or `grep ASSUMED` (TAP + generator output);
+open assumptions are declared debt at archive review, not done.
+First users: `gcd` (assumed remainder-decrease) with `lcm`
+proved over it.
 
 `@lean` blocks (v37): `/* @lean ... */` is emitted verbatim
 in file order (same `sorry`/`admit`/`axiom` rejection).
@@ -394,10 +411,14 @@ and goal as `#` diagnostics under it. There are no file:line
 claims anywhere: the word name in the effect text is unique per
 suite, and `grep -rn` finds it in seconds. Errors from one
 theorem are grouped under its statement; generator problems
-become extra `not ok` tests. TAP is the only output (no flag,
-no friendly report), so `prove` can run it directly. Exit 0
-when every emitted theorem proves and the generator reported no
-problems, 1 otherwise. The generated Lean is kept in a temp
+become extra `not ok` tests. Assumed axioms report as passing
+tests with the assumption visible: `ok N - <effect text>` plus
+a `# ASSUMED: <justification>` diagnostic (the suite stays green
+while every open assumption is named). TAP is the only output
+(no flag, no friendly report), so `prove` can run it directly.
+Exit 0 when every emitted theorem proves and the generator
+reported no problems, 1 otherwise. The generated Lean is kept
+in a temp
 file (path printed to stderr on failure) so the failing theorem
 can be opened. Lean is resolved as `lean` on PATH, else
 `~/.elan/bin/lean`, else `--lean PATH`.

@@ -7,5 +7,5 @@ nck: dup2 - ! swap ! * [ ! ] dip / ; /* n k nck == C(n,k) */
 
 /* Knuth operators */
 
-^^: -- dup [ [ dup ] swap times [ ^ ] ] dip times ;
-^^^: -- dup [ [ dup ] swap times [ ^^ ] ] dip times ;
+^^: -- dup [ [ dup ] swap times [ ^ ] ] dip times ; /* -effect ^^: A B == T (tetration A^^B; PARKED: hyperoperation spec inexpressible in effect expr language; nested-times higher-order composition beyond composer) */
+^^^: -- dup [ [ dup ] swap times [ ^^ ] ] dip times ; /* -effect ^^^: A B == P (pentation A^^^B; PARKED: hyperoperation spec inexpressible in effect expr language; nested-times higher-order composition beyond composer) */

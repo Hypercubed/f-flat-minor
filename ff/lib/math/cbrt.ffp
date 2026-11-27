@@ -5,7 +5,7 @@
  * `icbrt` returns the integer cube root (truncated toward zero).
  */
 
-__closer: dup2 2 ^ / over 2 * + 3 / ;
+__closer: dup2 2 ^ / over 2 * + 3 / ; /* @effect __closer: X N == X N T requires N^2 != 0 ensures T = (X/N^2+N*2)/3 */
 __loop: __closer dup2 > [ nip __loop ] ? ;
 __cbrtn: dup 3 / __loop drop nip ;
 

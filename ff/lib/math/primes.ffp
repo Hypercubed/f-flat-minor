@@ -1,7 +1,7 @@
 .import ./pred.ffp
 
 /* Test if value is a factor of 2 or 3 */
-__simple-composite?: [ 2 divisor? ] [ 3 divisor? ] or_else ;
+__simple-composite?: dup 2 divisor? swap 3 divisor? or ; /* @effect __simple-composite?: N == F ensures F = if (N%2)=0 then 1 else if (N%3)=0 then 1 else 0 */
 
 /*
  * Miller-Rabin helpers copied from the experimental primality test.
@@ -14,7 +14,7 @@ __(factor_by_2):
   ? ;
 __factor_by_2: 0 __(factor_by_2) ; /* n -> d s */
 
-__nrand: over - rand + ;
+__nrand: over - rand + ; /* -effect __nrand: LO HI == R (PARKED: inlines rand oracle primitive; defined words over IO/nondeterministic tokens refused — only bare effects on the primitives) */
 
 __(powmod_loop): /* acc a d -> acc, with n on queue */
   dup zero?
@@ -58,8 +58,8 @@ __witness_seed: /* n __witness_seed == s n a^d%n */
 ;
 
 __witness_trivial?: /* s n x __witness_trivial? == s n x b */
-  dup [ 1 = ] [ over -- = ] or_else
-;
+  dup 1 = swap over -- = or
+; /* -effect __witness_trivial?: S N X == S N B ensures B = if X = 1 then 1 else if X = N-1 then 1 else 0 (PARKED: quot-free or-of-prim-=-flags rewrite verified on interpreter, but fbm_verify stalls with confused split goals (N-1=-1); or+prim-= composition beyond closer) */
 
 __witness_composite: /* s n x __witness_composite == b */
   __(inner_witness_loop) nip nip nip
@@ -67,7 +67,7 @@ __witness_composite: /* s n x __witness_composite == b */
 
 __witness_probable: /* s n x __witness_probable == false */
   drop2 drop false
-;
+; /* @effect __witness_probable: S N X == B ensures B = 0 */
 
 __witness_loop: /* n -> n */
   __witness_seed

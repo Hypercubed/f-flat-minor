@@ -636,6 +636,36 @@ def _emit_expr(ast, rest_name=None):
             return f"SpecHist2 {f_lean} {n_lean} {a_lean} {rn}"
         if not ast[2]:
             return ast[1]
+        if ast[1] in ("gcd", "igcd"):
+            # `gcd(A,B)` in an effect maps to the Lean-side `igcd`
+            # helper (same pattern as `land`/`lor`): `Nat.gcd` on
+            # magnitudes, defined in `Fbm/Arith.lean`.
+            if len(ast[2]) != 2:
+                raise ExprError(f"gcd takes exactly 2 arguments, got {len(ast[2])}")
+            return (f"(igcd ({_emit_expr(ast[2][0], rest_name=rest_name)}) "
+                    f"({_emit_expr(ast[2][1], rest_name=rest_name)}))")
+        if ast[1] in ("sqrt",):
+            # `sqrt(N)` in an effect maps to the Lean-side `fsqrt`
+            # helper (exact root at spec level; write `floor(sqrt(N))`
+            # for the integer root, connected by `floor_sqrt` in
+            # `Fbm/Arith.lean`), same pattern as `gcd`/`igcd`.
+            if len(ast[2]) != 1:
+                raise ExprError(f"sqrt takes exactly 1 argument, got {len(ast[2])}")
+            return f"(fsqrt ({_emit_expr(ast[2][0], rest_name=rest_name)}))"
+        if ast[1] in ("isqrt",):
+            # `isqrt(N)` keeps its direct mapping to the Lean-side
+            # `isqrt` helper (`Nat.sqrt` on `toNat`; callers require
+            # `0 ≤ n` so the conversion is exact).
+            if len(ast[2]) != 1:
+                raise ExprError(f"isqrt takes exactly 1 argument, got {len(ast[2])}")
+            return f"(isqrt ({_emit_expr(ast[2][0], rest_name=rest_name)}))"
+        if ast[1] in ("floor",):
+            # `floor(E)` applies the spec-level floor to its argument,
+            # so `floor(sqrt(X))` emits as `floor (fsqrt X)` (which
+            # `floor_sqrt` connects to `isqrt X`).
+            if len(ast[2]) != 1:
+                raise ExprError(f"floor takes exactly 1 argument, got {len(ast[2])}")
+            return f"(floor ({_emit_expr(ast[2][0], rest_name=rest_name)}))"
         return ast[1] + " " + " ".join(_emit_expr(a, rest_name=rest_name) for a in ast[2])
     if kind == "neg":
         return f"(-{_emit_expr(ast[1], rest_name=rest_name)})"
@@ -810,16 +840,17 @@ def _check_lean_safe(body, where):
             f"(no sorry / admit / axiom in verbatim Lean)")
 
 def _split_proof_clauses(body):
-    """Split trailing `@by-proof` / `@by-induction` clauses off an `@effect`
-    body (v37). Returns `(core, by_proof, by_induction)`. Clauses must be
-    at the tail (`@by-proof <tactic>`, `@by-induction <pattern>`); at most
-    one of each, and not both together. Raises ValueError on duplicates,
-    empty clauses, both-together, or forbidden `sorry`/`admit`/`axiom`
-    tokens."""
+    """Split trailing `@by-proof` / `@by-induction` / `@assume` clauses
+    off an `@effect` body (v37 + assumed-effects). Returns
+    `(core, by_proof, by_induction, assume)`. Clauses must be at the
+    tail (`@by-proof <tactic>`, `@by-induction <pattern>`,
+    `@assume <justification>`); at most one clause per effect.
+    Raises ValueError on duplicates, empty clauses, mixed clauses,
+    or forbidden `sorry`/`admit`/`axiom` tokens."""
     marks = [(m.start(), m.end(), m.group(1))
-             for m in re.finditer(r"\s@(by-proof|by-induction)\b", body)]
+             for m in re.finditer(r"\s@(by-proof|by-induction|assume)\b", body)]
     if not marks:
-        return body, None, None
+        return body, None, None, None
     marks.sort()
     core = body[:marks[0][0]].strip()
     clauses = {}
@@ -831,23 +862,28 @@ def _split_proof_clauses(body):
         if kind in clauses:
             raise ValueError(f"duplicate @{kind} clause")
         clauses[kind] = text
-    if "by-proof" in clauses and "by-induction" in clauses:
-        raise ValueError("@by-proof and @by-induction cannot be combined on one @effect")
+    if len(clauses) > 1:
+        raise ValueError("at most one of @by-proof / @by-induction / @assume per @effect")
     by_proof = clauses.get("by-proof")
     by_ind = clauses.get("by-induction")
+    assume = clauses.get("assume")
     # Newlines are never significant in the `;`-separated tactic grammar,
     # so collapse every run of whitespace containing a newline to one space.
     if by_proof is not None:
         by_proof = re.sub(r"\s*\n\s*", " ", by_proof)
     if by_ind is not None:
         by_ind = re.sub(r"\s*\n\s*", " ", by_ind)
+    if assume is not None:
+        assume = re.sub(r"\s*\n\s*", " ", assume)
     if by_proof is not None:
         _check_lean_safe(by_proof, "@by-proof clause")
     if by_ind is not None:
         _check_lean_safe(by_ind, "@by-induction clause")
+    if assume is not None:
+        _check_lean_safe(assume, "@assume clause")
     if not core:
-        raise ValueError("@effect has no effect before @by-proof / @by-induction")
-    return core, by_proof, by_ind
+        raise ValueError("@effect has no effect before @by-proof / @by-induction / @assume")
+    return core, by_proof, by_ind, assume
 
 def extract_effects(text):
     """Strip ordinary /* */ comments, keeping @effect bodies.
@@ -1595,9 +1631,11 @@ class EmitCtx:
     oracle_binder: str = ""
     oracle_arg: str = "[]"
     suffix: str = ""
-    # (v37) Proof-clause overrides from `@by-proof` / `@by-induction`.
+    # (v37) Proof-clause overrides from `@by-proof` / `@by-induction`
+    # (+ assumed-effects `@assume` justification).
     by_proof: str | None = None
     by_induction: str | None = None
+    by_assume: str | None = None
     # Computed by _prepare_recursive() (recursive words only).
     is_recursive: bool = False
     rec_self_vars: list = field(default_factory=list)
@@ -5685,6 +5723,21 @@ class EmitCtx:
             post, hyps, binders = self._lift_post_conditionals(
                 post, hyps, binders)
         hyp_binders = "".join(f" {h}" for h in hyps)
+        if self.by_assume is not None:
+            # Assumed lemma: statement-identical axiom. The `Spec`
+            # statement is built by the existing path above; only the
+            # proof body differs (`axiom` vs `theorem ... := by ...`).
+            # check.py detects the `-- ASSUMED` marker above the axiom.
+            if head == "SpecErr":
+                stmt = f"{head} ({prog_app}) {pre}"
+            else:
+                stmt = f"{head} ({prog_app}) {pre} {post}"
+            self.out_lines.append(f"-- ASSUMED: {self.by_assume}")
+            self.out_lines.append(
+                f"axiom {self.ln}_effect{self.suffix} : "
+                f"∀{binders}{hyp_binders}, {stmt}")
+            self.was_spec = True
+            return True
         if head == "SpecErr":
             concl = f"    {head} ({prog_app}) {pre} := by"
         else:
@@ -5979,9 +6032,9 @@ class EmitCtx:
         callee's effect lemma, so plain `fbm_verify` suffices (no clause)."""
         ctx = self
         is_self_rec = ctx.name in ctx.rec_deps_sorted
-        if is_self_rec and ctx.by_proof is None and ctx.by_induction is None:
+        if is_self_rec and ctx.by_proof is None and ctx.by_induction is None and ctx.by_assume is None:
             return ctx.problem(
-                f"recursive word {ctx.name!r} needs `@by-proof` or `@by-induction` "
+                f"recursive word {ctx.name!r} needs `@by-proof`, `@by-induction`, or `@assume` "
                 f"(fbm_verify cannot prove recursion; see HELP.md)")
         wit = {}
         if ctx.where_eqs is not None:
@@ -6353,7 +6406,7 @@ def main():
         # before parsing the stack picture; they ride along into
         # EmitCtx and select the proof body at emission.
         try:
-            core_body, by_proof, by_ind = _split_proof_clauses(body)
+            core_body, by_proof, by_ind, by_assume = _split_proof_clauses(body)
         except ValueError as ex:
             problems.append(f"{word} (line {src_line}): {ex}")
             out_lines.append(f"-- {lean_name(word)}: no theorem emitted (src {src_path}:{src_line}): {ex}")
@@ -6371,14 +6424,14 @@ def main():
             out_lines.append("")
             continue
         in_elems, out_elems, cond, where_text, else_error = parsed
-        if else_error and (by_proof is not None or by_ind is not None):
-            msg = "@by-proof / @by-induction cannot be combined with `else ERROR`"
+        if else_error and (by_proof is not None or by_ind is not None or by_assume is not None):
+            msg = "@by-proof / @by-induction / @assume cannot be combined with `else ERROR`"
             problems.append(f"{word} (line {src_line}): {msg}")
             out_lines.append(f"-- {lean_name(word)}: no theorem emitted (src {src_path}:{src_line}): {msg}")
             out_lines.append("")
             continue
         effects.setdefault(word, []).append(
-            (in_elems, out_elems, cond, where_text, else_error, by_proof, by_ind))
+            (in_elems, out_elems, cond, where_text, else_error, by_proof, by_ind, by_assume))
         effect_text.setdefault(word, []).append(core_body)
         effect_line.setdefault(word, []).append(src_line)
         # The doc comment is a Lean line comment: it must stay on
@@ -6394,15 +6447,28 @@ def main():
     # case (`== ERROR`) with `when` the negated condition. The
     # error entry's `where` is dropped (there is no output to
     # constrain); its doc comment marks it as the else branch.
+    # Assumed-effects: two effects on one word must not mix assumed
+    # and proven clauses (an axiom and a theorem would collide on the
+    # same `<name>_effect` lemma). Report once per word and drop the
+    # word's effects.
+    for name in list(effects):
+        has_assume = any(t[7] is not None for t in effects[name])
+        has_proven = any(t[7] is None for t in effects[name])
+        if has_assume and has_proven and len(effects[name]) > 1:
+            msg = f"{name}: cannot mix @assume and proven clauses on one word"
+            problems.append(msg)
+            out_lines.append(f"-- {lean_name(name)}: no theorem emitted: {msg}")
+            out_lines.append("")
+            del effects[name]
     entries = []
     for name in effects:
         expanded = []
-        for idx, (in_elems, out_elems, cond, where_text, else_error, by_proof, by_ind) in enumerate(effects[name]):
+        for idx, (in_elems, out_elems, cond, where_text, else_error, by_proof, by_ind, by_assume) in enumerate(effects[name]):
             body = effect_text[name][idx]
             src_line = effect_line[name][idx]
             full = effect_full[name][idx]
             if else_error:
-                expanded.append((in_elems, out_elems, cond, where_text, body, src_line, full, by_proof, by_ind))
+                expanded.append((in_elems, out_elems, cond, where_text, body, src_line, full, by_proof, by_ind, by_assume))
                 try:
                     neg = negate_cond(cond)
                 except ExprError:
@@ -6411,13 +6477,13 @@ def main():
                     # for the error effect (the success effect's own
                     # translation fails the same way).
                     neg = f"¬ ({cond})"
-                expanded.append((in_elems, ["ERROR"], neg, None, body + " [else ERROR]", src_line, full + " [else ERROR]", None, None))
+                expanded.append((in_elems, ["ERROR"], neg, None, body + " [else ERROR]", src_line, full + " [else ERROR]", None, None, None))
             else:
-                expanded.append((in_elems, out_elems, cond, where_text, body, src_line, full, by_proof, by_ind))
-        for idx, (in_elems, out_elems, cond, where_text, body, src_line, full, by_proof, by_ind) in enumerate(expanded):
+                expanded.append((in_elems, out_elems, cond, where_text, body, src_line, full, by_proof, by_ind, by_assume))
+        for idx, (in_elems, out_elems, cond, where_text, body, src_line, full, by_proof, by_ind, by_assume) in enumerate(expanded):
             entries.append((name, idx, len(expanded), in_elems,
                             out_elems, cond, where_text, body, src_line, full,
-                            by_proof, by_ind))
+                            by_proof, by_ind, by_assume))
     # Generalized compositional frontier, computed ONCE per run (not per
     # effect): every word carrying an @effect in this run. Same sharing
     # shape as the rec-call-graph cache above (1 run, not 61). Falls back
@@ -6436,13 +6502,13 @@ def main():
     failed = set()
     prog_emitted = set()
     ctxs = []
-    for name, idx, n_effects, in_elems, out_elems, cond, where_text, effect_body, src_line, src_effect, by_proof, by_ind in entries:
+    for name, idx, n_effects, in_elems, out_elems, cond, where_text, effect_body, src_line, src_effect, by_proof, by_ind, by_assume in entries:
         ctx = EmitCtx(name=name, idx=idx, n_effects=n_effects,
                       in_elems=in_elems, out_elems=out_elems, cond=cond,
                       where_text=where_text, effect_body=effect_body,
                       src_line=src_line, src_path=str(src_path),
                       src_effect=src_effect,
-                      by_proof=by_proof, by_induction=by_ind,
+                      by_proof=by_proof, by_induction=by_ind, by_assume=by_assume,
                       rec_words=_rec_words_run, rec_frontier=_rec_frontier_run,
                       rec_succ=_rec_succ, annotated=_gen_frontier_run,
                       defs=defs, progs=progs, prog_tokens=prog_tokens,

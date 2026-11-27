@@ -2,10 +2,13 @@
 .import ./arith.ffp
 
 /* Internal precision helpers shared by variable-precision math words. */
-n->S: 10 swap ^ ; /* n n->S == 10ⁿ */
-n->S2: 2 * n->S ; /* n n->S2 == 10²ⁿ */
-n->K: 6 * 4 + 5 / 10 + ; /* n n->K == ⌈6*n/5⌉+10 */
-p/q*S: n->S swap rot * swap / ; /* p q n p/q*S == ⌊p*10ⁿ/q⌋₀ */
+n->S: 10 swap ^ ; /* @effect n->S: N == M requires 0 <= N ensures M = 10^N */ /* n n->S == 10ⁿ */
+n->S2: 2 * n->S ; /* @effect n->S2: N == M requires 0 <= N ensures M = 10^(2*N) */ /* n n->S2 == 10²ⁿ */
+n->K: 6 * 4 + 5 / 10 + ; /* @effect n->K: N == M ensures M = (6*N+4)/5+10 */ /* n n->K == ⌈6*n/5⌉+10 */
+p/q*S: n->S swap rot * swap / ; /* @effect p/q*S: P Q N == M requires Q != 0 ∧ 0 <= N ensures M = 10^N*P/Q */ /* p q n p/q*S == ⌊p*10ⁿ/q⌋₀ */
 
+/* @effect ntrunc: X N == M requires 0 <= N ∧ 10^N != 0 ensures M = X/10^N
+   @by-proof have h10 : (10 : Int) ^ N.toNat ≠ 0 := (by induction N.toNat with | zero => decide | succ k ih => rw [Int.pow_succ]; exact Int.mul_ne_zero ih (by decide));
+   fbm_verify [ntruncProg, n__S_effect] */
 ntrunc: n->S / ; /* x n ntrunc == ⌊x/10ⁿ⌋₀ */
-nfrac: [ abs ] dip n->S % ; /* x n nfrac == (x - ⌊x/10ⁿ⌋₀)*10ⁿ */
+nfrac: swap abs swap n->S % ; /* -effect nfrac: X N == M requires 0 <= N ∧ 10^N != 0 ensures M = if X < 0 then (-1*X)%10^N else X%10^N (PARKED: single-? runQ-cond via inlined abs + when-clause refused by generator) */ /* x n nfrac == (x - ⌊x/10ⁿ⌋₀)*10ⁿ */

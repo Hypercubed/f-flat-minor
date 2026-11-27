@@ -2,6 +2,7 @@
 .import ./precision.ffp
 
 /* Exact integer square root via recursive digit-by-digit refinement. */
+/* @effect __base: N == M requires 0 <= N ensures M = 2*floor(sqrt(N>>2)) @assume same n/4 strong induction as __next (mutual cluster: neither member proves without it) */
 __base: 2 >> __next 1 << ; /* n __base == 2*sqrt(n/4) */
 
 __pick:
@@ -10,8 +11,9 @@ __pick:
   <=
   [ ++ ] /* x+1 */
   ? /* else x */
-; /* n x __pick == ⌊sqrt(n)⌋ */
+; /* @effect __pick: N X == Y ensures Y = if (X+1)*(X+1) <= N then X+1 else X */ /* n x __pick == ⌊sqrt(n)⌋ */
 
+/* @effect __next: N == Y requires 0 <= N ensures Y = floor(sqrt(N)) @assume strong induction on n with n/4 step beyond N-1/R.length patterns */
 __next:
   dup 1 > [ /* n if n < 2 */
     dup /* n n */
@@ -21,14 +23,19 @@ __next:
 ;
 
 /* x -- ⌊sqrt(x)⌋ | errors on negative x (division by zero) */
+/* @effect isqrt: X == M requires 0 <= X ensures M = floor(sqrt(X)) */
 isqrt:
   dup 0 < [ 1 0 / ] ? /* error: negative input */
   __next ;
 
 /* x -- ⌊sqrt(x)⌋ x-⌊sqrt(x)⌋² */
+/* @effect isqrtrem: X == Q R requires 0 <= X ensures Q = floor(sqrt(X)) ∧ R = X-floor(sqrt(X))^2 */
 isqrtrem: dup isqrt tuck 2 ^ - ;
 
 /* n x -- ⌊10ⁿ*sqrt(x)⌋ | errors on negative x (division by zero) */
+/* @effect nsqrt: N X == M requires 0 <= X ∧ 0 <= N ensures M = floor(sqrt(X*10^(2*N)))
+   @by-proof have harg : (0:Int) ≤ X * 10 ^ (N*2).toNat := Int.mul_nonneg hw.1 (Int.pow_nonneg (by decide));
+   fbm_verify [nsqrtProg, n__S2_effect, n__S_effect, isqrt_effect, __next_effect] */
 nsqrt:
   dup 0 < [ 1 0 / ] ? /* error: negative input */
   swap n->S2 * isqrt
