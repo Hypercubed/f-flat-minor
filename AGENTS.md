@@ -117,6 +117,11 @@ Use these when the task involves:
 - `.agents/docs/plans/` contains deferred implementation plans (write-plan contract); read [plans index](.agents/docs/plans/index.md) before implementation work.
 - Use `.agents/skills/plans/SKILL.md` for the plan workflow.
 
+## OpenSpec roots
+
+- OpenSpec roots are per-project: `lean-proof/openspec/`, `typescript/openspec/`, `shell/openspec/`, `vscode-f-flat-minor/openspec/`. There is no repo-root OpenSpec (the old root-level `_openspec/` + symlink are gone; project roots are plain `openspec/` dirs).
+- Never create or read `openspec/` at repo root for project work. `cd` into the project dir first so nearest-resolution applies.
+
 ## Environment notes
 
 - The environment bootstrap installs runtimes with `mise install` and runs `npm install` for the web playground.
