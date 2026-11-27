@@ -116,19 +116,19 @@ nexp:
   swap dup q< swap
   1 __parts
   q> p/q*S
-; /* n x nexp == ⌊10ⁿ*eˣ⌋ */
+; /* -effect nexp: N X == M (PARKED: callee __parts has no @effect; it depends on recursive __reduce/__series_loop/__square_loop — needs recursion work first) */ /* n x nexp == ⌊10ⁿ*eˣ⌋ */
 
 ncosh:
   [ nexp ] [ -1 * nexp ] bi2
   +
   2 /
-; /* n x ncosh == ⌊(nexp(n,x)+nexp(n,-x))/2⌋ */
+; /* -effect ncosh: N X == M (PARKED: callee nexp parked on unproven __parts; bi2 composer path untried until nexp goes green) */ /* n x ncosh == ⌊(nexp(n,x)+nexp(n,-x))/2⌋ */
 
 nsinh:
   [ nexp ] [ -1 * nexp ] bi2
   -
   __floor_half
-; /* n x nsinh == ⌊(nexp(n,x)-nexp(n,-x))/2⌋ */
+; /* -effect nsinh: N X == M (PARKED: callee nexp parked on unproven __parts; bi2 composer path untried until nexp goes green) */ /* n x nsinh == ⌊(nexp(n,x)-nexp(n,-x))/2⌋ */
 
-icosh: 0 swap ncosh ; /* x icosh == ⌊cosh(x)⌋ via first-pass nexp wrapper */
-isinh: 0 swap nsinh ; /* x isinh == ⌊sinh(x)⌋ via first-pass nexp wrapper */
+icosh: 0 swap ncosh ; /* -effect icosh: X == M (PARKED: callee ncosh parked; trivial wrapper, lift after ncosh goes green) */ /* x icosh == ⌊cosh(x)⌋ via first-pass nexp wrapper */
+isinh: 0 swap nsinh ; /* -effect isinh: X == M (PARKED: callee nsinh parked; trivial wrapper, lift after nsinh goes green) */ /* x isinh == ⌊sinh(x)⌋ via first-pass nexp wrapper */

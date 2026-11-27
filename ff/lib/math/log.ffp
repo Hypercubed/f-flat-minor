@@ -14,4 +14,4 @@ nln2:
 
 ilb: dup 1 > [ 1 >> ilb ++ ] [ drop 0 ] branch ; /* x ilb == ⌊log2(x)⌋ */
 ilog: dup 10 >= [ 10 / ilog ++ ] [ drop 0 ] branch ; /* x ilog == ⌊log10(x)⌋ */
-iln: ilb __ln2 * __s / ; /* x iln == ⌊ln(x)⌋ */
+iln: ilb __ln2 * __s / ; /* -effect iln: X == M ensures M = __ln2*ilb(X)/__s (PARKED: callee ilb is directly self-recursive with no @effect; wrapper-lifting blocked until ilb proves) */ /* x iln == ⌊ln(x)⌋ */
