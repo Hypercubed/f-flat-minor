@@ -904,6 +904,11 @@ def _tok_lean(tok):
     becomes a push of its code variable (`Tok.push lit{k}`); a call
     marker (v37, recursive call) becomes `Tok.call self_<word>`."""
     if isinstance(tok, int):
+        # A negative literal needs parentheses: `Tok.push -1` parses as
+        # `HSub (Tok.push) 1`. Non-negatives keep their exact form so
+        # existing generated files stay byte-identical.
+        if tok < 0:
+            return f"Tok.push ({tok})"
         return f"Tok.push {tok}"
     if isinstance(tok, tuple) and tok[0] == "lit":
         return f"Tok.push lit{tok[1]}"
@@ -991,6 +996,17 @@ def _succ_map(defs):
         succ[w] = _direct_callees_of_tokens(toks, defs)
     return succ
 
+
+def _compute_gen_frontier(defs, annotated):
+    """The generalized compositional frontier: every annotated
+    (effect-carrying) word defined in this run. Computed ONCE per run
+    in main() and shared across entries (same `effects` for the whole
+    run), the line the rec-cache memoization anticipated. A call to a
+    frontier word emits a callee-`Prog` `++` boundary reference instead
+    of flattening the callee (see `_comp_prog_lean` and the cond-path
+    region test); unannotated callees still inline, and recursive words
+    keep their `Tok.call` path untouched."""
+    return {w for w in annotated if w in defs}
 
 def _compute_rec_words(defs, succ=None):
     """The set of recursive words (v37): words that can reach themselves
@@ -1314,7 +1330,8 @@ def _shape_runq_cond(tokens, stack, stack_rest, queue, queue_tail, stop_at_cond=
     """Track the statement shape with comparisons (lean-generator-
     cleanup: a fuel-free statement-shape pass).
     Like `_shape_runq`, but comparison tokens push a Lean
-    if-expression and literal markers push their code variables.
+    if-expression, total arithmetic/bitwise tokens push a Lean
+    expression, and literal markers push their code variables.
     With stop_at_cond it stops at the first `?` and returns
     (stack, stack_rest, queue, queue_tail, steps, remaining).
     With stop_at_cond False it tracks the whole list (a `?`
@@ -1365,10 +1382,40 @@ def _shape_runq_cond(tokens, stack, stack_rest, queue, queue_tail, stop_at_cond=
             b = stack.pop()
             a = stack.pop()
             stack.append(f"(if {a} {_COND_CMP_OPS[tok]} {b} then 1 else 0)")
+        elif tok == "~":
+            # Total arithmetic/bitwise ops (compositional-callee-lemmas):
+            # they pop values and push a Lean expression, exactly as
+            # `_emit_expr` renders them, so a `?` body like `[-1 *]`
+            # simulates. Only total ops qualify: `/`, `%`, `^` are
+            # guarded (fail on zero/negative) and stay unsupported.
+            if not stack:
+                raise ValueError("~ underflows the stack in a runQ cond prefix")
+            a = stack.pop()
+            stack.append(f"(lnot ({a}))")
+        elif tok in ("+", "-", "*", "&", "|", "<<", ">>"):
+            if len(stack) < 2:
+                raise ValueError(f"{tok} underflows the stack in a runQ cond prefix")
+            b = stack.pop()
+            a = stack.pop()
+            if tok == "+":
+                stack.append(f"({a} + {b})")
+            elif tok == "-":
+                stack.append(f"({a} - {b})")
+            elif tok == "*":
+                stack.append(f"({a} * {b})")
+            elif tok == "&":
+                stack.append(f"(land ({a}) ({b}))")
+            elif tok == "|":
+                stack.append(f"(lor ({a}) ({b}))")
+            elif tok == "<<":
+                stack.append(f"(shl ({a}) ({b}))")
+            else:
+                stack.append(f"(shr ({a}) ({b}))")
         else:
             raise ValueError(
                 f"token {tok!r} is not supported in a runQ cond prefix "
-                f"(only stack shuffles, q< / q>, comparisons, and literals are)")
+                f"(only stack shuffles, q< / q>, comparisons, total "
+                f"arithmetic/bitwise ops, and literals are)")
     if stop_at_cond:
         raise ValueError(
             "the program has no ? dispatch (the cond path needs one)")
@@ -1517,6 +1564,13 @@ class EmitCtx:
     rec_words: set | None = None
     rec_frontier: set | None = None
     rec_succ: dict | None = None
+    # Generalized compositional frontier, computed ONCE per run in main()
+    # and shared across entries (same effects for the whole run): every
+    # word carrying an @effect. A `?` inlined from an annotated callee
+    # stays behind that callee's `Prog ++` boundary (the cond-path region
+    # test consults this); the `Tok.call` path for recursive words is a
+    # separate frontier for a separate reason (induction, not reuse).
+    annotated: set | None = None
     # Computed by prepare().
     ln: str = ""
     is_error: bool = False
@@ -1725,6 +1779,16 @@ class EmitCtx:
         only when main() did not provide it)."""
         return self._rec_cache()[2]
 
+    def _gen_frontier_cached(self):
+        """The run's generalized compositional frontier (cached): words
+        carrying an @effect in this run. Calls to these words emit
+        callee-`Prog` `++` references (see `_comp_prog_lean`); the
+        cond-path region test treats a `?` inlined from one as staying
+        behind its boundary. Unannotated callees stay fully inlined
+        (transparent to the simulators); recursive words keep their
+        `Tok.call` path via the rec frontier above."""
+        return self.annotated if self.annotated is not None else set()
+
     def _compute_prog(self, name):
         """Build and cache a word's program (v30). Returns
         (prog, lits, raw_lits), or None after recording a clean
@@ -1787,7 +1851,12 @@ class EmitCtx:
         `[Tok.call self_<tok>]` instead of delegating: fbm_verify
         composes the callee's proven lemma at the opaque call
         boundary rather than re-peeling a body whose induction
-        lives elsewhere."""
+        lives elsewhere. The generalized frontier (annotated words)
+        needs no separate marker here: every non-frontier defined
+        callee emits a callee-`Prog` `++` reference, which is exactly
+        the boundary the generalized rule requires; unannotated
+        callees (no lemma to compose) still get that `Prog` boundary
+        while staying fully inlined at the flat simulation level."""
         if name in PRIMS:
             return f"[{PRIMS[name]}]"
         try:
@@ -2476,6 +2545,126 @@ class EmitCtx:
         self.suffix = "" if self.n_effects == 1 else f"_{self.idx + 1}"
         return True
 
+    def _cond_lit_bodies(self, lits, raw_lits):
+        """The Lean body per quotation literal (shared cond-path helper,
+        as in v30). A literal whose raw contents are a single defined
+        word W is the word's program def (`WProg`); a single primitive
+        is a one-element list; anything else is the inlined body as a
+        literal list. A literal naming a word that itself contains a
+        literal is not supported yet. Returns (lit_body_lean,
+        lit_prog_defs, lit_words), or None after recording a clean
+        problem."""
+        lit_body_lean = []
+        lit_prog_defs = []
+        lit_words = []
+        for k, raw in enumerate(raw_lits):
+            body_prog = lits[k]
+            if (len(raw) == 1 and isinstance(raw[0], str)
+                    and raw[0] in self.defs and raw[0] not in PRIMS):
+                w = raw[0]
+                if _is_rec_single_word(raw, body_prog, self.defs, self._frontier_cached()):
+                    # (v37) Recursive single-word literal `[W]`: emit the
+                    # inlined body (with `Tok.call self_W`) directly instead
+                    # of a `WProg` reference (which would be underapplied /
+                    # circular). Ensure `WProg` exists for `hself`.
+                    lit_body_lean.append(
+                        "[" + ", ".join(_tok_lean(t) for t in body_prog) + "]")
+                    lit_prog_defs.append(None)
+                    if self._compute_prog(w) is None:
+                        return None
+                    lit_words.append(w)
+                    continue
+                if any(isinstance(t, tuple) and t[0] == "lit" for t in body_prog):
+                    self.problem(
+                        f"a literal naming {w!r}, which itself contains a "
+                        f"literal, is not supported yet")
+                    return None
+                lit_body_lean.append(f"{lean_name(w)}Prog")
+                lit_prog_defs.append(f"{lean_name(w)}Prog")
+                if self._compute_prog(w) is None:
+                    return None
+                lit_words.append(w)
+            elif (len(raw) == 1 and isinstance(raw[0], str)
+                    and raw[0] in PRIMS):
+                lit_body_lean.append(f"[{PRIMS[raw[0]]}]")
+                lit_prog_defs.append(None)
+            else:
+                lit_body_lean.append(
+                    "[" + ", ".join(_tok_lean(t) for t in body_prog) + "]")
+                lit_prog_defs.append(None)
+        return lit_body_lean, lit_prog_defs, lit_words
+
+    def _cond_rest_vars(self, in_elems, out_elems):
+        """Rest handling for the cond path (shared helper; mirrors the
+        standard path, but the rest must be preserved: the word cannot
+        drop it or conjure one). Unnamed, it defaults to `R` (as in the
+        hand-proofs for sort2/choose), collision-avoided. Returns
+        (in_vars, out_vars, rest_name), or None after recording a clean
+        problem."""
+        is_rest_tok = lambda e: e in ("...", "∅") or self._quot_rest_name(e) is not None
+        if any(is_rest_tok(e) for e in in_elems[1:] + out_elems[1:]):
+            self.problem(
+                "a rest token is only allowed at the far left (the rest position)")
+            return None
+        in_first = in_elems[0] if in_elems else None
+        out_first = out_elems[0] if out_elems else None
+        in_empty = in_first == "∅"
+        out_empty = out_first == "∅"
+        if in_empty != out_empty:
+            self.problem(
+                "the rest must be preserved by a runQ cond word "
+                "(it cannot be dropped or conjured)")
+            return None
+        in_named = self._quot_rest_name(in_first)
+        out_named = self._quot_rest_name(out_first)
+        if in_named is not None and out_named is not None and in_named != out_named:
+            self.problem(
+                f"the rest is named ..{in_named} on the input and ..{out_named} "
+                f"on the output; use the same name on both sides")
+            return None
+        rest_name = in_named or out_named
+        if rest_name is None and not in_empty:
+            used_names = set(_effect_vars(in_elems + out_elems))
+            rest_name = "R"
+            while rest_name in used_names or rest_name in self.runq_lit_vars:
+                rest_name += "_"
+        in_vars = [e for e in in_elems if not is_rest_tok(e)]
+        out_vars = [e for e in out_elems if not is_rest_tok(e)]
+        return in_vars, out_vars, rest_name
+
+    def _cond_where_rhs(self, where_text, in_vars, out_vars, rest_name):
+        """The `where` equations in direct form (shared cond-path helper):
+        each output variable gets its right-hand side substituted into
+        the output stack. Returns the {lhs: lean_rhs} dict, or None
+        after recording a clean problem."""
+        where_rhs = {}
+        if where_text is not None:
+            try:
+                where_eqs = parse_where_clauses(where_text)
+            except ValueError as ex:
+                self.problem(str(ex))
+                return None
+            for lhs, rhs in where_eqs:
+                if lhs not in out_vars:
+                    self.problem(
+                        f"where equation for {lhs!r}, which is not an output variable")
+                    return None
+                try:
+                    rhs_lean = translate_expr(rhs)
+                except ExprError as ex:
+                    self.problem(str(ex))
+                    return None
+                rhs_vars = _effect_vars([rhs])
+                bad = [v for v in rhs_vars
+                       if v not in in_vars and v != rest_name]
+                if bad:
+                    self.problem(
+                        f"where right-hand side mentions {bad[0]!r}, which is "
+                        f"not an input variable")
+                    return None
+                where_rhs[lhs] = rhs_lean
+        return where_rhs
+
     def _prepare_runq_cond(self):
         """A defined word whose (inlined) program contains exactly
         one `?` (v31, Phase 6). The theorem is a runQ theorem
@@ -2497,8 +2686,6 @@ class EmitCtx:
         name = self.name
         in_elems, out_elems = self.in_elems, self.out_elems
         cond, where_text = self.cond, self.where_text
-        if cond is not None:
-            return self.problem("a runQ cond effect takes no when clause yet")
         if self.is_error:
             return self.problem("a runQ cond effect cannot be an ERROR effect")
         if name in self.failed:
@@ -2529,52 +2716,23 @@ class EmitCtx:
         # quotation token anywhere, including inside literals;
         # here it must be a top-level program token, exactly once).
         quot_idx = [i for i, t in enumerate(prog) if isinstance(t, str) and t in QUOT_TOKENS]
+        if len(quot_idx) >= 2 and all(prog[i] == "?" for i in quot_idx):
+            # Two or more sequential `?`s: the compositional multi path
+            # (each dispatching on a literal, each `?` from an annotated
+            # callee's boundary). Unlike the single path below, a `when`
+            # clause is accepted (it becomes an `hw` hypothesis).
+            return self._prepare_runq_cond_multi(
+                prog, lits, raw_lits, quot_idx)
         if len(quot_idx) != 1 or prog[quot_idx[0]] != "?":
             return self.problem(
                 "a runQ cond effect needs exactly one ? in its program")
-        # The body Lean expression for each literal (as in v30).
-        # A literal whose raw contents are a single defined word W
-        # is the word's program def (`WProg`); a single primitive
-        # is a one-element list; anything else is the inlined body
-        # as a literal list. A literal naming a word that itself
-        # contains a literal is not supported yet.
-        lit_body_lean = []
-        lit_prog_defs = []
-        lit_words = []
-        for k, raw in enumerate(raw_lits):
-            body_prog = lits[k]
-            if (len(raw) == 1 and isinstance(raw[0], str)
-                    and raw[0] in self.defs and raw[0] not in PRIMS):
-                w = raw[0]
-                if _is_rec_single_word(raw, body_prog, self.defs, self._frontier_cached()):
-                    # (v37) Recursive single-word literal `[W]`: emit the
-                    # inlined body (with `Tok.call self_W`) directly instead
-                    # of a `WProg` reference (which would be underapplied /
-                    # circular). Ensure `WProg` exists for `hself`.
-                    lit_body_lean.append(
-                        "[" + ", ".join(_tok_lean(t) for t in body_prog) + "]")
-                    lit_prog_defs.append(None)
-                    if self._compute_prog(w) is None:
-                        return False
-                    lit_words.append(w)
-                    continue
-                if any(isinstance(t, tuple) and t[0] == "lit" for t in body_prog):
-                    return self.problem(
-                        f"a literal naming {w!r}, which itself contains a "
-                        f"literal, is not supported yet")
-                lit_body_lean.append(f"{lean_name(w)}Prog")
-                lit_prog_defs.append(f"{lean_name(w)}Prog")
-                if self._compute_prog(w) is None:
-                    return False
-                lit_words.append(w)
-            elif (len(raw) == 1 and isinstance(raw[0], str)
-                    and raw[0] in PRIMS):
-                lit_body_lean.append(f"[{PRIMS[raw[0]]}]")
-                lit_prog_defs.append(None)
-            else:
-                lit_body_lean.append(
-                    "[" + ", ".join(_tok_lean(t) for t in body_prog) + "]")
-                lit_prog_defs.append(None)
+        if cond is not None:
+            return self.problem("a runQ cond effect takes no when clause yet")
+        # The body Lean expression for each literal (shared helper).
+        _bodies = self._cond_lit_bodies(lits, raw_lits)
+        if _bodies is None:
+            return False
+        lit_body_lean, lit_prog_defs, lit_words = _bodies
         self.runq_lit_words = lit_words
         self.spec_lit_bodies = lit_body_lean
         # No quotation slot in the inputs or outputs: the `?`
@@ -2586,62 +2744,14 @@ class EmitCtx:
                 return self.problem(
                     f"a runQ cond effect takes no quotation element {e!r} "
                     f"(the ? dispatches on a literal from the definition)")
-        # Rest handling (mirrors the standard path, but the rest
-        # must be preserved: the word cannot drop it or conjure
-        # one. Unnamed, it defaults to `R` (as in the hand-proofs
-        # for sort2/choose), collision-avoided.
-        is_rest_tok = lambda e: e in ("...", "∅") or self._quot_rest_name(e) is not None
-        if any(is_rest_tok(e) for e in in_elems[1:] + out_elems[1:]):
-            return self.problem(
-                "a rest token is only allowed at the far left (the rest position)")
-        in_first = in_elems[0] if in_elems else None
-        out_first = out_elems[0] if out_elems else None
-        in_empty = in_first == "∅"
-        out_empty = out_first == "∅"
-        if in_empty != out_empty:
-            return self.problem(
-                "the rest must be preserved by a runQ cond word "
-                "(it cannot be dropped or conjured)")
-        in_named = self._quot_rest_name(in_first)
-        out_named = self._quot_rest_name(out_first)
-        if in_named is not None and out_named is not None and in_named != out_named:
-            return self.problem(
-                f"the rest is named ..{in_named} on the input and ..{out_named} "
-                f"on the output; use the same name on both sides")
-        rest_name = in_named or out_named
-        if rest_name is None and not in_empty:
-            rest_name = "R"
-            while rest_name in used_names or rest_name in self.runq_lit_vars:
-                rest_name += "_"
-        in_vars = [e for e in in_elems if not is_rest_tok(e)]
-        out_vars = [e for e in out_elems if not is_rest_tok(e)]
-        # The `where` equations (the direct form): each output
-        # variable gets its right-hand side substituted into the
-        # output stack. A left-hand side that is not an output
-        # variable, or a right-hand side mentioning anything but
-        # input variables (and the rest), is a clean problem.
-        where_rhs = {}
-        if where_text is not None:
-            try:
-                where_eqs = parse_where_clauses(where_text)
-            except ValueError as ex:
-                return self.problem(str(ex))
-            for lhs, rhs in where_eqs:
-                if lhs not in out_vars:
-                    return self.problem(
-                        f"where equation for {lhs!r}, which is not an output variable")
-                try:
-                    rhs_lean = translate_expr(rhs)
-                except ExprError as ex:
-                    return self.problem(str(ex))
-                rhs_vars = _effect_vars([rhs])
-                bad = [v for v in rhs_vars
-                       if v not in in_vars and v != rest_name]
-                if bad:
-                    return self.problem(
-                        f"where right-hand side mentions {bad[0]!r}, which is "
-                        f"not an input variable")
-                where_rhs[lhs] = rhs_lean
+        # Rest handling + `where` equations (shared helpers).
+        _rest = self._cond_rest_vars(in_elems, out_elems)
+        if _rest is None:
+            return False
+        in_vars, out_vars, rest_name = _rest
+        where_rhs = self._cond_where_rhs(where_text, in_vars, out_vars, rest_name)
+        if where_rhs is None:
+            return False
         # Simulate the prefix up to the `?` dispatch. The stack
         # is bottom-to-top elements; the rest sits underneath
         # them. The queue starts as the ambient `qq`.
@@ -2786,6 +2896,229 @@ class EmitCtx:
             f" (defs : Defs)"
             + (f" ({bvars} : Int)" if bvars else "")
             + (f" ({rest_name} : Stack)" if rest_name is not None else "")
+            + f" (qq : Stack)")
+        self.runq_prog_app = (
+            f"{self.ln}Prog"
+            + (f" {' '.join(self.runq_lit_vars)}" if self.runq_lit_vars else ""))
+        self.is_runq_cond = True
+        self.suffix = "" if self.n_effects == 1 else f"_{self.idx + 1}"
+        return True
+
+    def _prepare_runq_cond_multi(self, prog, lits, raw_lits, quot_idx):
+        """A defined word whose (inlined) program contains TWO OR MORE
+        sequential `?`s (compositional-callee-lemmas, the compositional
+        multi path). Each `?` must dispatch on a quotation literal with
+        an analyzable flag (a bare input variable or an if-expression
+        from a comparison), and every `?` must sit inside an annotated
+        callee's inlined region (the generalized boundary rule: the
+        word's own body and unannotated callees are quot-free, so the
+        `Prog` stays a `++` over callee `Prog`s with no `?` at this
+        word's own level). The simulation branches at each `?` (run vs
+        discard) and every leaf must restore the queue and land on the
+        effect's output arity. A `when` clause is accepted (it becomes
+        an `hw` hypothesis); an ERROR effect is refused by the caller.
+        Emission reuses the cond shape (literal binders + lookups +
+        lifted post, proved by uniform `fbm_verify [deps]`)."""
+        name = self.name
+        in_elems, out_elems = self.in_elems, self.out_elems
+        cond, where_text = self.cond, self.where_text
+        gen = self._gen_frontier_cached()
+        # --- Region test (the generalized boundary rule). ---
+        # The word's own raw body carries no quotation token: each `?`
+        # arrives via an annotated callee. (A word mixing its own `?`
+        # with callee `?`s keeps today's single-`?` refusal.)
+        for tok in self.defs.get(name, []):
+            if isinstance(tok, str) and tok in QUOT_TOKENS:
+                return self.problem(
+                    "a runQ cond effect needs exactly one ? in its program")
+            if isinstance(tok, str) and tok.startswith("["):
+                try:
+                    inner = _literal_inner_tokens(tok)
+                except ValueError:
+                    continue
+                if _tokens_use_quot(inner, self.defs, ()):
+                    return self.problem(
+                        "a runQ cond effect needs exactly one ? in its program")
+        # No call markers (a recursive word routes to _prepare_recursive
+        # before reaching here; defensive).
+        for t in prog:
+            if isinstance(t, tuple) and t[0] == "call":
+                return self.problem(
+                    "a runQ cond effect cannot compose a recursive call yet")
+        # Direct callees: quot-free, or annotated with an only-`?`
+        # program (their own proof handles their dispatches; our proof
+        # re-peels them through the `++` composition). An unannotated
+        # quot-carrying callee, or an annotated callee running `eval` /
+        # `cons` / recursion, is a clean problem.
+        for tok in self.defs.get(name, []):
+            if isinstance(tok, str) and tok.startswith("["):
+                continue
+            if not (isinstance(tok, str) and tok in self.defs
+                    and tok not in PRIMS):
+                continue
+            if not _uses_quot_token(tok, self.defs):
+                continue
+            if tok not in gen:
+                return self.problem(
+                    "a runQ cond effect needs exactly one ? in its program")
+            got_w = self._compute_prog(tok)
+            if got_w is None:
+                return False
+            wprog, _, _ = got_w
+            for t in wprog:
+                if isinstance(t, tuple) and t[0] == "call":
+                    return self.problem(
+                        "a runQ cond effect cannot compose a recursive call yet")
+                if isinstance(t, str) and t in ("eval", "cons"):
+                    return self.problem(
+                        f"a runQ cond callee {tok!r} runs {t!r} "
+                        f"(only single-? callees compose)")
+        # Literal bodies (shared helper): every literal's code is bound
+        # and pinned, exactly as on the single path.
+        _bodies = self._cond_lit_bodies(lits, raw_lits)
+        if _bodies is None:
+            return False
+        lit_body_lean, lit_prog_defs, lit_words = _bodies
+        self.runq_lit_words = lit_words
+        self.spec_lit_bodies = lit_body_lean
+        # No quotation slot in the inputs or outputs (as on the single
+        # path: each `?` dispatches on a literal from the definition).
+        for e in in_elems + out_elems:
+            if _parse_quot_slot(e) is not None:
+                return self.problem(
+                    f"a runQ cond effect takes no quotation element {e!r} "
+                    f"(the ? dispatches on a literal from the definition)")
+        # Rest handling + `where` equations (shared helpers).
+        _rest = self._cond_rest_vars(in_elems, out_elems)
+        if _rest is None:
+            return False
+        in_vars, out_vars, rest_name = _rest
+        where_rhs = self._cond_where_rhs(where_text, in_vars, out_vars, rest_name)
+        if where_rhs is None:
+            return False
+        # A `when` clause becomes an `hw` hypothesis (the single path
+        # refuses it; the multi path accepts it for bound-ordered
+        # words like clamp).
+        hw_binder = ""
+        if cond is not None:
+            try:
+                cond_lean = translate_expr(cond)
+            except ExprError as ex:
+                return self.problem(f"cannot translate expression: {ex}")
+            hw_binder = f" (hw : {cond_lean})"
+        # --- Branching shape simulation (one `?` at a time, per leaf).
+        # Segments between the top-level `?`s are simulated under every
+        # leaf state; each `?` branches into its run/disc continuations.
+        # Literal-interior `?`s were refused by the region test above,
+        # so `stop_at_cond=False` doubling as a no-`?` assertion holds.
+        try:
+            states = [(list(in_vars), rest_name, [], "qq")]
+            prev = 0
+            for qpos in quot_idx:
+                seg = prog[prev:qpos]
+                new_states = []
+                for (st, rst, qu, tail) in states:
+                    p_stack, p_rest, p_queue, p_tail, _, _ = _shape_runq_cond(
+                        seg, st, rst, list(qu), tail, stop_at_cond=False)
+                    if not p_stack:
+                        raise ValueError(
+                            "the stack is empty when ? runs (a quotation code "
+                            "and a flag are needed)")
+                    top = p_stack[-1]
+                    if not (isinstance(top, str) and re.fullmatch(r"lit\d+", top)):
+                        raise ValueError(
+                            "the ? must dispatch on a quotation literal "
+                            f"(the stack top at ? time is {top!r}, not a literal code)")
+                    lit_k = int(top[3:])
+                    if len(p_stack) < 2:
+                        raise ValueError(
+                            "the stack has a quotation code but no flag when ? runs")
+                    flag_expr = p_stack[-2]
+                    stack_below = p_stack[:-2]
+                    m_if = re.fullmatch(r"\(if (.+) then 1 else 0\)", flag_expr)
+                    if m_if is not None:
+                        pass
+                    elif re.fullmatch(r"[A-Za-z_][A-Za-z0-9_]*", flag_expr) is not None:
+                        if flag_expr not in in_vars:
+                            raise ValueError(
+                                f"the ? flag {flag_expr!r} is not an input variable")
+                    else:
+                        raise ValueError(
+                            f"the ? flag {flag_expr!r} is not supported (a bare "
+                            f"variable or an if-expression from a comparison)")
+                    body_prog = lits[lit_k]
+                    for t in body_prog:
+                        if isinstance(t, tuple):
+                            raise ValueError(
+                                "a literal inside the ? body is not supported yet")
+                        if isinstance(t, str) and t in QUOT_TOKENS:
+                            raise ValueError(
+                                f"the ? body contains {t!r}, which is not supported yet")
+                        if isinstance(t, str) and t in IO_PRIMS:
+                            raise ValueError(
+                                f"the ? body contains IO word {t!r}")
+                        if isinstance(t, str) and t not in PRIMS:
+                            raise ValueError(
+                                f"the ? body contains unknown token {t!r}")
+                    b_stack, b_rest, b_queue, b_tail, _, _ = _shape_runq_cond(
+                        body_prog, list(stack_below), p_rest, list(p_queue), p_tail,
+                        stop_at_cond=False)
+                    new_states.append((b_stack, b_rest, b_queue, b_tail))
+                    new_states.append((list(stack_below), p_rest, list(p_queue), p_tail))
+                states = new_states
+                prev = qpos + 1
+            leaves = []
+            for (st, rst, qu, tail) in states:
+                f_stack, _, f_queue, f_tail, _, _ = _shape_runq_cond(
+                    prog[prev:], st, rst, list(qu), tail, stop_at_cond=False)
+                if _queue_lean(f_queue, f_tail) != "qq":
+                    raise ValueError(
+                        "after the ? the queue is not restored to the ambient queue qq")
+                if len(f_stack) != len(out_vars):
+                    raise ValueError(
+                        f"after the ?s the stack has {len(f_stack)} element(s) on "
+                        f"some branch, but the effect says {len(out_vars)}")
+                leaves.append(f_stack)
+        except ValueError as ex:
+            return self.problem(str(ex))
+        # The output stack (direct form): the `where` equations
+        # substituted in. With no `where` clause every leaf must
+        # agree, and the agreement must be exactly the effect's
+        # output.
+        self.runq_in_stack = lean_list_bottom_to_top(in_vars, rest_name)
+        if where_text is not None:
+            out_direct = [where_rhs.get(v, v) for v in out_vars]
+            self.runq_out_stack = lean_list_bottom_to_top(out_direct, rest_name)
+        else:
+            first = leaves[0]
+            if any(lf != first for lf in leaves):
+                return self.problem(
+                    "the ? branches leave different stacks, so the effect "
+                    "needs a where clause to state the output")
+            if first != list(out_vars):
+                return self.problem(
+                    f"after the ?s the stack is {_stack_lean(first, rest_name)}, "
+                    f"but the effect says "
+                    f"{lean_list_bottom_to_top(out_vars, rest_name)}")
+            self.runq_out_stack = lean_list_bottom_to_top(out_vars, rest_name)
+        # Hypotheses: only the literal lookups (in lit index order).
+        # Binders: defs, the input variables and literal codes, the
+        # rest, an optional `hw`, qq. No fuel binder, no body binder.
+        self.runq_cond_hyps = [
+            f"lookup defs lit{k} = some {lit_body_lean[k]}"
+            for k in range(len(lits))]
+        lit_intro = " ".join(f"hlookupLit{k}" for k in range(len(lits)))
+        self.runq_cond_intro = f"intro {lit_intro}" if lit_intro else ""
+        seen_b = []
+        for v in in_vars + self.runq_lit_vars:
+            if v not in seen_b:
+                seen_b.append(v)
+        bvars = " ".join(seen_b)
+        self.runq_cond_binders = (
+            f" (defs : Defs)"
+            + (f" ({bvars} : Int)" if bvars else "")
+            + (f" ({rest_name} : Stack)" if rest_name is not None else "")
+            + hw_binder
             + f" (qq : Stack)")
         self.runq_prog_app = (
             f"{self.ln}Prog"
@@ -6085,6 +6418,14 @@ def main():
             entries.append((name, idx, len(expanded), in_elems,
                             out_elems, cond, where_text, body, src_line, full,
                             by_proof, by_ind))
+    # Generalized compositional frontier, computed ONCE per run (not per
+    # effect): every word carrying an @effect in this run. Same sharing
+    # shape as the rec-call-graph cache above (1 run, not 61). Falls back
+    # to empty, matching the old per-effect try/except call sites.
+    try:
+        _gen_frontier_run = _compute_gen_frontier(defs, set(effects))
+    except Exception:
+        _gen_frontier_run = set()
     emitted = 0
     progs = {}
     prog_tokens = {}  # word -> raw token list (for the trace / oracle checks)
@@ -6103,7 +6444,8 @@ def main():
                       src_effect=src_effect,
                       by_proof=by_proof, by_induction=by_ind,
                       rec_words=_rec_words_run, rec_frontier=_rec_frontier_run,
-                      rec_succ=_rec_succ, defs=defs, progs=progs, prog_tokens=prog_tokens,
+                      rec_succ=_rec_succ, annotated=_gen_frontier_run,
+                      defs=defs, progs=progs, prog_tokens=prog_tokens,
                       prog_lits=prog_lits, prog_raw_lits=prog_raw_lits,
                       prog_lit_params=prog_lit_params,
                       prog_self_vars=prog_self_vars,

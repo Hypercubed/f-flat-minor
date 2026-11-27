@@ -329,6 +329,31 @@ non-frame-polymorphic primitives (`clr`, `depth`, `.`, `getc`,
 self-recursive words need `@by-proof` or `@by-induction`
 (below) since `fbm_verify` cannot do induction.
 
+Generalized compositional boundary (v38): the inlining frontier is
+now every ANNOTATED word, not just recursive ones — the
+generalized frontier is computed once per run and every call to
+an annotated callee emits a `calleeProg ... ++` reference in the
+caller's `Prog` instead of flattening the callee (e.g.
+`clampProg := digProg ++ maxProg lit0 ++ minProg lit1`: no `?`
+at clamp's level; the `?`-prefix and literal threads of each
+callee boundary are checked at the callee's own level). The
+`Tok.call` path for recursive words is untouched, and
+unannotated callees still inline. Last-resort conditional
+splitting: when a full round makes zero progress on a `Prop`
+goal whose statement carries `if`s from applied callee lemmas,
+`fbm_verify` `by_cases`-splits one undecided `if` condition
+(atomic per split, hypotheses named `hsplit`), then resumes the
+round-robin — closer tactics (`simp_all`, `omega`, congr-closure)
+get first crack at each branch. Depth cap 3 per branch: beyond
+it the goal genuinely needs human tactics and fails clean as a
+`needs @by-proof` problem naming the condition (prove it by
+hand over the callee lemmas). The decided-check covers the
+condition itself, its negation, comparison duals (`simp`
+rewrites `¬(X < LO)` to `LO ≤ X` via `not_lt`, so duals are
+compared too), and `Eq`/`Ne` pairs. The step fires only after
+a zero-progress round, so proofs that close without it (all of
+`sort2`/`between?`, `abs`, `clamp`) never observe it.
+
 Proof clauses (v37, at the tail of an `@effect`, at most one of
 the two; `sorry`/`admit`/`axiom` rejected up front):
 `@by-proof <tactic>` replaces the `fbm_verify [...]` proof

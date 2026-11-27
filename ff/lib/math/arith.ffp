@@ -3,14 +3,14 @@
 /* Unary operations */
 
 sgn: dup positive? swap negitive? - ; .inline /* @effect sgn: N == F ensures F = if 0 < N then 1 else if N < 0 then -1 else 0 */
-abs: dup negitive? [ -1 * ] ? ; .inline /* -effect abs: N == M ensures M = if N < 0 then -1*N else N */
+abs: dup negitive? [ -1 * ] ? ; .inline /* @effect abs: N == M ensures M = if N < 0 then -1*N else N */
 sqr: dup * ; /* @effect sqr: N == N^2 */
 
 /* Ordering utilities */
 
 min: sort2 drop ; .inline /* a b min == min */ /* @effect min: A B == X ensures X = if A < B then A else B */
 max: sort2 nip ; .inline /* a b max == max */ /* @effect max: A B == Y ensures Y = if A < B then B else A */
-clamp: dig max min ; .inline /* lo hi x clamp == x' */ /* -effect clamp: LO HI X == Y ensures Y = if HI < (if X < LO then LO else X) then HI else if X < LO then LO else X */
+clamp: dig max min ; .inline /* lo hi x clamp == x' */ /* @effect clamp: LO HI X == Y requires LO <= HI ensures Y = if X < LO then LO else if HI < X then HI else X */
 
 /* Division utilities */
 

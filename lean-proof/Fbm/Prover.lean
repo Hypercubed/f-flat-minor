@@ -2109,6 +2109,169 @@ def FbmVerify.splitSingle : TacticM Bool := do
       return true
   catch _ => return false
 
+/-- First `ite`/`dite` condition with no metavariables and no nested
+    `ite`/`dite` inside it, if any (preorder, so the outermost
+    split candidate wins). Returns the condition, not the `ite`. -/
+def FbmVerify.firstSplitCond (e : Expr) : Option Expr := do
+  let s ← e.find? fun s =>
+    if s.getAppFn.isConstOf `ite || s.getAppFn.isConstOf `dite then
+      let a := s.getAppArgs
+      if a.size < 2 then false
+      else
+        let c := a[1]!
+        if c.hasMVar then false
+        else !(((c.find? fun t =>
+          t.getAppFn.isConstOf `ite || t.getAppFn.isConstOf `dite).isSome))
+    else false
+  let a := s.getAppArgs
+  if a.size < 2 then none else some a[1]!
+
+/-- Whether two expressions share a free variable. A hypothesis
+    sharing no free variable with the goal cannot be an `if` the
+    goal depends on. -/
+def FbmVerify.sharesFVar (a b : Expr) : Bool :=
+  ((a.find? fun e => match e with
+    | .fvar _ => (b.find? fun x => x == e).isSome
+    | _ => false).isSome)
+
+/-- Dual comparisons of `c`: expressions `d` with `d ↔ ¬c` (empty
+    unless `c` is a comparison). Needed because the round-robin
+    `simp_all` rewrites split hypotheses via `not_lt`/`not_le`, so a
+    negative branch `¬(X < 0)` appears in context as `0 ≤ X` — neither
+    syntactically `¬c` nor defeq to `c`. Rebuilt with `mkAppM` so
+    instance arguments are fresh unification variables. -/
+def FbmVerify.dualConds (c : Expr) : TacticM (Array Expr) := do
+  try
+    let fn := c.getAppFn
+    let args := c.getAppArgs
+    if fn.isConstOf `LT.lt && args.size == 4 then
+      return #[← mkAppM `LE.le #[args[3]!, args[2]!]]
+    if fn.isConstOf `LE.le && args.size == 4 then
+      return #[← mkAppM `LT.lt #[args[3]!, args[2]!]]
+    if fn.isConstOf `GT.gt && args.size == 4 then
+      return #[← mkAppM `GE.ge #[args[3]!, args[2]!]]
+    if fn.isConstOf `GE.ge && args.size == 4 then
+      return #[← mkAppM `GT.gt #[args[3]!, args[2]!]]
+    if fn.isConstOf `Eq && args.size == 3 then
+      return #[← mkAppM `Ne #[args[1]!, args[2]!]]
+    if fn.isConstOf `Ne && args.size == 3 then
+      return #[← mkAppM `Eq #[args[1]!, args[2]!]]
+    return #[]
+  catch _ => return #[]
+
+/-- Whether `c` is already decided in context. Uses `isDefEq` (never
+    syntactic `==`: elaborated hypothesis types can carry metadata or
+    different-but-equal instances that `==` misses, which would loop
+    the splitter on an already-decided condition). Each probe runs
+    inside `atomic`, so a failed unification rolls back any partial
+    midpoint assignments. Covers `c`, `¬c`, comparison duals (see
+    `dualConds`), and `¬`-of-dual. -/
+def FbmVerify.condDecided (c : Expr) : TacticM Bool := do
+  try
+    let notc := mkApp (mkConst `Not) c
+    let mut duals : Array Expr := #[notc]
+    for d in ← FbmVerify.dualConds c do
+      duals := duals.push d
+      duals := duals.push (mkApp (mkConst `Not) d)
+    for ldecl in (← getLCtx) do
+      if ldecl.isImplementationDetail then continue
+      let hty ← instantiateMVars (← inferType ldecl.toExpr)
+      if ← FbmVerify.atomic do pure (← isDefEq hty c) then return true
+      for d in duals do
+        if ← FbmVerify.atomic do pure (← isDefEq hty d) then return true
+    return false
+  catch _ => return false
+
+/-- This branch's conditional-splitting depth: each split adds one
+    `hsplit`-named hypothesis, so their count in context is the
+    depth. Per-branch (contexts are branch-local), no threading. -/
+def FbmVerify.splitDepth : TacticM Nat := do
+  try
+    let mut depth := 0
+    for ldecl in (← getLCtx) do
+      if ldecl.userName.toString.startsWith "hsplit" then depth := depth + 1
+    return depth
+  catch _ => return 0
+
+/-- Split conditions worth a `by_cases`: the goal's first splittable
+    `if` condition, then relevant hypotheses' (sharing a free
+    variable with the goal), deduplicated, undecided ones only.
+    Empty means no split applies (the caller reports stuck). -/
+def FbmVerify.splitCandidates (ty : Expr) : TacticM (Array Expr) := do
+  try
+    let mut cands : Array Expr := #[]
+    if let some c := FbmVerify.firstSplitCond ty then
+      cands := cands.push c
+    for ldecl in (← getLCtx) do
+      if ldecl.isImplementationDetail then continue
+      let hty ← instantiateMVars (← inferType ldecl.toExpr)
+      if !FbmVerify.sharesFVar hty ty then continue
+      if let some c := FbmVerify.firstSplitCond hty then
+        if !cands.any (· == c) then cands := cands.push c
+    let mut todo : Array Expr := #[]
+    for c in cands do
+      if !(← FbmVerify.condDecided c) then todo := todo.push c
+    return todo
+  catch _ => return #[]
+
+/-- `by_cases` on one stuck-goal `if` condition, if any. Atomic
+    rollback per split: a failing elaboration leaves no trace.
+    Depth-capped (see `FbmVerify.splitDepth`): beyond the cap the
+    goal genuinely needs human tactics, reported as a clean
+    `needs @by-proof` problem rather than explored further. -/
+def FbmVerify.splitOneStuck : TacticM Bool := do
+  let mvar ← getMainGoal
+  let ty ← FbmVerify.goalTy mvar
+  if (← inferType ty) != mkSort Level.zero then return false
+  let cands ← FbmVerify.splitCandidates ty
+  if cands.isEmpty then return false
+  let depth ← FbmVerify.splitDepth
+  if depth >= 3 then
+    throwError m!"fbm_verify: conditional splitting needs `@by-proof` (depth {depth} on {cands[0]!}); prove this goal by hand over the callee lemmas (see HELP.md)"
+  for c in cands do
+    let ok ← FbmVerify.atomic do
+      try
+        let hname := mkIdent (← mkFreshUserName `hsplit)
+        let t ← Lean.PrettyPrinter.delab c
+        evalTactic (← `(tactic| by_cases $hname:ident : $t:term))
+        return true
+      catch _ => return false
+    if ok then return true
+  return false
+
+/-- Last-resort conditional splitting over the active goals: try
+    `splitOneStuck` on each active `Prop` goal in order, keeping
+    the first success. Runs only after a full round with zero
+    progress (see `FbmVerify.run`), so proofs that close without
+    it never observe it. Restores the goal list on failure. -/
+def FbmVerify.lastResortSplit (active : Array MVarId) : TacticM Bool := do
+  let saved ← getGoals
+  for g in active do
+    if ← g.isAssigned then continue
+    let isP ← g.withContext do
+      try
+        let gty ← instantiateMVars (← g.getType)
+        pure ((← inferType gty) == mkSort Level.zero)
+      catch _ => pure false
+    if !isP then continue
+    setGoals (g :: (active.toList.filter (· != g)))
+    let done ← g.withContext FbmVerify.splitOneStuck
+    if done then
+      let now ← getGoals
+      -- Reassemble: the split branches first, then every other
+      -- still-unassigned goal from before (the split goal `g` is
+      -- assigned by `by_cases`).
+      let mut others : List MVarId := []
+      for h in saved do
+        if h == g then continue
+        if ← h.isAssigned then continue
+        others := others ++ [h]
+      setGoals (now ++ others)
+      return true
+    setGoals saved
+  setGoals saved
+  return false
+
 def FbmVerify.run (_deps : Array Term) : TacticM Unit := do
   -- Callee `Prog` definitions unfold by definitional unfolding
   -- (`whnf` inspection + `refine` unification), so the `deps`
@@ -2410,6 +2573,13 @@ def FbmVerify.run (_deps : Array Term) : TacticM Unit := do
       if ← f.withContext stepOnce then progressed := true; break
     if progressed then continue
     else
+      -- Last resort (compositional callee composition): a full round
+      -- with zero progress. One conditional-hypothesis split over
+      -- the active goals; proofs that close without it never
+      -- observe it. On failure the original stuck report below
+      -- fires unchanged.
+      let splitDone ← FbmVerify.lastResortSplit active
+      if splitDone then continue
       let gs2 ← getGoals
       let mut msg : MessageData :=
         m!"fbm_verify: no progress, {gs2.length} goals:"
