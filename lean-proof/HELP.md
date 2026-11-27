@@ -395,9 +395,40 @@ list must then be written by hand (copy it from the
 plain-emission output). `@by-induction <pattern>` generates an
 induction skeleton with `fbm_verify` discharging base and step
 goals: `N - 1` (strong induction on `N.toNat`, generalising the
-queue, rest, and other inputs; needs nonneg — `when 0 <= N`)
-or `R.length` (List induction on the rest). Anything else is a
-clean problem. Single-line rule: `;` separates tactics, but a
+queue, rest, and other inputs; needs nonneg — `when 0 <= N`),
+`R.length` (List induction on the rest), division countdown
+(`X >> 1`, `X / 10`, single-Int-var words only), or the
+explicit-measure countdown-by-2 (`countdown by 2 on <measure>`
+for accumulator loops). The countdown skeletons are
+explicit-motive (`have key` + `Nat.strongRecOn` over the
+measure's `toNat`, no `generalizing`): `by_cases` on the guard,
+a pre-built `ih_call` for the recursive arm, and per-arm dep
+filtering (the dead branch arm lemma is excluded — its general
+conclusion unifies and walks a doomed path). Countdown specs
+need split-free `@lean` helpers (`ilog2_base`/`ilog2_step`
+shape: base and step equations with strong side conditions for
+`tryArithUnfold`); the raw `if`-unfold refires and diverges.
+First users: `ilb`, `ilog`. Anything else is a clean problem.
+The by-2 arm (`generate.py`, before the generic countdown
+fallback) has motive `∀ (m) (<measure> <accumulators>...) (qq),
+<measure>.toNat = m → Spec ...` — measure FIRST, NO nonneg
+premise (a by-2 step goes negative: `ODD = 1` recurses at
+`-1`), and `ih_call := ih ((M - 2).toNat) h_lt (M - 2)`
+(measure ground so it cannot misfire at the top-level goal,
+accumulators free to unify from the call site; needs
+file-local `sub2_toNat`). Status (Nov 27, 2026): the arm is
+landed but unproven in the field — `__tail_loop` (atan core)
+parks on it: motive + WF model (`tailP`/`tailQ` +
+`tailP_base/step`, `tailQ_base/step` in `atan-core.ffp`'s
+`@lean`) elaborate, the base arm closes in isolation, but the
+recursive arm doom-loops (`iteration limit`, `Stack` goals,
+unassigned `S`/`defs'` midpoint metas) in the composer over
+the 3-level-nested dip quotations (the inlining the
+single-word-literal rule forces; quotation-manipulating
+helpers cannot take plain `@effect`s — the runQ path demands
+slots). Resume path: teach the composer the nested-dip case,
+or state the accumulator updates in the clause, then re-add
+`@effect __tail_loop: ... @by-induction countdown by 2 on ODD`. Single-line rule: `;` separates tactics, but a
 `by <tac>` block absorbs a following `;` into itself —
 parenthesise it (`:= (by omega); fbm_verify ...`).
 `@assume <justification>` records the word as an assumed lemma:

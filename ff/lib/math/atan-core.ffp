@@ -6,10 +6,48 @@
  * introducing a circular import back through atan.ffp.
  */
 
+/* @lean
+theorem sub2_toNat (a : Int) (h : 0 < a) : (a - 2).toNat = a.toNat - 2 := by
+  have h0 : 0 ≤ a := by omega
+  have ha : a = ((a.toNat : Nat) : Int) := (Int.toNat_of_nonneg h0).symm
+  have h2 : (2 : Int) = ((2 : Nat) : Int) := by norm_cast
+  rw [ha, h2, Int.toNat_sub, Int.toNat_natCast]
+theorem sub2_toNat_lt (a : Int) (h : 0 < a) (m : Nat)
+    (e : a.toNat = m) : (a - 2).toNat < m := by
+  have h1 := sub2_toNat a h
+  omega
+def tailP (u2 p q odd v2 : Int) : Int :=
+  if 0 < odd then tailP u2 ((q*v2) - (p*(odd*u2))) (q*(odd*v2)) (odd-2) v2 else p
+termination_by odd.toNat
+decreasing_by simp_wf; omega
+def tailQ (u2 p q odd v2 : Int) : Int :=
+  if 0 < odd then tailQ u2 ((q*v2) - (p*(odd*u2))) (q*(odd*v2)) (odd-2) v2 else q
+termination_by odd.toNat
+decreasing_by simp_wf; omega
+theorem tailP_base (u2 p q odd v2 : Int) (h : ¬ 0 < odd) :
+    tailP u2 p q odd v2 = p := by
+  rw [tailP.eq_def]
+  simp [h]
+theorem tailP_step (u2 p q odd v2 : Int) (h : 0 < odd) :
+    tailP u2 p q odd v2 =
+      tailP u2 ((q*v2) - (p*(odd*u2))) (q*(odd*v2)) (odd-2) v2 := by
+  rw [tailP.eq_def]
+  simp [h]
+theorem tailQ_base (u2 p q odd v2 : Int) (h : ¬ 0 < odd) :
+    tailQ u2 p q odd v2 = q := by
+  rw [tailQ.eq_def]
+  simp [h]
+theorem tailQ_step (u2 p q odd v2 : Int) (h : 0 < odd) :
+    tailQ u2 p q odd v2 =
+      tailQ u2 ((q*v2) - (p*(odd*u2))) (q*(odd*v2)) (odd-2) v2 := by
+  rw [tailQ.eq_def]
+  simp [h]
+*/
+
 __u2_newp: /* u² p q odd v² */
-  [ atan_shared_over3 ] dip /* u² p q odd u² v² */
+  [ atan_shared_over3 ] dip /* u² q*v²-p*odd*u² v² */
   dup
-  [ [ dig [ * * ] dip ] dip * swap - ] dip /* u² q*v²-p*odd*u² v² */
+  [ [ dig [ * * ] dip ] dip * swap - ] dip /* u² q*v²+p*odd*u² v² */
 ; /* u² p q odd v² __u2_newp == u² p' v² */
 
 __tail_loop:
@@ -28,7 +66,7 @@ __tail_loop:
     [nip] dip
   ]
   branch
-; /* u v u2 p q odd v2 __tail_loop == u v p q */
+; /* u v u2 p q odd v2 __tail_loop == u v p q */ /* PARKED(@by-induction countdown by 2 on ODD): recursive-arm composer doom-loop, see tasks 2.1; model tailP/tailQ kept in @lean above for resume */
 
 __parts:
   atan_shared_odd_from_precision

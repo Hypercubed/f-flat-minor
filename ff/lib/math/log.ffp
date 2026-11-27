@@ -1,6 +1,23 @@
 .import ../core/core.ff
 .import ./atanh.ffp
 
+/* @lean
+theorem ilog2_base (N : Int) (h0 : 0 <= N) (h : N < 2) : ilog2 N = 0 := by
+  rw [ilog2_unfold N h0]
+  simp [h]
+theorem ilog2_step (N : Int) (h0 : 0 <= N) (h : 1 < N) : ilog2 N = ilog2 (shr N 1) + 1 := by
+  rw [ilog2_unfold N h0]
+  have hc : ¬ N < 2 := by omega
+  simp [hc]
+theorem ilog10_base (N : Int) (h0 : 0 <= N) (h : N < 10) : ilog10 N = 0 := by
+  rw [ilog10_unfold N h0]
+  simp [h]
+theorem ilog10_step (N : Int) (h0 : 0 <= N) (h : 10 <= N) : ilog10 N = ilog10 (tdiv N 10) + 1 := by
+  rw [ilog10_unfold N h0]
+  have hc : ¬ N < 10 := by omega
+  simp [hc]
+*/
+
 __n: 20 ; /* @effect __n: == 20 */ /* number of digits to use for fixed-point calculations */
 __s: 100000000000000000000 ; /* @effect __s: == 100000000000000000000 */ /* 10^n */
 __ln2: 69314718055994530941 ; /* @effect __ln2: == 69314718055994530941 */ /* ⌊ln(2)*10^n⌋ */
@@ -12,6 +29,6 @@ nln2:
   10 /
 ; /* n nln2 == ⌊10^n*ln(2)⌋ */
 
-ilb: dup 1 > [ 1 >> ilb ++ ] [ drop 0 ] branch ; /* x ilb == ⌊log2(x)⌋ */
-ilog: dup 10 >= [ 10 / ilog ++ ] [ drop 0 ] branch ; /* x ilog == ⌊log10(x)⌋ */
+ilb: dup 1 > [ 1 >> ilb ++ ] [ drop 0 ] branch ; /* x ilb == ⌊log2(x)⌋ */ /* @effect ilb: N == M requires 0 <= N ensures M = ilog2(N) @by-induction N >> 1 */
+ilog: dup 10 >= [ 10 / ilog ++ ] [ drop 0 ] branch ; /* x ilog == ⌊log10(x)⌋ */ /* @effect ilog: N == M requires 0 <= N ensures M = ilog10(N) @by-induction N / 10 */
 iln: ilb __ln2 * __s / ; /* -effect iln: X == M ensures M = __ln2*ilb(X)/__s (PARKED: callee ilb is directly self-recursive with no @effect; wrapper-lifting blocked until ilb proves) */ /* x iln == ⌊ln(x)⌋ */

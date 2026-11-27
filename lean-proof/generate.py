@@ -6154,6 +6154,25 @@ class EmitCtx:
                    or low.startswith("r ") or " on r," in low)
         is_nat = ("n - 1" in low or "n-1" in low or " on n" in low
                   or "strong on n" in low)
+        # Countdown induction (induction-generalization): strong induction
+        # on `X.toNat` for division countdown (`X>>1`, `X/10` as in
+        # `ilb`/`ilog`) and countdown-by-k with accumulator state (as in
+        # `__tail_loop`). Patterns: `countdown on X`, `strong countdown
+        # on X`, `X >> 1`, `X / 10`, or explicit-measure
+        # `@by-induction <pattern> on <measure>` (measure = target var).
+        # Emits `Nat.strongRecOn` so the IH applies to any smaller
+        # measure (not just the predecessor). Division countdown
+        # (`>>1`/`/10`) pre-builds a specialized `ih_call` (no `<`
+        # side goal at apply time) so `fbm_verify` closes the
+        # recursive arm via plain `assumption`; the base arm closes by
+        # peeling. Explicit-motive shape (`have key` + `intro m` +
+        # `induction m` + `intro N qq ...`): no `generalizing`, so `e`
+        # and `ih` stay concrete (the `generalizing N qq` form left
+        # `_fvar` metavars in `e`/`ih` when the motive mentions
+        # `branchProg` + `lookup` context, stalling `fbm_verify`).
+        is_countdown = ("countdown" in low or ">> 1" in low or ">>1" in low
+                        or "/ 10" in low or "/10" in low or "shr" in low
+                        or "tdiv" in low or " on x" in low)
         if is_list and not is_nat:
             target = self.rest_name
             # Validate: word must be recursive and body must mention a
@@ -6176,6 +6195,198 @@ class EmitCtx:
             self.out_lines.append(f"  | nil => fbm_verify [{', '.join(deps)}]")
             self.out_lines.append(
                 f"  | cons a {target} ih => fbm_verify [{', '.join(deps + ['ih'])}]")
+            self.was_spec = True
+            return True
+        if is_countdown and not is_list:
+            # Countdown induction: strong induction on `target.toNat`
+            # via `Nat.strongRecOn`, so the IH applies to any smaller
+            # measure (division countdown `>>1`/`/10`, countdown-by-k).
+            # Target inference: explicit `on <measure>` wins (escape hatch
+            # for accumulator loops like `__tail_loop`); else the sole Int
+            # var; else a whole-word match in the pattern; else clean
+            # problem asking for `on <measure>`.
+            import re as _re2
+            cands = _effect_vars([self.src_effect])
+            # Int binders only (filter rest/quot vars): in_vars holds Ints.
+            int_vars = [v for v in self.in_vars if _re2.fullmatch(r"[A-Za-z_][A-Za-z0-9_']*", v)]
+            target = None
+            m = _re2.search(r"\bon\s+([A-Za-z_][A-Za-z0-9_']*)", low)
+            if m:
+                want = m.group(1)
+                for v in int_vars:
+                    if v.lower() == want.lower():
+                        target = v
+                        break
+                if target is None:
+                    # `on <measure>` names something not in the effect:
+                    # clean problem (explicit measure must name an input).
+                    return self.problem(
+                        f"@by-induction pattern {pat!r} names unknown measure "
+                        f"{m.group(1)!r}; expected one of {int_vars}")
+            if target is None:
+                if len(int_vars) == 1:
+                    target = int_vars[0]
+                else:
+                    # Whole-word match in the original pattern (case-sensitive
+                    # first, then case-insensitive) so `N >> 1` finds `N`.
+                    found = None
+                    for v in int_vars:
+                        if _re2.search(r"\b" + _re2.escape(v) + r"\b", pat):
+                            found = v
+                            break
+                    if found is None:
+                        for v in int_vars:
+                            if _re2.search(r"\b" + _re2.escape(v) + r"\b", low, _re2.IGNORECASE):
+                                found = v
+                                break
+                    if found is not None:
+                        target = found
+                    else:
+                        return self.problem(
+                            f"@by-induction pattern {pat!r} is ambiguous for inputs "
+                            f"{int_vars}; write `@by-induction countdown on <measure>`")
+            # Countdown generalizing: `qq` + other Int inputs, but NOT `rest`
+            # (frame fixed; `Spec` already quantifies the frame internally.
+            # Generalizing `rest` with `strongRecOn` leaves `e`/`ih` mentioning
+            # metavars instead of `N`/`n`, stalling `fbm_verify` on
+            # `_fvar = _fvar/2`-style goals. N-1/R.length keep `rest`.)
+            gen_extra = ["qq"]
+            fun_qs = {qv for qv, _, _, _ in self.rec_fun_slots}
+            for v in self.in_vars:
+                if (v != target and v not in fun_qs and v not in gen_extra
+                        and _re2.fullmatch(r"[A-Za-z_][A-Za-z0-9_']*", v)):
+                    gen_extra.append(v)
+            gen_list = " ".join([target] + gen_extra)
+            hbodies = [f"hbody{qv}" for qv, _, _, _ in self.rec_fun_slots]
+            all_deps = deps + hbodies + ["ih"]
+            # Threshold-specific countdown for division (ilb/ilog):
+            # `>>1`/`shr` recurses on `shr TARGET 1` (guard `1 < TARGET`);
+            # `/10`/`tdiv` recurses on `tdiv TARGET 10` (guard `10 <= TARGET`).
+            # Pre-build a specialized `ih_call` (no `<` side goal at apply
+            # time) so `fbm_verify` closes the recursive arm via plain
+            # `assumption`; the base arm closes by peeling. Generic
+            # `countdown` (e.g. `__tail_loop` accumulator loops) falls back
+            # to the general `ih` (may need parking per tasks 2.2).
+            is_shr_pat = (">> 1" in low or ">>1" in low or "shr" in low)
+            is_tdiv_pat = ("/ 10" in low or "/10" in low or "tdiv" in low)
+            single_var = (len(int_vars) == 1 and not hbodies)
+            # Arm-filtered deps for the division countdown skeletons:
+            # `by_cases` decides the branch flag, so each arm passes
+            # only its live arm lemma. The dead arm lemma's conclusion
+            # is fully general (`R S T` metas), so unconditional `apply`
+            # unifies and walks a doomed path that burns heartbeats in
+            # `whnf`/`isDefEq` instead of failing fast. True/nonzero arm
+            # (`1 < X`, `10 ≤ X`) needs `branch_effect_1`; false/zero arm
+            # needs `branch_effect_2`.
+            rec_deps = ([d for d in deps + hbodies if d != "branch_effect_2"]
+                        + ["ih_call", "ih"])
+            base_deps = [d for d in deps + hbodies if d != "branch_effect_1"]
+            if single_var and is_shr_pat and not is_tdiv_pat:
+                self.out_lines.append(f"  have hnn : 0 \u2264 {target} := by omega")
+                self.out_lines.append(
+                    f"  have key : ∀ (m : Nat) ({target} : Int) (qq : Stack), 0 \u2264 {target} \u2192 {target}.toNat = m \u2192 Spec ({prog_app}) {pre} {post} := by")
+                self.out_lines.append(f"    intro m")
+                self.out_lines.append(f"    induction m using Nat.strongRecOn with")
+                self.out_lines.append(f"    | ind m ih =>")
+                self.out_lines.append(f"      intro {target} qq hnn0 e")
+                self.out_lines.append(f"      by_cases h : 1 < {target}")
+                self.out_lines.append(f"      \u00b7 have h_lt : (shr {target} 1).toNat < m := by")
+                self.out_lines.append(f"          have h1 : (shr {target} 1).toNat = {target}.toNat / 2 := shr_toNat {target} hnn0")
+                self.out_lines.append(f"          omega")
+                self.out_lines.append(f"        have h_nn2 : 0 \u2264 shr {target} 1 := shr_nonneg {target} hnn0")
+                self.out_lines.append(f"        have ih_call := ih ((shr {target} 1).toNat) h_lt (shr {target} 1) qq h_nn2 rfl")
+                self.out_lines.append(f"        fbm_verify [{', '.join(rec_deps)}]")
+                self.out_lines.append(f"      \u00b7 fbm_verify [{', '.join(base_deps)}]")
+                self.out_lines.append(f"  exact key {target}.toNat {target} qq hnn rfl")
+                self.was_spec = True
+                return True
+            if single_var and is_tdiv_pat and not is_shr_pat:
+                self.out_lines.append(f"  have hnn : 0 \u2264 {target} := by omega")
+                self.out_lines.append(
+                    f"  have key : ∀ (m : Nat) ({target} : Int) (qq : Stack), 0 \u2264 {target} \u2192 {target}.toNat = m \u2192 Spec ({prog_app}) {pre} {post} := by")
+                self.out_lines.append(f"    intro m")
+                self.out_lines.append(f"    induction m using Nat.strongRecOn with")
+                self.out_lines.append(f"    | ind m ih =>")
+                self.out_lines.append(f"      intro {target} qq hnn0 e")
+                self.out_lines.append(f"      by_cases h : 10 \u2264 {target}")
+                self.out_lines.append(f"      \u00b7 have h_lt : (tdiv {target} 10).toNat < m := by")
+                self.out_lines.append(f"          have h1 : (tdiv {target} 10).toNat = {target}.toNat / 10 := tdiv10_toNat {target} hnn0")
+                self.out_lines.append(f"          omega")
+                self.out_lines.append(f"        have h_nn2 : 0 \u2264 tdiv {target} 10 := tdiv10_nonneg {target} hnn0")
+                self.out_lines.append(f"        have ih_call := ih ((tdiv {target} 10).toNat) h_lt (tdiv {target} 10) qq h_nn2 rfl")
+                self.out_lines.append(f"        fbm_verify [{', '.join(rec_deps)}]")
+                self.out_lines.append(f"      \u00b7 fbm_verify [{', '.join(base_deps)}]")
+                self.out_lines.append(f"  exact key {target}.toNat {target} qq hnn rfl")
+                self.was_spec = True
+                return True
+            # Explicit-measure countdown-by-2 with accumulator state
+            # (first user: `__tail_loop`, measure `ODD`). Trigger:
+            # multi-var countdown with an explicit `by 2` step and an
+            # `on <measure>` target. Explicit motive (`have key` +
+            # `Nat.strongRecOn`, no `generalizing`) so `e`/`ih` stay
+            # concrete; `ih_call` is `ih` applied to the measure step
+            # (`(TARGET - 2).toNat`, `h_lt`) with the measure ground
+            # but the accumulators free -- they unify from the
+            # call-site goal when `fbm_verify` applies it, and the
+            # ground measure blocks premature application at the
+            # top-level goal (a partial application unifies anywhere
+            # and strands a bogus side goal). No nonneg premise: the
+            # step can go negative (`ODD = 1` recurses at `-1`), so
+            # the motive carries only the `toNat` equation (closed by
+            # `rfl`). Requires file-local `sub2_toNat` (decrease)
+            # plus split-free base/step spec helpers for
+            # `tryArithUnfold`. Contract: guard `0 < MEASURE`, step
+            # `MEASURE - 2`, `requires 0 <= MEASURE`.
+            is_by2_pat = ("by 2" in low or "by2" in low)
+            has_explicit_on = bool(_re2.search(
+                r"\bon\s+[A-Za-z_][A-Za-z0-9_']*", low))
+            if (not single_var and is_countdown and is_by2_pat
+                    and has_explicit_on and not hbodies):
+                acc_vars = [v for v in self.in_vars
+                            if _re2.fullmatch(
+                                r"[A-Za-z_][A-Za-z0-9_']*", v)]
+                rec2_deps = ([d for d in deps + hbodies
+                              if d != "branch_effect_2"]
+                             + ["ih_call"])
+                # Motive order is measure-first: the recursive call
+                # keeps every accumulator but steps the measure, so
+                # `ih` applied to the measure step alone leaves the
+                # accumulators free to unify from the call-site goal,
+                # while the ground measure blocks premature
+                # application at the top-level goal. (Applying all
+                # vars pins accumulators to rigid fvars that never
+                # match the computed call-site expressions; applying
+                # none unifies anywhere and strands a bogus goal.)
+                key_vars = " ".join([target] + [v for v in acc_vars
+                                                if v != target])
+                self.out_lines.append(
+                    f"  have key : \u2200 (m : Nat) ({key_vars} : Int) (qq : Stack), {target}.toNat = m \u2192 Spec ({prog_app}) {pre} {post} := by")
+                self.out_lines.append(f"    intro m")
+                self.out_lines.append(
+                    f"    induction m using Nat.strongRecOn with")
+                self.out_lines.append(f"    | ind m ih =>")
+                self.out_lines.append(
+                    f"      intro {key_vars} qq e")
+                self.out_lines.append(f"      by_cases h : 0 < {target}")
+                self.out_lines.append(
+                    f"      \u00b7 have h_sub2 : ({target} - 2).toNat = {target}.toNat - 2 := sub2_toNat {target} h")
+                self.out_lines.append(
+                    f"        have h_lt : ({target} - 2).toNat < m := by omega")
+                self.out_lines.append(
+                    f"        have ih_call := ih (({target} - 2).toNat) h_lt ({target} - 2)")
+                self.out_lines.append(
+                    f"        fbm_verify [{', '.join(rec2_deps)}]")
+                self.out_lines.append(
+                    f"      \u00b7 fbm_verify [{', '.join(base_deps)}]")
+                self.out_lines.append(
+                    f"  exact key {target}.toNat {key_vars} qq rfl")
+                self.was_spec = True
+                return True
+            self.out_lines.append(f"  have hnn : 0 \u2264 {target} := by omega")
+            self.out_lines.append(
+                f"  induction e : {target}.toNat using Nat.strongRecOn generalizing {gen_list} with")
+            self.out_lines.append(f"  | ind n ih =>")
+            self.out_lines.append(f"    fbm_verify [{', '.join(all_deps)}]")
             self.was_spec = True
             return True
         if is_nat and not is_list:
@@ -6243,7 +6454,8 @@ class EmitCtx:
             return True
         return self.problem(
             f"@by-induction pattern {pat!r} not recognised (expected an `R.length` "
-            f"/ `R.tail` list pattern or an `N - 1` strong pattern)")
+            f"/ `R.tail` list pattern, an `N - 1` strong pattern, or a countdown "
+            f"pattern `countdown on X` / `X >> 1` / `X / 10`)")
 
     def _transitive_words(self):
         """Defined words referenced by this word: executed callee
