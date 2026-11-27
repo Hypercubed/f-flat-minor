@@ -2,8 +2,32 @@
 
 /* Logarithm and combinatorics */
 
-!: dup [ dup -- ! * ] [ drop 1 ] branch ; /* n ! == n! */
-nck: dup2 - ! swap ! * [ ! ] dip / ; /* n k nck == C(n,k) */
+/* @lean
+def factNat : Nat → Int
+  | 0 => 1
+  | n + 1 => ((n + 1 : Nat) : Int) * factNat n
+def fact (n : Int) : Int := factNat n.toNat
+@[simp] theorem fact_zero : fact 0 = 1 := rfl
+theorem factNat_succ (n : Nat) : factNat (n + 1) = ((n + 1 : Nat) : Int) * factNat n := rfl
+theorem fact_step (N : Int) (h : 1 ≤ N) : fact N = N * fact (N - 1) := by
+  have hN : N.toNat = (N - 1).toNat + 1 := by omega
+  unfold fact
+  rw [hN, factNat_succ]
+  have h3 : (((N - 1).toNat + 1 : Nat) : Int) = N := by
+    rw [show ((N - 1).toNat + 1 : Nat) = N.toNat by omega,
+        Int.toNat_of_nonneg (by omega : (0 : Int) ≤ N)]
+  rw [h3]
+theorem fact_ne_zero (M : Int) : fact M ≠ 0 := by
+  have hN : ∀ n : Nat, factNat n ≠ 0 := by
+    intro n; induction n with
+    | zero => decide
+    | succ k ih => rw [factNat_succ]; exact Int.mul_ne_zero (by omega) ih
+  exact hN M.toNat
+*/
+
+!: dup [ dup -- ! * ] [ drop 1 ] branch ; /* @effect !: N == M requires 0 <= N ensures M = fact(N)
+   @by-induction N - 1 */
+nck: dup2 - ! swap ! * [ ! ] dip / ; /* @effect nck: N K == C requires 0 <= K ∧ K <= N ensures C = fact(N)/(fact(K)*fact(N-K)) */ /* n k nck == C(n,k) */
 
 /* Knuth operators */
 

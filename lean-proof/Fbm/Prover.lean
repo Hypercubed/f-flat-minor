@@ -2272,6 +2272,353 @@ def FbmVerify.lastResortSplit (active : Array MVarId) : TacticM Bool := do
   setGoals saved
   return false
 
+/-- Third stack element (branch flag `F` in `QC :: QB :: F :: R`),
+    if the goal has that shape. `condGoalFlag` extracts the second
+    element (`F` in `qv :: F :: R` for `Tok.cond`); branch needs the
+    third (the two quotations sit on top). -/
+def FbmVerify.branchFlagOfStackEq (s : Expr) (h : Expr) : MetaM (Option Expr) := do
+  if !h.getAppFn.isConstOf `Eq then return none
+  let args := h.getAppArgs
+  if args.size != 3 then return none
+  if args[1]! != s then return none
+  let rhsWhnf ← whnf args[2]!
+  let a1 := rhsWhnf.getAppArgs
+  if a1.size < 3 then return none
+  let tail1Whnf ← whnf a1[2]!
+  let a2 := tail1Whnf.getAppArgs
+  if a2.size < 3 then return none
+  let tail2Whnf ← whnf a2[2]!
+  let a3 := tail2Whnf.getAppArgs
+  if a3.size < 3 then return none
+  return some a3[1]!
+
+/-- Extract the branch flag `F` from a `Spec (branchProg ...)` goal
+    (`s = QC :: QB :: F :: R` in the pre), if the goal has that shape. -/
+def FbmVerify.branchGoalFlag : TacticM (Option Expr) := do
+  try
+    let mvar ← getMainGoal
+    let ty ← FbmVerify.goalTy mvar
+    if !(ty.getAppFn.isConstOf `Spec || ty.getAppFn.isConstOf `SpecExact) then return none
+    let args := ty.getAppArgs
+    if args.size != 3 then return none
+    let pre := args[1]!
+    forallTelescope (← inferType pre) fun xs _ => do
+      if xs.size < 6 then return (none : Option Expr)
+      let body ← whnf (mkAppN pre xs)
+      let mut conj := body
+      let mut found : Option Expr := none
+      for _ in List.range 8 do
+        if found.isSome then break
+        if conj.getAppFn.isConstOf `And then
+          let cargs := conj.getAppArgs
+          if cargs.size != 2 then break
+          if let some F ← FbmVerify.branchFlagOfStackEq xs[0]! cargs[0]! then
+            found := some F
+          conj := cargs[1]!
+        else
+          if let some F ← FbmVerify.branchFlagOfStackEq xs[0]! conj then
+            found := some F
+          break
+      return found
+  catch _ => return none
+
+/-- Whether `branch_effect_1` (`nonzero = true`) / `branch_effect_2`
+    may fire on the current goal. Mirrors `condOk`: blocks when the
+    branch flag must take the other arm (contrary hyp in context,
+    computed `if` flag, or literal flag taking the other branch). A free
+    flag with no decision defers (returns false for both arms), so
+    existing peeling (e.g. `or_else` with free `A`) is untouched. -/
+def FbmVerify.branchOk (nonzero : Bool) : TacticM Bool := do
+  try
+    let some F ← FbmVerify.branchGoalFlag
+      | return false
+    if F.hasMVar then return false
+    let Fr ← whnfR F
+    if Fr.getAppFn.isConstOf `ite || Fr.getAppFn.isConstOf `dite then
+      return false
+    let isNz : Expr → Bool := fun e => match e with
+      | .lit (.natVal n) => n != 0
+      | _ => (e.getAppFn.isConstOf `OfNat.ofNat ||
+          e.getAppFn.isConstOf `Int.ofNat) &&
+        e.getAppArgs.any fun a => match a with
+          | .lit (.natVal n) => n != 0
+          | _ => false
+    if FbmVerify.isZeroLit F || FbmVerify.isZeroLit Fr then
+      return !nonzero
+    if isNz F || isNz Fr then
+      return nonzero
+    let mut decided := false
+    for ldecl in (← getLCtx) do
+      if ldecl.isImplementationDetail then continue
+      let ht ← instantiateMVars (← inferType ldecl.toExpr)
+      let hr ← whnf ht
+      if hr.isAppOfArity `Eq 3 then
+        let ha := hr.getAppArgs
+        if (← isDefEq ha[1]! F) && FbmVerify.isZeroLit ha[2]! then
+          if nonzero then return false
+          else decided := true
+      if hr.isAppOfArity `Ne 3 then
+        let ha := hr.getAppArgs
+        if (← isDefEq ha[0]! F) && FbmVerify.isZeroLit ha[1]! then
+          if !nonzero then return false
+          else decided := true
+      if hr.isForall then
+        let (xs, body) ← forallTelescope hr fun xs b => return (xs, b)
+        if body.isConstOf `False && xs.size == 1 then
+          let P ← whnf xs[0]!
+          if P.isAppOfArity `Eq 3 then
+            let pa := P.getAppArgs
+            if (← isDefEq pa[1]! F) && FbmVerify.isZeroLit pa[2]! then
+              if !nonzero then return false
+              else decided := true
+          if P.isAppOfArity `Ne 3 then
+            let pa := P.getAppArgs
+            if (← isDefEq pa[0]! F) && FbmVerify.isZeroLit pa[1]! then
+              if nonzero then return false
+              else decided := true
+          if P.isForall then
+            let (ys, yb) ← forallTelescope P fun ys b => return (ys, b)
+            if yb.isConstOf `False && ys.size == 1 then
+              let Q ← whnf ys[0]!
+              if Q.isAppOfArity `Eq 3 then
+                let qa := Q.getAppArgs
+                if (← isDefEq qa[1]! F) && FbmVerify.isZeroLit qa[2]! then
+                  if nonzero then return false
+                  else decided := true
+    if F.isFVar && !decided then return false
+    return true
+  catch _ => return true
+
+/-- Unfold a `Spec` goal program to a token list (`Tok.*` exprs),
+    via `whnf` (unfolds `Prog` defs and `++`). Returns `none` on
+    fuel exhaustion, metas, or neutral tails (safe fallback: no split). -/
+def FbmVerify.progTokList (prog : Expr) : MetaM (Option (List Expr)) := do
+  try
+    let mut toks : List Expr := []
+    let mut cur := prog
+    for _ in List.range 256 do
+      let curI ← instantiateMVars cur
+      if curI.hasMVar then return none
+      let w ← whnf curI
+      if w.getAppFn.isConstOf `List.nil then
+        return some toks.reverse
+      else if w.isAppOfArity `List.cons 3 then
+        let args := w.getAppArgs
+        let head := args[1]!
+        let tail := args[2]!
+        let headW ← whnf head
+        if headW.hasMVar then return none
+        toks := toks ++ [headW]
+        cur := tail
+      else
+        return none
+    return none
+  catch _ => return none
+
+/-- First `Tok.call code` in the goal program (after unfolding),
+    with its index and code, if any. -/
+def FbmVerify.findCallToken : TacticM (Option (Nat × Expr)) := do
+  try
+    let mvar ← getMainGoal
+    let ty ← FbmVerify.goalTy mvar
+    let fn := ty.getAppFn
+    if !(fn.isConstOf `Spec || fn.isConstOf `SpecExact) then return none
+    let args := ty.getAppArgs
+    if args.size != 3 then return none
+    let some toks ← FbmVerify.progTokList args[0]! | return none
+    let mut idx := 0
+    for t in toks do
+      if t.getAppFn.isConstOf `Tok.call then
+        let targs := t.getAppArgs
+        if targs.size >= 1 then
+          return some (idx, targs[0]!)
+      idx := idx + 1
+    return none
+  catch _ => return none
+
+/-- Whether an `ih` induction hypothesis is in context (the
+    `@by-induction N - 1` skeleton names it `ih`). -/
+def FbmVerify.hasIH : TacticM Bool := do
+  try
+    for ldecl in (← getLCtx) do
+      if ldecl.isImplementationDetail then continue
+      if ldecl.userName == `ih then return true
+    return false
+  catch _ => return false
+
+/-- Split `Spec prog` at the first `Tok.call` token: `prog = p1 ++ p2`
+    with `p1 = prefix ++ [call]` (left, closed by `Spec.call ... ih`)
+    and `p2 = suffix` (right, closed by the token-peeling loop). The
+    split point is found by walking the unfolded program to the call
+    token (generalizing the hand proof's fixed positions). Only fires
+    when `ih` is present and both sides are non-empty (avoids trivial
+    `[call] ++ []` splits); leaves both subgoals for the main loop. -/
+def FbmVerify.tryCallSplit : TacticM Bool := do
+  try
+    if !(← FbmVerify.hasIH) then return false
+    let mvar ← getMainGoal
+    let ty ← FbmVerify.goalTy mvar
+    let fn := ty.getAppFn
+    if !(fn.isConstOf `Spec || fn.isConstOf `SpecExact) then return false
+    let args := ty.getAppArgs
+    if args.size != 3 then return false
+    let some toks ← FbmVerify.progTokList args[0]! | return false
+    let mut idx : Nat := 0
+    let mut found : Option Nat := none
+    for t in toks do
+      if t.getAppFn.isConstOf `Tok.call then
+        found := some idx
+        break
+      idx := idx + 1
+    let some ci := found | return false
+    if ci + 1 >= toks.length then return false
+    if ci == 0 && toks.length == 1 then return false
+    let preToks := toks.take (ci + 1)
+    let postToks := toks.drop (ci + 1)
+    if preToks.isEmpty || postToks.isEmpty then return false
+    let mut preTerms : Array (TSyntax `term) := #[]
+    for t in preToks do
+      let td ← Lean.PrettyPrinter.delab t
+      preTerms := preTerms.push td
+    let mut postTerms : Array (TSyntax `term) := #[]
+    for t in postToks do
+      let td ← Lean.PrettyPrinter.delab t
+      postTerms := postTerms.push td
+    if ← FbmVerify.tryApply (← `(tactic| refine Spec.seq (p1 := [$preTerms,*]) (p2 := [$postTerms,*]) ?_ ?_)) then return true
+    if ← FbmVerify.tryApply (← `(tactic| refine SpecExact.seq (p1 := [$preTerms,*]) (p2 := [$postTerms,*]) ?_ ?_)) then return true
+    return false
+  catch _ => return false
+
+/-- Local (current-file) equality theorems (the `@lean` helper
+    equations like `fact_zero`/`factNat_succ`/`fact_step`): `Prog`
+    defs and `Spec` theorems are excluded by the `Eq` check (their
+    types are `List Tok` / `Spec`, not `Eq`). Used by `tryArithUnfold`
+    to `rw` helper equations generically, so `omega` / `congr/omega`
+    (tried in later loop iterations) close nil-close leaves. -/
+def FbmVerify.localEqThms : MetaM (Array Name) := do
+  try
+    let env ← getEnv
+    let mut out : Array Name := #[]
+    let all : Array (Name × ConstantInfo) :=
+      env.constants.foldStage2 (fun acc n ci => acc.push (n, ci)) #[]
+    for (n, ci) in all do
+      if (env.getModuleIdxFor? n).isSome then continue
+      let ty := ci.type
+      let isEq ← forallTelescope ty fun _ body =>
+        pure (body.getAppFn.isConstOf `Eq)
+      if isEq then out := out.push n
+    return out
+  catch _ => return #[]
+
+/-- Induction target `N` from `e : N.toNat = k + 1` (the `@by-induction
+    N - 1` skeleton names its equation `e`), as a `Term` for explicit
+    `rw [stepLemma N]` (which pins the correct `fact N` occurrence,
+    avoiding the wrong `fact (N - 1)` that bare `rw [stepLemma]` picks). -/
+def FbmVerify.inductionTargetTerm : TacticM (Option Term) := do
+  try
+    for ldecl in (← getLCtx) do
+      if ldecl.isImplementationDetail then continue
+      if ldecl.userName != `e then continue
+      let ht ← instantiateMVars (← inferType ldecl.toExpr)
+      if !ht.isAppOfArity `Eq 3 then continue
+      let args := ht.getAppArgs
+      let lhs := args[1]!
+      let lhsW := lhs
+      if !lhsW.getAppFn.isConstOf `Int.toNat then continue
+      let largs := lhsW.getAppArgs
+      if largs.size < 1 then continue
+      let nExpr := largs[0]!
+      if nExpr.hasMVar then continue
+      let td ← Lean.PrettyPrinter.delab nExpr
+      return some td
+    return none
+  catch _ => return none
+
+def FbmVerify.tryArithUnfold : TacticM Bool := do
+  try
+    let thms ← FbmVerify.localEqThms
+    for d in thms do
+      let t : Term ← `(term| $(mkIdent d))
+      let r : TSyntax `Lean.Parser.Tactic.rwRule ← `(Lean.Parser.Tactic.rwRule| $t:term)
+      let ok ← FbmVerify.tryApply (← `(tactic| rw [$r] <;> (first | rfl | assumption | contradiction | omega | simp_all | decide)))
+      if ok then return true
+    for d in thms do
+      let some nTerm ← FbmVerify.inductionTargetTerm | continue
+      let t : Term ← `(term| $(mkIdent d) $nTerm)
+      let r : TSyntax `Lean.Parser.Tactic.rwRule ← `(Lean.Parser.Tactic.rwRule| $t:term)
+      let ok ← FbmVerify.tryApply (← `(tactic| rw [$r] <;> (first | rfl | assumption | contradiction | omega | simp_all | decide)))
+      if ok then return true
+    return false
+  catch _ => return false
+
+/-- Local (current-file) `Ne` theorems (the `@lean` positivity
+    facts, e.g. `fact_ne_zero`): `Eq`-shaped helper equations are
+    picked up by `tryArithUnfold` via `rw`; guard goals (`/`, `%`
+    divisor `e ≠ 0`) need `Ne`-shaped facts, which `omega` can never
+    derive when they need induction. Collected the same way
+    (current-file constants only, `Prog` defs and `Spec` theorems
+    excluded by the `Ne` check). -/
+def FbmVerify.localNeThms : MetaM (Array Name) := do
+  try
+    let env ← getEnv
+    let mut out : Array Name := #[]
+    let all : Array (Name × ConstantInfo) :=
+      env.constants.foldStage2 (fun acc n ci => acc.push (n, ci)) #[]
+    for (n, ci) in all do
+      if (env.getModuleIdxFor? n).isSome then continue
+      let ty := ci.type
+      let isNe ← forallTelescope ty fun _ body =>
+        pure (body.getAppFn.isConstOf `Ne)
+      if isNe then out := out.push n
+    return out
+  catch _ => return #[]
+
+/-- Split a conjunction GOAL (`A ∧ B`, e.g. a multi-divisor guard
+    `¬fact (N - K) = 0 ∧ ¬fact K = 0`): `splitConjHyp` only splits
+    hypotheses. Atomic: fires only on `And` goals, leaving both
+    conjuncts for later loop iterations. -/
+def FbmVerify.trySplitConjGoal : TacticM Bool := do
+  try
+    let mvar ← getMainGoal
+    let ty ← FbmVerify.goalTy mvar
+    if !(← whnfR ty).isAppOfArity `And 2 then return false
+    return ← FbmVerify.atomic do
+      evalTactic (← `(tactic| refine And.intro ?_ ?_))
+      return true
+  catch _ => return false
+
+/-- Close `e ≠ 0` guard goals with caller-supplied local `Ne`
+    lemmas (`@lean` positivity facts): `apply d` with the
+    pure-closer suffix for side goals. Atomic per lemma (rollback
+    on failure), so a wrong lemma never poisons the goal. Only
+    fires on `Ne`/`Not` goals, after every generic closer failed. -/
+def FbmVerify.tryNeGuard : TacticM Bool := do
+  try
+    let mvar ← getMainGoal
+    let ty ← FbmVerify.goalTy mvar
+    let w ← whnfR ty
+    if !(w.getAppFn.isConstOf `Ne || w.getAppFn.isConstOf `Not) then return false
+    let thms ← FbmVerify.localNeThms
+    for d in thms do
+      let t : Term ← `(term| $(mkIdent d))
+      let ok ← FbmVerify.tryApply (← `(tactic| apply $t <;> (first | rfl | assumption | contradiction | omega | simp_all | decide | ac_rfl)))
+      if ok then return true
+    return false
+  catch _ => return false
+
+/-- Apply an `ih` dep with backtracking: `apply ih` unifies the
+    conclusion, leaving `0 ≤ N'`, `N'.toNat = k` side goals. If those
+    are closable via `omega`/`assumption` the instantiation was correct
+    (call-site `N-1`); if not (top-level premature `N` with
+    `N.toNat = k` contradicting `e : N.toNat = k+1`) roll back so
+    peeling proceeds instead. Non-`ih` deps are untouched. -/
+def FbmVerify.tryIHDep (dep : Term) : TacticM Bool := do
+  FbmVerify.atomic do
+    try
+      evalTactic (← `(tactic| apply $dep <;> (first | rfl | assumption | contradiction | omega | decide)))
+      return true
+    catch _ => return false
+
 def FbmVerify.run (_deps : Array Term) : TacticM Unit := do
   -- Callee `Prog` definitions unfold by definitional unfolding
   -- (`whnf` inspection + `refine` unification), so the `deps`
@@ -2362,6 +2709,11 @@ def FbmVerify.run (_deps : Array Term) : TacticM Unit := do
   -- never mangle a live goal.
   let congrOmegaTac ← `(tactic| first | (congr 1 <;> omega) | (congr 1 <;> congr 1 <;> omega) | (congr 1 <;> congr 1 <;> congr 1 <;> omega))
   let decideTac ← `(tactic| decide)
+  -- Associative-commutative closure: `omega`/`simp_all` normalize linear
+  -- arithmetic but not `*`-ordering, so `a * b = b * a` shaped leaves
+  -- (e.g. `nck`'s denominator order) need `ac_rfl`. Tried last among
+  -- the pure closers, as a must-apply (atomic rollback), before giving up.
+  let acRflTac ← `(tactic| ac_rfl)
   -- One pass over the current main goal. Returns true on progress.
   -- Single focus (no round-robin): every head lemma consumes its
   -- head token (or closes its goal), side conditions are `Prop`s
@@ -2402,9 +2754,13 @@ def FbmVerify.run (_deps : Array Term) : TacticM Unit := do
           if ← FbmVerify.introFresh then return true
           if ← FbmVerify.splitConjHyp then return true
           if ← FbmVerify.tryApply simpAllTac then return true
+          if ← FbmVerify.tryArithUnfold then return true
           if ← FbmVerify.tryApply omegaTac then return true
           if ← FbmVerify.tryClose congrOmegaTac then return true
           if ← FbmVerify.tryApply decideTac then return true
+          if ← FbmVerify.tryApply acRflTac then return true
+          if ← FbmVerify.trySplitConjGoal then return true
+          if ← FbmVerify.tryNeGuard then return true
         return false
     -- `Spec` goals: per-hyp atomic `assumption` first. This
     -- closes body-spec subgoals against the context `Spec`
@@ -2412,6 +2768,27 @@ def FbmVerify.run (_deps : Array Term) : TacticM Unit := do
     -- hyp) and exact duplicates; each failed hypothesis is
     -- rolled back, so a wrong hyp never poisons the right one.
     if ← FbmVerify.atomicAssumption then return true
+    -- Primitive-recursion branch backtracking: try the arm whose flag
+    -- is decided in context (`have hN0`/`have hNe` from the skeleton),
+    -- instead of committing to the first dep (which dooms the zero case).
+    -- Free flags (no decision) try neither, preserving existing peeling.
+    do
+      for dep in _deps do
+        let s ← try pure (← Lean.PrettyPrinter.ppTerm dep).pretty catch _ => pure ""
+        if s == "branch_effect_1" then
+          if ← FbmVerify.branchOk true then
+            let applied ← FbmVerify.atomic do
+              try evalTactic (← `(tactic| apply $dep)); return true catch _ => return false
+            if applied then return true
+        else if s == "branch_effect_2" then
+          if ← FbmVerify.branchOk false then
+            let applied ← FbmVerify.atomic do
+              try evalTactic (← `(tactic| apply $dep)); return true catch _ => return false
+            if applied then return true
+    -- Split at `Tok.call`: `Spec (prefix ++ [call] ++ suffix)` becomes
+    -- `Spec (prefix ++ [call])` (left, closed by `Spec.call ... ih`) and
+    -- `Spec suffix` (right, peeling loop). Walk finds the call token.
+    if ← FbmVerify.tryCallSplit then return true
     -- Callee `Spec` lemmas (`dip_spec`, `sort2_spec`, ...): close
     -- hbody goals compositionally. Bare-peeling a
     -- cond-containing callee with a midpoint-meta post shares
@@ -2421,12 +2798,19 @@ def FbmVerify.run (_deps : Array Term) : TacticM Unit := do
     -- correctly. Non-theorem deps (`Prog` defs) fail `apply`
     -- harmlessly inside `atomic`.
     for dep in _deps do
-      let applied ← FbmVerify.atomic do
-        try
-          evalTactic (← `(tactic| apply $dep))
-          return true
-        catch _ => return false
-      if applied then return true
+      let isIH ← try
+        let fmt ← Lean.PrettyPrinter.ppTerm dep
+        pure (fmt.pretty == "ih")
+      catch _ => pure false
+      if isIH then
+        if ← FbmVerify.tryIHDep dep then return true
+      else
+        let applied ← FbmVerify.atomic do
+          try
+            evalTactic (← `(tactic| apply $dep))
+            return true
+          catch _ => return false
+        if applied then return true
     if ← FbmVerify.tryApply normTac then return true
     let some hd ← FbmVerify.headTok | return false
     match hd with

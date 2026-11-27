@@ -354,6 +354,37 @@ compared too), and `Eq`/`Ne` pairs. The step fires only after
 a zero-progress round, so proofs that close without it (all of
 `sort2`/`between?`, `abs`, `clamp`) never observe it.
 
+Pure-goal closers (v39, `Fbm/Prover.lean` `stepOnce`, non-`Spec`
+branch, tried in order, each atomic): `rfl`, `assumption`,
+`contradiction`, `intro`, conjunction-hypothesis split,
+`simp_all`, `tryArithUnfold` (rewrites current-file `Eq`
+theorems, e.g. `@lean` helper equations), `omega`,
+congr-closure-then-`omega`, `decide`, `ac_rfl`, conjunction-goal
+split, `Ne`-guard lemmas. `ac_rfl` closes
+associative-commutative-ordering leaves that `omega`/`simp_all`
+cannot see (`a * b = b * a` shapes, e.g. `nck`'s denominator
+order — its hand `Int.mul_comm` step is gone). The
+conjunction-goal split (`refine And.intro`, the goal-side twin
+of the hypothesis split) and the `Ne`-guard hook fire only
+after every generic closer fails: the hook `apply`s
+current-file `Ne`-shaped theorems (the mirror of
+`tryArithUnfold`, same discovery — e.g. an `@lean` positivity
+fact like `fact_ne_zero : ∀ M, fact M ≠ 0`) to `/`/`%`
+divisor-guard goals `e ≠ 0`, which `omega` can never derive
+when they need induction. Recipe: state the positivity fact
+once in the file's `@lean` block (hand proof, induction is
+fine there), and the word's clause goes fully plain
+(`fbm_verify [...]` with no `@by-proof`). Status: the hook
+is landed and scratch-verified (`nck` fully plain closes over
+an injected `fact_ne_zero`, full suite green), but NOT
+activated — activation needs the `@lean` lemma, a second
+`.ffp` edit beyond the `nck` clause, so `nck` keeps its
+positivity `have`s (minus the `mul_comm` step) until that
+lands. No new clause syntax was added: `@by-induction ...
+using <tactic>` does not exist, and a new clause would need
+generator changes — the `@lean`-theorem hook fits the
+existing `tryArithUnfold` pattern instead.
+
 Proof clauses (v37, at the tail of an `@effect`, at most one of
 the three; `sorry`/`admit`/`axiom` rejected up front):
 `@by-proof <tactic>` replaces the `fbm_verify [...]` proof
