@@ -10,12 +10,12 @@ The system SHALL name Lean-side spec helpers exactly as effect spellings invoke 
 - **THEN** the generator emits `Fbm.gcd ...` with no `gcd`-specific branch in the emitter (arity checked structurally)
 
 #### Scenario: Floor notation
-- **WHEN** an effect writes `⌊sqrt(X)⌋`
-- **THEN** the `Fbm`-scoped `⌊e⌋` notation elaborates to the floor application, and generated + hand-written Lean share the spelling
+- **WHEN** an effect writes `⌊sqrt(X)⌋₀`
+- **THEN** the `Fbm`-scoped `⌊e⌋₀` truncation notation elaborates to the floor application, and generated + hand-written Lean share the spelling (bare `⌊e⌋` without ₀ means floor toward -inf and is reserved/rejected)
 
 ### Requirement: Rejection of legacy spellings
-The system SHALL reject superseded call spellings (`isqrt(`, bare `floor(`, bare `sqrt(` unwrapped in `⌊⌋`) with clean problems naming the canonical form.
+The system SHALL reject superseded call spellings (`isqrt(`, bare `floor(`, bare `sqrt(` unwrapped in `⌊⌋₀`, bare `⌊...⌋` without ₀, legacy `igcd(`) with clean problems naming the canonical form.
 
 #### Scenario: Rejecting the old integer-root spelling
 - **WHEN** an effect writes `isqrt(X)`
-- **THEN** the generator reports a clean problem directing the author to `⌊sqrt(X)⌋`
+- **THEN** the generator reports a clean problem directing the author to `⌊sqrt(X)⌋₀`

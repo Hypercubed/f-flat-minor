@@ -1,8 +1,63 @@
 .import ../core/core.ff
 .import ./precision.ffp
 
+/* @lean
+/-- Integer square root on Int: the computed integer root named by
+    `floor_sqrt` below (effects write `⌊sqrt(N)⌋₀` for it).
+    Defined from `Nat.sqrt` on `toNat`; callers require `0 ≤ n` so
+    the conversion is exact. Same pattern as `igcd`: an opaque spec
+    function for assumed/proved lemmas, not computed by `step`,
+    hence not `@[simp]`. -/
+def isqrt (a : Int) : Int := (Nat.sqrt a.toNat : Int)
+
+/-- Exact (real) square root at spec level (F♭m effects write
+    `⌊sqrt(N)⌋₀` for the integer root; `Fbm.sqrt` is the Lean-side
+    name so the call emits with no per-function mapping branch).
+    Lean core has no `Real`, so the real-number meaning is carried
+    by documentation plus `floor_sqrt` below, not by computation:
+    `Fbm.sqrt` unfolds to `isqrt`, and the truncation is taken
+    explicitly at each use site via the `Fbm`-scoped `⌊e⌋₀`
+    notation. Same pattern as `Fbm.gcd`/`isqrt`: opaque spec
+    function, never computed by `step`, hence not `@[simp]`. -/
+def Fbm.sqrt (a : Int) : Int := isqrt a
+
+/-- Truncation at spec level: takes the toward-zero truncation of
+    an exact-root spec function. On `Int` this is the identity —
+    it exists so the `⌊...⌋₀` notation has a target and the
+    exact-vs-truncated distinction is explicit in effect text.
+    Named `Fbm.floor` for uniformity with `Fbm.sqrt`/`Fbm.gcd`
+    (the Lean-side name is unchanged, so the `floor_sqrt` bridge
+    below is untouched); effects never write the `floor(`
+    spelling (it is a clean problem). Bare `⌊...⌋` (floor toward
+    -inf) is reserved and rejected — always write `⌊...⌋₀`.
+    Not `@[simp]`; rewrite via `floor_sqrt`. -/
+def Fbm.floor (a : Int) : Int := a
+
+namespace Fbm
+/-- `⌊e⌋₀`: toward-zero truncation of an exact-root spec
+    expression (F♭m effects write `⌊sqrt(X)⌋₀` for the integer
+    root). Elaborates to the `Fbm.floor` application above (same
+    target as before, surface change only: F♭m integer arithmetic
+    truncates toward zero, while bare `⌊⌋` universally means floor
+    toward -inf, which core Lean cannot represent — so bare `⌊...⌋`
+    is reserved). `scoped` so a future Mathlib import can't
+    collide; generated files enable it via `open scoped Fbm` (see
+    `LEAN_HEADER` in `generate.py`). Closed-bracket form, so no
+    precedence interaction with the generated expression grammar.
+    (Lean 4.36.0 `scoped notation` form: bare `e` binder, `=>`
+    target resolved at definition site.) -/
+scoped notation "⌊" e "⌋₀" => Fbm.floor e
+end Fbm
+
+/-- Connecting lemma: truncating the exact root is the integer root.
+    Marked `@[simp]` so the `fbm_verify` closer rewrites stated
+    `⌊sqrt X⌋₀` goals to the `isqrt X` form the composition
+    lemmas produce. Axioms: standard only. -/
+@[simp] theorem floor_sqrt (a : Int) : Fbm.floor (Fbm.sqrt a) = isqrt a := rfl
+*/
+
 /* Exact integer square root via recursive digit-by-digit refinement. */
-/* @effect __base: N == M requires 0 <= N ensures M = 2*floor(sqrt(N>>2)) @assume same n/4 strong induction as __next (mutual cluster: neither member proves without it) */
+/* @effect __base: N == M requires 0 <= N ensures M = 2*⌊sqrt(N>>2)⌋₀ @assume same n/4 strong induction as __next (mutual cluster: neither member proves without it) */
 __base: 2 >> __next 1 << ; /* n __base == 2*sqrt(n/4) */
 
 __pick:
@@ -11,9 +66,9 @@ __pick:
   <=
   [ ++ ] /* x+1 */
   ? /* else x */
-; /* @effect __pick: N X == Y ensures Y = if (X+1)*(X+1) <= N then X+1 else X */ /* n x __pick == ⌊sqrt(n)⌋ */
+; /* @effect __pick: N X == Y ensures Y = if (X+1)*(X+1) <= N then X+1 else X */ /* n x __pick == ⌊sqrt(n)⌋₀ */
 
-/* @effect __next: N == Y requires 0 <= N ensures Y = floor(sqrt(N)) @assume strong induction on n with n/4 step beyond N-1/R.length patterns */
+/* @effect __next: N == Y requires 0 <= N ensures Y = ⌊sqrt(N)⌋₀ @assume strong induction on n with n/4 step beyond N-1/R.length patterns */
 __next:
   dup 1 > [ /* n if n < 2 */
     dup /* n n */
@@ -22,18 +77,18 @@ __next:
   ] ?
 ;
 
-/* x -- ⌊sqrt(x)⌋ | errors on negative x (division by zero) */
-/* @effect isqrt: X == M requires 0 <= X ensures M = floor(sqrt(X)) */
+/* x -- ⌊sqrt(x)⌋₀ | errors on negative x (division by zero) */
+/* @effect isqrt: X == M requires 0 <= X ensures M = ⌊sqrt(X)⌋₀ */
 isqrt:
   dup 0 < [ 1 0 / ] ? /* error: negative input */
   __next ;
 
-/* x -- ⌊sqrt(x)⌋ x-⌊sqrt(x)⌋² */
-/* @effect isqrtrem: X == Q R requires 0 <= X ensures Q = floor(sqrt(X)) ∧ R = X-floor(sqrt(X))^2 */
+/* x -- ⌊sqrt(x)⌋₀ x-⌊sqrt(x)⌋₀² */
+/* @effect isqrtrem: X == Q R requires 0 <= X ensures Q = ⌊sqrt(X)⌋₀ ∧ R = X-⌊sqrt(X)⌋₀^2 */
 isqrtrem: dup isqrt tuck 2 ^ - ;
 
-/* n x -- ⌊10ⁿ*sqrt(x)⌋ | errors on negative x (division by zero) */
-/* @effect nsqrt: N X == M requires 0 <= X ∧ 0 <= N ensures M = floor(sqrt(X*10^(2*N)))
+/* n x -- ⌊10ⁿ*sqrt(x)⌋₀ | errors on negative x (division by zero) */
+/* @effect nsqrt: N X == M requires 0 <= X ∧ 0 <= N ensures M = ⌊sqrt(X*10^(2*N))⌋₀
    @by-proof have harg : (0:Int) ≤ X * 10 ^ (N*2).toNat := Int.mul_nonneg hw.1 (Int.pow_nonneg (by decide));
    fbm_verify [nsqrtProg, n__S2_effect, n__S_effect, isqrt_effect, __next_effect] */
 nsqrt:

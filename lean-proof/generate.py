@@ -123,7 +123,7 @@ def lean_name(word):
         name = "w_" + name
     return name
 
-LEAN_HEADER = "import Fbm.Prover\nimport Fbm.Arith"
+LEAN_HEADER = "import Fbm.Prover\nimport Fbm.Arith\nopen scoped Fbm"
 
 def _rest(tok):
     """The rest-of-stack marker, in either spelling: the Unicode
@@ -480,6 +480,9 @@ _EXPR_TOKEN_RE = re.compile(r"""
     | (?P<rpar>\))
     | (?P<comma>,)
     | (?P<dot>\.)
+    | (?P<lfloor>⌊)
+    | (?P<rfloor0>⌋₀)
+    | (?P<rfloor>⌋)
     )""", re.VERBOSE)
 
 _BINPREC = {"^": 80, "*": 70, "/": 70, "%": 70, "&": 70, "&&&": 70,
@@ -581,6 +584,21 @@ def _parse_expr(s):
             # Bitwise NOT: ~x = -x - 1 (two's complement).
             # `~~~` is Lean's complement spelling (v23).
             left = ("lnot", parse(80))
+        elif kind == "lfloor":
+            # `⌊E⌋₀` truncation notation: a closed bracket atom like
+            # parens; the inside parses as a full expression so
+            # `⌊sqrt(X*10^(2*N))⌋₀` works. Bare `⌊E⌋` (floor toward
+            # -inf, reserved) is a clean problem naming the canonical
+            # `⌊...⌋₀` spelling.
+            inner = parse(0)
+            k2, v2 = next_tok()
+            if k2 == "rfloor":
+                raise ExprError(
+                    "bare ⌊...⌋ without the ₀ subscript is not an effect spelling: "
+                    "write ⌊...⌋₀ for the toward-zero truncation")
+            if k2 != "rfloor0":
+                raise ExprError(f"expected '⌋₀' in {s!r}")
+            left = ("floorn", inner)
         elif kind == "lpar":
             left = parse(0)
             k2, v2 = next_tok()
@@ -605,7 +623,7 @@ def _parse_expr(s):
         raise ExprError(f"trailing tokens in {s!r}")
     return ast
 
-def _emit_expr(ast, rest_name=None):
+def _emit_expr(ast, rest_name=None, in_floor=False):
     kind = ast[0]
     if kind in ("num", "var"):
         return ast[1]
@@ -618,6 +636,13 @@ def _emit_expr(ast, rest_name=None):
         # `<name>.toNat` is `Int.toNat` (a Nat). `name` must be an
         # `Int` stack variable (checked in prepare()).
         return f"({ast[1]}.toNat)"
+    if kind == "floorn":
+        # `⌊E⌋₀` emits the `Fbm`-scoped truncation notation (enabled
+        # via `open scoped Fbm` in the header), which elaborates to
+        # `Fbm.floor E` -- generated and hand-written Lean share
+        # the spelling. The inside is the truncation context licensing
+        # `sqrt` below it.
+        return f"⌊{_emit_expr(ast[1], rest_name=rest_name, in_floor=True)}⌋₀"
     if kind == "call":
         # Lean application is space-separated, not f(a, b):
         # `min(a,b)` in an effect means `min a b` in Lean.
@@ -625,59 +650,71 @@ def _emit_expr(ast, rest_name=None):
             if len(ast[2]) != 3:
                 raise ExprError(f"iterates(F,N,A) takes exactly 3 arguments, got {len(ast[2])}")
             f_ast, n_ast, a_ast = ast[2]
-            f_lean = _emit_expr(f_ast, rest_name=rest_name)
+            f_lean = _emit_expr(f_ast, rest_name=rest_name, in_floor=in_floor)
             if n_ast[0] == "tonat":
                 n_lean = f"{n_ast[1]}.toNat"
             else:
-                n_raw = _emit_expr(n_ast, rest_name=rest_name)
+                n_raw = _emit_expr(n_ast, rest_name=rest_name, in_floor=in_floor)
                 n_lean = f"{n_raw}.toNat"
-            a_lean = _emit_expr(a_ast, rest_name=rest_name)
+            a_lean = _emit_expr(a_ast, rest_name=rest_name, in_floor=in_floor)
             rn = rest_name or "rest"
             return f"SpecHist2 {f_lean} {n_lean} {a_lean} {rn}"
         if not ast[2]:
             return ast[1]
-        if ast[1] in ("gcd", "igcd"):
-            # `gcd(A,B)` in an effect maps to the Lean-side `igcd`
-            # helper (same pattern as `land`/`lor`): `Nat.gcd` on
-            # magnitudes, defined in `Fbm/Arith.lean`.
-            if len(ast[2]) != 2:
-                raise ExprError(f"gcd takes exactly 2 arguments, got {len(ast[2])}")
-            return (f"(igcd ({_emit_expr(ast[2][0], rest_name=rest_name)}) "
-                    f"({_emit_expr(ast[2][1], rest_name=rest_name)}))")
-        if ast[1] in ("sqrt",):
-            # `sqrt(N)` in an effect maps to the Lean-side `fsqrt`
-            # helper (exact root at spec level; write `floor(sqrt(N))`
-            # for the integer root, connected by `floor_sqrt` in
-            # `Fbm/Arith.lean`), same pattern as `gcd`/`igcd`.
-            if len(ast[2]) != 1:
-                raise ExprError(f"sqrt takes exactly 1 argument, got {len(ast[2])}")
-            return f"(fsqrt ({_emit_expr(ast[2][0], rest_name=rest_name)}))"
-        if ast[1] in ("isqrt",):
-            # `isqrt(N)` keeps its direct mapping to the Lean-side
-            # `isqrt` helper (`Nat.sqrt` on `toNat`; callers require
-            # `0 ≤ n` so the conversion is exact).
-            if len(ast[2]) != 1:
-                raise ExprError(f"isqrt takes exactly 1 argument, got {len(ast[2])}")
-            return f"(isqrt ({_emit_expr(ast[2][0], rest_name=rest_name)}))"
+        if ast[1] in _FBM_SPECS:
+            # Spelling-aligned `Fbm.*` spec helper: emit the qualified
+            # target with its arity checked structurally (argument
+            # count vs the table's binder count), not via a per-name
+            # branch. `sqrt` additionally requires the `⌊...⌋₀`
+            # truncation context; bare `sqrt(` names the canonical form.
+            target, want = _FBM_SPECS[ast[1]]
+            if len(ast[2]) != want:
+                raise ExprError(
+                    f"{ast[1]} takes exactly {want} argument(s), "
+                    f"got {len(ast[2])}")
+            if ast[1] == "sqrt" and not in_floor:
+                raise ExprError(
+                    "bare sqrt(...) without an enclosing ⌊...⌋₀: "
+                    "wrap in ⌊...⌋₀ or document exact-root intent")
+            return (f"({target} "
+                    + " ".join(f"({_emit_expr(a, rest_name=rest_name, in_floor=in_floor)})"
+                                 for a in ast[2]) + ")")
+        if ast[1] in ("isqrt", "fsqrt"):
+            # Neither `isqrt(X)` nor the pre-rename `fsqrt(X)` is an
+            # effect spelling (the Lean-side `isqrt` is the
+            # computational helper `floor_sqrt` names). A clean
+            # problem telling the author to write `⌊sqrt(X)⌋₀`.
+            raise ExprError(
+                f"{ast[1]}(...) is not an effect spelling: "
+                "write ⌊sqrt(...)⌋₀ for the integer root")
+        if ast[1] in ("igcd",):
+            # Legacy `igcd(...)` is not an effect spelling (the
+            # Lean-side `isqrt`-style computational name is gone;
+            # `Fbm.gcd` is the spec helper). A clean problem naming
+            # the canonical `gcd(...)` form.
+            raise ExprError(
+                "igcd(...) is not an effect spelling: "
+                "write gcd(...) for the spec helper")
         if ast[1] in ("floor",):
-            # `floor(E)` applies the spec-level floor to its argument,
-            # so `floor(sqrt(X))` emits as `floor (fsqrt X)` (which
-            # `floor_sqrt` connects to `isqrt X`).
-            if len(ast[2]) != 1:
-                raise ExprError(f"floor takes exactly 1 argument, got {len(ast[2])}")
-            return f"(floor ({_emit_expr(ast[2][0], rest_name=rest_name)}))"
-        return ast[1] + " " + " ".join(_emit_expr(a, rest_name=rest_name) for a in ast[2])
+            # `floor(...)` is not an effect spelling: the canonical
+            # form is the `⌊...⌋₀` truncation notation. A clean problem
+            # naming it (this keeps the one-way-per-call rule so the
+            # exact-vs-truncated distinction stays visible).
+            raise ExprError(
+                "floor(...) is not an effect spelling: "
+                "write ⌊...⌋₀ for the truncated form")
+        return ast[1] + " " + " ".join(_emit_expr(a, rest_name=rest_name, in_floor=in_floor) for a in ast[2])
     if kind == "neg":
-        return f"(-{_emit_expr(ast[1], rest_name=rest_name)})"
+        return f"(-{_emit_expr(ast[1], rest_name=rest_name, in_floor=in_floor)})"
     if kind == "not":
-        return f"(¬ {_emit_expr(ast[1], rest_name=rest_name)})"
+        return f"(¬ {_emit_expr(ast[1], rest_name=rest_name, in_floor=in_floor)})"
     if kind == "lnot":
         # `lnot` in the preamble (v23, @[simp]); `~` and `~~~`
         # both emit it, as does the `lnot(a)` call form.
-        return f"(lnot ({_emit_expr(ast[1], rest_name=rest_name)}))"
+        return f"(lnot ({_emit_expr(ast[1], rest_name=rest_name, in_floor=in_floor)}))"
     if kind == "if":
-        return (f"(if {_emit_expr(ast[1], rest_name=rest_name)} then {_emit_expr(ast[2], rest_name=rest_name)} "
-                f"else {_emit_expr(ast[3], rest_name=rest_name)})")
+        return (f"(if {_emit_expr(ast[1], rest_name=rest_name, in_floor=in_floor)} then {_emit_expr(ast[2], rest_name=rest_name, in_floor=in_floor)} "
+                f"else {_emit_expr(ast[3], rest_name=rest_name, in_floor=in_floor)})")
     if kind == "bin":
         op, l, r = ast[1], ast[2], ast[3]
         # Prefix operators (tmod/tdiv/land/lor/xor/lnot/shl/shr) take
@@ -689,36 +726,46 @@ def _emit_expr(ast, rest_name=None):
         # F♭m symbol (`&`), Lean's operator (`&&&`), and the f()
         # form (`land(a, b)`); all three emit the same helper.
         if op == "%":
-            return f"(tmod ({_emit_expr(l, rest_name=rest_name)}) ({_emit_expr(r, rest_name=rest_name)}))"
+            return f"(tmod ({_emit_expr(l, rest_name=rest_name, in_floor=in_floor)}) ({_emit_expr(r, rest_name=rest_name, in_floor=in_floor)}))"
         if op == "/":
-            return f"(tdiv ({_emit_expr(l, rest_name=rest_name)}) ({_emit_expr(r, rest_name=rest_name)}))"
+            return f"(tdiv ({_emit_expr(l, rest_name=rest_name, in_floor=in_floor)}) ({_emit_expr(r, rest_name=rest_name, in_floor=in_floor)}))"
         if op in ("&", "&&&"):
-            return f"(land ({_emit_expr(l, rest_name=rest_name)}) ({_emit_expr(r, rest_name=rest_name)}))"
+            return f"(land ({_emit_expr(l, rest_name=rest_name, in_floor=in_floor)}) ({_emit_expr(r, rest_name=rest_name, in_floor=in_floor)}))"
         if op == "!=":
-            return f"({_emit_expr(l, rest_name=rest_name)} ≠ {_emit_expr(r, rest_name=rest_name)})"
+            return f"({_emit_expr(l, rest_name=rest_name, in_floor=in_floor)} ≠ {_emit_expr(r, rest_name=rest_name, in_floor=in_floor)})"
         if op == "==":
-            return f"({_emit_expr(l, rest_name=rest_name)} = {_emit_expr(r, rest_name=rest_name)})"
+            return f"({_emit_expr(l, rest_name=rest_name, in_floor=in_floor)} = {_emit_expr(r, rest_name=rest_name, in_floor=in_floor)})"
         if op in ("|", "|||"):
-            return f"(lor ({_emit_expr(l, rest_name=rest_name)}) ({_emit_expr(r, rest_name=rest_name)}))"
+            return f"(lor ({_emit_expr(l, rest_name=rest_name, in_floor=in_floor)}) ({_emit_expr(r, rest_name=rest_name, in_floor=in_floor)}))"
         if op in ("⊕", "^^^"):
             # Bitwise xor (v22): `xor` in the preamble, defined
             # as (a & ~b) | (b & ~a), `@[simp]` so the ladder
             # unfolds it. `^` in F♭m is power, so xor is `⊕`
             # (also `^^^`, Lean's Nat xor, and `xor(a, b)`).
-            return f"(xor ({_emit_expr(l, rest_name=rest_name)}) ({_emit_expr(r, rest_name=rest_name)}))"
+            return f"(xor ({_emit_expr(l, rest_name=rest_name, in_floor=in_floor)}) ({_emit_expr(r, rest_name=rest_name, in_floor=in_floor)}))"
         if op == "^":
             # Lean's `^` on Int takes a Nat exponent; the effect
             # writes an Int exponent, so it is converted here.
             # A numeric literal is already Nat, so it is emitted bare.
             if r[0] == "num":
-                return f"({_emit_expr(l, rest_name=rest_name)} ^ {_emit_expr(r, rest_name=rest_name)})"
-            return f"({_emit_expr(l, rest_name=rest_name)} ^ ({_emit_expr(r, rest_name=rest_name)}).toNat)"
+                return f"({_emit_expr(l, rest_name=rest_name, in_floor=in_floor)} ^ {_emit_expr(r, rest_name=rest_name, in_floor=in_floor)})"
+            return f"({_emit_expr(l, rest_name=rest_name, in_floor=in_floor)} ^ ({_emit_expr(r, rest_name=rest_name, in_floor=in_floor)}).toNat)"
         if op in ("<<", "<<<"):
-            return f"(shl ({_emit_expr(l, rest_name=rest_name)}) ({_emit_expr(r, rest_name=rest_name)}))"
+            return f"(shl ({_emit_expr(l, rest_name=rest_name, in_floor=in_floor)}) ({_emit_expr(r, rest_name=rest_name, in_floor=in_floor)}))"
         if op in (">>", ">>>"):
-            return f"(shr ({_emit_expr(l, rest_name=rest_name)}) ({_emit_expr(r, rest_name=rest_name)}))"
-        return f"({_emit_expr(l, rest_name=rest_name)} {op} {_emit_expr(r, rest_name=rest_name)})"
+            return f"(shr ({_emit_expr(l, rest_name=rest_name, in_floor=in_floor)}) ({_emit_expr(r, rest_name=rest_name, in_floor=in_floor)}))"
+        return f"({_emit_expr(l, rest_name=rest_name, in_floor=in_floor)} {op} {_emit_expr(r, rest_name=rest_name, in_floor=in_floor)})"
     raise ExprError(f"bad AST node {ast!r}")
+
+# Lean-side `Fbm.*` spec helpers named exactly as effect spellings
+# invoke them (spelling-alignment): effect name -> (Lean target,
+# arity). A call to one emits the qualified target with its arity
+# checked structurally (argument count vs binder count) -- one code
+# path, no per-name branches. `sqrt` additionally requires the
+# `⌊...⌋₀` truncation context (bare `sqrt(` is a clean problem).
+# Legacy `igcd(` is rejected in `_emit_expr`, not mapped here.
+_FBM_SPECS = {"gcd": ("Fbm.gcd", 2),
+              "sqrt": ("Fbm.sqrt", 1)}
 
 _CMP_OPS = {"=", "==", "!=", "<", "<=", ">", ">="}
 
@@ -732,12 +779,12 @@ def _needs_translation(e):
     # all contain `=`, `<`, or `>`; every f() form is caught by the
     # call regex.
     return ("%" in e or "/" in e or "&" in e or "|" in e or "^" in e or "~" in e
-            or "⊕" in e or "#" in e
+            or "⊕" in e or "#" in e or "⌊" in e or "⌋" in e
             or "<<" in e or ">>" in e or "." in e
             or "=" in e or "<" in e or ">" in e
             or re.search(r"[A-Za-z_][A-Za-z0-9_']*\s*\(", e) is not None)
 
-def translate_expr(s, coerce_cmp=False, rest_name=None):
+def translate_expr(s, coerce_cmp=False, rest_name=None, in_floor=False):
     """Translate an effect expression to Lean. `%` and `&` mean
     F♭m's operators (truncating mod, bitwise and), not Lean's
     (Euclidean `%`, no Int `&`), so they become the `tmod` /
@@ -748,7 +795,7 @@ def translate_expr(s, coerce_cmp=False, rest_name=None):
     `(if <cond> then 1 else 0)`.
     Raises ExprError on anything it cannot translate."""
     ast = _parse_expr(s)
-    lean = _emit_expr(ast, rest_name=rest_name)
+    lean = _emit_expr(ast, rest_name=rest_name, in_floor=in_floor)
     if coerce_cmp and ast[0] == "bin" and ast[1] in _CMP_OPS:
         return f"(if {lean} then 1 else 0)"
     return lean

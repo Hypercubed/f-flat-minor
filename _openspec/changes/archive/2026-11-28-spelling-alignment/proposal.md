@@ -20,6 +20,6 @@
 
 - `lean-proof/Fbm/Arith.lean` (renames + `⌊⌋` notation, `Fbm` namespace), `lean-proof/Fbm/Interp.lean` (no renames needed — operator helpers already match — but confirm `Fbm` qualification doesn't break `step`).
 - `lean-proof/generate.py` (delete mapping branches; generic call emission; legacy-spelling rejections).
-- `ff/lib/math/*` (no effect-text changes expected — spellings already read this way; only Lean-side targets move).
+- `ff/lib/math/*` (landed effect-text change: 5 effect lines in `sqrt.ffp` migrated to the canonical `⌊sqrt(...)⌋` spelling — 6 occurrences including `isqrtrem`'s two — plus matching plain comments; follow-up renames the surface to `⌊...⌋₀` for toward-zero truncation; Lean-side targets moved to `Fbm.*` otherwise).
 - `lean-proof/HELP.md` (spelling-canonical docs: one way to write each call).
 - Gate: parsed-equal TAP (modulo Lean-side name changes in diagnostics, documented).

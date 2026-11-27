@@ -149,6 +149,34 @@ Scope (prototype, deliberately small):
     `and`/`or` make bare `and`/`or` ambiguous). An f() call in
     a direct output takes no space after the comma
     (`land(a,b)`); in an `ensures` clause spaces are fine.
+    Truncation, not floor (spelling-alignment): F♭m integer
+    arithmetic truncates toward zero, so effect text writes the
+    house notation `⌊x⌋₀` for toward-zero truncation — defined
+    here, no reader arrives knowing it: `⌊sqrt(X)⌋₀` is the
+    integer root (the exact real root, truncated toward zero).
+    Bare `⌊x⌋` universally means floor toward -inf, which core
+    Lean cannot represent, so it is reserved and rejected:
+    always write the ₀ subscript.
+    Spelling-canonical calls: one way to write each call, with
+    the Lean-side helper named exactly as the effect spells it.
+    `gcd(A,B)` emits `Fbm.gcd` (arity 2, checked structurally);
+    `⌊sqrt(X)⌋₀` emits `⌊Fbm.sqrt X⌋₀` via the `Fbm`-scoped
+    `⌊e⌋₀` notation (which elaborates to `Fbm.floor`;
+    `sqrt.ffp`'s `@lean` block defines both plus the `floor_sqrt`
+    bridge, and every generated file carries `open scoped Fbm`).
+    `fact(N)` / `min(a,b)` keep emitting generic application.
+    Arity is argument count vs the target's binder count
+    (`_FBM_SPECS` in generate.py); a mismatch is a clean
+    problem. Legacy spellings are clean problems naming the
+    canonical form:
+
+    | Legacy spelling | Canonical form | Why |
+    |---|---|---|
+    | `isqrt(X)`, `fsqrt(X)` | `⌊sqrt(X)⌋₀` | integer root is always truncated explicitly |
+    | `igcd(A,B)` | `gcd(A,B)` | spec helper is `Fbm.gcd`, spelled `gcd` |
+    | `floor(E)` | `⌊E⌋₀` | the ₀ notation is the only truncation spelling |
+    | bare `sqrt(X)` (outside `⌊...⌋₀`) | `⌊sqrt(X)⌋₀`, or document exact-root intent | exact-vs-truncated stays visible |
+    | bare `⌊E⌋` (no ₀) | `⌊E⌋₀` | bare floor is toward -inf, reserved |
 
     Comparison-coercion sugar: any whole output element whose
     top-level operator is a comparison (`=`, `==`, `!=`, `<`,

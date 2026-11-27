@@ -163,3 +163,21 @@ The system SHALL support `@by-induction` patterns beyond `N - 1` and `R.length` 
 #### Scenario: Clean failure for unsupported recursion shapes
 - **WHEN** a word's recursion matches no available induction pattern (e.g. double recursion as in `ack`)
 - **THEN** the tactic fails with a clean word-naming error (existing `needs @by-proof` style), not a loop or fuel-limit stall
+
+### Requirement: Name identity between effect calls and Lean defs
+The system SHALL name Lean-side spec helpers exactly as effect spellings invoke them (`Fbm`-scoped where core clashes threaten), so the translator emits calls generically without per-function mapping branches.
+
+#### Scenario: gcd passes through
+- **WHEN** an effect writes `gcd(A,B)`
+- **THEN** the generator emits `Fbm.gcd ...` with no `gcd`-specific branch in the emitter (arity checked structurally)
+
+#### Scenario: Floor notation
+- **WHEN** an effect writes `⌊sqrt(X)⌋₀`
+- **THEN** the `Fbm`-scoped `⌊e⌋₀` truncation notation elaborates to the floor application, and generated + hand-written Lean share the spelling (bare `⌊e⌋` without ₀ means floor toward -inf and is reserved/rejected)
+
+### Requirement: Rejection of legacy spellings
+The system SHALL reject superseded call spellings (`isqrt(`, bare `floor(`, bare `sqrt(` unwrapped in `⌊⌋₀`, bare `⌊...⌋` without ₀, legacy `igcd(`) with clean problems naming the canonical form.
+
+#### Scenario: Rejecting the old integer-root spelling
+- **WHEN** an effect writes `isqrt(X)`
+- **THEN** the generator reports a clean problem directing the author to `⌊sqrt(X)⌋₀`
