@@ -38,6 +38,30 @@ is_preprocessor() {
   esac
 }
 
+has_mise() {
+  command -v mise >/dev/null 2>&1
+}
+
+# Run a managed tool: `mise exec -- "$@"` when mise is installed,
+# otherwise `"$@"` directly (bare tool on PATH). The chomp
+# lean-proof tasks run on boxes with no mise, so shell helpers
+# must not hard-require it.
+run_managed() {
+  if has_mise; then
+    exec mise exec -- "$@"
+  else
+    exec "$@"
+  fi
+}
+
+print_managed() {
+  if has_mise; then
+    print_command mise exec -- "$@"
+  else
+    print_command "$@"
+  fi
+}
+
 is_compiler() {
   case "${1-}" in
     deno|node|bun|go|racket) return 0 ;;
@@ -66,25 +90,43 @@ ff_preprocess() {
       exec "$REPO_ROOT/deno/build/ff-preprocess" "$file"
       ;;
     bun)
-      print_command mise exec -- bun -- "$REPO_ROOT/bun/bin/ff-preprocess.ts" "$file"
-      exec mise exec -- bun -- "$REPO_ROOT/bun/bin/ff-preprocess.ts" "$file"
+      print_managed bun -- "$REPO_ROOT/bun/bin/ff-preprocess.ts" "$file"
+      run_managed bun -- "$REPO_ROOT/bun/bin/ff-preprocess.ts" "$file"
       ;;
     node)
-      print_command \
-        mise exec -- \
-        node \
-        --experimental-transform-types \
-        --disable-warning=ExperimentalWarning \
-        -- \
-        "$REPO_ROOT/node/bin/ff-preprocess.ts" \
-        "$file"
-      exec mise exec -- \
-        node \
-        --experimental-transform-types \
-        --disable-warning=ExperimentalWarning \
-        -- \
-        "$REPO_ROOT/node/bin/ff-preprocess.ts" \
-        "$file"
+      if has_mise; then
+        print_command \
+          mise exec -- \
+          node \
+          --experimental-transform-types \
+          --disable-warning=ExperimentalWarning \
+          -- \
+          "$REPO_ROOT/node/bin/ff-preprocess.ts" \
+          "$file"
+        exec mise exec -- \
+          node \
+          --experimental-transform-types \
+          --disable-warning=ExperimentalWarning \
+          -- \
+          "$REPO_ROOT/node/bin/ff-preprocess.ts" \
+          "$file"
+      else
+        # No mise: bare node on PATH. Fall back to the plain
+        # type-stripping flag this node accepts (verified on the
+        # lean-proof chomp box; sufficient for the preprocessor
+        # sources, which use only erasable syntax).
+        print_command \
+          node \
+          --experimental-strip-types \
+          -- \
+          "$REPO_ROOT/node/bin/ff-preprocess.ts" \
+          "$file"
+        exec node \
+          --experimental-strip-types \
+          -- \
+          "$REPO_ROOT/node/bin/ff-preprocess.ts" \
+          "$file"
+      fi
       ;;
   esac
 }

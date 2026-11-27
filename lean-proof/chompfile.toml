@@ -26,10 +26,12 @@ run = '''
   touch $TARGET
 '''
 
-# Flattened prelude: preprocessed once to a temp file, rebuilt
-# only when the library or the preprocessor changes. test:lean
-# then checks the temp file with --label so the `-- src:`
-# markers still name ../ff/lib/prelude.ffp.
+# Flattened prelude: flattening runs here in the chomp layer via
+# shell/ff-preprocess.sh (never inside check.py), rebuilt only when
+# the library, the preprocessor, or the shell helper changes.
+# test:lean feeds the cached flat file to check.py on stdin.
+# Backend is `--pp node` (node exists on the chomp box; switch
+# with --pp go|deno|bun|node).
 [[task]]
 name = 'prelude'
 target = './build/prelude.flat.ff'
@@ -39,21 +41,26 @@ deps = [
   '../ff/lib/**/*.ff',
   '../node/bin/ff-preprocess.ts',
   '../node/src/**/*.ts',
+  '../shell/ff-preprocess.sh',
+  '../shell/_ff-common.sh',
 ]
 run = '''
   mkdir -p ./build
-  node --experimental-strip-types -- ../node/bin/ff-preprocess.ts ../ff/lib/prelude.ffp > $TARGET
+  ../shell/ff-preprocess.sh --pp node ../ff/lib/prelude.ffp > $TARGET
 '''
 
 # Single file: run the generate + Lean pipeline on one file.
-# Usage (from lean-proof/): chomp single -- <file>
+# Usage (from lean-proof/): chomp check -- <file>
 # Paths are relative to lean-proof/, e.g.:
-#   chomp single -- ../ff/__tests__/primitives.test.ffp
-#   chomp single -- ../ff/lib/math/pred.ffp
-# .ffp files go through the real preprocessor (--pp); .ff files
-# run raw. :build is a cached dep so the oleans exist before
-# `lake env lean` runs; invalidation is always (a single check
-# is never cached) and ok-only so a failing proof fails the task.
+#   chomp check -- ../ff/__tests__/primitives.test.ffp
+#   chomp check -- ../ff/lib/math/pred.ffp
+# Single file: every input, .ff or .ffp alike, is flattened via
+# shell/ff-preprocess.sh and piped straight into `check.py --stdin`
+# (the preprocessor walks directive-free files as a no-op, so there
+# is no extension branching). :build is a cached dep so the oleans
+# exist before `lake env lean` runs; invalidation is always (a
+# single check is never cached) and ok-only so a failing proof
+# fails the task. Backend is `--pp node` like :prelude.
 [[task]]
 name = 'check'
 args = ['FILE']
@@ -61,17 +68,27 @@ deps = [
   ':build',
   './check.py',
   './generate.py',
+  '../shell/ff-preprocess.sh',
+  '../shell/_ff-common.sh',
 ]
 invalidation = 'always'
 validation = 'ok-only'
 run = '''
   if [ -z "$FILE" ]; then echo "usage: chomp check -- <file.ff|file.ffp>"; exit 1; fi
-  case "$FILE" in
-    *.ffp) python3 check.py --pp "$FILE" ;;
-    *) python3 check.py "$FILE" ;;
-  esac
+  set -o pipefail
+  ../shell/ff-preprocess.sh --pp node "$FILE" | python3 check.py --stdin
 '''
 
+# Two roots: the whole library via the chomp-flattened prelude
+# (one run verifies every annotated lib file in the tree --
+# core.ff, pred.ffp, arith.ffp -- since flattening inlines all
+# definitions; files with no `@effect` are skipped silently),
+# plus the primitives test file raw (standalone: its only import
+# is tap.ffp, no lib definitions needed, so no flattening).
+# Only prelude pays the preprocess cost. Each theorem carries a
+# `/-- word: @effect ... -/` doc comment with effect text only,
+# no file:line (flattened lines are unmappable) -- TAP names the
+# effect text and nothing names a file.
 [[task]]
 name = 'test:lean'
 deps = [
@@ -85,5 +102,5 @@ serial = true
 invalidation = 'always'
 validation = 'ok-only'
 run = '''
-  prove --exec "python3 check.py" ../ff/__tests__/primitives.test.ffp ./build/prelude.flat.ff
+  prove --exec "python3 check.py" ./build/prelude.flat.ff ../ff/__tests__/primitives.test.ffp
 '''

@@ -54,22 +54,26 @@ breaks parsing.
 
 Or run it via chomp from this directory — `lean-proof/` has
 its own `chompfile.toml` with a `test:lean` task (also the
-default task, so bare `chomp` works there). It runs
-`prove --exec "python3 check.py"` over the test file
-and `ff/lib/core/core.ff`, so the summary is prove's quick
-one (one TAP test per theorem); run `check.py` by hand for
-the detail behind a failure:
+default task, so bare `chomp` works there). The shell flattens
+(`shell/ff-preprocess.sh --pp node`; backend switchable with
+--pp go|deno|bun|node), the pipe carries the flat text
+(`... | python3 check.py --stdin`), and check.py verifies — TAP
+names the effect text, nothing names a file. Two roots: the
+`:prelude`-cached flat file via stdin (the whole library — core,
+pred, arith — in one run) plus the primitives test file through
+the identical pipe; run the pipe by hand for the detail behind
+a failure. `check.py`/`generate.py` never spawn a preprocessor:
 
 ```sh
 cd lean-proof && chomp test:lean
 ```
 
-For readable failures, use `check.py` instead of the raw pipe
-(see below) — it reports each failure against the `.ff`
-statement it came from, not a line in a temp file:
+For readable failures, use the pipe instead of the raw generator
+— check.py reports each failure against the effect text it came
+from, not a line in generated Lean:
 
 ```sh
-python3 check.py ff/lib/core/core.ff
+../shell/ff-preprocess.sh --pp node ff/lib/core/core.ff | python3 check.py --stdin
 ```
 
 ## Files
@@ -81,9 +85,10 @@ python3 check.py ff/lib/core/core.ff
   `emit()` dispatches to one `emit_*` function per word kind —
   `exit`, `rand`, `clock`, `getc`, error, `where`, normal). A new
   word kind is a new `emit_*` function plus one dispatch line.
-  `generate.py --help` prints the short usage. Since v21 every
-  theorem carries a `-- src: <file>:<line> <effect>` marker above
-  it, so a Lean error can be traced back to the statement. Since
+  `generate.py --help` prints the short usage. Every emitted
+  theorem carries a `/-- word: @effect <effect> -/` doc comment
+  above it, so a Lean error can be traced back to the statement
+  (effect text only, no file:line markers). Since
   v22 `⊕` is a bitwise-xor operator in effects (translated to
   `xor`, defined in `Fbm/Interp.lean`), and the prefix operators
   (`tmod`/`tdiv`/`land`/`lor`/`xor`/`shl`/`shr`) emit their
@@ -96,13 +101,17 @@ python3 check.py ff/lib/core/core.ff
 - `check.py` — the checker (v21). Runs the generator, passes the
   output to `lake env lean --json` (from `lean-proof/`), and reports
 each result as a TAP
-  version 13 test, one per emitted theorem, named
-  `<effect> (<file>:<line>)`, with the Lean message as `#`
+  version 13 test, one per emitted theorem, named by effect text
+  (`<word>: <effect>`, no file:line), with the Lean message as `#`
   diagnostics. Exit 0 when every theorem proves, 1
   otherwise. The generator stays a pure translator — all Lean
-  invocation and error mapping lives here. TAP is the only
+  invocation and error mapping lives here.   TAP is the only
   output (no flag, no friendly report) — that is what the
-  `test:lean` chomp task consumes via `prove`.
+  `test:lean` chomp task consumes. Single input path: the
+  already-flattened program on stdin (`check.py --stdin`,
+  forwarded via `generate.py --stdin`); no `--pp` flag
+  and no preprocessor invocation — flattening lives in the chomp
+  layer.
 - `Fbm/Interp.lean` — the Lean interpreter (`Tok`, `step`, `exec`,
   `run`, `Outcome`, helpers, `Defs`, `lookup`, `execQ`, `runQ`) with
   zero prover dependencies; import it alone to run the model.

@@ -359,47 +359,40 @@ statement it came from:
 python3 check.py ff/lib/core/core.ff
 ```
 
-It works because every theorem the generator emits (v21+) carries
-a `-- src: <file>:<line> <effect>` marker above it, naming the
-source file, the source line, and the statement as written. For
-each Lean error, check.py finds the nearest marker above the
-error's line in the generated file and emits a TAP version 13
-test for that statement -- `not ok N - <effect> (<file>:<line>)`,
-with the Lean message and goal as `#` diagnostics under it.
-Errors from one theorem are grouped under its statement;
-generator problems become extra `not ok` tests. TAP is the only
-output (no flag, no friendly report), so `prove` can run it
-directly. Exit 0 when every emitted theorem proves and the
-generator reported no problems, 1 otherwise. The generated Lean
-is kept in a temp file (path printed to stderr on failure) so
-the failing theorem can be opened. Lean is resolved as `lean`
-on PATH, else `~/.elan/bin/lean`, else `--lean PATH`.
+It works because every theorem the generator emits carries a
+`/-- word: @effect <effect> -/` doc comment above it, naming
+the word and the statement as written. For each Lean error,
+check.py finds the nearest theorem at or above the error's line
+in the generated file and emits a TAP version 13 test for that
+statement -- `not ok N - <effect text>`, with the Lean message
+and goal as `#` diagnostics under it. There are no file:line
+claims anywhere: the word name in the effect text is unique per
+suite, and `grep -rn` finds it in seconds. Errors from one
+theorem are grouped under its statement; generator problems
+become extra `not ok` tests. TAP is the only output (no flag,
+no friendly report), so `prove` can run it directly. Exit 0
+when every emitted theorem proves and the generator reported no
+problems, 1 otherwise. The generated Lean is kept in a temp
+file (path printed to stderr on failure) so the failing theorem
+can be opened. Lean is resolved as `lean` on PATH, else
+`~/.elan/bin/lean`, else `--lean PATH`.
 
-`.ffp` files with imports go through the REAL preprocessor
-(Phase 7 lite): `check.py --pp` runs
-`node --experimental-strip-types -- <repo>/node/bin/ff-preprocess.ts <file>`
-and pipes its flattened stdout into `generate.py --stdin <file>`
-(the requested file stays the `-- src:` label; line numbers are
-the flattened stream's). `check.py --label ORIG FLAT` skips the
-preprocessor and treats FLAT as already-flattened output,
-labelling markers with ORIG (for the chomp-cached
-`./build/prelude.flat.ff`). Non-`--pp`/non-`--label` behavior is
-unchanged (raw file straight to `generate.py`). Node resolves
-like lean/lake: `node` on PATH, else a short candidate list,
-else `--node PATH` — no new dependencies. Theorems are emitted
-for the ENTIRE flattened output (no emit-filter). `test:lean`
-is two roots: `check.py --label ../ff/lib/prelude.ffp
-./build/prelude.flat.ff` (the whole library via imports — one
-run verifies every annotated file in the tree; definitions with
-no `@effect` are skipped silently, no theorem and no problem;
-the `:prelude` chomp task rebuilds the flat file only when the
-library or preprocessor changes, and `:build` rebuilds the
-oleans only when the Lean sources change) and `check.py
-../ff/__tests__/primitives.test.ffp` (unchanged raw path).
-
-Single file: `chomp single -- <file>` (from lean-proof/, paths
-relative to it) runs the same generate + Lean pipeline on one
-file — `.ffp` via `--pp`, `.ff` raw — calling `check.py`
-directly (no `prove` wrapper) so the full TAP stream prints,
-with `:build` as a cached dep. Always reruns; a failing proof
-fails the task.
+One path, split across the chomp/Python boundary: the shell
+flattens (`shell/ff-preprocess.sh --pp node`, backend selectable:
+go|deno|bun|node — every file, `.ff` and `.ffp` alike, since the
+preprocessor walks directive-free files as a no-op), the pipe
+carries the flat text, and check.py verifies (`... | python3
+check.py --stdin`, which reads the program from stdin and forwards
+it via `generate.py --stdin`; provenance comments use the
+`<stdin>` marker). TAP names the effect text from the `/-- word:
+@effect ... -/` doc comments and nothing names a file. check.py
+has NO `--pp` flag and spawns no preprocessor — an old check.py
+`--pp` once meant "use preprocessor", while the shell's `--pp`
+selects a backend; do not "restore compatibility" by adding one.
+`test:lean` is two roots: the `:prelude`-cached flat file via
+stdin (`python3 check.py --stdin < ./build/prelude.flat.ff` — the
+whole library in one run; new annotated lib files ride the prelude
+imports, no chomp change) plus the primitives test file through
+the identical pipe. Single file: `chomp check -- <file>` (from
+lean-proof/) pipes the file the same way, always reruns, and a
+failing proof fails the task; `:build` keeps the oleans fresh.

@@ -2,21 +2,29 @@
 """Verify @effect statements via Lean, emitting TAP.
 
     python3 check.py in.ff [--lean LEAN_BIN]
+    ../shell/ff-preprocess.sh --pp BACKEND FILE | python3 check.py --stdin [--lean LEAN_BIN]
 
-Runs the generator on an .ff file, passes the generated Lean to
-Lean, and reports each result as a TAP version 13 test -- one per
-emitted theorem, in file order, named `<effect> (<file>:<line>)`,
-with generator problems as extra `not ok` tests -- so `prove`
-can run it:
+Two input modes: a real file on disk (read directly -- the flat
+prelude cache and standalone files like the primitives test), or
+the already-flattened program on stdin (the shell helper inlines
+all definitions; the chomp layer runs it, never this file).
+check.py pipes the text via `generate.py` (file arg or `--stdin`
+to match) and uses `<stdin>` as the provenance marker for piped
+input.
+
+Runs the generator on the file, passes the generated Lean to
+`lake env lean --json`, and reports each result as a TAP version
+13 test -- one per emitted theorem, in file order, named by the
+effect text -- so `prove` can run it:
 
     prove --exec "python3 check.py" in.ff
 
-The generator (v21+) emits a `-- src: <file>:<line> <effect>`
-marker above every theorem. check.py runs `lean --json`, and for
-each error finds the nearest marker above the error's line in the
-generated file, so a failing test reads e.g.:
+The generator emits a `/-- word: @effect <effect> -/` doc comment
+above every theorem. check.py finds the nearest doc comment above
+each Lean error's line in the generated file (theorem order), so a
+failing test reads e.g.:
 
-    not ok 11 - bury: a b c == c a b (ff/lib/core/core.ff:31)
+    not ok 11 - bury: a b c == c a b
     # bury_effect: unsolved goals
     #   a b c : Int
     #   rest : Stack
@@ -45,16 +53,9 @@ from pathlib import Path
 
 HERE = Path(__file__).resolve().parent
 GENERATOR = HERE / "generate.py"
-PREPROCESSOR = HERE.parent / "node" / "bin" / "ff-preprocess.ts"
-# Fallback node locations when `node` is not on PATH (mirrors the
-# lean/lake resolution below: explicit flag, PATH, then this list).
-NODE_CANDIDATES = [
-    Path.home() / ".hermes" / "tools" / "node-26.12.1-linux-x64" / "bin" / "node",
-    Path("/home/jmh/.hermes/tools/node-26.12.1-linux-x64/bin/node"),
-]
 
-MARKER_RE = re.compile(r"^-- src: (\S+):(\d+) (.*)$")
 THEOREM_RE = re.compile(r"^theorem (\S+)")
+DOC_RE = re.compile(r"^/-- (.*) -/$")
 SUMMARY_RE = re.compile(r"(\d+) theorem\(s\) emitted, (\d+) problem\(s\)")
 
 
@@ -84,23 +85,6 @@ def resolve_lake(explicit):
     return None
 
 
-def resolve_node(explicit):
-    """Find the Node binary: --node, PATH, or a short candidate list."""
-    if explicit:
-        return explicit
-    found = shutil.which("node")
-    if found:
-        return found
-    seen = set()
-    for cand in NODE_CANDIDATES:
-        if cand in seen:
-            continue
-        seen.add(cand)
-        if cand.exists():
-            return str(cand)
-    return None
-
-
 def run_generator(src_path):
     """Run generate.py on src_path. Returns (lean_text, stderr, returncode)."""
     proc = subprocess.run(
@@ -109,21 +93,13 @@ def run_generator(src_path):
     return proc.stdout, proc.stderr, proc.returncode
 
 
-def run_preprocessor(node_bin, src_path):
-    """Run the TS preprocessor on src_path. Returns (flat_text, stderr, returncode)."""
+def run_generator_stdin(flat_text):
+    """Run generate.py --stdin on flattened text (read from stdin).
+    The theorems are named by effect text; provenance comments
+    use generate.py's `<stdin>` marker. Returns (lean_text,
+    stderr, returncode)."""
     proc = subprocess.run(
-        [node_bin, "--experimental-strip-types", "--",
-         str(PREPROCESSOR), str(src_path)],
-        capture_output=True, text=True)
-    return proc.stdout, proc.stderr, proc.returncode
-
-
-def run_generator_stdin(flat_text, label_path):
-    """Run generate.py --stdin on flattened text. label_path is the
-    requested file, used only for `-- src:` markers (line numbers
-    are the flattened stream's). Returns (lean_text, stderr, returncode)."""
-    proc = subprocess.run(
-        [sys.executable, str(GENERATOR), "--stdin", str(label_path)],
+        [sys.executable, str(GENERATOR), "--stdin"],
         input=flat_text, capture_output=True, text=True)
     return proc.stdout, proc.stderr, proc.returncode
 
@@ -154,57 +130,58 @@ def run_lean(lake_bin, lean_bin, lean_path):
     return errors, proc.stdout, proc.returncode
 
 
-def parse_markers(lean_text):
-    """Map generated-file line numbers to source markers.
+def parse_theorems(lean_text):
+    """Emitted theorems in file order.
 
-    Returns a list of (gen_line, src, src_line, effect, theorem)
-    in file order. theorem is the name from the `theorem X` line
-    following the marker, or "" when it cannot be found."""
+    Returns a list of (gen_line, theorem, name). The name is the
+    effect text from the nearest `/-- word: @effect <effect> -/`
+    doc comment above the theorem (the `@effect ` tag word is
+    stripped so it reads as the effect text); when no doc comment
+    is found (e.g. a multi-line effect body), the name falls back
+    to the theorem name."""
     lines = lean_text.splitlines()
-    markers = []
+    theorems = []
     for i, line in enumerate(lines):
-        m = MARKER_RE.match(line)
+        m = THEOREM_RE.match(line)
         if not m:
             continue
-        theorem = ""
-        for following in lines[i + 1:i + 6]:
-            t = THEOREM_RE.match(following)
-            if t:
-                theorem = t.group(1)
-                break
-        markers.append((i + 1, m.group(1), int(m.group(2)), m.group(3), theorem))
-    return markers
+        theorem = m.group(1)
+        name = theorem
+        for back in lines[max(0, i - 6):i]:
+            d = DOC_RE.match(back)
+            if d and ": @effect " in d.group(1):
+                name = d.group(1).replace(": @effect ", ": ", 1)
+        theorems.append((i + 1, theorem, name))
+    return theorems
 
 
-def marker_for(markers, gen_line):
-    """The nearest marker at or above gen_line (tolerant of Lean's
+def theorem_for(theorems, gen_line):
+    """The nearest theorem at or above gen_line (tolerant of Lean's
     line numbering being off by one from the file's)."""
     best = None
-    for marker in markers:
-        if marker[0] <= gen_line + 1:
-            best = marker
+    for theorem in theorems:
+        if theorem[0] <= gen_line + 1:
+            best = theorem
         else:
             break
     return best
 
 
-def emit_tap(markers, grouped, problem_lines, unmapped):
+def emit_tap(theorems, grouped, problem_lines, unmapped):
     """Print pure TAP version 13 to stdout: one test per emitted
-    theorem in file order, named `<effect> (<file>:<line>)`,
-    generator problems as extra `not ok` tests after them, and
-    unmapped errors (no marker above them) last. Lean messages
-    become `#` diagnostics under their failing test. Returns the
-    number of failed tests. Nothing but TAP goes to stdout."""
+    theorem in file order, named by effect text, generator problems
+    as extra `not ok` tests after them, and unmapped errors (no
+    theorem above them) last. Lean messages become `#` diagnostics
+    under their failing test. Returns the number of failed tests.
+    Nothing but TAP goes to stdout."""
     n = 0
     failed = 0
-    for marker in markers:
-        _gen, src, src_line, effect, theorem = marker
+    for _gen, theorem, name in theorems:
         n += 1
-        key = (src, src_line, effect, theorem)
-        messages = grouped.get(key)
+        messages = grouped.get(theorem)
         if messages:
             failed += 1
-            print(f"not ok {n} - {effect} ({src}:{src_line})")
+            print(f"not ok {n} - {name}")
             for message in messages:
                 first, *rest = message.splitlines() or [""]
                 header = f"{theorem}: {first}" if theorem else first
@@ -212,7 +189,7 @@ def emit_tap(markers, grouped, problem_lines, unmapped):
                 for line in rest:
                     print(f"#   {line}")
         else:
-            print(f"ok {n} - {effect} ({src}:{src_line})")
+            print(f"ok {n} - {name}")
     for line in problem_lines:
         n += 1
         failed += 1
@@ -233,29 +210,33 @@ def main():
     parser = argparse.ArgumentParser(
         description="Verify @effect statements via Lean, emitting "
                     "TAP version 13 on stdout.")
-    parser.add_argument("input", help=".ff file with @effect comments")
+    parser.add_argument("input", nargs="?",
+                        help=".ff / .ffp file with @effect comments "
+                             "(a flat prelude cache or a standalone file; "
+                             "omit with --stdin)")
+    parser.add_argument("--stdin", action="store_true",
+                        help="read the already-flattened program from stdin "
+                             "instead of a file")
     parser.add_argument("--lean", default=None,
                         help="Lean binary (default: lean on PATH, else ~/.elan/bin/lean)")
     parser.add_argument("--lake", default=None,
                         help="Lake binary (default: lake on PATH, else ~/.elan/bin/lake)")
-    parser.add_argument("--pp", action="store_true",
-                        help="run the TS preprocessor on the input first, then "
-                             "generate.py --stdin on its flattened output "
-                             "(for .ffp files with imports)")
-    parser.add_argument("--node", default=None,
-                        help="Node binary for --pp (default: node on PATH, "
-                             "else a short candidate list)")
-    parser.add_argument("--label", default=None,
-                        help="src path reported in -- src: markers (default: the input file); "
-                             "with --label the input is treated as already-flattened "
-                             "preprocessor output and piped via generate.py --stdin "
-                             "(for the chomp-cached ./build/prelude.flat.ff)")
     args = parser.parse_args()
 
-    src_path = Path(args.input)
-    if not src_path.exists():
-        print(f"check: no such file: {src_path}", file=sys.stderr)
-        return 1
+    if args.stdin:
+        flat_text = sys.stdin.read()
+        lean_text, gen_stderr, gen_rc = run_generator_stdin(flat_text)
+    else:
+        if not args.input:
+            print("usage: python3 check.py in.ff | "
+                  "../shell/ff-preprocess.sh --pp BACKEND FILE | "
+                  "python3 check.py --stdin", file=sys.stderr)
+            return 2
+        src_path = Path(args.input)
+        if not src_path.exists():
+            print(f"check: no such file: {src_path}", file=sys.stderr)
+            return 1
+        lean_text, gen_stderr, gen_rc = run_generator(src_path)
 
     lean_bin = resolve_lean(args.lean)
     if lean_bin is None:
@@ -269,37 +250,6 @@ def main():
               "pass --lake PATH", file=sys.stderr)
         return 1
 
-    if args.pp and args.label is not None:
-        print("check: --pp and --label cannot be combined "
-              "(--pp preprocesses; --label takes already-flattened input)",
-              file=sys.stderr)
-        return 1
-    if args.pp:
-        node_bin = resolve_node(args.node)
-        if node_bin is None:
-            print("check: Node not found (not on PATH, no candidate node binary); "
-                  "pass --node PATH", file=sys.stderr)
-            return 1
-        flat_text, pp_stderr, pp_rc = run_preprocessor(node_bin, src_path)
-        if pp_rc != 0:
-            print("check: preprocessor failed:", file=sys.stderr)
-            print(pp_stderr, file=sys.stderr)
-            return 1
-        # Label the requested file in `-- src:` markers; line
-        # numbers are the flattened stream's (accepted limitation).
-        lean_text, gen_stderr, gen_rc = run_generator_stdin(flat_text, src_path)
-    elif args.label is not None:
-        # Already-flattened input (the chomp-cached prelude.flat.ff):
-        # pipe it via generate.py --stdin so the markers name the
-        # original .ffp root, not the temp file.
-        try:
-            flat_text = src_path.read_text()
-        except OSError as ex:
-            print(f"check: cannot read {src_path}: {ex}", file=sys.stderr)
-            return 1
-        lean_text, gen_stderr, gen_rc = run_generator_stdin(flat_text, Path(args.label))
-    else:
-        lean_text, gen_stderr, gen_rc = run_generator(src_path)
     if gen_rc != 0:
         print("check: generator failed:", file=sys.stderr)
         print(gen_stderr, file=sys.stderr)
@@ -321,34 +271,29 @@ def main():
         lean_path = Path(f.name)
 
     errors, _raw, _lean_rc = run_lean(lake_bin, lean_bin, lean_path)
-    markers = parse_markers(lean_text)
+    theorems = parse_theorems(lean_text)
 
-    # Group errors by source statement (several Lean errors can
-    # come from one theorem, e.g. bxor's two type mismatches plus
-    # the unsolved goal left behind).
-    grouped = {}  # (src, src_line, effect, theorem) -> [messages]
-    order = []
+    # Group errors by theorem (several Lean errors can come from
+    # one theorem, e.g. bxor's two type mismatches plus the
+    # unsolved goal left behind).
+    grouped = {}  # theorem -> [messages]
     unmapped = []
     for gen_line, _col, message in errors:
-        marker = marker_for(markers, gen_line)
-        if marker is None:
+        hit = theorem_for(theorems, gen_line)
+        if hit is None:
             unmapped.append((gen_line, message))
             continue
-        _gen, src, src_line, effect, theorem = marker
-        key = (src, src_line, effect, theorem)
-        if key not in grouped:
-            grouped[key] = []
-            order.append(key)
-        grouped[key].append(message)
+        _gen, theorem, _name = hit
+        grouped.setdefault(theorem, []).append(message)
 
     # Pure TAP on stdout (the plan, then one test per theorem
     # in file order, problems and unmapped errors after them).
     # Nothing else may go to stdout or prove cannot parse it;
     # the temp-file path goes to stderr instead.
-    total = len(markers) + len(problem_lines) + len(unmapped)
+    total = len(theorems) + len(problem_lines) + len(unmapped)
     print("TAP version 13")
     print(f"1..{total}")
-    _n, tap_failed = emit_tap(markers, grouped, problem_lines, unmapped)
+    _n, tap_failed = emit_tap(theorems, grouped, problem_lines, unmapped)
     if tap_failed:
         print(f"generated Lean kept at {lean_path}", file=sys.stderr)
         return 1

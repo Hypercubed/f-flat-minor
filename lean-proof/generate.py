@@ -2,8 +2,8 @@
 """Generate Lean proofs from an .ff file with @effect comments.
 
 Usage:  python3 generate.py in.ff [out.lean]
+        python3 generate.py --stdin [out.lean] < flattened.ff
         python3 generate.py in.ff | lean --stdin
-        python3 generate.py --stdin in.ff [out.lean] < flattened.ff
 
 A pure translator: it parses, inlines, and emits Lean. It runs no
 tests and has no interpreter of its own. The full manual (notation,
@@ -759,9 +759,13 @@ def parse_args(argv):
     """Parse command-line args: generate.py in.ff [out.lean|-].
     Returns (src_path, out_path, from_stdin) where out_path is None
     for stdout. `--help` prints the short usage; the full manual
-    is HELP.md. With `--stdin`, in.ff is only the label used in
-    `-- src:` markers (the requested file) and the program text is
-    read from stdin (flattened preprocessor output)."""
+    is HELP.md. With `--stdin` there is no LABEL: the program text
+    is read from stdin (already-flattened preprocessor output --
+    all definitions present, no `.import` walking) and `<stdin>` is
+    used as the provenance marker (in `@lean`/`-- src` comments and
+    problem messages). Without `--stdin`, in.ff is a real
+    standalone file on disk (raw `.ff` / `.ffp` with no lib imports
+    needing flattening); its definitions are parsed as-is."""
     args = list(argv)
     from_stdin = False
     if "--stdin" in args[1:]:
@@ -769,18 +773,23 @@ def parse_args(argv):
         args = [args[0]] + [a for a in args[1:] if a != "--stdin"]
     if len(args) == 2 and args[1] in ("-h", "--help"):
         print("usage: generate.py in.ff [out.lean|-]")
-        print("       generate.py --stdin in.ff [out.lean|-] < flattened.ff")
+        print("       generate.py --stdin [out.lean|-] < flattened.ff")
         print("       out.lean omitted (or '-') writes Lean to stdout")
-        print("       --stdin reads the program from stdin; in.ff is only the -- src: label")
+        print("       --stdin reads the program from stdin; stdin is stdin (no LABEL)")
         print("       full manual: HELP.md (notation, scope, IO, requires/ensures)")
         sys.exit(0)
-    if len(args) < 2 or len(args) > 3:
-        print("usage: generate.py in.ff [out.lean|-]", file=sys.stderr)
-        print("       generate.py --stdin in.ff [out.lean|-] < flattened.ff", file=sys.stderr)
-        print("       out.lean omitted (or '-') writes Lean to stdout", file=sys.stderr)
-        sys.exit(2)
-    src_path = Path(args[1])
-    out_arg = args[2] if len(args) == 3 else None
+    if from_stdin:
+        if len(args) > 2:
+            print("usage: generate.py --stdin [out.lean|-] < flattened.ff", file=sys.stderr)
+            sys.exit(2)
+        src_path = Path("<stdin>")
+        out_arg = args[1] if len(args) == 2 else None
+    else:
+        if len(args) < 2 or len(args) > 3:
+            print("usage: generate.py in.ff [out.lean|-]", file=sys.stderr)
+            sys.exit(2)
+        src_path = Path(args[1])
+        out_arg = args[2] if len(args) == 3 else None
     out_path = None if out_arg in (None, "-") else Path(out_arg)
     return src_path, out_path, from_stdin
 
@@ -848,9 +857,10 @@ def extract_effects(text):
     list of (source line, @lean body) in file order (the body
     without the '@lean' tag, emitted verbatim); the returned text
     has every comment replaced by a single space so definitions
-    still parse. The source line is what the `-- src:` marker in
-    the generated Lean reports, so a Lean error can be traced
-    back to the statement it came from."""
+    still parse. The source line is reported in generator problem
+    messages and in the `/-- word: @effect ... -/` doc comment above
+    each emitted theorem (which is also what check.py names TAP
+    tests by)."""
     effects_list = []
     lean_blocks = []
     for m in re.finditer(r"/\*(.*?)\*/", text, flags=re.S):
@@ -5281,10 +5291,11 @@ class EmitCtx:
         tactic / `@by-induction` skeleton when present). Records the
         theorem name for downstream dep computation. `head` selects the
         predicate (`Spec`, `SpecExact`, `SpecIO`, `SpecExit`);
-        `is_specerr` selects `SpecErr` (pre only)."""
-        self.out_lines.append(
-            f"-- src: {self.src_path}:{self.src_line} {self.src_effect}")
-        self.out_lines.append(f"/-- {self.ln}: @effect {self.effect_body} -/")
+        `is_specerr` selects `SpecErr` (pre only). The `/-- ... -/`
+        doc comment carries the effect text (it is also what
+        check.py names TAP tests by); there are no `-- src:`
+        file:line markers."""
+        self.out_lines.append(f"/-- {self.name}: @effect {self.effect_body} -/")
         if head is None:
             head = "SpecErr" if is_specerr else "Spec"
         if head == "Spec" and not is_specerr:
@@ -5320,11 +5331,6 @@ class EmitCtx:
         self.out_lines.append(f"  fbm_verify [{', '.join(deps)}]")
         self.was_spec = True
         return True
-
-    def _emit_doc(self):
-        self.out_lines.append(
-            f"-- src: {self.src_path}:{self.src_line} {self.src_effect}")
-        self.out_lines.append(f"/-- {self.ln}: @effect {self.effect_body} -/")
 
     def _emit_spec_normal(self, deps):
         """Pure / where / guarded-prim success case."""
@@ -5901,7 +5907,9 @@ def main():
     # effect itself: the last token before '==', in postfix
     # position, exactly as typed -- or an explicit `word:` prefix.
     # No definition is required: a primitive word stands alone,
-    # a defined word is looked up by name anywhere in the file.
+    # a defined word is looked up by name anywhere in the input
+    # (flattened preprocessor output carries every definition;
+    # a raw standalone file carries its own).
     # Several effects for the same word are kept, in file order.
     # Output lines and problems are initialised here (before the
     # effect-attachment loop) so a malformed @effect can be
@@ -5974,7 +5982,7 @@ def main():
             (in_elems, out_elems, cond, where_text, else_error, by_proof, by_ind))
         effect_text.setdefault(word, []).append(core_body)
         effect_line.setdefault(word, []).append(src_line)
-        # The `-- src:` marker is a Lean line comment: it must stay on
+        # The doc comment is a Lean line comment: it must stay on
         # one line even when the @effect was written multi-line.
         effect_full.setdefault(word, []).append(re.sub(r"\s*\n\s*", " ", e))
 
@@ -6080,8 +6088,9 @@ def main():
             f"def {lean_name(w)}Prog{prog_lit_params.get(w, '')} : "
             f"List Tok := {progs[w]}")
         prog_emitted.add(w)
-    # Theorems in file order (check.py maps them back by the
-    # `-- src:` markers). Deps for `fbm_verify [...]` are the
+    # Theorems in file order (check.py maps Lean errors back by
+    # emitted-theorem order, naming TAP tests by the `/-- ... -/`
+    # doc comment above each theorem). Deps for `fbm_verify [...]` are the
     # word's own Prog plus already-emitted transitive callee
     # Spec theorems (same-word siblings excluded: each case
     # proves itself by peeling).

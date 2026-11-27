@@ -201,6 +201,13 @@ Resolves macros, imports, and other preprocessor directives in a `.ff` or `.ffp`
 - `--quiet`: Disables execution tracing output.
 - `--help` / `-h`: Display command usage details.
 
+#### No-mise fallback
+`bun`/`node` backends run via `mise exec` when mise is installed,
+otherwise the bare tool on PATH (`_ff-common.sh` falls back
+automatically; the `node` fallback uses `--experimental-strip-types`).
+Boxes with only a system node and no mise — e.g. the lean-proof
+chomp tasks — work without configuration.
+
 #### Examples
 ```bash
 # Preprocess with default Bun preprocessor
